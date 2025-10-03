@@ -636,6 +636,224 @@ ${JSON.stringify(questionsToTranslate)}`
     }
   });
 
+  // Admin - Live Courses CRUD
+  app.get('/api/admin/live-courses', isAdmin, async (req, res) => {
+    try {
+      const courses = await storage.getAllLiveCourses();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching live courses:", error);
+      res.status(500).json({ message: "Failed to fetch live courses" });
+    }
+  });
+
+  app.post('/api/admin/live-courses', isAdmin, async (req, res) => {
+    try {
+      const course = await storage.createLiveCourse(req.body);
+      res.json(course);
+    } catch (error) {
+      console.error("Error creating live course:", error);
+      res.status(500).json({ message: "Failed to create live course" });
+    }
+  });
+
+  app.put('/api/admin/live-courses/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const course = await storage.updateLiveCourse(id, req.body);
+      res.json(course);
+    } catch (error) {
+      console.error("Error updating live course:", error);
+      res.status(500).json({ message: "Failed to update live course" });
+    }
+  });
+
+  app.delete('/api/admin/live-courses/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLiveCourse(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting live course:", error);
+      res.status(500).json({ message: "Failed to delete live course" });
+    }
+  });
+
+  // Admin - Live Course Sessions CRUD
+  app.get('/api/admin/live-courses/:courseId/sessions', isAdmin, async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const sessions = await storage.getSessionsByCourseId(courseId);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
+  app.post('/api/admin/live-courses/:courseId/sessions', isAdmin, async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const session = await storage.createLiveCourseSession({
+        ...req.body,
+        courseId
+      });
+      res.json(session);
+    } catch (error) {
+      console.error("Error creating session:", error);
+      res.status(500).json({ message: "Failed to create session" });
+    }
+  });
+
+  app.put('/api/admin/live-course-sessions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const session = await storage.updateLiveCourseSession(id, req.body);
+      res.json(session);
+    } catch (error) {
+      console.error("Error updating session:", error);
+      res.status(500).json({ message: "Failed to update session" });
+    }
+  });
+
+  app.delete('/api/admin/live-course-sessions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLiveCourseSession(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
+  // Public - Get live course for quiz
+  app.get('/api/live-courses/quiz/:quizId', async (req, res) => {
+    try {
+      const { quizId } = req.params;
+      const course = await storage.getLiveCourseByQuizId(quizId);
+      
+      if (!course) {
+        return res.status(404).json({ message: "No live course for this quiz" });
+      }
+
+      const sessions = await storage.getSessionsByCourseId(course.id);
+      res.json({ ...course, sessions });
+    } catch (error) {
+      console.error("Error fetching live course:", error);
+      res.status(500).json({ message: "Failed to fetch live course" });
+    }
+  });
+
+  // Purchase live course - Create payment intent
+  app.post('/api/live-courses/purchase', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { courseId, sessionId } = req.body;
+
+      if (!courseId || !sessionId) {
+        return res.status(400).json({ message: "Course ID and Session ID required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const course = await storage.getLiveCourseById(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      const session = await storage.getSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Check session availability
+      if (session.status !== 'available' || (session.enrolled || 0) >= (session.capacity || 30)) {
+        return res.status(400).json({ message: "Session is full or unavailable" });
+      }
+
+      try {
+        let customerId = user.stripeCustomerId;
+        
+        if (!customerId) {
+          const customer = await stripe.customers.create({
+            email: user.email,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          });
+          customerId = customer.id;
+          await storage.updateUserStripeInfo(userId, customerId);
+        }
+
+        // Create payment intent for live course
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: course.price,
+          currency: 'eur',
+          customer: customerId,
+          metadata: {
+            userId: userId,
+            courseId: course.id,
+            sessionId: session.id,
+            type: 'live_course'
+          },
+          description: `${course.title} - ${new Date(session.startDate).toLocaleDateString()}`,
+        });
+
+        res.json({ clientSecret: paymentIntent.client_secret });
+      } catch (stripeError) {
+        console.error("Stripe error:", stripeError);
+        res.status(500).json({ message: "Payment initialization failed" });
+      }
+    } catch (error) {
+      console.error("Error purchasing course:", error);
+      res.status(500).json({ message: "Failed to purchase course" });
+    }
+  });
+
+  // Confirm live course enrollment after payment
+  app.post('/api/live-courses/confirm-enrollment', isAuthenticated, async (req: any, res) => {
+    try {
+      const { paymentIntentId, courseId, sessionId } = req.body;
+      const userId = req.user.claims.sub;
+
+      // Verify payment with Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === 'succeeded' && 
+          paymentIntent.metadata.userId === userId &&
+          paymentIntent.metadata.courseId === courseId &&
+          paymentIntent.metadata.sessionId === sessionId) {
+        
+        // Create enrollment
+        await storage.createLiveCourseEnrollment({
+          userId,
+          courseId,
+          sessionId,
+          stripePaymentIntentId: paymentIntentId,
+          amountPaid: paymentIntent.amount,
+          status: 'confirmed'
+        });
+
+        // Update session enrolled count
+        const session = await storage.getSessionById(sessionId);
+        if (session) {
+          await storage.updateLiveCourseSession(sessionId, {
+            enrolled: (session.enrolled || 0) + 1
+          });
+        }
+
+        res.json({ success: true, message: "Enrollment confirmed" });
+      } else {
+        res.status(400).json({ message: "Payment verification failed" });
+      }
+    } catch (error) {
+      console.error("Error confirming enrollment:", error);
+      res.status(500).json({ message: "Failed to confirm enrollment" });
+    }
+  });
+
   // Download quiz report
   app.get('/api/quiz-reports/:attemptId/download', isAuthenticated, async (req: any, res) => {
     try {

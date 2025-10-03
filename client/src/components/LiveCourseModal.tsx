@@ -33,6 +33,7 @@ interface LiveCourse {
   title: string;
   description: string;
   program?: string;
+  instructor?: string;
   price: number;
   sessions: LiveCourseSession[];
 }
@@ -247,13 +248,20 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
               )}
             </div>
 
+            {courseData.instructor && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-semibold">Docente:</span>
+                <span className="text-muted-foreground" data-testid="course-instructor">{courseData.instructor}</span>
+              </div>
+            )}
+
             <div className="bg-accent/20 p-4 rounded-lg">
               <h4 className="font-semibold mb-2 flex items-center gap-2">
                 <Check className="w-4 h-4 text-primary" />
                 Cosa Include
               </h4>
               <ul className="text-sm space-y-1 ml-6 list-disc text-muted-foreground">
-                <li>Formazione live con esperti del settore</li>
+                <li>Formazione live con {courseData.instructor || 'esperti del settore'}</li>
                 <li>Materiale didattico completo</li>
                 <li>Certificato di partecipazione</li>
                 <li>Accesso al gruppo di supporto</li>

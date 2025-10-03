@@ -33,6 +33,7 @@ interface LiveCourse {
   title: string;
   description: string;
   program?: string;
+  instructor?: string;
   price: number;
   createdAt: string;
 }
@@ -155,6 +156,7 @@ export function AdminLiveCourses() {
       title: '',
       description: '',
       program: '',
+      instructor: '',
       price: 0,
       quizId: '',
     });
@@ -229,8 +231,8 @@ export function AdminLiveCourses() {
               <TableRow>
                 <TableHead>Titolo</TableHead>
                 <TableHead>Quiz</TableHead>
+                <TableHead>Docente</TableHead>
                 <TableHead>Prezzo</TableHead>
-                <TableHead>Programma</TableHead>
                 <TableHead>Azioni</TableHead>
               </TableRow>
             </TableHeader>
@@ -239,8 +241,8 @@ export function AdminLiveCourses() {
                 <TableRow key={course.id} data-testid={`course-row-${course.id}`}>
                   <TableCell className="font-medium">{course.title}</TableCell>
                   <TableCell>{quizzes?.find(q => q.id === course.quizId)?.title || course.quizId}</TableCell>
+                  <TableCell>{course.instructor || '-'}</TableCell>
                   <TableCell>€{(course.price / 100).toFixed(2)}</TableCell>
-                  <TableCell className="max-w-xs truncate">{course.program || '-'}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
@@ -391,15 +393,27 @@ export function AdminLiveCourses() {
                 rows={5}
               />
             </div>
-            <div>
-              <Label htmlFor="price">Prezzo (€)</Label>
-              <Input
-                id="price"
-                type="number"
-                value={editingCourse?.price ? editingCourse.price / 100 : 0}
-                onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
-                data-testid="input-course-price"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="instructor">Docente</Label>
+                <Input
+                  id="instructor"
+                  value={editingCourse?.instructor || ''}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, instructor: e.target.value })}
+                  placeholder="Nome del docente"
+                  data-testid="input-course-instructor"
+                />
+              </div>
+              <div>
+                <Label htmlFor="price">Prezzo (€)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={editingCourse?.price ? editingCourse.price / 100 : 0}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
+                  data-testid="input-course-price"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

@@ -127,6 +127,7 @@ export const liveCourses = pgTable("live_courses", {
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   program: text("program"), // Detailed course program/curriculum
+  instructor: varchar("instructor", { length: 200 }), // Course instructor/teacher
   price: integer("price").notNull(), // Price in cents (e.g., 9000 for €90)
   stripeProductId: varchar("stripe_product_id"),
   stripePriceId: varchar("stripe_price_id"),

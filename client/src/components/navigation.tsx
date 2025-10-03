@@ -62,23 +62,35 @@ export default function Navigation() {
             </div>
           </Link>
           
-          {/* Desktop Navigation - Authenticated */}
-          {isAuthenticated && (
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="/dashboard">
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
-                  <ChartLine className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
-              <Link href="/">
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-quizzes">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  I miei Quiz
-                </Button>
-              </Link>
-            </div>
-          )}
+          {/* Center Navigation Menu - Always Visible */}
+          <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
+            {isAuthenticated ? (
+              <>
+                <Link href="/dashboard">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
+                    <ChartLine className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link href="/">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-quizzes">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    I miei Quiz
+                  </Button>
+                </Link>
+              </>
+            ) : null}
+            <Link href="/chi-siamo">
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-about">
+                Chi siamo
+              </Button>
+            </Link>
+            <Link href="/contatti">
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-contact">
+                Contatti
+              </Button>
+            </Link>
+          </div>
 
           <div className="flex items-center space-x-4">
             {isLoading ? (

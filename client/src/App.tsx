@@ -11,6 +11,8 @@ import Dashboard from "@/pages/dashboard";
 import Subscribe from "@/pages/subscribe";
 import Report from "@/pages/report";
 import Admin from "@/pages/admin";
+import ChiSiamo from "@/pages/chi-siamo";
+import Contatti from "@/pages/contatti";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +20,8 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/chi-siamo" component={ChiSiamo} />
+      <Route path="/contatti" component={Contatti} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

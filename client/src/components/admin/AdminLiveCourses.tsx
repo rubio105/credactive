@@ -22,10 +22,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, Calendar } from "lucide-react";
+import { Pencil, Trash2, Plus, Calendar, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "wouter";
 
 interface LiveCourse {
   id: string;
@@ -230,10 +231,18 @@ export function AdminLiveCourses() {
               <CardTitle>Corsi Live</CardTitle>
               <CardDescription>Gestisci i corsi live e le relative sessioni</CardDescription>
             </div>
-            <Button onClick={handleCreateCourse} data-testid="button-create-course">
-              <Plus className="w-4 h-4 mr-2" />
-              Nuovo Corso
-            </Button>
+            <div className="flex gap-2">
+              <Link href="/">
+                <Button variant="outline" data-testid="button-back-home">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Torna alla Home
+                </Button>
+              </Link>
+              <Button onClick={handleCreateCourse} data-testid="button-create-course">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuovo Corso
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

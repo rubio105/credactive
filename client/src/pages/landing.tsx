@@ -60,7 +60,7 @@ export default function Landing() {
                 Prepara le tue <span className="text-accent">Certificazioni</span> con Quiz Professionali
               </h1>
               <p className="text-lg md:text-xl text-white/90">
-                Oltre 2.000 domande aggiornate per Cybersecurity (CISSP, CISM, OSCP), Compliance (ISO 27001, GDPR, NIS2, DORA), Business (Open Innovation, Bilancio) e Leadership. Migliora le tue competenze professionali con quiz interattivi e feedback immediato.
+                Accedi a oltre 2.000 domande professionali, 10 categorie complete e certificati di completamento con un unico pagamento. Cybersecurity (CISSP, CISM, OSCP), Compliance (ISO 27001, GDPR, NIS2, DORA), Business (Open Innovation, Bilancio) e Leadership.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
@@ -85,7 +85,7 @@ export default function Landing() {
               <div className="flex items-center space-x-8 pt-6">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-success" />
-                  <span className="text-sm">10.000+ Domande</span>
+                  <span className="text-sm">2.000+ Domande</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-success" />

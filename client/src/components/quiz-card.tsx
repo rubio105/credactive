@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, HelpCircle, BarChart3, Lock, Crown, Play, Shield, FileText, Users, Brain, Database, AlertTriangle, Bot } from "lucide-react";
+import { Clock, HelpCircle, BarChart3, Lock, Crown, Play, Shield, FileText, Users, Brain, Database, AlertTriangle, Bot, Calendar } from "lucide-react";
 
 interface QuizCardProps {
   quiz: {
@@ -18,6 +18,8 @@ interface QuizCardProps {
     icon: string;
   };
   onStartQuiz: () => void;
+  onLiveCourse?: () => void;
+  hasLiveCourse?: boolean;
   showPremiumBadge?: boolean;
 }
 
@@ -52,7 +54,7 @@ const levelColors = {
   "SecOps": "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300"
 };
 
-export default function QuizCard({ quiz, onStartQuiz, showPremiumBadge = true }: QuizCardProps) {
+export default function QuizCard({ quiz, onStartQuiz, onLiveCourse, hasLiveCourse = false, showPremiumBadge = true }: QuizCardProps) {
   const IconComponent = iconMap[quiz.icon] || Shield;
   
   return (
@@ -117,27 +119,40 @@ export default function QuizCard({ quiz, onStartQuiz, showPremiumBadge = true }:
           </Badge>
         </div>
 
-        {/* Action Button */}
-        {quiz.isPremium && showPremiumBadge ? (
-          <Button 
-            className="w-full" 
-            variant="outline"
-            disabled
-            data-testid={`quiz-button-locked-${quiz.id}`}
-          >
-            <Lock className="w-4 h-4 mr-2" />
-            Richiede Premium
-          </Button>
-        ) : (
-          <Button 
-            className="w-full" 
-            onClick={onStartQuiz}
-            data-testid={`quiz-button-start-${quiz.id}`}
-          >
-            <Play className="w-4 h-4 mr-2" />
-            Inizia Quiz
-          </Button>
-        )}
+        {/* Action Buttons */}
+        <div className="space-y-2">
+          {quiz.isPremium && showPremiumBadge ? (
+            <Button 
+              className="w-full" 
+              variant="outline"
+              disabled
+              data-testid={`quiz-button-locked-${quiz.id}`}
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Richiede Premium
+            </Button>
+          ) : (
+            <Button 
+              className="w-full" 
+              onClick={onStartQuiz}
+              data-testid={`quiz-button-start-${quiz.id}`}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Inizia Quiz
+            </Button>
+          )}
+          
+          {hasLiveCourse && onLiveCourse && (
+            <Button 
+              className="w-full bg-warning hover:bg-warning/90 text-warning-foreground" 
+              onClick={onLiveCourse}
+              data-testid={`quiz-button-live-course-${quiz.id}`}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Corso Live
+            </Button>
+          )}
+        </div>
       </CardContent>
 
       {/* Overlay effect for premium locked cards */}

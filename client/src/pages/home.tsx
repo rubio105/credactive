@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import LanguageSelector from "@/components/language-selector";
+import { LiveCourseModal } from "@/components/LiveCourseModal";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, Quiz, User as UserType } from "@shared/schema";
@@ -44,6 +45,7 @@ interface DashboardData {
 export default function Home() {
   const { user } = useAuth();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [selectedLiveCourseQuiz, setSelectedLiveCourseQuiz] = useState<{ id: string; title: string } | null>(null);
   
   const { data: dashboardData } = useQuery<DashboardData>({
     queryKey: ["/api/user/dashboard"],
@@ -67,6 +69,20 @@ export default function Home() {
     ? quizCategories 
     : quizCategories.filter(quiz => !quiz.isPremium);
 
+  // Quiz with live courses
+  const liveCourseQuizTitles = [
+    'DORA - Digital Operational Resilience',
+    'Data Protection & Privacy',
+    'EU Privacy Law & ePrivacy',
+    'GDPR - Fondamenti e Principi',
+    'ISO 27001 - Information Security Management',
+    'NIS2 Directive - Fondamenti e Requisiti'
+  ];
+
+  const hasLiveCourse = (quizTitle: string) => {
+    return liveCourseQuizTitles.some(title => quizTitle.includes(title) || title.includes(quizTitle));
+  };
+
   const handleStartQuiz = (quizId: string, isPremium: boolean) => {
     if (isPremium && !(user as User)?.isPremium) {
       // Redirect to subscription page
@@ -75,6 +91,10 @@ export default function Home() {
       // Start quiz
       window.location.href = `/quiz/${quizId}`;
     }
+  };
+
+  const handleLiveCourse = (quizId: string, quizTitle: string) => {
+    setSelectedLiveCourseQuiz({ id: quizId, title: quizTitle });
   };
 
   const handleLanguageSelected = () => {
@@ -214,10 +234,21 @@ export default function Home() {
                 key={quiz.id}
                 quiz={quiz}
                 onStartQuiz={() => handleStartQuiz(quiz.id, quiz.isPremium)}
+                onLiveCourse={() => handleLiveCourse(quiz.id, quiz.title)}
+                hasLiveCourse={hasLiveCourse(quiz.title)}
                 showPremiumBadge={!(user as User)?.isPremium}
               />
             ))}
           </div>
+
+          {selectedLiveCourseQuiz && (
+            <LiveCourseModal
+              quizId={selectedLiveCourseQuiz.id}
+              quizTitle={selectedLiveCourseQuiz.title}
+              isOpen={!!selectedLiveCourseQuiz}
+              onClose={() => setSelectedLiveCourseQuiz(null)}
+            />
+          )}
 
           {availableQuizzes.length === 0 && (
             <Card className="p-12 text-center">

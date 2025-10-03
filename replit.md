@@ -143,13 +143,23 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
-- **Live Courses System** (October 3, 2025): Integrated live course purchase system for premium quizzes
-  - Database: liveCourses, liveCourseSessions, liveCourseEnrollments tables
-  - Admin CRUD: Full management of courses and session dates via API
-  - Stripe Integration: One-time payment flow (separate from premium subscription)
-  - Capacity Management: Session enrollment tracking with availability status
-  - Target Quizzes: DORA, GDPR, ISO 27001, NIS2, Data Protection, EU Privacy Law
-  - Bug Fix: Separated course purchase from premium upgrade (updateUserStripeCustomer)
+- **Live Courses System - Complete** (October 3, 2025): Fully integrated live course purchase system
+  - **Database**: liveCourses, liveCourseSessions, liveCourseEnrollments tables with proper relations
+  - **Backend API**: 
+    - Admin CRUD: POST/PUT/DELETE /api/admin/live-courses, session management
+    - Public: GET /api/live-courses/quiz/:quizId for course lookup
+    - Purchase: POST /api/live-courses/purchase (Stripe payment intent creation)
+    - Enrollment: POST /api/live-courses/confirm-enrollment (post-payment confirmation)
+  - **Frontend**:
+    - QuizCard: Added "Corso Live" button for designated quizzes
+    - LiveCourseModal: Complete purchase flow with session selection and Stripe Elements checkout
+    - AdminLiveCourses: Full admin panel for course/session management
+    - Home page integration with 6 target quizzes
+  - **Stripe Integration**: One-time payment flow (separate from premium subscription)
+  - **Capacity Management**: Session enrollment tracking with availability status
+  - **Target Quizzes**: DORA, Data Protection & Privacy, EU Privacy Law & ePrivacy, GDPR, ISO 27001, NIS2
+  - **Bug Fix**: Created updateUserStripeCustomer() to prevent accidental premium upgrade on course purchase
+  - **UX**: Live dates displayed in modal, real-time availability checking, payment confirmation flow
 
 ## Previous Changes
 

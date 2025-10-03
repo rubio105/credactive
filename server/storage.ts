@@ -6,6 +6,9 @@ import {
   userQuizAttempts,
   userProgress,
   quizReports,
+  liveCourses,
+  liveCourseSessions,
+  liveCourseEnrollments,
   type User,
   type UpsertUser,
   type Category,
@@ -14,9 +17,15 @@ import {
   type UserQuizAttempt,
   type UserProgress,
   type QuizReport,
+  type LiveCourse,
+  type LiveCourseSession,
+  type LiveCourseEnrollment,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
   type InsertQuizReport,
+  type InsertLiveCourse,
+  type InsertLiveCourseSession,
+  type InsertLiveCourseEnrollment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -66,6 +75,26 @@ export interface IStorage {
   createQuizReport(report: InsertQuizReport): Promise<QuizReport>;
   getQuizReport(attemptId: string): Promise<QuizReport | undefined>;
   getUserReports(userId: string, limit?: number): Promise<QuizReport[]>;
+  
+  // Live course operations
+  createLiveCourse(course: InsertLiveCourse): Promise<LiveCourse>;
+  updateLiveCourse(id: string, updates: Partial<LiveCourse>): Promise<LiveCourse>;
+  deleteLiveCourse(id: string): Promise<void>;
+  getLiveCourseById(id: string): Promise<LiveCourse | undefined>;
+  getLiveCourseByQuizId(quizId: string): Promise<LiveCourse | undefined>;
+  getAllLiveCourses(): Promise<LiveCourse[]>;
+  
+  // Live course session operations
+  createLiveCourseSession(session: InsertLiveCourseSession): Promise<LiveCourseSession>;
+  updateLiveCourseSession(id: string, updates: Partial<LiveCourseSession>): Promise<LiveCourseSession>;
+  deleteLiveCourseSession(id: string): Promise<void>;
+  getSessionsByCourseId(courseId: string): Promise<LiveCourseSession[]>;
+  getSessionById(id: string): Promise<LiveCourseSession | undefined>;
+  
+  // Live course enrollment operations
+  createLiveCourseEnrollment(enrollment: InsertLiveCourseEnrollment): Promise<LiveCourseEnrollment>;
+  updateLiveCourseEnrollment(id: string, updates: Partial<LiveCourseEnrollment>): Promise<LiveCourseEnrollment>;
+  getUserEnrollments(userId: string): Promise<LiveCourseEnrollment[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -365,6 +394,115 @@ export class DatabaseStorage implements IStorage {
       .where(eq(quizReports.userId, userId))
       .orderBy(desc(quizReports.createdAt))
       .limit(limit);
+  }
+
+  // Live course operations
+  async createLiveCourse(course: InsertLiveCourse): Promise<LiveCourse> {
+    const [created] = await db
+      .insert(liveCourses)
+      .values(course)
+      .returning();
+    return created;
+  }
+
+  async updateLiveCourse(id: string, updates: Partial<LiveCourse>): Promise<LiveCourse> {
+    const [updated] = await db
+      .update(liveCourses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(liveCourses.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteLiveCourse(id: string): Promise<void> {
+    await db.delete(liveCourses).where(eq(liveCourses.id, id));
+  }
+
+  async getLiveCourseById(id: string): Promise<LiveCourse | undefined> {
+    const [course] = await db
+      .select()
+      .from(liveCourses)
+      .where(eq(liveCourses.id, id));
+    return course;
+  }
+
+  async getLiveCourseByQuizId(quizId: string): Promise<LiveCourse | undefined> {
+    const [course] = await db
+      .select()
+      .from(liveCourses)
+      .where(and(eq(liveCourses.quizId, quizId), eq(liveCourses.isActive, true)));
+    return course;
+  }
+
+  async getAllLiveCourses(): Promise<LiveCourse[]> {
+    return await db
+      .select()
+      .from(liveCourses)
+      .where(eq(liveCourses.isActive, true));
+  }
+
+  // Live course session operations
+  async createLiveCourseSession(session: InsertLiveCourseSession): Promise<LiveCourseSession> {
+    const [created] = await db
+      .insert(liveCourseSessions)
+      .values(session)
+      .returning();
+    return created;
+  }
+
+  async updateLiveCourseSession(id: string, updates: Partial<LiveCourseSession>): Promise<LiveCourseSession> {
+    const [updated] = await db
+      .update(liveCourseSessions)
+      .set(updates)
+      .where(eq(liveCourseSessions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteLiveCourseSession(id: string): Promise<void> {
+    await db.delete(liveCourseSessions).where(eq(liveCourseSessions.id, id));
+  }
+
+  async getSessionsByCourseId(courseId: string): Promise<LiveCourseSession[]> {
+    return await db
+      .select()
+      .from(liveCourseSessions)
+      .where(eq(liveCourseSessions.courseId, courseId))
+      .orderBy(liveCourseSessions.startDate);
+  }
+
+  async getSessionById(id: string): Promise<LiveCourseSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(liveCourseSessions)
+      .where(eq(liveCourseSessions.id, id));
+    return session;
+  }
+
+  // Live course enrollment operations
+  async createLiveCourseEnrollment(enrollment: InsertLiveCourseEnrollment): Promise<LiveCourseEnrollment> {
+    const [created] = await db
+      .insert(liveCourseEnrollments)
+      .values(enrollment)
+      .returning();
+    return created;
+  }
+
+  async updateLiveCourseEnrollment(id: string, updates: Partial<LiveCourseEnrollment>): Promise<LiveCourseEnrollment> {
+    const [updated] = await db
+      .update(liveCourseEnrollments)
+      .set(updates)
+      .where(eq(liveCourseEnrollments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getUserEnrollments(userId: string): Promise<LiveCourseEnrollment[]> {
+    return await db
+      .select()
+      .from(liveCourseEnrollments)
+      .where(eq(liveCourseEnrollments.userId, userId))
+      .orderBy(desc(liveCourseEnrollments.enrolledAt));
   }
 }
 

@@ -120,6 +120,44 @@ export const quizReports = pgTable("quiz_reports", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Live courses
+export const liveCourses = pgTable("live_courses", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  quizId: uuid("quiz_id").notNull().references(() => quizzes.id),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  price: integer("price").notNull(), // Price in cents (e.g., 9000 for €90)
+  stripeProductId: varchar("stripe_product_id"),
+  stripePriceId: varchar("stripe_price_id"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Live course sessions (dates)
+export const liveCourseSessions = pgTable("live_course_sessions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: uuid("course_id").notNull().references(() => liveCourses.id),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  capacity: integer("capacity").default(30),
+  enrolled: integer("enrolled").default(0),
+  status: varchar("status", { length: 20 }).default("available"), // available, full, completed, cancelled
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Live course enrollments
+export const liveCourseEnrollments = pgTable("live_course_enrollments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  courseId: uuid("course_id").notNull().references(() => liveCourses.id),
+  sessionId: uuid("session_id").notNull().references(() => liveCourseSessions.id),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  amountPaid: integer("amount_paid").notNull(), // Amount in cents
+  status: varchar("status", { length: 20 }).default("pending"), // pending, confirmed, cancelled
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   quizAttempts: many(userQuizAttempts),
@@ -184,6 +222,38 @@ export const quizReportsRelations = relations(quizReports, ({ one }) => ({
   }),
 }));
 
+export const liveCoursesRelations = relations(liveCourses, ({ one, many }) => ({
+  quiz: one(quizzes, {
+    fields: [liveCourses.quizId],
+    references: [quizzes.id],
+  }),
+  sessions: many(liveCourseSessions),
+  enrollments: many(liveCourseEnrollments),
+}));
+
+export const liveCourseSessionsRelations = relations(liveCourseSessions, ({ one, many }) => ({
+  course: one(liveCourses, {
+    fields: [liveCourseSessions.courseId],
+    references: [liveCourses.id],
+  }),
+  enrollments: many(liveCourseEnrollments),
+}));
+
+export const liveCourseEnrollmentsRelations = relations(liveCourseEnrollments, ({ one }) => ({
+  user: one(users, {
+    fields: [liveCourseEnrollments.userId],
+    references: [users.id],
+  }),
+  course: one(liveCourses, {
+    fields: [liveCourseEnrollments.courseId],
+    references: [liveCourses.id],
+  }),
+  session: one(liveCourseSessions, {
+    fields: [liveCourseEnrollments.sessionId],
+    references: [liveCourseSessions.id],
+  }),
+}));
+
 // Types
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
@@ -193,6 +263,9 @@ export type Question = typeof questions.$inferSelect;
 export type UserQuizAttempt = typeof userQuizAttempts.$inferSelect;
 export type UserProgress = typeof userProgress.$inferSelect;
 export type QuizReport = typeof quizReports.$inferSelect;
+export type LiveCourse = typeof liveCourses.$inferSelect;
+export type LiveCourseSession = typeof liveCourseSessions.$inferSelect;
+export type LiveCourseEnrollment = typeof liveCourseEnrollments.$inferSelect;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -201,6 +274,9 @@ export const insertQuestionSchema = createInsertSchema(questions);
 export const insertUserQuizAttemptSchema = createInsertSchema(userQuizAttempts);
 export const insertUserProgressSchema = createInsertSchema(userProgress);
 export const insertQuizReportSchema = createInsertSchema(quizReports);
+export const insertLiveCourseSchema = createInsertSchema(liveCourses).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertLiveCourseSessionSchema = createInsertSchema(liveCourseSessions).omit({ id: true, createdAt: true });
+export const insertLiveCourseEnrollmentSchema = createInsertSchema(liveCourseEnrollments).omit({ id: true, enrolledAt: true });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
@@ -208,3 +284,6 @@ export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
 export type InsertUserQuizAttempt = z.infer<typeof insertUserQuizAttemptSchema>;
 export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
 export type InsertQuizReport = z.infer<typeof insertQuizReportSchema>;
+export type InsertLiveCourse = z.infer<typeof insertLiveCourseSchema>;
+export type InsertLiveCourseSession = z.infer<typeof insertLiveCourseSessionSchema>;
+export type InsertLiveCourseEnrollment = z.infer<typeof insertLiveCourseEnrollmentSchema>;

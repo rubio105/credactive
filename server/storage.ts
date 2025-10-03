@@ -5,6 +5,7 @@ import {
   questions,
   userQuizAttempts,
   userProgress,
+  quizReports,
   type User,
   type UpsertUser,
   type Category,
@@ -12,8 +13,10 @@ import {
   type Question,
   type UserQuizAttempt,
   type UserProgress,
+  type QuizReport,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
+  type InsertQuizReport,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -37,6 +40,11 @@ export interface IStorage {
   getUserQuizAttempts(userId: string, limit?: number): Promise<UserQuizAttempt[]>;
   getUserProgress(userId: string): Promise<UserProgress[]>;
   updateUserProgress(userId: string, categoryId: string, attempt: UserQuizAttempt): Promise<void>;
+  
+  // Report operations
+  createQuizReport(report: InsertQuizReport): Promise<QuizReport>;
+  getQuizReport(attemptId: string): Promise<QuizReport | undefined>;
+  getUserReports(userId: string, limit?: number): Promise<QuizReport[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -196,6 +204,32 @@ export class DatabaseStorage implements IStorage {
           lastAttemptAt: new Date(),
         });
     }
+  }
+
+  // Report operations
+  async createQuizReport(reportData: InsertQuizReport): Promise<QuizReport> {
+    const [report] = await db
+      .insert(quizReports)
+      .values(reportData)
+      .returning();
+    return report;
+  }
+
+  async getQuizReport(attemptId: string): Promise<QuizReport | undefined> {
+    const [report] = await db
+      .select()
+      .from(quizReports)
+      .where(eq(quizReports.attemptId, attemptId));
+    return report;
+  }
+
+  async getUserReports(userId: string, limit = 10): Promise<QuizReport[]> {
+    return await db
+      .select()
+      .from(quizReports)
+      .where(eq(quizReports.userId, userId))
+      .orderBy(desc(quizReports.createdAt))
+      .limit(limit);
   }
 }
 

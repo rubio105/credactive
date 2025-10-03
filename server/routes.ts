@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertUserQuizAttemptSchema } from "@shared/schema";
 import { z } from "zod";
+import { generateQuizReport } from "./reportGenerator";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY. Please set this environment variable.');
@@ -110,6 +111,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const quiz = await storage.getQuizById(attempt.quizId);
       if (quiz) {
         await storage.updateUserProgress(userId, quiz.categoryId, attempt);
+        
+        // Generate quiz report
+        const questions = await storage.getQuestionsByQuizId(attempt.quizId);
+        const reportData = generateQuizReport(attempt, quiz, questions);
+        
+        await storage.createQuizReport({
+          attemptId: attempt.id,
+          userId,
+          quizId: attempt.quizId,
+          reportData: reportData as any,
+          weakAreas: reportData.weakAreas as any,
+          strengths: reportData.strengths as any,
+          recommendations: reportData.recommendations,
+        });
       }
 
       res.json(attempt);
@@ -174,6 +189,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user language:", error);
       res.status(500).json({ message: "Failed to update language" });
+    }
+  });
+
+  // Get quiz report by attempt ID
+  app.get('/api/quiz-reports/:attemptId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { attemptId } = req.params;
+      const report = await storage.getQuizReport(attemptId);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      // Check if user owns this report
+      if (report.userId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error("Error fetching quiz report:", error);
+      res.status(500).json({ message: "Failed to fetch report" });
     }
   });
 

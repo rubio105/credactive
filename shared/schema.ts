@@ -74,7 +74,7 @@ export const questions = pgTable("questions", {
   question: text("question").notNull(),
   imageUrl: text("image_url"), // Optional image for the question
   options: jsonb("options").notNull(), // Array of option objects {label, text, explanation}
-  correctAnswer: varchar("correct_answer", { length: 10 }).notNull(), // A, B, C, D
+  correctAnswer: text("correct_answer").notNull(), // Full text of the correct answer
   explanation: text("explanation"),
   category: varchar("category", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow(),

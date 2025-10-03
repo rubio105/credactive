@@ -660,7 +660,9 @@ ${JSON.stringify(questionsToTranslate)}`
 
   app.post('/api/admin/live-courses', isAdmin, async (req, res) => {
     try {
+      console.log("Creating live course with data:", req.body);
       const course = await storage.createLiveCourse(req.body);
+      console.log("Live course created successfully:", course);
       res.json(course);
     } catch (error) {
       console.error("Error creating live course:", error);

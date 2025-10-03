@@ -75,15 +75,19 @@ export function AdminLiveCourses() {
   });
 
   const createCourseMutation = useMutation({
-    mutationFn: (data: Partial<LiveCourse>) => apiRequest("/api/admin/live-courses", "POST", data),
+    mutationFn: (data: Partial<LiveCourse>) => {
+      console.log("Mutation data:", data);
+      return apiRequest("/api/admin/live-courses", "POST", data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/live-courses"] });
       toast({ title: "Corso creato con successo" });
       setIsCourseDialogOpen(false);
       setEditingCourse(null);
     },
-    onError: () => {
-      toast({ title: "Errore durante la creazione", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Mutation error:", error);
+      toast({ title: "Errore durante la creazione: " + (error?.message || "Errore sconosciuto"), variant: "destructive" });
     },
   });
 

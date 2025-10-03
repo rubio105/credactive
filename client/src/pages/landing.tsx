@@ -8,6 +8,7 @@ import QuizCard from "@/components/quiz-card";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, Quiz } from "@shared/schema";
 import { ShieldCheck, Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Clock, Flame } from "lucide-react";
+import { featuredImages } from "@/lib/stockImages";
 
 export default function Landing() {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -101,13 +102,15 @@ export default function Landing() {
               <div className="absolute inset-0 gradient-primary opacity-20 blur-3xl rounded-full"></div>
               <Card className="relative shadow-2xl border-white/20 overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="h-96 bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-                    <div className="text-center space-y-4">
-                      <div className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center mx-auto">
-                        <ShieldCheck className="w-10 h-10 text-white" />
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-800">Dashboard Preview</h3>
-                      <p className="text-slate-600">Monitora i tuoi progressi</p>
+                  <img 
+                    src={featuredImages.hero} 
+                    alt="Cybersecurity Training Platform" 
+                    className="w-full h-96 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent flex items-end">
+                    <div className="p-6 text-white">
+                      <h3 className="text-xl font-bold mb-2">Formazione Professionale</h3>
+                      <p className="text-white/90">Inizia il tuo percorso verso la certificazione</p>
                     </div>
                   </div>
                 </CardContent>
@@ -143,6 +146,80 @@ export default function Landing() {
             <div className="flex justify-center" data-testid="partner-cybershield">
               <span className="text-2xl font-bold text-muted-foreground">CyberShield</span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Categories with Images */}
+      <section className="py-16 bg-gradient-to-b from-background to-secondary/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Categorie in Evidenza</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Scopri le nostre categorie principali di formazione in cybersecurity
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Certifications */}
+            <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src={featuredImages.certifications} 
+                  alt="Certificazioni Professionali" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <CardContent className="p-6">
+                <div className="flex items-center mb-3">
+                  <Trophy className="w-6 h-6 text-primary mr-2" />
+                  <h3 className="text-xl font-bold">Certificazioni</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Preparati per CISSP, CISM e altre certificazioni riconosciute a livello internazionale
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Compliance */}
+            <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src={featuredImages.compliance} 
+                  alt="Compliance e Standard" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <CardContent className="p-6">
+                <div className="flex items-center mb-3">
+                  <CheckCircle className="w-6 h-6 text-primary mr-2" />
+                  <h3 className="text-xl font-bold">Compliance</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Padroneggia ISO 27001, GDPR e standard di conformità normativa essenziali
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* AI Security */}
+            <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src={featuredImages.ai} 
+                  alt="AI Security" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <CardContent className="p-6">
+                <div className="flex items-center mb-3">
+                  <ChartLine className="w-6 h-6 text-primary mr-2" />
+                  <h3 className="text-xl font-bold">AI Security</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Esplora la sicurezza nell'intelligenza artificiale e le tecnologie emergenti
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

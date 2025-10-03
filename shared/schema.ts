@@ -77,6 +77,7 @@ export const questions = pgTable("questions", {
   correctAnswer: text("correct_answer").notNull(), // Full text of the correct answer
   explanation: text("explanation"),
   category: varchar("category", { length: 100 }),
+  domain: varchar("domain", { length: 200 }), // CISSP domain or topic hint
   createdAt: timestamp("created_at").defaultNow(),
 });
 

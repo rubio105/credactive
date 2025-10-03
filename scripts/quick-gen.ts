@@ -56,6 +56,7 @@ async function quickGen() {
       explanation: q.explanation,
       imageUrl: '',
       category: quiz.category,
+      domain: q.domain || '',
     });
   }
 

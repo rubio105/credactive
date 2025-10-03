@@ -50,6 +50,7 @@ async function generateWithRetry(quiz: typeof quizzes[0], batchSize: number, max
           explanation: q.explanation,
           imageUrl: '',
           category: quiz.category,
+          domain: q.domain || '',
         });
       }
       

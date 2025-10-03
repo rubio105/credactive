@@ -13,6 +13,7 @@ interface GeneratedQuestion {
   options: QuestionOption[];
   explanation: string;
   difficulty: string;
+  domain?: string; // CISSP domain or topic area
 }
 
 const certificationPrompts: Record<string, string> = {
@@ -48,6 +49,10 @@ export async function generateQuestions(
   
   const systemPrompt = certificationPrompts[category] || certificationPrompts['CISSP'];
   
+  const domainInstructions = category === 'CISSP' 
+    ? '\n- For CISSP questions, include a "domain" field with one of the 8 CISSP domains: "Security and Risk Management", "Asset Security", "Security Architecture and Engineering", "Communication and Network Security", "Identity and Access Management", "Security Assessment and Testing", "Security Operations", or "Software Development Security"'
+    : '\n- Include a "domain" field with the main topic or area covered by the question';
+
   const userPrompt = `Generate ${count} multiple-choice questions for ${quizTitle}.
 
 Requirements:
@@ -57,7 +62,7 @@ Requirements:
 - Include a detailed explanation for the correct answer
 - Questions should be realistic and exam-like
 - Cover different subtopics within the domain
-- Avoid duplicate questions
+- Avoid duplicate questions${domainInstructions}
 
 Return ONLY a valid JSON array with this exact structure:
 [
@@ -70,7 +75,8 @@ Return ONLY a valid JSON array with this exact structure:
       {"text": "Option D text", "isCorrect": false}
     ],
     "explanation": "Detailed explanation of why the correct answer is correct and why others are wrong.",
-    "difficulty": "${difficulty}"
+    "difficulty": "${difficulty}",
+    "domain": "Security and Risk Management"
   }
 ]`;
 

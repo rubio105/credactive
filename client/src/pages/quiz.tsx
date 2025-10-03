@@ -33,6 +33,7 @@ interface Question {
   correctAnswer: string;
   explanation?: string;
   category?: string;
+  domain?: string; // CISSP domain or topic hint
 }
 
 interface QuizData {
@@ -568,16 +569,16 @@ export default function QuizPage() {
           </div>
         </div>
 
-        {/* Quiz Tips */}
-        {currentQuestion.explanation && (
+        {/* Quiz Tips - Show domain hint instead of explanation */}
+        {currentQuestion.domain && (
           <Card className="mt-8 bg-accent/10 border-accent/20">
             <CardContent className="p-4">
               <div className="flex items-start space-x-3">
                 <Lightbulb className="text-accent text-xl mt-1 flex-shrink-0" />
                 <div>
-                  <h4 className="font-semibold text-accent mb-1">Suggerimento</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {currentQuestion.explanation}
+                  <h4 className="font-semibold text-accent mb-1">Dominio/Area</h4>
+                  <p className="text-sm text-muted-foreground" data-testid="question-domain-hint">
+                    {currentQuestion.domain}
                   </p>
                 </div>
               </div>

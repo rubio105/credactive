@@ -92,13 +92,23 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
-            Benvenuto, {(user as User)?.firstName || 'Utente'}!
-          </h1>
-          <p className="text-muted-foreground">
-            Continua il tuo percorso di apprendimento in cybersecurity
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
+              Benvenuto, {(user as User)?.firstName || 'Utente'}!
+            </h1>
+            <p className="text-muted-foreground">
+              Continua il tuo percorso di apprendimento in cybersecurity
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowLanguageSelector(true)}
+            data-testid="button-change-language"
+            className="ml-4"
+          >
+            Cambia Lingua
+          </Button>
         </div>
 
         {/* Quick Stats */}

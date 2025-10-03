@@ -107,12 +107,6 @@ export default function Landing() {
                     alt="Professional Certification Training Platform" 
                     className="w-full h-96 object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent flex items-end">
-                    <div className="p-6 text-white">
-                      <h3 className="text-xl font-bold mb-2">Formazione Professionale</h3>
-                      <p className="text-white/90">Inizia il tuo percorso verso la certificazione</p>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>

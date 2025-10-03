@@ -25,6 +25,9 @@ import secOps2 from '@assets/stock_images/security_operations__36c08bf5.jpg';
 import dataProtection1 from '@assets/stock_images/data_protection_encr_48263cce.jpg';
 import dataProtection2 from '@assets/stock_images/data_protection_encr_c4a6bde2.jpg';
 
+import leadership1 from '@assets/stock_images/professional_leaders_6a93cbaf.jpg';
+import leadership2 from '@assets/stock_images/professional_leaders_be86b888.jpg';
+
 export const categoryImages = {
   'cyber-security-awareness': [cyberAwareness1, cyberAwareness2, cyberAwareness3],
   'cism': [certification1, certification2],
@@ -36,6 +39,7 @@ export const categoryImages = {
   'data-protection-privacy': [dataProtection1, dataProtection2],
   'threat-intelligence-ai': [threatIntel1, threatIntel2],
   'secops-ai': [secOps1, secOps2],
+  'assessment-leadership': [leadership1, leadership2],
 };
 
 // Helper to get a random image for a category

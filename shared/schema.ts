@@ -49,6 +49,8 @@ export const categories = pgTable("categories", {
   icon: varchar("icon", { length: 50 }),
   color: varchar("color", { length: 20 }),
   isPremium: boolean("is_premium").default(true),
+  sortOrder: integer("sort_order").default(0),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

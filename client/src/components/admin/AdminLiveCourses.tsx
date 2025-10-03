@@ -36,6 +36,7 @@ interface LiveCourse {
   instructor?: string;
   price: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface LiveCourseSession {
@@ -178,7 +179,9 @@ export function AdminLiveCourses() {
     console.log("Saving course with data:", editingCourse);
 
     if (editingCourse.id) {
-      updateCourseMutation.mutate({ id: editingCourse.id, updates: editingCourse });
+      // Remove timestamps and id before update
+      const { id, createdAt, updatedAt, ...updates } = editingCourse as LiveCourse;
+      updateCourseMutation.mutate({ id: editingCourse.id, updates });
     } else {
       createCourseMutation.mutate(editingCourse);
     }

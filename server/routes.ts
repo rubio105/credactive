@@ -39,6 +39,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/categories-with-quizzes', async (req, res) => {
+    try {
+      const categoriesWithQuizzes = await storage.getCategoriesWithQuizzes();
+      res.json(categoriesWithQuizzes);
+    } catch (error) {
+      console.error("Error fetching categories with quizzes:", error);
+      res.status(500).json({ message: "Failed to fetch categories with quizzes" });
+    }
+  });
+
   app.get('/api/categories/:categoryId/quizzes', async (req, res) => {
     try {
       const { categoryId } = req.params;

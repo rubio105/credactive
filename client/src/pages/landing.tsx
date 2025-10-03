@@ -5,157 +5,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
+import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
+import type { Category, Quiz } from "@shared/schema";
 import { ShieldCheck, Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Clock, Flame } from "lucide-react";
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  icon: string;
-  color: string;
-  isPremium: boolean;
-}
 
 export default function Landing() {
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+  const { data: categoriesWithQuizzes = [], isLoading } = useQuery<Array<Category & { quizzes: Quiz[] }>>({
+    queryKey: ["/api/categories-with-quizzes"],
   });
 
-  const quizCategories = [
-    {
-      id: "1",
-      title: "Cyber Security Awareness",
-      description: "Impara i concetti base della sicurezza informatica, riconosci le minacce comuni e proteggi i tuoi dati.",
-      duration: 30,
-      questions: 50,
-      difficulty: "Principiante",
-      level: "Fondamentale",
-      isPremium: false,
-      category: "certifications",
-      gradient: "from-blue-600 to-blue-700",
-      icon: "shield-alt"
-    },
-    {
-      id: "2",
-      title: "CISM - Certified Information Security Manager",
-      description: "Preparati per la certificazione CISM con domande realistiche su governance, gestione del rischio e incident management.",
-      duration: 90,
-      questions: 150,
-      difficulty: "Avanzato",
-      level: "Certificazione",
-      isPremium: true,
-      category: "certifications",
-      gradient: "from-slate-700 to-blue-600",
-      icon: "user-shield"
-    },
-    {
-      id: "3",
-      title: "CISSP - Certified Information Systems Security Professional",
-      description: "Quiz completo per la certificazione CISSP coprendo tutti gli 8 domini del CBK.",
-      duration: 180,
-      questions: 250,
-      difficulty: "Esperto",
-      level: "Certificazione",
-      isPremium: true,
-      category: "certifications",
-      gradient: "from-purple-600 to-blue-600",
-      icon: "certificate"
-    },
-    {
-      id: "4",
-      title: "ISO 27001/27002",
-      description: "Approfondisci gli standard internazionali per la gestione della sicurezza delle informazioni.",
-      duration: 60,
-      questions: 100,
-      difficulty: "Intermedio",
-      level: "Standard",
-      isPremium: true,
-      category: "compliance",
-      gradient: "from-green-600 to-teal-600",
-      icon: "file-contract"
-    },
-    {
-      id: "5",
-      title: "GDPR - General Data Protection Regulation",
-      description: "Testa la tua conoscenza del regolamento europeo sulla protezione dei dati personali.",
-      duration: 45,
-      questions: 75,
-      difficulty: "Intermedio",
-      level: "Compliance",
-      isPremium: true,
-      category: "compliance",
-      gradient: "from-blue-800 to-indigo-800",
-      icon: "balance-scale"
-    },
-    {
-      id: "6",
-      title: "EU Privacy Law & ePrivacy",
-      description: "Esplora le normative europee sulla privacy e le direttive ePrivacy.",
-      duration: 40,
-      questions: 60,
-      difficulty: "Intermedio",
-      level: "Compliance",
-      isPremium: true,
-      category: "compliance",
-      gradient: "from-indigo-600 to-purple-600",
-      icon: "user-lock"
-    },
-    {
-      id: "7",
-      title: "AI Security & Ethics",
-      description: "Sicurezza nell'intelligenza artificiale, vulnerabilità dei modelli ML e considerazioni etiche.",
-      duration: 50,
-      questions: 80,
-      difficulty: "Avanzato",
-      level: "AI & ML",
-      isPremium: true,
-      category: "ai",
-      gradient: "from-cyan-600 to-blue-600",
-      icon: "brain"
-    },
-    {
-      id: "8",
-      title: "Data Protection & Privacy",
-      description: "Tecniche avanzate di protezione dei dati, crittografia e best practices per la privacy.",
-      duration: 55,
-      questions: 90,
-      difficulty: "Avanzato",
-      level: "Privacy",
-      isPremium: true,
-      category: "ai",
-      gradient: "from-pink-600 to-rose-600",
-      icon: "database"
-    },
-    {
-      id: "9",
-      title: "Threat Intelligence & AI",
-      description: "Utilizzo dell'AI per la threat intelligence, detection e response automatizzato.",
-      duration: 70,
-      questions: 95,
-      difficulty: "Esperto",
-      level: "Threat Intel",
-      isPremium: true,
-      category: "ai",
-      gradient: "from-red-600 to-orange-600",
-      icon: "biohazard"
-    },
-    {
-      id: "10",
-      title: "SecOps & AI Automation",
-      description: "Automazione delle operazioni di sicurezza con AI, SOAR e orchestrazione.",
-      duration: 65,
-      questions: 85,
-      difficulty: "Esperto",
-      level: "SecOps",
-      isPremium: true,
-      category: "ai",
-      gradient: "from-violet-600 to-fuchsia-600",
-      icon: "robot"
-    }
-  ];
+  const quizCategories = mapCategoriesToQuizCards(categoriesWithQuizzes);
 
   const filteredQuizzes = activeFilter === "all" 
     ? quizCategories 

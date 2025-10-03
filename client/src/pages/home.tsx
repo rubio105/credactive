@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import { useAuth } from "@/hooks/useAuth";
+import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
+import type { Category, Quiz } from "@shared/schema";
 import { Crown, ChartLine, BookOpen } from "lucide-react";
 
 interface User {
@@ -44,60 +46,11 @@ export default function Home() {
     queryKey: ["/api/user/dashboard"],
   });
 
-  const quizCategories = [
-    {
-      id: "1",
-      title: "Cyber Security Awareness",
-      description: "Impara i concetti base della sicurezza informatica, riconosci le minacce comuni e proteggi i tuoi dati.",
-      duration: 30,
-      questions: 50,
-      difficulty: "Principiante",
-      level: "Fondamentale",
-      isPremium: false,
-      category: "certifications",
-      gradient: "from-blue-600 to-blue-700",
-      icon: "shield-alt"
-    },
-    {
-      id: "2",
-      title: "CISM - Certified Information Security Manager",
-      description: "Preparati per la certificazione CISM con domande realistiche su governance, gestione del rischio e incident management.",
-      duration: 90,
-      questions: 150,
-      difficulty: "Avanzato",
-      level: "Certificazione",
-      isPremium: true,
-      category: "certifications",
-      gradient: "from-slate-700 to-blue-600",
-      icon: "user-shield"
-    },
-    {
-      id: "3",
-      title: "CISSP - Certified Information Systems Security Professional",
-      description: "Quiz completo per la certificazione CISSP coprendo tutti gli 8 domini del CBK.",
-      duration: 180,
-      questions: 250,
-      difficulty: "Esperto",
-      level: "Certificazione",
-      isPremium: true,
-      category: "certifications",
-      gradient: "from-purple-600 to-blue-600",
-      icon: "certificate"
-    },
-    {
-      id: "4",
-      title: "ISO 27001/27002",
-      description: "Approfondisci gli standard internazionali per la gestione della sicurezza delle informazioni.",
-      duration: 60,
-      questions: 100,
-      difficulty: "Intermedio",
-      level: "Standard",
-      isPremium: true,
-      category: "compliance",
-      gradient: "from-green-600 to-teal-600",
-      icon: "file-contract"
-    }
-  ];
+  const { data: categoriesWithQuizzes = [] } = useQuery<Array<Category & { quizzes: Quiz[] }>>({
+    queryKey: ["/api/categories-with-quizzes"],
+  });
+
+  const quizCategories = mapCategoriesToQuizCards(categoriesWithQuizzes);
 
   const availableQuizzes = (user as User)?.isPremium 
     ? quizCategories 

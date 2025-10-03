@@ -13,6 +13,7 @@ interface QuizCardProps {
     difficulty: string;
     level: string;
     isPremium: boolean;
+    category?: string;
     gradient: string;
     icon: string;
   };

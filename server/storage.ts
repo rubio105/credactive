@@ -23,6 +23,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User>;
+  updateUserLanguage(userId: string, language: string): Promise<User>;
   
   // Quiz operations
   getCategories(): Promise<Category[]>;
@@ -67,6 +68,18 @@ export class DatabaseStorage implements IStorage {
         stripeCustomerId,
         stripeSubscriptionId,
         isPremium: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateUserLanguage(userId: string, language: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        language,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId))

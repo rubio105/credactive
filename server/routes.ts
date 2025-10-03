@@ -146,6 +146,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user language
+  app.post('/api/user/language', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { language } = req.body;
+
+      const validLanguages = ['it', 'en', 'es', 'fr'];
+      if (!language || !validLanguages.includes(language)) {
+        return res.status(400).json({ message: "Invalid language code" });
+      }
+
+      await storage.updateUserLanguage(userId, language);
+      res.json({ success: true, language });
+    } catch (error) {
+      console.error("Error updating user language:", error);
+      res.status(500).json({ message: "Failed to update language" });
+    }
+  });
+
   // Stripe subscription endpoint
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     const userId = req.user.claims.sub;

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
+import LanguageSelector from "@/components/language-selector";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
-import type { Category, Quiz } from "@shared/schema";
+import type { Category, Quiz, User as UserType } from "@shared/schema";
 import { Crown, ChartLine, BookOpen } from "lucide-react";
 
 interface User {
@@ -41,6 +43,7 @@ interface DashboardData {
 
 export default function Home() {
   const { user } = useAuth();
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   
   const { data: dashboardData } = useQuery<DashboardData>({
     queryKey: ["/api/user/dashboard"],
@@ -51,6 +54,14 @@ export default function Home() {
   });
 
   const quizCategories = mapCategoriesToQuizCards(categoriesWithQuizzes);
+
+  // Check if user needs to select a language
+  useEffect(() => {
+    const userWithLanguage = user as UserType;
+    if (userWithLanguage && !userWithLanguage.language) {
+      setShowLanguageSelector(true);
+    }
+  }, [user]);
 
   const availableQuizzes = (user as User)?.isPremium 
     ? quizCategories 
@@ -66,9 +77,18 @@ export default function Home() {
     }
   };
 
+  const handleLanguageSelected = () => {
+    setShowLanguageSelector(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      
+      <LanguageSelector 
+        open={showLanguageSelector} 
+        onLanguageSelected={handleLanguageSelected}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}

@@ -15,7 +15,7 @@ const quizData = [
       {
         title: "Fondamenti di Cyber Security",
         description: "Concetti base della sicurezza informatica, riconosci le minacce comuni e proteggi i tuoi dati",
-        duration: 30,
+        duration: 45,
         difficulty: "beginner",
         isPremium: false,
         questions: [
@@ -60,7 +60,7 @@ const quizData = [
       {
         title: "CISM - Information Security Governance",
         description: "Governance della sicurezza informatica e gestione del rischio",
-        duration: 90,
+        duration: 240,
         difficulty: "advanced",
         isPremium: true,
         questions: [
@@ -126,7 +126,7 @@ const quizData = [
       {
         title: "ISO 27001 - Information Security Management",
         description: "Standard ISO per la gestione della sicurezza delle informazioni",
-        duration: 60,
+        duration: 90,
         difficulty: "intermediate",
         isPremium: true,
         questions: [
@@ -159,7 +159,7 @@ const quizData = [
       {
         title: "GDPR - Fondamenti e Principi",
         description: "Regolamento sulla protezione dei dati personali nell'UE",
-        duration: 45,
+        duration: 60,
         difficulty: "intermediate",
         isPremium: true,
         questions: [
@@ -192,7 +192,7 @@ const quizData = [
       {
         title: "EU Privacy Law & ePrivacy",
         description: "Normative europee sulla privacy e direttive ePrivacy",
-        duration: 40,
+        duration: 60,
         difficulty: "intermediate",
         isPremium: true,
         questions: [
@@ -225,7 +225,7 @@ const quizData = [
       {
         title: "AI Security & Ethics",
         description: "Sicurezza e etica nell'intelligenza artificiale",
-        duration: 50,
+        duration: 75,
         difficulty: "advanced",
         isPremium: true,
         questions: [
@@ -258,7 +258,7 @@ const quizData = [
       {
         title: "Data Protection & Privacy",
         description: "Tecniche avanzate di protezione dei dati e privacy",
-        duration: 55,
+        duration: 90,
         difficulty: "advanced",
         isPremium: true,
         questions: [
@@ -291,7 +291,7 @@ const quizData = [
       {
         title: "Threat Intelligence & AI",
         description: "Utilizzo dell'AI per threat intelligence e detection",
-        duration: 70,
+        duration: 120,
         difficulty: "expert",
         isPremium: true,
         questions: [
@@ -324,7 +324,7 @@ const quizData = [
       {
         title: "SecOps & AI Automation",
         description: "Automazione delle operazioni di sicurezza con AI e SOAR",
-        duration: 65,
+        duration: 90,
         difficulty: "expert",
         isPremium: true,
         questions: [

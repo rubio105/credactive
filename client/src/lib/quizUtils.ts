@@ -39,6 +39,19 @@ const categoryTypeMap: Record<string, string> = {
   "secops-ai-automation": "ai",
 };
 
+const questionCountMap: Record<string, number> = {
+  "cyber-security-awareness": 50,
+  "cism": 150,
+  "cissp": 125,
+  "iso-27001": 60,
+  "gdpr": 50,
+  "eu-privacy": 40,
+  "ai-security": 70,
+  "data-protection-privacy": 80,
+  "threat-intelligence-ai": 90,
+  "secops-ai-automation": 75,
+};
+
 export interface QuizCardData {
   id: string;
   title: string;
@@ -53,7 +66,8 @@ export interface QuizCardData {
   icon: string;
 }
 
-export function mapQuizToCardData(quiz: Quiz, category: Category, questionCount = 50): QuizCardData {
+export function mapQuizToCardData(quiz: Quiz, category: Category): QuizCardData {
+  const questionCount = questionCountMap[category.slug] || 50;
   return {
     id: quiz.id,
     title: quiz.title,

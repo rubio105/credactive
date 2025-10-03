@@ -132,7 +132,7 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
 
   const purchaseMutation = useMutation({
     mutationFn: async (data: { courseId: string; sessionId: string }) =>
-      apiRequest('/api/live-courses/purchase', 'POST', data) as Promise<{ clientSecret: string }>,
+      apiRequest('/api/live-courses/purchase', 'POST', data) as unknown as Promise<{ clientSecret: string }>,
     onSuccess: (data: { clientSecret: string }) => {
       setClientSecret(data.clientSecret);
     },

@@ -34,6 +34,7 @@ interface LiveCourse {
   description: string;
   program?: string;
   instructor?: string;
+  duration?: string;
   price: number;
   sessions: LiveCourseSession[];
 }
@@ -252,6 +253,13 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-semibold">Docente:</span>
                 <span className="text-muted-foreground" data-testid="course-instructor">{courseData.instructor}</span>
+              </div>
+            )}
+
+            {courseData.duration && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-semibold">Durata:</span>
+                <span className="text-muted-foreground" data-testid="course-duration">{courseData.duration}</span>
               </div>
             )}
 

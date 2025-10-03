@@ -34,6 +34,7 @@ interface LiveCourse {
   description: string;
   program?: string;
   instructor?: string;
+  duration?: string;
   price: number;
   createdAt: string;
   updatedAt?: string;
@@ -162,6 +163,7 @@ export function AdminLiveCourses() {
       description: '',
       program: '',
       instructor: '',
+      duration: '',
       price: 0,
       quizId: '',
     });
@@ -414,15 +416,25 @@ export function AdminLiveCourses() {
                 />
               </div>
               <div>
-                <Label htmlFor="price">Prezzo (€)</Label>
+                <Label htmlFor="duration">Durata</Label>
                 <Input
-                  id="price"
-                  type="number"
-                  value={editingCourse?.price ? editingCourse.price / 100 : 0}
-                  onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
-                  data-testid="input-course-price"
+                  id="duration"
+                  value={editingCourse?.duration || ''}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, duration: e.target.value })}
+                  placeholder="Es: 2 giorni, 3 settimane"
+                  data-testid="input-course-duration"
                 />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="price">Prezzo (€)</Label>
+              <Input
+                id="price"
+                type="number"
+                value={editingCourse?.price ? editingCourse.price / 100 : 0}
+                onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
+                data-testid="input-course-price"
+              />
             </div>
           </div>
           <DialogFooter>

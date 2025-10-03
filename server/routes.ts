@@ -793,7 +793,7 @@ ${JSON.stringify(questionsToTranslate)}`
         
         if (!customerId) {
           const customer = await stripe.customers.create({
-            email: user.email,
+            email: user.email || undefined,
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
           });
           customerId = customer.id;
@@ -1210,6 +1210,7 @@ ${JSON.stringify(questionsToTranslate)}`
               explanation: q.explanation,
               imageUrl: '',
               category: categoryName,
+              domain: null,
             });
           }
           console.log(`Successfully generated and saved ${questions.length} questions for ${quiz.title}`);

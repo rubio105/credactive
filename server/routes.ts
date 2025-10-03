@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertUserQuizAttemptSchema } from "@shared/schema";
 import { z } from "zod";
-import { generateQuizReport } from "./reportGenerator";
+import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY. Please set this environment variable.');
@@ -114,17 +114,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Generate quiz report
         const questions = await storage.getQuestionsByQuizId(attempt.quizId);
-        const reportData = generateQuizReport(attempt, quiz, questions);
         
-        await storage.createQuizReport({
-          attemptId: attempt.id,
-          userId,
-          quizId: attempt.quizId,
-          reportData: reportData as any,
-          weakAreas: reportData.weakAreas as any,
-          strengths: reportData.strengths as any,
-          recommendations: reportData.recommendations,
-        });
+        // Check if this is an Insight Discovery personality test
+        const isInsightDiscovery = quiz.title.toLowerCase().includes('insight discovery');
+        
+        if (isInsightDiscovery) {
+          // Generate Insight Discovery personality report
+          const insightProfile = generateInsightDiscoveryReport(attempt, questions);
+          
+          await storage.createQuizReport({
+            attemptId: attempt.id,
+            userId,
+            quizId: attempt.quizId,
+            reportData: insightProfile as any,
+            weakAreas: [],
+            strengths: insightProfile.strengths,
+            recommendations: insightProfile.recommendations,
+          });
+        } else {
+          // Generate standard quiz report
+          const reportData = generateQuizReport(attempt, quiz, questions);
+          
+          await storage.createQuizReport({
+            attemptId: attempt.id,
+            userId,
+            quizId: attempt.quizId,
+            reportData: reportData as any,
+            weakAreas: reportData.weakAreas as any,
+            strengths: reportData.strengths as any,
+            recommendations: reportData.recommendations,
+          });
+        }
       }
 
       res.json(attempt);

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings } from "lucide-react";
 import logoImage from "@assets/image_1759506819087.png";
 
 interface User {
@@ -20,6 +20,7 @@ interface User {
   lastName?: string;
   profileImageUrl?: string;
   isPremium: boolean;
+  isAdmin: boolean;
 }
 
 export default function Navigation() {
@@ -157,6 +158,17 @@ export default function Navigation() {
                         Quiz
                       </DropdownMenuItem>
                     </Link>
+                    {typedUser?.isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <Link href="/admin">
+                          <DropdownMenuItem className="text-destructive" data-testid="menu-admin">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Pannello Admin
+                          </DropdownMenuItem>
+                        </Link>
+                      </>
+                    )}
                     {!typedUser?.isPremium && (
                       <>
                         <DropdownMenuSeparator />

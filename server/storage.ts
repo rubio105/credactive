@@ -28,12 +28,33 @@ export interface IStorage {
   updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User>;
   updateUserLanguage(userId: string, language: string): Promise<User>;
   
+  // Admin User operations
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: string, updates: Partial<User>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
+  
   // Quiz operations
   getCategories(): Promise<Category[]>;
   getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: Quiz[] }>>;
   getQuizzesByCategory(categoryId: string): Promise<Quiz[]>;
   getQuizById(id: string): Promise<Quiz | undefined>;
   getQuestionsByQuizId(quizId: string): Promise<Question[]>;
+  getQuestionById(id: string): Promise<Question | undefined>;
+  
+  // Admin Category operations
+  createCategory(category: Omit<Category, 'id' | 'createdAt'>): Promise<Category>;
+  updateCategory(id: string, updates: Partial<Category>): Promise<Category>;
+  deleteCategory(id: string): Promise<void>;
+  
+  // Admin Quiz operations
+  createQuiz(quiz: Omit<Quiz, 'id' | 'createdAt'>): Promise<Quiz>;
+  updateQuiz(id: string, updates: Partial<Quiz>): Promise<Quiz>;
+  deleteQuiz(id: string): Promise<void>;
+  
+  // Admin Question operations
+  createQuestion(question: Omit<Question, 'id' | 'createdAt'>): Promise<Question>;
+  updateQuestion(id: string, updates: Partial<Question>): Promise<Question>;
+  deleteQuestion(id: string): Promise<void>;
   
   // User progress operations
   createQuizAttempt(attempt: InsertUserQuizAttempt): Promise<UserQuizAttempt>;
@@ -95,6 +116,27 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  // Admin User operations
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
   // Quiz operations
   async getCategories(): Promise<Category[]> {
     return await db.select().from(categories).orderBy(categories.name);
@@ -139,6 +181,77 @@ export class DatabaseStorage implements IStorage {
       .from(questions)
       .where(eq(questions.quizId, quizId))
       .orderBy(sql`RANDOM()`); // Randomize question order
+  }
+
+  async getQuestionById(id: string): Promise<Question | undefined> {
+    const [question] = await db.select().from(questions).where(eq(questions.id, id));
+    return question;
+  }
+
+  // Admin Category operations
+  async createCategory(categoryData: Omit<Category, 'id' | 'createdAt'>): Promise<Category> {
+    const [category] = await db
+      .insert(categories)
+      .values(categoryData)
+      .returning();
+    return category;
+  }
+
+  async updateCategory(id: string, updates: Partial<Category>): Promise<Category> {
+    const [category] = await db
+      .update(categories)
+      .set(updates)
+      .where(eq(categories.id, id))
+      .returning();
+    return category;
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    await db.delete(categories).where(eq(categories.id, id));
+  }
+
+  // Admin Quiz operations
+  async createQuiz(quizData: Omit<Quiz, 'id' | 'createdAt'>): Promise<Quiz> {
+    const [quiz] = await db
+      .insert(quizzes)
+      .values(quizData)
+      .returning();
+    return quiz;
+  }
+
+  async updateQuiz(id: string, updates: Partial<Quiz>): Promise<Quiz> {
+    const [quiz] = await db
+      .update(quizzes)
+      .set(updates)
+      .where(eq(quizzes.id, id))
+      .returning();
+    return quiz;
+  }
+
+  async deleteQuiz(id: string): Promise<void> {
+    await db.delete(quizzes).where(eq(quizzes.id, id));
+  }
+
+  // Admin Question operations
+  async createQuestion(questionData: Omit<Question, 'id' | 'createdAt'>): Promise<Question> {
+    const [question] = await db
+      .insert(questions)
+      .values(questionData)
+      .returning();
+    return question;
+  }
+
+  async updateQuestion(id: string, updates: Partial<Question>): Promise<Question> {
+    const [question] = await db
+      .update(questions)
+      .set(updates)
+      .where(eq(questions.id, id))
+      .returning();
+    return question;
+  }
+
+  async deleteQuestion(id: string): Promise<void> {
+    await db.delete(questions).where(eq(questions.id, id));
   }
 
   // User progress operations

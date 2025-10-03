@@ -10,6 +10,7 @@ import Quiz from "@/pages/quiz";
 import Dashboard from "@/pages/dashboard";
 import Subscribe from "@/pages/subscribe";
 import Report from "@/pages/report";
+import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/report/:attemptId" component={Report} />
+          <Route path="/admin" component={Admin} />
         </>
       )}
       <Route component={NotFound} />

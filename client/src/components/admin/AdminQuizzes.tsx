@@ -1,0 +1,338 @@
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Pencil, Trash2, Plus } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Quiz {
+  id: string;
+  categoryId: string;
+  title: string;
+  description: string;
+  duration: number;
+  difficulty: string;
+  isPremium: boolean;
+  isActive: boolean;
+}
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+export function AdminQuizzes() {
+  const { toast } = useToast();
+  const [editingQuiz, setEditingQuiz] = useState<Partial<Quiz> | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const { data: categories } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  const { data: categoriesWithQuizzes, isLoading } = useQuery<Array<Category & { quizzes: Quiz[] }>>({
+    queryKey: ["/api/categories-with-quizzes"],
+  });
+
+  const allQuizzes = categoriesWithQuizzes?.flatMap(cat => cat.quizzes) || [];
+
+  const createMutation = useMutation({
+    mutationFn: (data: Partial<Quiz>) => apiRequest("/api/admin/quizzes", "POST", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories-with-quizzes"] });
+      toast({ title: "Quiz creato con successo" });
+      setIsDialogOpen(false);
+      setEditingQuiz(null);
+      setIsCreating(false);
+    },
+    onError: () => {
+      toast({ title: "Errore durante la creazione", variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: { id: string; updates: Partial<Quiz> }) =>
+      apiRequest(`/api/admin/quizzes/${data.id}`, "PATCH", data.updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories-with-quizzes"] });
+      toast({ title: "Quiz aggiornato con successo" });
+      setIsDialogOpen(false);
+      setEditingQuiz(null);
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/api/admin/quizzes/${id}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories-with-quizzes"] });
+      toast({ title: "Quiz eliminato con successo" });
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
+    },
+  });
+
+  const handleEdit = (quiz: Quiz) => {
+    setEditingQuiz(quiz);
+    setIsCreating(false);
+    setIsDialogOpen(true);
+  };
+
+  const handleCreate = () => {
+    setEditingQuiz({
+      categoryId: categories?.[0]?.id || '',
+      title: '',
+      description: '',
+      duration: 30,
+      difficulty: 'intermediate',
+      isPremium: true,
+      isActive: true,
+    });
+    setIsCreating(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!editingQuiz) return;
+    
+    if (isCreating) {
+      createMutation.mutate(editingQuiz);
+    } else if (editingQuiz.id) {
+      updateMutation.mutate({
+        id: editingQuiz.id,
+        updates: editingQuiz,
+      });
+    }
+  };
+
+  const getCategoryName = (categoryId: string) => {
+    return categories?.find(c => c.id === categoryId)?.name || categoryId;
+  };
+
+  if (isLoading) {
+    return <div>Caricamento...</div>;
+  }
+
+  return (
+    <div>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Gestione Quiz</h2>
+          <p className="text-muted-foreground">Gestisci i quiz della piattaforma</p>
+        </div>
+        <Button onClick={handleCreate} data-testid="button-create-quiz">
+          <Plus className="w-4 h-4 mr-2" />
+          Nuovo Quiz
+        </Button>
+      </div>
+
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Titolo</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead>Durata</TableHead>
+              <TableHead>Difficoltà</TableHead>
+              <TableHead>Premium</TableHead>
+              <TableHead>Attivo</TableHead>
+              <TableHead className="text-right">Azioni</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {allQuizzes.map((quiz) => (
+              <TableRow key={quiz.id} data-testid={`row-quiz-${quiz.id}`}>
+                <TableCell className="font-medium">{quiz.title}</TableCell>
+                <TableCell>{getCategoryName(quiz.categoryId)}</TableCell>
+                <TableCell>{quiz.duration} min</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{quiz.difficulty}</Badge>
+                </TableCell>
+                <TableCell>
+                  {quiz.isPremium ? (
+                    <Badge variant="default">Premium</Badge>
+                  ) : (
+                    <Badge variant="secondary">Free</Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {quiz.isActive ? (
+                    <Badge variant="default">Attivo</Badge>
+                  ) : (
+                    <Badge variant="secondary">Inattivo</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(quiz)}
+                      data-testid={`button-edit-quiz-${quiz.id}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (confirm('Sei sicuro di voler eliminare questo quiz?')) {
+                          deleteMutation.mutate(quiz.id);
+                        }
+                      }}
+                      data-testid={`button-delete-quiz-${quiz.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl" data-testid="dialog-quiz">
+          <DialogHeader>
+            <DialogTitle>{isCreating ? 'Nuovo Quiz' : 'Modifica Quiz'}</DialogTitle>
+            <DialogDescription>
+              {isCreating ? 'Crea un nuovo quiz' : 'Modifica i dati del quiz'}
+            </DialogDescription>
+          </DialogHeader>
+          {editingQuiz && (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              <div>
+                <Label htmlFor="category">Categoria</Label>
+                <Select
+                  value={editingQuiz.categoryId}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, categoryId: value })}
+                >
+                  <SelectTrigger data-testid="select-category">
+                    <SelectValue placeholder="Seleziona categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="title">Titolo</Label>
+                <Input
+                  id="title"
+                  value={editingQuiz.title || ''}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, title: e.target.value })}
+                  data-testid="input-title"
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Descrizione</Label>
+                <Textarea
+                  id="description"
+                  value={editingQuiz.description || ''}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, description: e.target.value })}
+                  data-testid="textarea-description"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="duration">Durata (minuti)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={editingQuiz.duration || 30}
+                    onChange={(e) => setEditingQuiz({ ...editingQuiz, duration: parseInt(e.target.value) })}
+                    data-testid="input-duration"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="difficulty">Difficoltà</Label>
+                  <Select
+                    value={editingQuiz.difficulty}
+                    onValueChange={(value) => setEditingQuiz({ ...editingQuiz, difficulty: value })}
+                  >
+                    <SelectTrigger data-testid="select-difficulty">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">Principiante</SelectItem>
+                      <SelectItem value="intermediate">Intermedio</SelectItem>
+                      <SelectItem value="advanced">Avanzato</SelectItem>
+                      <SelectItem value="expert">Esperto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isPremium">Premium</Label>
+                <Switch
+                  id="isPremium"
+                  checked={editingQuiz.isPremium}
+                  onCheckedChange={(checked) => setEditingQuiz({ ...editingQuiz, isPremium: checked })}
+                  data-testid="switch-isPremium"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isActive">Attivo</Label>
+                <Switch
+                  id="isActive"
+                  checked={editingQuiz.isActive}
+                  onCheckedChange={(checked) => setEditingQuiz({ ...editingQuiz, isActive: checked })}
+                  data-testid="switch-isActive"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-quiz"
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

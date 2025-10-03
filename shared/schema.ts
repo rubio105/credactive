@@ -34,6 +34,7 @@ export const users = pgTable("users", {
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
   isPremium: boolean("is_premium").default(false),
+  isAdmin: boolean("is_admin").default(false),
   language: varchar("language", { length: 2 }), // it, en, es, fr
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

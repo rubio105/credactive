@@ -1,8 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
+import multer from "multer";
+import path from "path";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { insertUserQuizAttemptSchema } from "@shared/schema";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
@@ -313,6 +315,216 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error verifying payment:", error);
       res.status(500).json({ message: "Failed to verify payment" });
+    }
+  });
+
+  // ========== ADMIN ROUTES ==========
+  
+  // Configure multer for image uploads
+  const uploadStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'attached_assets/stock_images');
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+  });
+  
+  const upload = multer({ 
+    storage: uploadStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = /jpeg|jpg|png|gif|webp/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
+      
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed!'));
+      }
+    }
+  });
+
+  // Admin - Get all users
+  app.get('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Admin - Update user
+  app.patch('/api/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.updateUser(id, req.body);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Admin - Delete user
+  app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteUser(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // Admin - Create category
+  app.post('/api/admin/categories', isAdmin, async (req, res) => {
+    try {
+      const category = await storage.createCategory(req.body);
+      res.json(category);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  // Admin - Update category
+  app.patch('/api/admin/categories/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const category = await storage.updateCategory(id, req.body);
+      res.json(category);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  // Admin - Delete category
+  app.delete('/api/admin/categories/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCategory(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
+  // Admin - Create quiz
+  app.post('/api/admin/quizzes', isAdmin, async (req, res) => {
+    try {
+      const quiz = await storage.createQuiz(req.body);
+      res.json(quiz);
+    } catch (error) {
+      console.error("Error creating quiz:", error);
+      res.status(500).json({ message: "Failed to create quiz" });
+    }
+  });
+
+  // Admin - Update quiz
+  app.patch('/api/admin/quizzes/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const quiz = await storage.updateQuiz(id, req.body);
+      res.json(quiz);
+    } catch (error) {
+      console.error("Error updating quiz:", error);
+      res.status(500).json({ message: "Failed to update quiz" });
+    }
+  });
+
+  // Admin - Delete quiz
+  app.delete('/api/admin/quizzes/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteQuiz(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting quiz:", error);
+      res.status(500).json({ message: "Failed to delete quiz" });
+    }
+  });
+
+  // Admin - Get question by ID
+  app.get('/api/admin/questions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const question = await storage.getQuestionById(id);
+      res.json(question);
+    } catch (error) {
+      console.error("Error fetching question:", error);
+      res.status(500).json({ message: "Failed to fetch question" });
+    }
+  });
+
+  // Admin - Create question
+  app.post('/api/admin/questions', isAdmin, async (req, res) => {
+    try {
+      const question = await storage.createQuestion(req.body);
+      res.json(question);
+    } catch (error) {
+      console.error("Error creating question:", error);
+      res.status(500).json({ message: "Failed to create question" });
+    }
+  });
+
+  // Admin - Update question
+  app.patch('/api/admin/questions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const question = await storage.updateQuestion(id, req.body);
+      res.json(question);
+    } catch (error) {
+      console.error("Error updating question:", error);
+      res.status(500).json({ message: "Failed to update question" });
+    }
+  });
+
+  // Admin - Delete question
+  app.delete('/api/admin/questions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteQuestion(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
+  // Admin - Upload image
+  app.post('/api/admin/upload', isAdmin, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const imageUrl = `/attached_assets/stock_images/${req.file.filename}`;
+      res.json({ url: imageUrl, filename: req.file.filename });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
+  // Admin - Get pricing settings (simplified - could be database-backed)
+  app.get('/api/admin/pricing', isAdmin, async (req, res) => {
+    try {
+      res.json({
+        annualPrice: 9000, // €90 in cents
+        currency: 'eur',
+        features: ['All quizzes', 'Detailed reports', 'Progress tracking', 'Priority support']
+      });
+    } catch (error) {
+      console.error("Error fetching pricing:", error);
+      res.status(500).json({ message: "Failed to fetch pricing" });
     }
   });
 

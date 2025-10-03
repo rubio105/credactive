@@ -28,14 +28,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, PlusCircle, X } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Trash2, Plus, PlusCircle, X, Upload, Image as ImageIcon } from "lucide-react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Question {
   id: string;
   quizId: string;
   question: string;
+  imageUrl?: string;
   options: { text: string; isCorrect: boolean }[];
   explanation: string;
   difficulty: string;
@@ -59,6 +60,8 @@ export function AdminQuestions() {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedQuiz, setSelectedQuiz] = useState<string>('all');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -169,6 +172,36 @@ export function AdminQuestions() {
     const newOptions = [...(editingQuestion.options || [])];
     newOptions[index] = { ...newOptions[index], [field]: value };
     setEditingQuestion({ ...editingQuestion, options: newOptions });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      setEditingQuestion({ ...editingQuestion, imageUrl: data.url });
+      toast({ title: "Immagine caricata con successo" });
+    } catch (error) {
+      toast({ 
+        title: "Errore durante il caricamento dell'immagine", 
+        variant: "destructive" 
+      });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const getQuizTitle = (quizId: string) => {
@@ -328,6 +361,54 @@ export function AdminQuestions() {
                   rows={3}
                   data-testid="textarea-question"
                 />
+              </div>
+              <div>
+                <Label>Immagine (opzionale)</Label>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingImage}
+                      data-testid="button-upload-image"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadingImage ? "Caricamento..." : "Carica Immagine"}
+                    </Button>
+                    {editingQuestion.imageUrl && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setEditingQuestion({ ...editingQuestion, imageUrl: '' })}
+                        data-testid="button-remove-image"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Rimuovi
+                      </Button>
+                    )}
+                  </div>
+                  {editingQuestion.imageUrl && (
+                    <div className="relative border rounded-lg p-2">
+                      <img
+                        src={editingQuestion.imageUrl}
+                        alt="Preview"
+                        className="max-h-48 rounded"
+                        data-testid="img-preview"
+                      />
+                    </div>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    Carica un'immagine per domande di solution design, diagrammi, architetture, ecc.
+                  </p>
+                </div>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-2">

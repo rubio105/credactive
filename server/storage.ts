@@ -139,11 +139,11 @@ export class DatabaseStorage implements IStorage {
 
   // Quiz operations
   async getCategories(): Promise<Category[]> {
-    return await db.select().from(categories).orderBy(categories.name);
+    return await db.select().from(categories).orderBy(categories.sortOrder, categories.name);
   }
 
   async getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: Quiz[] }>> {
-    const allCategories = await db.select().from(categories).orderBy(categories.name);
+    const allCategories = await db.select().from(categories).orderBy(categories.sortOrder, categories.name);
     const result = [];
 
     for (const category of allCategories) {

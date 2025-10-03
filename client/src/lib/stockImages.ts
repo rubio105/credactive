@@ -28,6 +28,12 @@ import dataProtection2 from '@assets/stock_images/data_protection_encr_c4a6bde2.
 import leadership1 from '@assets/stock_images/professional_leaders_6a93cbaf.jpg';
 import leadership2 from '@assets/stock_images/professional_leaders_be86b888.jpg';
 
+import nis2_1 from '@assets/stock_images/network_security_dir_c2169f3a.jpg';
+import nis2_2 from '@assets/stock_images/network_security_dir_8b1254ec.jpg';
+
+import dora1 from '@assets/stock_images/digital_operational__f394c1a6.jpg';
+import dora2 from '@assets/stock_images/digital_operational__1ab992cc.jpg';
+
 export const categoryImages = {
   'cyber-security-awareness': [cyberAwareness1, cyberAwareness2, cyberAwareness3],
   'cism': [certification1, certification2],
@@ -40,6 +46,8 @@ export const categoryImages = {
   'threat-intelligence-ai': [threatIntel1, threatIntel2],
   'secops-ai': [secOps1, secOps2],
   'assessment-leadership': [leadership1, leadership2],
+  'nis2': [nis2_1, nis2_2],
+  'dora': [dora1, dora2],
 };
 
 // Helper to get a random image for a category

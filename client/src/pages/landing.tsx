@@ -7,8 +7,9 @@ import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, Quiz } from "@shared/schema";
-import { ShieldCheck, Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Clock, Flame } from "lucide-react";
+import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine } from "lucide-react";
 import { featuredImages } from "@/lib/stockImages";
+import logoImage from "@assets/image_1759506819087.png";
 
 export default function Landing() {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -68,7 +69,6 @@ export default function Landing() {
                   onClick={() => window.location.href = '/api/login'}
                   data-testid="button-start-free"
                 >
-                  <ShieldCheck className="w-5 h-5 mr-2" />
                   Inizia Gratis
                 </Button>
                 <Button 
@@ -242,7 +242,6 @@ export default function Landing() {
               className="rounded-full"
               data-testid="filter-all"
             >
-              <ShieldCheck className="w-4 h-4 mr-2" />
               Tutti
             </Button>
             <Button
@@ -335,11 +334,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                  <ShieldCheck className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-bold">CyberQuiz<span className="text-primary">Pro</span></span>
+              <div className="mb-4">
+                <img 
+                  src={logoImage} 
+                  alt="IBI ACADEMY" 
+                  className="h-10 w-auto"
+                />
               </div>
               <p className="text-white/70 text-sm">La piattaforma leader per la preparazione alle certificazioni di cybersecurity.</p>
             </div>
@@ -376,7 +376,7 @@ export default function Landing() {
           </div>
 
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-white/70 mb-4 md:mb-0">© 2024 CyberQuizPro. Tutti i diritti riservati.</p>
+            <p className="text-sm text-white/70 mb-4 md:mb-0">© 2024 IBI ACADEMY. Tutti i diritti riservati.</p>
             <div className="flex space-x-6">
               <a href="#" className="text-white/70 hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>

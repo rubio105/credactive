@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { ShieldCheck, ChartLine, BookOpen, User, Crown, Menu, LogOut } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut } from "lucide-react";
+import logoImage from "@assets/image_1759506819087.png";
 
 interface User {
   id: string;
@@ -51,13 +52,12 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/">
-            <div className="flex items-center space-x-3 cursor-pointer" data-testid="logo">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <ShieldCheck className="text-primary-foreground text-xl" />
-              </div>
-              <span className="text-xl font-bold text-secondary">
-                CyberQuiz<span className="text-primary">Pro</span>
-              </span>
+            <div className="flex items-center cursor-pointer" data-testid="logo">
+              <img 
+                src={logoImage} 
+                alt="IBI ACADEMY" 
+                className="h-10 w-auto"
+              />
             </div>
           </Link>
           

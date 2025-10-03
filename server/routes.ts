@@ -528,6 +528,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin - Generate AI questions
+  app.post('/api/admin/generate-questions', isAdmin, async (req, res) => {
+    try {
+      const { quizId, count, difficulty = 'intermediate' } = req.body;
+      
+      if (!quizId || !count) {
+        return res.status(400).json({ message: "Quiz ID and count are required" });
+      }
+
+      const quiz = await storage.getQuizById(quizId);
+      if (!quiz) {
+        return res.status(404).json({ message: "Quiz not found" });
+      }
+
+      // Import dynamically to avoid circular dependencies
+      const { generateQuestionsInBatches } = await import('./aiQuestionGenerator');
+      
+      // Get category name for better context
+      const categories = await storage.getCategories();
+      const category = categories.find(c => c.id === quiz.categoryId);
+      const categoryName = category?.name || 'General';
+      
+      res.json({ 
+        message: "Question generation started", 
+        quizId, 
+        count,
+        status: "processing"
+      });
+
+      // Generate questions in background
+      generateQuestionsInBatches(quiz.title, categoryName, count, 20, difficulty)
+        .then(async (questions) => {
+          // Save all generated questions to database
+          for (const q of questions) {
+            await storage.createQuestion({
+              quizId: quiz.id,
+              question: q.question,
+              options: q.options as any,
+              explanation: q.explanation,
+              difficulty: q.difficulty,
+            });
+          }
+          console.log(`Successfully generated and saved ${questions.length} questions for ${quiz.title}`);
+        })
+        .catch((error) => {
+          console.error("Error in background question generation:", error);
+        });
+
+    } catch (error) {
+      console.error("Error generating questions:", error);
+      res.status(500).json({ message: "Failed to generate questions" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

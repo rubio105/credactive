@@ -86,6 +86,12 @@ Preferred communication style: Simple, everyday language.
 - Connection via DATABASE_URL environment variable
 - Used through @neondatabase/serverless package
 
+**OpenAI Integration**:
+- OpenAI GPT-4o model for AI-powered question generation
+- Secure API key management via OPENAI_API_KEY environment variable
+- Batch processing for efficient bulk question generation
+- Context-aware question generation based on quiz topic and category
+
 **UI Dependencies**:
 - Radix UI primitives for accessible component foundations
 - Lucide React for icon system
@@ -117,6 +123,13 @@ Preferred communication style: Simple, everyday language.
 
 **Premium Features**: Most categories and quizzes marked as premium, requiring active Stripe subscription (€90/year) for access.
 
+**AI Question Generation**: Admin panel includes AI-powered question generation using OpenAI GPT-4o:
+- Batch generation (1-1000 questions per quiz)
+- Configurable difficulty levels (beginner, intermediate, advanced, expert)
+- Background processing for large batches
+- Automatic database persistence
+- Context-aware generation based on quiz topic and certification standards
+
 **Localization**: User language preference stored (it/en/es/fr) for future i18n support, though current implementation is primarily Italian.
 
 ## Recent Changes (October 2025)
@@ -128,3 +141,10 @@ Preferred communication style: Simple, everyday language.
 - **Personality Assessment**: Implemented Insight Discovery with color wheel visualization (4-color system: Rosso Fuoco, Giallo Sole, Verde Terra, Blu Freddo)
 - **Branding**: Updated to "Piattaforma #1 per Certificazioni Professionali" - broader positioning
 - **Platform Updates**: €90/year subscription, IBI ACADEMY branding, professional stock images for all categories
+- **AI Question Generation** (October 3, 2025): Integrated OpenAI GPT-4o for automated question generation
+  - Admin panel now includes "AI" button for each quiz to generate questions in bulk
+  - Configurable batch generation (1-1000 questions) with difficulty selection
+  - Background processing with automatic database persistence
+  - Service: server/aiQuestionGenerator.ts for batch OpenAI API calls
+  - Endpoint: POST /api/admin/generate-questions for question generation
+  - UI: AdminQuizzes component enhanced with AI generation dialog

@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,6 +54,10 @@ export function AdminQuizzes() {
   const [editingQuiz, setEditingQuiz] = useState<Partial<Quiz> | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [selectedQuizForAI, setSelectedQuizForAI] = useState<Quiz | null>(null);
+  const [aiQuestionCount, setAiQuestionCount] = useState('100');
+  const [aiDifficulty, setAiDifficulty] = useState('intermediate');
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -103,6 +107,37 @@ export function AdminQuizzes() {
       toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
     },
   });
+
+  const generateAIMutation = useMutation({
+    mutationFn: (data: { quizId: string; count: number; difficulty: string }) =>
+      apiRequest("/api/admin/generate-questions", "POST", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/questions"] });
+      toast({ 
+        title: "Generazione avviata!", 
+        description: "Le domande verranno generate in background. Potrebbero volerci alcuni minuti."
+      });
+      setAiDialogOpen(false);
+      setSelectedQuizForAI(null);
+    },
+    onError: () => {
+      toast({ title: "Errore durante la generazione", variant: "destructive" });
+    },
+  });
+
+  const handleGenerateAI = (quiz: Quiz) => {
+    setSelectedQuizForAI(quiz);
+    setAiDialogOpen(true);
+  };
+
+  const handleStartGeneration = () => {
+    if (!selectedQuizForAI) return;
+    generateAIMutation.mutate({
+      quizId: selectedQuizForAI.id,
+      count: parseInt(aiQuestionCount),
+      difficulty: aiDifficulty,
+    });
+  };
 
   const handleEdit = (quiz: Quiz) => {
     setEditingQuiz(quiz);
@@ -196,6 +231,16 @@ export function AdminQuizzes() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleGenerateAI(quiz)}
+                      className="text-primary"
+                      data-testid={`button-ai-quiz-${quiz.id}`}
+                    >
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      AI
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -329,6 +374,71 @@ export function AdminQuizzes() {
               data-testid="button-save-quiz"
             >
               {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <DialogContent data-testid="dialog-ai-generate">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Genera Domande con AI
+            </DialogTitle>
+            <DialogDescription>
+              {selectedQuizForAI && `Genera domande automaticamente per: ${selectedQuizForAI.title}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="ai-count">Numero di Domande</Label>
+              <Input
+                id="ai-count"
+                type="number"
+                value={aiQuestionCount}
+                onChange={(e) => setAiQuestionCount(e.target.value)}
+                placeholder="es. 100"
+                min="1"
+                max="1000"
+                data-testid="input-ai-count"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Consigliato: 100-1000 domande per una buona rotazione
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="ai-difficulty">Livello di Difficoltà</Label>
+              <Select value={aiDifficulty} onValueChange={setAiDifficulty}>
+                <SelectTrigger data-testid="select-ai-difficulty">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">Principiante</SelectItem>
+                  <SelectItem value="intermediate">Intermedio</SelectItem>
+                  <SelectItem value="advanced">Avanzato</SelectItem>
+                  <SelectItem value="expert">Esperto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="bg-primary/5 p-3 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                ⚡ La generazione avverrà in background e potrebbe richiedere alcuni minuti.
+                Le domande saranno automaticamente salvate nel database.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleStartGeneration} 
+              disabled={generateAIMutation.isPending || !aiQuestionCount}
+              data-testid="button-start-ai-generation"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {generateAIMutation.isPending ? "Avvio..." : "Genera Domande"}
             </Button>
           </DialogFooter>
         </DialogContent>

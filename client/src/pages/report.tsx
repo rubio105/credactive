@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { InsightColorWheel } from "@/components/InsightColorWheel";
 import {
   CheckCircle2,
   XCircle,
@@ -16,6 +17,7 @@ import {
   Trophy,
   Target,
   Clock,
+  Palette,
 } from "lucide-react";
 
 interface ReportData {
@@ -42,12 +44,30 @@ interface ReportData {
   }>;
 }
 
+interface ColorScore {
+  color: string;
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+interface InsightProfile {
+  dominantColor: ColorScore;
+  secondaryColor: ColorScore;
+  colorScores: ColorScore[];
+  strengths: string[];
+  developmentAreas: string[];
+  workingStyle: string;
+  communicationStyle: string;
+  recommendations: string;
+}
+
 interface QuizReport {
   id: string;
   attemptId: string;
   userId: string;
   quizId: string;
-  reportData: ReportData;
+  reportData: ReportData | InsightProfile;
   weakAreas: any[];
   strengths: string[];
   recommendations: string;
@@ -92,11 +112,149 @@ export default function ReportPage() {
   }
 
   const data = report.reportData;
+  
+  // Type guard to check if this is an Insight Discovery report
+  const isInsightProfile = (data: ReportData | InsightProfile): data is InsightProfile => {
+    return 'dominantColor' in data && 'colorScores' in data;
+  };
+  
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
+  
+  // If this is an Insight Discovery personality test, show different view
+  if (isInsightProfile(data)) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/")}
+              className="mb-2"
+              data-testid="button-back-home"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Torna alla Home
+            </Button>
+            <h1 className="text-3xl font-bold">Il Tuo Profilo Insight Discovery</h1>
+            <p className="text-muted-foreground mt-1">
+              Analisi completa della tua personalità
+            </p>
+          </div>
+          <Button variant="outline" data-testid="button-download-report">
+            <Download className="w-4 h-4 mr-2" />
+            Scarica PDF
+          </Button>
+        </div>
+
+        {/* Color Wheel */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Palette className="w-5 h-5 mr-2" />
+              La Tua Ruota dei Colori
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <InsightColorWheel 
+              colorScores={data.colorScores}
+              dominantColor={data.dominantColor}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Profile Summary */}
+        <Card className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 border-purple-200 dark:border-purple-800">
+          <CardHeader>
+            <CardTitle className="flex items-center text-purple-900 dark:text-purple-100">
+              <Lightbulb className="w-5 h-5 mr-2" />
+              Il Tuo Profilo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Colori Dominanti</h3>
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">{data.dominantColor.name}</strong> ({data.dominantColor.percentage}%) 
+                con influenza <strong className="text-foreground">{data.secondaryColor.name}</strong> ({data.secondaryColor.percentage}%)
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Stile di Lavoro</h3>
+              <p className="text-muted-foreground">{data.workingStyle}</p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Stile di Comunicazione</h3>
+              <p className="text-muted-foreground">{data.communicationStyle}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recommendations */}
+        <Card className="mb-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="flex items-center text-blue-900 dark:text-blue-100">
+              <Lightbulb className="w-5 h-5 mr-2" />
+              Raccomandazioni Personalizzate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-blue-800 dark:text-blue-200 whitespace-pre-line" data-testid="text-recommendations">
+              {data.recommendations}
+            </p>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Strengths */}
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader>
+              <CardTitle className="flex items-center text-green-900 dark:text-green-100">
+                <TrendingUp className="w-5 h-5 mr-2" />
+                Punti di Forza
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {data.strengths.map((strength, index) => (
+                  <div key={index} className="flex items-start" data-testid={`strength-${index}`}>
+                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm">{strength}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Development Areas */}
+          <Card className="border-orange-200 dark:border-orange-800">
+            <CardHeader>
+              <CardTitle className="flex items-center text-orange-900 dark:text-orange-100">
+                <Target className="w-5 h-5 mr-2" />
+                Aree di Sviluppo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {data.developmentAreas.map((area, index) => (
+                  <div key={index} className="flex items-start" data-testid={`development-area-${index}`}>
+                    <Trophy className="w-5 h-5 text-orange-600 dark:text-orange-400 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm">{area}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">

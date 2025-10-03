@@ -34,6 +34,15 @@ import nis2_2 from '@assets/stock_images/network_security_dir_8b1254ec.jpg';
 import dora1 from '@assets/stock_images/digital_operational__f394c1a6.jpg';
 import dora2 from '@assets/stock_images/digital_operational__1ab992cc.jpg';
 
+import innovation1 from '@assets/stock_images/open_innovation_coll_5df1abd8.jpg';
+import innovation2 from '@assets/stock_images/open_innovation_coll_2ad78448.jpg';
+
+import finance1 from '@assets/stock_images/financial_accounting_9e1627c4.jpg';
+import finance2 from '@assets/stock_images/financial_accounting_15cd14cb.jpg';
+
+import hacking1 from '@assets/stock_images/ethical_hacking_pene_2e9acc4d.jpg';
+import hacking2 from '@assets/stock_images/ethical_hacking_pene_442de290.jpg';
+
 export const categoryImages = {
   'cyber-security-awareness': [cyberAwareness1, cyberAwareness2, cyberAwareness3],
   'cism': [certification1, certification2],
@@ -48,6 +57,9 @@ export const categoryImages = {
   'assessment-leadership': [leadership1, leadership2],
   'nis2': [nis2_1, nis2_2],
   'dora': [dora1, dora2],
+  'open-innovation': [innovation1, innovation2],
+  'bilancio-controllo': [finance1, finance2],
+  'ethical-hacking': [hacking1, hacking2],
 };
 
 // Helper to get a random image for a category

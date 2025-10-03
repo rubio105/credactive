@@ -54,13 +54,13 @@ export default function Landing() {
             <div className="space-y-6 fade-in">
               <Badge className="bg-white/10 backdrop-blur-sm text-white border-white/20" data-testid="badge-hero">
                 <Star className="w-4 h-4 mr-2 text-warning" />
-                Piattaforma #1 per Certificazioni Cybersecurity
+                Piattaforma #1 per Certificazioni Professionali
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 Prepara le tue <span className="text-accent">Certificazioni</span> con Quiz Professionali
               </h1>
               <p className="text-lg md:text-xl text-white/90">
-                Oltre 2.000 domande aggiornate per CISSP, CISM, ISO 27001, GDPR e molto altro. Migliora le tue competenze in Cybersecurity con quiz interattivi e feedback immediato.
+                Oltre 2.000 domande aggiornate per Cybersecurity (CISSP, CISM, OSCP), Compliance (ISO 27001, GDPR, NIS2, DORA), Business (Open Innovation, Bilancio) e Leadership. Migliora le tue competenze professionali con quiz interattivi e feedback immediato.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
@@ -104,7 +104,7 @@ export default function Landing() {
                 <CardContent className="p-0">
                   <img 
                     src={featuredImages.hero} 
-                    alt="Cybersecurity Training Platform" 
+                    alt="Professional Certification Training Platform" 
                     className="w-full h-96 object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-secondary/80 to-transparent flex items-end">
@@ -156,7 +156,7 @@ export default function Landing() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Categorie in Evidenza</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Scopri le nostre categorie principali di formazione in cybersecurity
+              Scopri le nostre categorie principali di formazione professionale
             </p>
           </div>
 
@@ -230,7 +230,7 @@ export default function Landing() {
           <div className="text-center mb-12 fade-in">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Esplora i Nostri Quiz</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Scegli tra una vasta gamma di quiz professionali per prepararti alle certificazioni più richieste nel settore della cybersecurity.
+              Scegli tra una vasta gamma di quiz professionali per prepararti alle certificazioni più richieste nel mercato.
             </p>
           </div>
 
@@ -341,7 +341,7 @@ export default function Landing() {
                   className="h-10 w-auto"
                 />
               </div>
-              <p className="text-white/70 text-sm">La piattaforma leader per la preparazione alle certificazioni di cybersecurity.</p>
+              <p className="text-white/70 text-sm">La piattaforma leader per la preparazione alle certificazioni professionali.</p>
             </div>
 
             <div>

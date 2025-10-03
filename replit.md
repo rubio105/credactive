@@ -1,6 +1,6 @@
 # Overview
 
-This is a quiz platform application branded as "IBI ACADEMY" that helps users test their knowledge in cyber security and related topics. The platform offers various quiz categories including cyber security awareness, professional certifications (CISM, CISSP), compliance standards (ISO 27001, GDPR, NIS2, DORA), AI security topics, and personality/leadership assessments using Insight Discovery methodology. Users can take quizzes, track their progress, receive detailed reports, and subscribe to premium content for €90/year through Stripe.
+This is a professional quiz and certification preparation platform branded as "IBI ACADEMY". The platform helps users prepare for professional certifications across multiple domains: Cybersecurity (CISSP, CISM, OSCP, CEH), Compliance & Governance (ISO 27001, GDPR, NIS2, DORA), Business & Innovation (Open Innovation, Bilancio e Controllo), and Leadership & Assessment (Insight Discovery personality tests). Users can take quizzes, track their progress, receive detailed reports, and subscribe to premium content for €90/year through Stripe.
 
 The application is built as a full-stack TypeScript project with a React frontend and Express backend, using PostgreSQL for data persistence.
 
@@ -109,11 +109,11 @@ Preferred communication style: Simple, everyday language.
 - Insight Discovery reports: Personality assessment with color wheel visualization, dominant/secondary colors, strengths, development areas, working style, and communication style
 
 **Quiz Categories**:
-- Cyber Security Awareness
-- Professional Certifications (CISM, CISSP)
-- Compliance Standards (ISO 27001, GDPR, NIS2, DORA)
-- AI Security Topics
-- Assessment & Leadership (Insight Discovery personality tests)
+- **Cybersecurity**: Security Awareness, CISM, CISSP, AI Security, Threat Intelligence, SecOps
+- **Ethical Hacking**: OSCP, CEH, GPEN, eJPT - Penetration Testing certifications
+- **Compliance & Governance**: ISO 27001, GDPR, NIS2, DORA, Data Protection, Privacy
+- **Business & Innovation**: Open Innovation, Bilancio e Controllo (Financial Management)
+- **Assessment & Leadership**: Insight Discovery personality tests
 
 **Premium Features**: Most categories and quizzes marked as premium, requiring active Stripe subscription (€90/year) for access.
 
@@ -121,10 +121,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
-- Added NIS2 Directive category with comprehensive quiz on Network and Information Security requirements
-- Added DORA Regulation category with quiz on Digital Operational Resilience Act for financial sector
-- Implemented Insight Discovery personality assessment with color wheel visualization
-- Created specialized report view for personality tests with 4-color system (Rosso Fuoco, Giallo Sole, Verde Terra, Blu Freddo)
-- Updated pricing to €90/year subscription model
-- Rebranded application to "IBI ACADEMY" with custom logo
-- Added professional stock images for all quiz categories
+- **Expanded Platform Scope**: Evolved from cybersecurity-only to multi-domain professional certification platform
+- **New Compliance Categories**: Added NIS2 Directive and DORA Regulation with comprehensive quizzes
+- **Business & Innovation**: Added Open Innovation and Bilancio e Controllo (Financial Management) categories
+- **Ethical Hacking**: Added dedicated category for OSCP, CEH, GPEN, eJPT penetration testing certifications
+- **Personality Assessment**: Implemented Insight Discovery with color wheel visualization (4-color system: Rosso Fuoco, Giallo Sole, Verde Terra, Blu Freddo)
+- **Branding**: Updated to "Piattaforma #1 per Certificazioni Professionali" - broader positioning
+- **Platform Updates**: €90/year subscription, IBI ACADEMY branding, professional stock images for all categories

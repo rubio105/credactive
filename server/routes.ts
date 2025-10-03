@@ -10,9 +10,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY. Please set this environment variable.');
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-10-28",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -117,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const averageScore = attempts.length > 0 
         ? Math.round(attempts.reduce((sum, a) => sum + a.score, 0) / attempts.length)
         : 0;
-      const totalTime = progress.reduce((sum, p) => sum + p.totalTimeSpent, 0);
+      const totalTime = progress.reduce((sum, p) => sum + (p.totalTimeSpent || 0), 0);
       
       // Calculate current streak (simplified - count recent consecutive days)
       const currentStreak = 7; // Placeholder - would need more complex logic

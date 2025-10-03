@@ -51,8 +51,8 @@ interface QuizResults {
 }
 
 export default function QuizPage() {
-  const [match] = useRoute("/quiz/:quizId");
-  const quizId = match?.quizId;
+  const [match, params] = useRoute("/quiz/:quizId");
+  const quizId = params?.quizId;
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});

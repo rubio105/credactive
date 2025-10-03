@@ -138,7 +138,7 @@ export default function Navigation() {
                       <p className="text-sm font-medium">{getUserName()}</p>
                       <p className="text-xs text-muted-foreground">{typedUser?.email}</p>
                       {typedUser?.isPremium && (
-                        <Badge size="sm" className="mt-1 bg-accent/10 text-accent border-accent/20">
+                        <Badge className="mt-1 bg-accent/10 text-accent border-accent/20 text-xs py-0.5">
                           <Crown className="w-3 h-3 mr-1" />
                           Premium
                         </Badge>

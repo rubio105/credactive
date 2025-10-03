@@ -16,7 +16,7 @@ import {
   type InsertUserProgress,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -129,15 +129,14 @@ export class DatabaseStorage implements IStorage {
     const [existing] = await db
       .select()
       .from(userProgress)
-      .where(eq(userProgress.userId, userId))
-      .where(eq(userProgress.categoryId, categoryId));
+      .where(and(eq(userProgress.userId, userId), eq(userProgress.categoryId, categoryId)));
 
     if (existing) {
       // Update existing progress
-      const newQuizzesCompleted = existing.quizzesCompleted + 1;
-      const newTotalTime = existing.totalTimeSpent + attempt.timeSpent;
+      const newQuizzesCompleted = (existing.quizzesCompleted || 0) + 1;
+      const newTotalTime = (existing.totalTimeSpent || 0) + attempt.timeSpent;
       const newAverageScore = Math.round(
-        ((existing.averageScore * existing.quizzesCompleted) + attempt.score) / newQuizzesCompleted
+        (((existing.averageScore || 0) * (existing.quizzesCompleted || 0)) + attempt.score) / newQuizzesCompleted
       );
 
       await db

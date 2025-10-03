@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { Trophy, ChartLine, Clock, Flame, ShieldCheck, BookOpen, Award, Star } from "lucide-react";
+import { Trophy, ChartLine, Clock, Flame, ShieldCheck, BookOpen, Award, Star, Download } from "lucide-react";
 
 interface DashboardData {
   stats: {
@@ -222,16 +222,26 @@ export default function Dashboard() {
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className={`text-2xl font-bold ${
-                            attempt.score >= 80 ? 'text-success' : 
-                            attempt.score >= 60 ? 'text-warning' : 'text-destructive'
-                          }`} data-testid={`attempt-score-${index}`}>
-                            {attempt.score}%
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className={`text-2xl font-bold ${
+                              attempt.score >= 80 ? 'text-success' : 
+                              attempt.score >= 60 ? 'text-warning' : 'text-destructive'
+                            }`} data-testid={`attempt-score-${index}`}>
+                              {attempt.score}%
+                            </div>
+                            <p className="text-xs text-muted-foreground" data-testid={`attempt-details-${index}`}>
+                              {attempt.correctAnswers}/{attempt.totalQuestions} corrette
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground" data-testid={`attempt-details-${index}`}>
-                            {attempt.correctAnswers}/{attempt.totalQuestions} corrette
-                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(`/api/quiz-reports/${attempt.id}/download`, '_blank')}
+                            data-testid={`button-download-report-${index}`}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}

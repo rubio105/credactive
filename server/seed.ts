@@ -181,6 +181,39 @@ const quizData = [
   },
   {
     category: {
+      name: "EU Privacy & ePrivacy",
+      slug: "eu-privacy",
+      description: "Normative europee sulla privacy",
+      icon: "user-lock",
+      color: "purple",
+      isPremium: true
+    },
+    quizzes: [
+      {
+        title: "EU Privacy Law & ePrivacy",
+        description: "Normative europee sulla privacy e direttive ePrivacy",
+        duration: 40,
+        difficulty: "intermediate",
+        isPremium: true,
+        questions: [
+          {
+            question: "Quale direttiva regola la privacy nelle comunicazioni elettroniche nell'UE?",
+            options: [
+              { label: "A", text: "GDPR" },
+              { label: "B", text: "ePrivacy Directive" },
+              { label: "C", text: "NIS Directive" },
+              { label: "D", text: "PSD2" }
+            ],
+            correctAnswer: "B",
+            explanation: "La ePrivacy Directive (2002/58/EC) regola la privacy nelle comunicazioni elettroniche",
+            category: "EU Privacy Law"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    category: {
       name: "AI Security",
       slug: "ai-security",
       description: "Sicurezza nell'intelligenza artificiale",
@@ -207,6 +240,105 @@ const quizData = [
             correctAnswer: "B",
             explanation: "Gli attacchi adversarial utilizzano input modificati per ingannare i modelli",
             category: "AI Threats"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    category: {
+      name: "Data Protection & Privacy",
+      slug: "data-protection-privacy",
+      description: "Protezione dati e privacy",
+      icon: "database",
+      color: "pink",
+      isPremium: true
+    },
+    quizzes: [
+      {
+        title: "Data Protection & Privacy",
+        description: "Tecniche avanzate di protezione dei dati e privacy",
+        duration: 55,
+        difficulty: "advanced",
+        isPremium: true,
+        questions: [
+          {
+            question: "Qual è la differenza principale tra crittografia simmetrica e asimmetrica?",
+            options: [
+              { label: "A", text: "La velocità di elaborazione" },
+              { label: "B", text: "Il numero di chiavi utilizzate" },
+              { label: "C", text: "Il livello di sicurezza" },
+              { label: "D", text: "La compatibilità con i sistemi legacy" }
+            ],
+            correctAnswer: "B",
+            explanation: "La crittografia simmetrica usa una chiave, quella asimmetrica usa una coppia di chiavi",
+            category: "Cryptography"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    category: {
+      name: "Threat Intelligence & AI",
+      slug: "threat-intelligence-ai",
+      description: "Intelligence delle minacce con AI",
+      icon: "biohazard",
+      color: "red",
+      isPremium: true
+    },
+    quizzes: [
+      {
+        title: "Threat Intelligence & AI",
+        description: "Utilizzo dell'AI per threat intelligence e detection",
+        duration: 70,
+        difficulty: "expert",
+        isPremium: true,
+        questions: [
+          {
+            question: "Come può l'AI migliorare la threat intelligence?",
+            options: [
+              { label: "A", text: "Automatizzando l'analisi di grandi volumi di dati" },
+              { label: "B", text: "Sostituendo completamente gli analisti umani" },
+              { label: "C", text: "Eliminando tutti i falsi positivi" },
+              { label: "D", text: "Prevenendo tutti gli attacchi zero-day" }
+            ],
+            correctAnswer: "A",
+            explanation: "L'AI può analizzare grandi quantità di dati per identificare pattern e minacce",
+            category: "AI Threat Detection"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    category: {
+      name: "SecOps & AI Automation",
+      slug: "secops-ai-automation",
+      description: "Operazioni di sicurezza automatizzate con AI",
+      icon: "robot",
+      color: "violet",
+      isPremium: true
+    },
+    quizzes: [
+      {
+        title: "SecOps & AI Automation",
+        description: "Automazione delle operazioni di sicurezza con AI e SOAR",
+        duration: 65,
+        difficulty: "expert",
+        isPremium: true,
+        questions: [
+          {
+            question: "Cos'è una piattaforma SOAR?",
+            options: [
+              { label: "A", text: "Security Operations Analysis and Recovery" },
+              { label: "B", text: "Security Orchestration, Automation and Response" },
+              { label: "C", text: "System Operations and Risk" },
+              { label: "D", text: "Secure Online Access Registry" }
+            ],
+            correctAnswer: "B",
+            explanation: "SOAR sta per Security Orchestration, Automation and Response",
+            category: "SecOps Tools"
           }
         ]
       }

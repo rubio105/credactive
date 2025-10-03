@@ -85,7 +85,7 @@ export default function Landing() {
               <div className="flex items-center space-x-8 pt-6">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-success" />
-                  <span className="text-sm">2.000+ Domande</span>
+                  <span className="text-sm">10.000+ Domande</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-success" />
@@ -93,7 +93,7 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-success" />
-                  <span className="text-sm">Certificati</span>
+                  <span className="text-sm">Corsi Live</span>
                 </div>
               </div>
             </div>

@@ -85,6 +85,11 @@ export default function ReportPage() {
     enabled: !!attemptId,
   });
 
+  const handleDownload = () => {
+    if (!attemptId) return;
+    window.open(`/api/quiz-reports/${attemptId}/download`, '_blank');
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -145,9 +150,9 @@ export default function ReportPage() {
               Analisi completa della tua personalità
             </p>
           </div>
-          <Button variant="outline" data-testid="button-download-report">
+          <Button variant="outline" onClick={handleDownload} data-testid="button-download-report">
             <Download className="w-4 h-4 mr-2" />
-            Scarica PDF
+            Scarica Report
           </Button>
         </div>
 

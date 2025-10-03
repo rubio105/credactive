@@ -528,6 +528,289 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download quiz report
+  app.get('/api/quiz-reports/:attemptId/download', isAuthenticated, async (req: any, res) => {
+    try {
+      const { attemptId } = req.params;
+      const report = await storage.getQuizReport(attemptId);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      // Check if user owns this report
+      if (report.userId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // HTML escape function to prevent XSS
+      const escapeHtml = (text: string): string => {
+        const map: { [key: string]: string } = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, (m) => map[m]);
+      };
+
+      // Get user info
+      const user = await storage.getUserById(report.userId);
+      const userName = escapeHtml(user?.name || 'Utente');
+
+      // Format date
+      const reportDate = new Date(report.createdAt).toLocaleDateString('it-IT', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // Check if this is an Insight Discovery report
+      const isInsightReport = 'dominantColor' in report.reportData;
+
+      // Create HTML content
+      let htmlContent = `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Quiz - IBI ACADEMY</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #3b82f6;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: #3b82f6;
+      margin: 0;
+    }
+    .meta-info {
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .score-summary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .score {
+      font-size: 48px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section h2 {
+      color: #1e293b;
+      border-left: 4px solid #3b82f6;
+      padding-left: 12px;
+      margin-bottom: 15px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-box {
+      text-align: center;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #3b82f6;
+    }
+    .weak-area {
+      background: #fef3c7;
+      padding: 12px;
+      border-left: 4px solid #f59e0b;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+    .strength {
+      background: #d1fae5;
+      padding: 12px;
+      border-left: 4px solid #10b981;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+    .recommendation {
+      background: #dbeafe;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3b82f6;
+    }
+    .footer {
+      margin-top: 50px;
+      text-align: center;
+      color: #64748b;
+      font-size: 14px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+    }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎓 IBI ACADEMY</h1>
+    <p>Report Quiz Dettagliato</p>
+  </div>
+
+  <div class="meta-info">
+    <p><strong>Utente:</strong> ${userName}</p>
+    <p><strong>Data:</strong> ${reportDate}</p>
+  </div>
+`;
+
+      if (isInsightReport) {
+        const data = report.reportData as any;
+        htmlContent += `
+  <div class="score-summary">
+    <h2>Il Tuo Profilo Insight Discovery</h2>
+    <p style="font-size: 20px; margin: 15px 0;">
+      <strong>${escapeHtml(data.dominantColor.name)}</strong> (${escapeHtml(String(data.dominantColor.percentage))}%)
+    </p>
+    <p>con influenza <strong>${escapeHtml(data.secondaryColor.name)}</strong> (${escapeHtml(String(data.secondaryColor.percentage))}%)</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 Distribuzione Colori</h2>
+    <div class="stats">
+      ${data.colorScores.map((cs: any) => `
+        <div class="stat-box">
+          <div class="stat-value">${escapeHtml(String(cs.percentage))}%</div>
+          <div>${escapeHtml(cs.name)}</div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>💼 Stile di Lavoro</h2>
+    <p>${escapeHtml(data.workingStyle)}</p>
+  </div>
+
+  <div class="section">
+    <h2>💬 Stile di Comunicazione</h2>
+    <p>${escapeHtml(data.communicationStyle)}</p>
+  </div>
+
+  <div class="section">
+    <h2>✨ Punti di Forza</h2>
+    ${data.strengths.map((s: string) => `<div class="strength">✓ ${escapeHtml(s)}</div>`).join('')}
+  </div>
+
+  <div class="section">
+    <h2>📈 Aree di Sviluppo</h2>
+    ${data.developmentAreas.map((a: string) => `<div class="weak-area">→ ${escapeHtml(a)}</div>`).join('')}
+  </div>
+
+  <div class="section">
+    <h2>💡 Raccomandazioni</h2>
+    <div class="recommendation">
+      ${escapeHtml(data.recommendations).replace(/\n/g, '<br>')}
+    </div>
+  </div>
+`;
+      } else {
+        const data = report.reportData as any;
+        const passStatus = data.passStatus === 'pass' ? 'SUPERATO ✓' : 'NON SUPERATO ✗';
+        const passColor = data.passStatus === 'pass' ? '#10b981' : '#ef4444';
+        
+        htmlContent += `
+  <div class="score-summary" style="background: linear-gradient(135deg, ${passColor} 0%, ${passColor}dd 100%);">
+    <div class="score">${escapeHtml(String(data.score))}%</div>
+    <h2>${passStatus}</h2>
+    <p>${escapeHtml(String(data.correctAnswers))} corrette su ${escapeHtml(String(data.totalQuestions))} domande</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <div class="stat-value" style="color: #10b981;">${escapeHtml(String(data.correctAnswers))}</div>
+      <div>Corrette</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" style="color: #ef4444;">${escapeHtml(String(data.totalQuestions - data.correctAnswers))}</div>
+      <div>Sbagliate</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" style="color: #3b82f6;">${escapeHtml(String(Math.floor(data.timeSpent / 60)))}:${escapeHtml((data.timeSpent % 60).toString().padStart(2, '0'))}</div>
+      <div>Tempo</div>
+    </div>
+  </div>
+
+  ${data.weakAreas && data.weakAreas.length > 0 ? `
+  <div class="section">
+    <h2>📉 Aree da Migliorare</h2>
+    ${data.weakAreas.map((area: any) => `
+      <div class="weak-area">
+        <strong>${escapeHtml(area.category)}</strong>: ${escapeHtml(String(area.wrongCount))} errori su ${escapeHtml(String(area.totalCount))} domande (${escapeHtml(String(area.percentage))}%)
+      </div>
+    `).join('')}
+  </div>
+  ` : ''}
+
+  ${data.strengths && data.strengths.length > 0 ? `
+  <div class="section">
+    <h2>✨ Punti di Forza</h2>
+    ${data.strengths.map((s: string) => `<div class="strength">✓ ${escapeHtml(s)}</div>`).join('')}
+  </div>
+  ` : ''}
+
+  <div class="section">
+    <h2>💡 Raccomandazioni</h2>
+    <div class="recommendation">
+      ${escapeHtml(data.recommendations).replace(/\n/g, '<br>')}
+    </div>
+  </div>
+`;
+      }
+
+      htmlContent += `
+  <div class="footer">
+    <p>Report generato da IBI ACADEMY - Piattaforma #1 per Certificazioni Professionali</p>
+    <p>${reportDate}</p>
+  </div>
+</body>
+</html>
+`;
+
+      // Set headers for download
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="report-quiz-${attemptId}.html"`);
+      res.send(htmlContent);
+
+    } catch (error) {
+      console.error("Error downloading quiz report:", error);
+      res.status(500).json({ message: "Failed to download report" });
+    }
+  });
+
   // Admin - Generate AI questions
   app.post('/api/admin/generate-questions', isAdmin, async (req, res) => {
     try {

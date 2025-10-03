@@ -157,11 +157,12 @@ Preferred communication style: Simple, everyday language.
   - Service: server/aiQuestionGenerator.ts for batch OpenAI API calls
   - Endpoint: POST /api/admin/generate-questions for question generation
   - UI: AdminQuizzes component enhanced with AI generation dialog
-  - Database populated with 250+ questions across CISSP (81), ISO 27001 (31), CISM (26), GDPR (21), and other quizzes
+  - Database populated with 434 questions: CISSP (171), ISO 27001 (129), GDPR (91), and other quizzes
 - **Question Images Support** (October 3, 2025): Added image upload for visual questions
   - Upload endpoint: POST /api/admin/upload (admin only, max 5MB, jpeg/jpg/png/gif/webp)
   - Images stored in public/question-images/ directory
   - Admin panel enhanced with image upload UI in question creation/edit form
   - Quiz interface displays images when present (data-testid="question-image")
   - Stock images downloaded for architecture diagrams, network topology, security designs
-  - Schema updated: correctAnswer changed from varchar(10) to text to support full answer text
+  - Schema updated: correctAnswer stores single letter (A/B/C/D) for consistent scoring
+  - Automated bulk generation: Successfully populated 434 questions across 16 quizzes using batch AI generation

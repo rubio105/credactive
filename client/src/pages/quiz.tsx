@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -54,6 +54,7 @@ interface QuizResults {
 export default function QuizPage() {
   const [match, params] = useRoute("/quiz/:quizId");
   const quizId = params?.quizId;
+  const [, setLocation] = useLocation();
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -63,6 +64,7 @@ export default function QuizPage() {
   const [results, setResults] = useState<QuizResults | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [showExplanation, setShowExplanation] = useState(false);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -78,6 +80,7 @@ export default function QuizPage() {
       return response.json();
     },
     onSuccess: (data) => {
+      setAttemptId(data.id); // Save attempt ID for report link
       queryClient.invalidateQueries({ queryKey: ["/api/user/dashboard"] });
       toast({
         title: "Quiz Completato!",
@@ -333,6 +336,16 @@ export default function QuizPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4">
+            {attemptId && (
+              <Button 
+                className="flex-1" 
+                onClick={() => setLocation(`/report/${attemptId}`)}
+                data-testid="button-view-report"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Visualizza Report Dettagliato
+              </Button>
+            )}
             <Button 
               className="flex-1" 
               onClick={handleRetakeQuiz}

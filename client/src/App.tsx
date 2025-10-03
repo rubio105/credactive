@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import Quiz from "@/pages/quiz";
 import Dashboard from "@/pages/dashboard";
 import Subscribe from "@/pages/subscribe";
+import Report from "@/pages/report";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
           <Route path="/quiz/:quizId" component={Quiz} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/subscribe" component={Subscribe} />
+          <Route path="/report/:attemptId" component={Report} />
         </>
       )}
       <Route component={NotFound} />

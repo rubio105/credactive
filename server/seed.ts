@@ -51,7 +51,7 @@ const quizData = [
     category: {
       name: "CISM Certification",
       slug: "cism",
-      description: "Preparazione per la certificazione CISM",
+      description: "Certified Information Security Manager (CISM) - Certificazione globale riconosciuta per professionisti della sicurezza informatica. La certificazione CISM è ideale per manager e professionisti che gestiscono, progettano e valutano programmi di sicurezza delle informazioni aziendali. Requisiti: minimo 5 anni di esperienza lavorativa nella sicurezza informatica, con almeno 3 anni in un ruolo manageriale. Esame: 150 domande, 240 minuti. Punteggio minimo: 450/800. Domini: Governance della Sicurezza Informatica, Gestione del Rischio, Sviluppo e Gestione del Programma di Sicurezza, Gestione degli Incidenti.",
       icon: "user-shield",
       color: "slate",
       isPremium: true
@@ -84,7 +84,7 @@ const quizData = [
     category: {
       name: "CISSP Certification",
       slug: "cissp",
-      description: "Preparazione per la certificazione CISSP",
+      description: "Certified Information Systems Security Professional (CISSP) - La certificazione di sicurezza informatica più riconosciuta al mondo. CISSP dimostra la competenza nel progettare, implementare e gestire programmi di sicurezza informatica. Requisiti: minimo 5 anni di esperienza professionale retribuita in almeno 2 degli 8 domini CISSP. Esame: 125-175 domande, 180 minuti. Punteggio minimo: 700/1000. Domini: Security & Risk Management, Asset Security, Security Architecture & Engineering, Communication & Network Security, Identity & Access Management (IAM), Security Assessment & Testing, Security Operations, Software Development Security.",
       icon: "certificate",
       color: "purple",
       isPremium: true
@@ -117,7 +117,7 @@ const quizData = [
     category: {
       name: "ISO 27001/27002",
       slug: "iso-27001",
-      description: "Standard internazionali per la gestione della sicurezza",
+      description: "ISO 27001 è lo standard internazionale per i sistemi di gestione della sicurezza delle informazioni (ISMS). Definisce i requisiti per stabilire, implementare, mantenere e migliorare continuamente un ISMS. ISO 27002 fornisce le linee guida per i controlli di sicurezza. Ideale per: Security Manager, Auditor, Consultant. Certificazione: L'organizzazione viene certificata ISO 27001, non l'individuo. I professionisti possono ottenere certificazioni come Lead Implementer o Lead Auditor. Esame tipico Lead Auditor: 40 domande, 60 minuti. Punteggio minimo: 70%. Copre: Annex A controls, risk assessment, ISMS implementation, audit procedures.",
       icon: "file-contract",
       color: "green",
       isPremium: true
@@ -150,7 +150,7 @@ const quizData = [
     category: {
       name: "GDPR Compliance",
       slug: "gdpr",
-      description: "Regolamento europeo sulla protezione dei dati",
+      description: "General Data Protection Regulation (GDPR) - Il regolamento UE 2016/679 sulla protezione dei dati personali, entrato in vigore il 25 maggio 2018. Obbligatorio per tutte le organizzazioni che trattano dati di cittadini UE. Principi chiave: lawfulness, fairness, transparency, purpose limitation, data minimization, accuracy, storage limitation, integrity and confidentiality, accountability. Diritti degli interessati: accesso, rettifica, cancellazione (diritto all'oblio), limitazione del trattamento, portabilità, opposizione. Sanzioni: fino a €20 milioni o 4% del fatturato globale annuo. Certificazioni disponibili: CIPP/E (Certified Information Privacy Professional/Europe), CIPM (Certified Information Privacy Manager).",
       icon: "balance-scale",
       color: "indigo",
       isPremium: true

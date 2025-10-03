@@ -34,6 +34,7 @@ interface Category {
   icon: string;
   color: string;
   isPremium: boolean;
+  sortOrder: number;
   imageUrl?: string;
 }
 
@@ -101,6 +102,7 @@ export function AdminCategories() {
       icon: '',
       color: '',
       isPremium: true,
+      sortOrder: 0,
     });
     setIsCreating(true);
     setIsDialogOpen(true);
@@ -172,6 +174,7 @@ export function AdminCategories() {
               <TableHead>Nome</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Descrizione</TableHead>
+              <TableHead>Ordine</TableHead>
               <TableHead>Premium</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
@@ -182,6 +185,7 @@ export function AdminCategories() {
                 <TableCell className="font-medium">{category.name}</TableCell>
                 <TableCell>{category.slug}</TableCell>
                 <TableCell className="max-w-xs truncate">{category.description}</TableCell>
+                <TableCell>{category.sortOrder}</TableCell>
                 <TableCell>
                   {category.isPremium ? (
                     <Badge variant="default">Premium</Badge>
@@ -258,7 +262,7 @@ export function AdminCategories() {
                   data-testid="textarea-description"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="icon">Icona</Label>
                   <Input
@@ -277,6 +281,17 @@ export function AdminCategories() {
                     onChange={(e) => setEditingCategory({ ...editingCategory, color: e.target.value })}
                     placeholder="es. blue-600"
                     data-testid="input-color"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="sortOrder">Ordine</Label>
+                  <Input
+                    id="sortOrder"
+                    type="number"
+                    value={editingCategory.sortOrder ?? 0}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, sortOrder: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                    data-testid="input-sortOrder"
                   />
                 </div>
               </div>

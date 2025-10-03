@@ -27,12 +27,20 @@ interface LiveCourseSession {
   status: string;
 }
 
+interface ProgramModule {
+  moduleTitle: string;
+  hours: string;
+  topics?: string;
+}
+
 interface LiveCourse {
   id: string;
   quizId: string;
   title: string;
-  description: string;
-  program?: string;
+  description?: string;
+  objectives?: string;
+  programModules?: ProgramModule[];
+  cosaInclude?: string[];
   instructor?: string;
   duration?: string;
   price: number;
@@ -123,8 +131,8 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
   });
 
   const purchaseMutation = useMutation({
-    mutationFn: (data: { courseId: string; sessionId: string }) =>
-      apiRequest('/api/live-courses/purchase', 'POST', data),
+    mutationFn: async (data: { courseId: string; sessionId: string }) =>
+      apiRequest('/api/live-courses/purchase', 'POST', data) as Promise<{ clientSecret: string }>,
     onSuccess: (data: { clientSecret: string }) => {
       setClientSecret(data.clientSecret);
     },
@@ -196,11 +204,26 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
 
         {!selectedSession ? (
           <div className="space-y-6">
-            {courseData.program && (
-              <div className="border-l-4 border-primary/30 pl-4 py-2">
-                <h3 className="font-semibold mb-2 text-sm uppercase text-muted-foreground">Programma del Corso</h3>
-                <div className="text-sm whitespace-pre-line" data-testid="course-program">
-                  {courseData.program}
+            {courseData.objectives && (
+              <div>
+                <h3 className="font-semibold mb-2">Obiettivi del corso</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed" data-testid="course-objectives">
+                  {courseData.objectives}
+                </p>
+              </div>
+            )}
+
+            {courseData.programModules && courseData.programModules.length > 0 && (
+              <div className="border border-border rounded-lg p-4 bg-accent/10">
+                <h3 className="font-bold mb-3 uppercase text-sm tracking-wide">PROGRAMMA DEL CORSO</h3>
+                <div className="space-y-2" data-testid="course-program-modules">
+                  {courseData.programModules.map((module, idx) => (
+                    <div key={idx} className="text-sm">
+                      <span className="font-medium">{module.moduleTitle}</span>
+                      {module.hours && <span className="text-muted-foreground"> ({module.hours})</span>}
+                      {module.topics && <span className="text-muted-foreground">: {module.topics}</span>}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -249,31 +272,41 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
               )}
             </div>
 
-            {courseData.instructor && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold">Docente:</span>
-                <span className="text-muted-foreground" data-testid="course-instructor">{courseData.instructor}</span>
-              </div>
-            )}
+            <div className="flex gap-4 text-sm">
+              {courseData.instructor && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Docente:</span>
+                  <span className="text-muted-foreground" data-testid="course-instructor">{courseData.instructor}</span>
+                </div>
+              )}
 
-            {courseData.duration && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold">Durata:</span>
-                <span className="text-muted-foreground" data-testid="course-duration">{courseData.duration}</span>
-              </div>
-            )}
+              {courseData.duration && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Durata:</span>
+                  <span className="text-muted-foreground" data-testid="course-duration">{courseData.duration}</span>
+                </div>
+              )}
+            </div>
 
-            <div className="bg-accent/20 p-4 rounded-lg">
-              <h4 className="font-semibold mb-2 flex items-center gap-2">
-                <Check className="w-4 h-4 text-primary" />
+            <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-4 rounded-lg border border-primary/20">
+              <h4 className="font-semibold mb-3 flex items-center gap-2 text-primary">
+                <Check className="w-5 h-5" />
                 Cosa Include
               </h4>
-              <ul className="text-sm space-y-1 ml-6 list-disc text-muted-foreground">
-                <li>Formazione live con {courseData.instructor || 'esperti del settore'}</li>
-                <li>Materiale didattico completo</li>
-                <li>Certificato di partecipazione</li>
-                <li>Accesso al gruppo di supporto</li>
-                <li>Q&A e casi studio pratici</li>
+              <ul className="text-sm space-y-2 ml-6 list-disc text-foreground/80" data-testid="course-includes">
+                {courseData.cosaInclude && courseData.cosaInclude.length > 0 ? (
+                  courseData.cosaInclude.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))
+                ) : (
+                  <>
+                    <li>Formazione live con {courseData.instructor || 'esperti del settore'}</li>
+                    <li>Materiale didattico completo</li>
+                    <li>Certificato di partecipazione</li>
+                    <li>Accesso al gruppo di supporto</li>
+                    <li>Q&A e casi studio pratici</li>
+                  </>
+                )}
               </ul>
             </div>
           </div>

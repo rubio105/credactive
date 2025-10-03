@@ -28,12 +28,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 
+interface ProgramModule {
+  moduleTitle: string;
+  hours: string;
+  topics?: string;
+}
+
 interface LiveCourse {
   id: string;
   quizId: string;
   title: string;
-  description: string;
-  program?: string;
+  description?: string;
+  objectives?: string;
+  programModules?: ProgramModule[];
+  cosaInclude?: string[];
   instructor?: string;
   duration?: string;
   price: number;
@@ -63,6 +71,8 @@ export function AdminLiveCourses() {
   const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
   const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [programModulesJson, setProgramModulesJson] = useState<string>('');
+  const [cosaIncludeJson, setCosaIncludeJson] = useState<string>('');
 
   const { data: courses, isLoading: coursesLoading } = useQuery<LiveCourse[]>({
     queryKey: ["/api/admin/live-courses"],
@@ -162,31 +172,67 @@ export function AdminLiveCourses() {
     setEditingCourse({
       title: '',
       description: '',
-      program: '',
+      objectives: '',
       instructor: '',
       duration: '',
       price: 0,
       quizId: '',
     });
+    setProgramModulesJson('[]');
+    setCosaIncludeJson('[]');
     setIsCourseDialogOpen(true);
   };
 
   const handleEditCourse = (course: LiveCourse) => {
     setEditingCourse(course);
+    setProgramModulesJson(course.programModules ? JSON.stringify(course.programModules, null, 2) : '[]');
+    setCosaIncludeJson(course.cosaInclude ? JSON.stringify(course.cosaInclude, null, 2) : '[]');
     setIsCourseDialogOpen(true);
   };
 
   const handleSaveCourse = () => {
     if (!editingCourse) return;
 
-    console.log("Saving course with data:", editingCourse);
+    // Validate and parse JSON fields
+    let programModules: ProgramModule[] | undefined;
+    let cosaInclude: string[] | undefined;
+
+    try {
+      programModules = programModulesJson ? JSON.parse(programModulesJson) : undefined;
+    } catch (e) {
+      toast({ 
+        title: "Errore JSON", 
+        description: "Il campo 'Programma Moduli' contiene JSON non valido", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    try {
+      cosaInclude = cosaIncludeJson ? JSON.parse(cosaIncludeJson) : undefined;
+    } catch (e) {
+      toast({ 
+        title: "Errore JSON", 
+        description: "Il campo 'Cosa Include' contiene JSON non valido", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    const courseData = {
+      ...editingCourse,
+      programModules,
+      cosaInclude,
+    };
+
+    console.log("Saving course with data:", courseData);
 
     if (editingCourse.id) {
       // Remove timestamps and id before update
-      const { id, createdAt, updatedAt, ...updates } = editingCourse as LiveCourse;
+      const { id, createdAt, updatedAt, ...updates } = courseData as LiveCourse;
       updateCourseMutation.mutate({ id: editingCourse.id, updates });
     } else {
-      createCourseMutation.mutate(editingCourse);
+      createCourseMutation.mutate(courseData);
     }
   };
 
@@ -393,25 +439,55 @@ export function AdminLiveCourses() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">Descrizione Breve</Label>
               <Textarea
                 id="description"
                 value={editingCourse?.description || ''}
                 onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
                 data-testid="input-course-description"
+                rows={2}
+              />
+            </div>
+            <div>
+              <Label htmlFor="objectives">Obiettivi del Corso</Label>
+              <Textarea
+                id="objectives"
+                value={editingCourse?.objectives || ''}
+                onChange={(e) => setEditingCourse({ ...editingCourse, objectives: e.target.value })}
+                placeholder="Comprendere i principi del GDPR, Applicare correttamente le misure di sicurezza..."
+                data-testid="input-course-objectives"
                 rows={3}
               />
             </div>
             <div>
-              <Label htmlFor="program">Programma del Corso</Label>
+              <Label htmlFor="programModules">Programma Moduli (JSON)</Label>
               <Textarea
-                id="program"
-                value={editingCourse?.program || ''}
-                onChange={(e) => setEditingCourse({ ...editingCourse, program: e.target.value })}
-                placeholder="Inserisci il programma dettagliato del corso..."
-                data-testid="input-course-program"
+                id="programModules"
+                value={programModulesJson}
+                onChange={(e) => setProgramModulesJson(e.target.value)}
+                placeholder='[{"moduleTitle": "Modulo 1", "hours": "3h", "topics": "Introduzione..."}]'
+                data-testid="input-course-program-modules"
                 rows={5}
+                className="font-mono text-xs"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Formato: Array di oggetti con moduleTitle, hours, topics
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="cosaInclude">Cosa Include (JSON array di stringhe)</Label>
+              <Textarea
+                id="cosaInclude"
+                value={cosaIncludeJson}
+                onChange={(e) => setCosaIncludeJson(e.target.value)}
+                placeholder='["Formazione live", "Materiale didattico", "Certificato"]'
+                data-testid="input-course-cosa-include"
+                rows={4}
+                className="font-mono text-xs"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Formato: Array di stringhe
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

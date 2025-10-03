@@ -145,16 +145,18 @@ Preferred communication style: Simple, everyday language.
 
 - **Live Courses System - Complete** (October 3, 2025): Fully integrated live course purchase system
   - **Database**: liveCourses, liveCourseSessions, liveCourseEnrollments tables with proper relations
-    - Course fields: title, description, program (curriculum), instructor (docente), duration (durata), price
+    - Course fields: title, description, objectives (obiettivi), programModules (JSONB array), cosaInclude (JSONB array), instructor (docente), duration (durata), price
+    - Structured data: programModules stores [{moduleTitle, hours, topics}], cosaInclude stores string array
   - **Backend API**: 
     - Admin CRUD: POST/PUT/DELETE /api/admin/live-courses, session management
     - Public: GET /api/live-courses/quiz/:quizId for course lookup
     - Purchase: POST /api/live-courses/purchase (Stripe payment intent creation)
     - Enrollment: POST /api/live-courses/confirm-enrollment (post-payment confirmation)
+    - Automatic JSONB handling via Drizzle ORM
   - **Frontend**:
     - QuizCard: Added "Corso Live" button for designated quizzes
-    - LiveCourseModal: Complete purchase flow with session selection, displays program/instructor/duration
-    - AdminLiveCourses: Full admin panel with program/instructor/duration fields
+    - LiveCourseModal: Rich UI with objectives, structured program modules, "Cosa Include" section, instructor/duration badges
+    - AdminLiveCourses: Full admin panel with JSON input for programModules and cosaInclude, validation on save
     - Home page integration with 6 target quizzes
   - **Stripe Integration**: One-time payment flow (separate from premium subscription)
   - **Capacity Management**: Session enrollment tracking with availability status
@@ -162,7 +164,8 @@ Preferred communication style: Simple, everyday language.
   - **Bug Fixes**: 
     - Created updateUserStripeCustomer() to prevent accidental premium upgrade on course purchase
     - Fixed apiRequest parameter order (url, method, data) for correct HTTP requests
-  - **UX**: Live dates displayed in modal, real-time availability checking, payment confirmation flow, course details (program/instructor/duration)
+    - Fixed admin JSON input fields to use draft state for proper editing (October 3, 2025)
+  - **UX**: Professional course display with objectives, modular program, benefits list, live dates, payment confirmation flow
 
 ## Previous Changes
 

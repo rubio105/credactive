@@ -784,7 +784,7 @@ ${JSON.stringify(questionsToTranslate)}`
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
           });
           customerId = customer.id;
-          await storage.updateUserStripeInfo(userId, customerId);
+          await storage.updateUserStripeCustomer(userId, customerId);
         }
 
         // Create payment intent for live course

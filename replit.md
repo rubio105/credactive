@@ -143,6 +143,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+- **Live Courses System** (October 3, 2025): Integrated live course purchase system for premium quizzes
+  - Database: liveCourses, liveCourseSessions, liveCourseEnrollments tables
+  - Admin CRUD: Full management of courses and session dates via API
+  - Stripe Integration: One-time payment flow (separate from premium subscription)
+  - Capacity Management: Session enrollment tracking with availability status
+  - Target Quizzes: DORA, GDPR, ISO 27001, NIS2, Data Protection, EU Privacy Law
+  - Bug Fix: Separated course purchase from premium upgrade (updateUserStripeCustomer)
+
+## Previous Changes
+
 - **Expanded Platform Scope**: Evolved from cybersecurity-only to multi-domain professional certification platform
 - **New Compliance Categories**: Added NIS2 Directive and DORA Regulation with comprehensive quizzes
 - **Business & Innovation**: Added Open Innovation and Bilancio e Controllo (Financial Management) categories

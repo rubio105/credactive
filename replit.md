@@ -1,0 +1,111 @@
+# Overview
+
+This is a quiz platform application that helps users test their knowledge in cyber security and related topics. The platform offers various quiz categories including cyber security awareness, professional certifications (CISM, CISSP), compliance standards (ISO 27001, GDPR), and AI security topics. Users can take quizzes, track their progress, receive detailed reports, and subscribe to premium content through Stripe.
+
+The application is built as a full-stack TypeScript project with a React frontend and Express backend, using PostgreSQL for data persistence.
+
+# User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+# System Architecture
+
+## Frontend Architecture
+
+**Technology Stack**: React with TypeScript, using Vite as the build tool and development server.
+
+**UI Framework**: shadcn/ui component library built on Radix UI primitives, styled with Tailwind CSS. This provides a consistent, accessible component system with the "new-york" style variant.
+
+**State Management**: TanStack Query (React Query) for server state management and data fetching. No global client state management library is used - component state and React Query handle all state needs.
+
+**Routing**: Wouter for lightweight client-side routing, handling navigation between landing, home, quiz, dashboard, subscribe, and report pages.
+
+**Forms**: React Hook Form with Zod validation resolvers for type-safe form handling.
+
+**Path Aliases**: Configured to use `@/` for client source files and `@shared/` for shared types/schemas, making imports cleaner and more maintainable.
+
+## Backend Architecture
+
+**Framework**: Express.js server running on Node.js with TypeScript.
+
+**API Design**: RESTful API with routes organized by feature (auth, quiz data, user progress, payments).
+
+**Authentication**: Replit Auth using OpenID Connect (OIDC) with Passport.js strategy. Session management uses express-session with PostgreSQL session storage (connect-pg-simple).
+
+**Database Access**: Drizzle ORM providing type-safe database queries. The schema is defined once in TypeScript and shared between frontend and backend through the `@shared/schema` module.
+
+**Build Process**: Development uses tsx for running TypeScript directly. Production build uses esbuild to bundle the server and Vite to bundle the client, with both outputs placed in the dist directory.
+
+**Request Flow**: Express middleware handles JSON parsing (with raw body capture for webhook verification), request logging, and authentication checks before routing to handlers.
+
+## Data Storage
+
+**Database**: PostgreSQL using Neon's serverless driver with WebSocket support for serverless environments.
+
+**ORM**: Drizzle ORM with schema-first design. Schema definitions live in `shared/schema.ts` and are used to generate types and migration files.
+
+**Schema Design**:
+- Users table stores authentication data and Stripe customer information
+- Categories and quizzes tables define the quiz structure hierarchy
+- Questions table stores quiz content with JSONB for flexible option structures
+- User progress tracked through userQuizAttempts and userProgress tables
+- Quiz reports stored as JSONB for flexible report data structures
+- Sessions table for secure session management
+
+**Migrations**: Managed through drizzle-kit, with migration files generated in the migrations directory and applied via `db:push` script.
+
+**Type Safety**: Full type safety from database to frontend through Drizzle's type inference and shared schema types.
+
+## Authentication & Authorization
+
+**Strategy**: Replit Auth provides the authentication layer, handling user identity through OIDC.
+
+**Session Management**: Express-session with PostgreSQL backing for persistent sessions. Sessions configured with 1-week TTL, httpOnly cookies, and secure flags.
+
+**User Flow**: Unauthenticated users see the landing page. After login via `/api/login`, users are redirected to the authenticated home page. The `isAuthenticated` middleware protects API routes.
+
+**User Data**: After successful authentication, user profile is upserted in the database with data from OIDC claims (email, name, profile image).
+
+**Frontend Auth Checks**: Custom `useAuth` hook wraps React Query to fetch current user, providing `isAuthenticated` and `isLoading` states throughout the app.
+
+## External Dependencies
+
+**Stripe Payment Integration**: 
+- Stripe SDK for payment processing and subscription management
+- Stripe Elements/Stripe.js for secure payment UI on the subscribe page
+- Webhook handling for subscription lifecycle events
+- Users linked to Stripe customers via stripeCustomerId and stripeSubscriptionId fields
+
+**Replit Platform Services**:
+- Replit Auth for authentication (OIDC)
+- Replit-specific Vite plugins for development (cartographer for navigation, dev banner, runtime error overlay)
+- Environment variables for Replit-specific configuration (REPL_ID, REPLIT_DOMAINS)
+
+**Neon Database**:
+- Serverless PostgreSQL with WebSocket support
+- Connection via DATABASE_URL environment variable
+- Used through @neondatabase/serverless package
+
+**UI Dependencies**:
+- Radix UI primitives for accessible component foundations
+- Lucide React for icon system
+- Tailwind CSS for utility-first styling
+- Custom font imports (Inter, JetBrains Mono, DM Sans, etc.)
+
+**Development Tools**:
+- TypeScript for type safety across the stack
+- ESBuild for fast server bundling
+- Vite for fast frontend development and building
+- TSX for running TypeScript in development
+
+## Quiz System Architecture
+
+**Quiz Structure**: Hierarchical - Categories contain Quizzes which contain Questions. Questions support multiple choice with explanations.
+
+**Quiz Taking Flow**: Questions are shuffled on quiz start. Timer tracks duration. Answers submitted together at completion. Results generated server-side with detailed reports.
+
+**Report Generation**: Server-side report generator analyzes answers, identifies weak areas by category, provides recommendations, and stores comprehensive results for later review.
+
+**Premium Features**: Some categories and quizzes marked as premium, requiring active Stripe subscription for access.
+
+**Localization**: User language preference stored (it/en/es/fr) for future i18n support, though current implementation appears to be primarily Italian.

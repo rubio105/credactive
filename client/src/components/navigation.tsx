@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings } from "lucide-react";
-import logoImage from "@assets/image_1759506819087.png";
+import logoImage from "@assets/image_1759523953855.png";
 
 interface User {
   id: string;

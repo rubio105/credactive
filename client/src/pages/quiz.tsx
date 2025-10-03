@@ -526,6 +526,18 @@ export default function QuizPage() {
                 {currentQuestion.question}
               </h3>
               
+              {/* Domain Hint (for CISSP) */}
+              {currentQuestion.domain && (
+                <div className="mb-4 p-3 bg-accent/10 rounded-lg border border-accent/20">
+                  <div className="flex items-start space-x-2">
+                    <Lightbulb className="w-4 h-4 text-accent mt-0.5" />
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">Domain:</span> {currentQuestion.domain}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               {/* Question Image */}
               {currentQuestion.imageUrl && (
                 <div className="mb-6">
@@ -568,11 +580,6 @@ export default function QuizPage() {
                         <div className="font-medium mb-1">
                           {option.label}) {option.text}
                         </div>
-                        {option.explanation && (
-                          <p className="text-sm text-muted-foreground">
-                            {option.explanation}
-                          </p>
-                        )}
                       </Label>
                       {showStatus && (
                         <div className="mt-1">

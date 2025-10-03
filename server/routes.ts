@@ -12,6 +12,16 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// Utility function to shuffle array (Fisher-Yates algorithm)
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -76,7 +86,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const questions = await storage.getQuestionsByQuizId(quizId);
-      res.json({ quiz, questions });
+      // Randomize questions order for each quiz attempt
+      const shuffledQuestions = shuffleArray(questions);
+      res.json({ quiz, questions: shuffledQuestions });
     } catch (error) {
       console.error("Error fetching quiz:", error);
       res.status(500).json({ message: "Failed to fetch quiz" });

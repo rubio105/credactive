@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Clock, Check } from "lucide-react";
+import { Calendar, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -32,9 +32,8 @@ interface LiveCourse {
   quizId: string;
   title: string;
   description: string;
+  program?: string;
   price: number;
-  duration: string;
-  instructor: string;
   sessions: LiveCourseSession[];
 }
 
@@ -195,16 +194,14 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
 
         {!selectedSession ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <span>{courseData.duration}</span>
+            {courseData.program && (
+              <div className="border-l-4 border-primary/30 pl-4 py-2">
+                <h3 className="font-semibold mb-2 text-sm uppercase text-muted-foreground">Programma del Corso</h3>
+                <div className="text-sm whitespace-pre-line" data-testid="course-program">
+                  {courseData.program}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-muted-foreground" />
-                <span>{courseData.instructor}</span>
-              </div>
-            </div>
+            )}
 
             <div>
               <h3 className="font-semibold mb-3">Date Disponibili</h3>
@@ -256,11 +253,11 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
                 Cosa Include
               </h4>
               <ul className="text-sm space-y-1 ml-6 list-disc text-muted-foreground">
-                <li>Formazione live con {courseData.instructor}</li>
-                <li>{courseData.duration} di contenuti</li>
-                <li>Materiale didattico incluso</li>
+                <li>Formazione live con esperti del settore</li>
+                <li>Materiale didattico completo</li>
                 <li>Certificato di partecipazione</li>
                 <li>Accesso al gruppo di supporto</li>
+                <li>Q&A e casi studio pratici</li>
               </ul>
             </div>
           </div>

@@ -46,6 +46,7 @@ export interface IStorage {
   // Quiz operations
   getCategories(): Promise<Category[]>;
   getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: Quiz[] }>>;
+  getAllQuizzes(): Promise<Quiz[]>;
   getQuizzesByCategory(categoryId: string): Promise<Quiz[]>;
   getQuizById(id: string): Promise<Quiz | undefined>;
   getQuestionsByQuizId(quizId: string): Promise<Question[]>;
@@ -207,6 +208,13 @@ export class DatabaseStorage implements IStorage {
     }
 
     return result;
+  }
+
+  async getAllQuizzes(): Promise<Quiz[]> {
+    return await db
+      .select()
+      .from(quizzes)
+      .orderBy(quizzes.title);
   }
 
   async getQuizzesByCategory(categoryId: string): Promise<Quiz[]> {

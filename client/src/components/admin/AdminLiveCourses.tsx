@@ -32,9 +32,8 @@ interface LiveCourse {
   quizId: string;
   title: string;
   description: string;
+  program?: string;
   price: number;
-  duration: string;
-  instructor: string;
   createdAt: string;
 }
 
@@ -155,9 +154,8 @@ export function AdminLiveCourses() {
     setEditingCourse({
       title: '',
       description: '',
+      program: '',
       price: 0,
-      duration: '',
-      instructor: '',
       quizId: '',
     });
     setIsCourseDialogOpen(true);
@@ -232,8 +230,7 @@ export function AdminLiveCourses() {
                 <TableHead>Titolo</TableHead>
                 <TableHead>Quiz</TableHead>
                 <TableHead>Prezzo</TableHead>
-                <TableHead>Durata</TableHead>
-                <TableHead>Istruttore</TableHead>
+                <TableHead>Programma</TableHead>
                 <TableHead>Azioni</TableHead>
               </TableRow>
             </TableHeader>
@@ -243,8 +240,7 @@ export function AdminLiveCourses() {
                   <TableCell className="font-medium">{course.title}</TableCell>
                   <TableCell>{quizzes?.find(q => q.id === course.quizId)?.title || course.quizId}</TableCell>
                   <TableCell>€{(course.price / 100).toFixed(2)}</TableCell>
-                  <TableCell>{course.duration}</TableCell>
-                  <TableCell>{course.instructor}</TableCell>
+                  <TableCell className="max-w-xs truncate">{course.program || '-'}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
@@ -381,37 +377,28 @@ export function AdminLiveCourses() {
                 value={editingCourse?.description || ''}
                 onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
                 data-testid="input-course-description"
+                rows={3}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price">Prezzo (€)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={editingCourse?.price ? editingCourse.price / 100 : 0}
-                  onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
-                  data-testid="input-course-price"
-                />
-              </div>
-              <div>
-                <Label htmlFor="duration">Durata</Label>
-                <Input
-                  id="duration"
-                  value={editingCourse?.duration || ''}
-                  onChange={(e) => setEditingCourse({ ...editingCourse, duration: e.target.value })}
-                  placeholder="es. 2 giorni"
-                  data-testid="input-course-duration"
-                />
-              </div>
+            <div>
+              <Label htmlFor="program">Programma del Corso</Label>
+              <Textarea
+                id="program"
+                value={editingCourse?.program || ''}
+                onChange={(e) => setEditingCourse({ ...editingCourse, program: e.target.value })}
+                placeholder="Inserisci il programma dettagliato del corso..."
+                data-testid="input-course-program"
+                rows={5}
+              />
             </div>
             <div>
-              <Label htmlFor="instructor">Istruttore</Label>
+              <Label htmlFor="price">Prezzo (€)</Label>
               <Input
-                id="instructor"
-                value={editingCourse?.instructor || ''}
-                onChange={(e) => setEditingCourse({ ...editingCourse, instructor: e.target.value })}
-                data-testid="input-course-instructor"
+                id="price"
+                type="number"
+                value={editingCourse?.price ? editingCourse.price / 100 : 0}
+                onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
+                data-testid="input-course-price"
               />
             </div>
           </div>

@@ -126,6 +126,7 @@ export const liveCourses = pgTable("live_courses", {
   quizId: uuid("quiz_id").notNull().references(() => quizzes.id),
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
+  program: text("program"), // Detailed course program/curriculum
   price: integer("price").notNull(), // Price in cents (e.g., 9000 for €90)
   stripeProductId: varchar("stripe_product_id"),
   stripePriceId: varchar("stripe_price_id"),

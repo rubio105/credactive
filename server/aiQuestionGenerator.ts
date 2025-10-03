@@ -82,7 +82,7 @@ Return ONLY a valid JSON array with this exact structure:
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      max_tokens: count * 800, // Approximately 800 tokens per question
+      max_tokens: Math.min(count * 800, 16000), // Cap at 16000 (GPT-4o limit is 16384)
     });
 
     const content = response.choices[0].message.content;

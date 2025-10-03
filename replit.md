@@ -165,4 +165,6 @@ Preferred communication style: Simple, everyday language.
   - Quiz interface displays images when present (data-testid="question-image")
   - Stock images downloaded for architecture diagrams, network topology, security designs
   - Schema updated: correctAnswer stores single letter (A/B/C/D) for consistent scoring
-  - Automated bulk generation: Successfully populated 434 questions across 16 quizzes using batch AI generation
+  - Automated bulk generation: Successfully populated 899 questions across 16 quizzes using batch AI generation
+  - Generation scripts with retry logic: scripts/resilient-gen.ts for fault-tolerant mass generation
+  - Environment limitations: Long-running processes interrupted by timeouts; batch approach (20-50 questions) recommended

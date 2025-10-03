@@ -129,6 +129,15 @@ Preferred communication style: Simple, everyday language.
 - Background processing for large batches
 - Automatic database persistence
 - Context-aware generation based on quiz topic and certification standards
+- Database populated with 250+ AI-generated questions across major quizzes
+
+**Question Images**: Questions support optional images for visual learning:
+- Image upload via admin panel (/api/admin/upload endpoint)
+- Stored in public/question-images/ directory with multer
+- Max 5MB files (jpeg, jpg, png, gif, webp formats)
+- Displayed in quiz interface when imageUrl is present
+- Useful for solution design, architecture diagrams, network topology questions
+- Stock images available for quick testing
 
 **Localization**: User language preference stored (it/en/es/fr) for future i18n support, though current implementation is primarily Italian.
 
@@ -148,3 +157,11 @@ Preferred communication style: Simple, everyday language.
   - Service: server/aiQuestionGenerator.ts for batch OpenAI API calls
   - Endpoint: POST /api/admin/generate-questions for question generation
   - UI: AdminQuizzes component enhanced with AI generation dialog
+  - Database populated with 250+ questions across CISSP (81), ISO 27001 (31), CISM (26), GDPR (21), and other quizzes
+- **Question Images Support** (October 3, 2025): Added image upload for visual questions
+  - Upload endpoint: POST /api/admin/upload (admin only, max 5MB, jpeg/jpg/png/gif/webp)
+  - Images stored in public/question-images/ directory
+  - Admin panel enhanced with image upload UI in question creation/edit form
+  - Quiz interface displays images when present (data-testid="question-image")
+  - Stock images downloaded for architecture diagrams, network topology, security designs
+  - Schema updated: correctAnswer changed from varchar(10) to text to support full answer text

@@ -35,13 +35,22 @@ async function populateQuestions() {
 
         // Save to database
         for (const q of questions) {
-          const correctOption = q.options.find(opt => opt.isCorrect);
-          const correctAnswer = correctOption?.text || q.options[0]?.text || '';
+          // Find the correct answer and get its label (A, B, C, D)
+          const correctIndex = q.options.findIndex(opt => opt.isCorrect);
+          const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+          const correctAnswer = labels[correctIndex] || 'A';
+          
+          // Create options with labels
+          const optionsWithLabels = q.options.map((opt, idx) => ({
+            label: labels[idx],
+            text: opt.text,
+            isCorrect: opt.isCorrect
+          }));
           
           await storage.createQuestion({
             quizId: quiz.id,
             question: q.question,
-            options: q.options as any,
+            options: optionsWithLabels as any,
             correctAnswer,
             explanation: q.explanation,
             imageUrl: '',

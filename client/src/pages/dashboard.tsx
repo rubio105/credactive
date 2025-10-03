@@ -21,6 +21,7 @@ interface DashboardData {
   recentAttempts: Array<{
     id: string;
     quizId: string;
+    quizTitle: string;
     score: number;
     correctAnswers: number;
     totalQuestions: number;
@@ -214,7 +215,7 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <h4 className="font-semibold" data-testid={`attempt-title-${index}`}>
-                              Quiz #{attempt.quizId}
+                              {attempt.quizTitle}
                             </h4>
                             <p className="text-sm text-muted-foreground" data-testid={`attempt-date-${index}`}>
                               Completato il {new Date(attempt.completedAt).toLocaleDateString('it-IT')}

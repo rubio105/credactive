@@ -263,13 +263,30 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getUserQuizAttempts(userId: string, limit = 10): Promise<UserQuizAttempt[]> {
-    return await db
-      .select()
+  async getUserQuizAttempts(userId: string, limit = 10): Promise<(UserQuizAttempt & { quizTitle: string })[]> {
+    const results = await db
+      .select({
+        id: userQuizAttempts.id,
+        userId: userQuizAttempts.userId,
+        quizId: userQuizAttempts.quizId,
+        answers: userQuizAttempts.answers,
+        score: userQuizAttempts.score,
+        correctAnswers: userQuizAttempts.correctAnswers,
+        totalQuestions: userQuizAttempts.totalQuestions,
+        timeSpent: userQuizAttempts.timeSpent,
+        completedAt: userQuizAttempts.completedAt,
+        quizTitle: quizzes.title,
+      })
       .from(userQuizAttempts)
+      .leftJoin(quizzes, eq(userQuizAttempts.quizId, quizzes.id))
       .where(eq(userQuizAttempts.userId, userId))
       .orderBy(desc(userQuizAttempts.completedAt))
       .limit(limit);
+    
+    return results.map(r => ({
+      ...r,
+      quizTitle: r.quizTitle || 'Quiz Sconosciuto'
+    }));
   }
 
   async getUserProgress(userId: string): Promise<UserProgress[]> {

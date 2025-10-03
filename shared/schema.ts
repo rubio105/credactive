@@ -69,6 +69,7 @@ export const questions = pgTable("questions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   quizId: uuid("quiz_id").notNull().references(() => quizzes.id),
   question: text("question").notNull(),
+  imageUrl: text("image_url"), // Optional image for the question
   options: jsonb("options").notNull(), // Array of option objects {label, text, explanation}
   correctAnswer: varchar("correct_answer", { length: 10 }).notNull(), // A, B, C, D
   explanation: text("explanation"),

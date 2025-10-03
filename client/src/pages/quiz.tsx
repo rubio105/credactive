@@ -24,6 +24,7 @@ interface Quiz {
 interface Question {
   id: string;
   question: string;
+  imageUrl?: string;
   options: Array<{
     label: string;
     text: string;
@@ -61,6 +62,7 @@ export default function QuizPage() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [results, setResults] = useState<QuizResults | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [showExplanation, setShowExplanation] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -115,7 +117,9 @@ export default function QuizPage() {
   useEffect(() => {
     if (quizData) {
       const questionId = quizData.questions[currentQuestionIndex]?.id;
-      setSelectedAnswer(answers[questionId] || "");
+      const savedAnswer = answers[questionId] || "";
+      setSelectedAnswer(savedAnswer);
+      setShowExplanation(!!savedAnswer); // Show explanation if answer was already selected
     }
   }, [currentQuestionIndex, answers, quizData]);
 
@@ -128,11 +132,13 @@ export default function QuizPage() {
       ...prev,
       [questionId]: answer
     }));
+    setShowExplanation(Boolean(answer)); // Show explanation only if answer is not empty
   };
 
   const handleNextQuestion = () => {
     if (!quizData) return;
 
+    setShowExplanation(false); // Hide explanation when moving to next question
     if (currentQuestionIndex < quizData.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
@@ -142,6 +148,7 @@ export default function QuizPage() {
 
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
+      setShowExplanation(false);
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
@@ -434,35 +441,88 @@ export default function QuizPage() {
               <h3 className="text-xl font-semibold mb-6 leading-relaxed" data-testid="question-text">
                 {currentQuestion.question}
               </h3>
+              
+              {/* Question Image */}
+              {currentQuestion.imageUrl && (
+                <div className="mb-6">
+                  <img 
+                    src={currentQuestion.imageUrl} 
+                    alt="Question illustration" 
+                    className="w-full max-w-2xl mx-auto rounded-lg shadow-md"
+                    data-testid="question-image"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Answer Options */}
             <RadioGroup value={selectedAnswer} onValueChange={handleAnswerChange}>
               <div className="space-y-4">
-                {currentQuestion.options.map((option) => (
-                  <div key={option.label} className="flex items-start space-x-3 p-4 rounded-lg border-2 border-border hover:border-primary transition-colors hover:bg-primary/5">
-                    <RadioGroupItem 
-                      value={option.label} 
-                      id={option.label}
-                      className="mt-1"
-                      data-testid={`option-${option.label}`}
-                    />
-                    <Label htmlFor={option.label} className="flex-1 cursor-pointer">
-                      <div className="font-medium mb-1">
-                        {option.label}) {option.text}
-                      </div>
-                      {option.explanation && (
-                        <p className="text-sm text-muted-foreground">
-                          {option.explanation}
-                        </p>
+                {currentQuestion.options.map((option) => {
+                  const isSelected = selectedAnswer === option.label;
+                  const isCorrect = option.label === currentQuestion.correctAnswer;
+                  const showStatus = showExplanation && isSelected;
+                  
+                  return (
+                    <div 
+                      key={option.label} 
+                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-colors ${
+                        showStatus
+                          ? isCorrect 
+                            ? 'border-green-500 bg-green-50 dark:bg-green-950'
+                            : 'border-red-500 bg-red-50 dark:bg-red-950'
+                          : 'border-border hover:border-primary hover:bg-primary/5'
+                      }`}
+                    >
+                      <RadioGroupItem 
+                        value={option.label} 
+                        id={option.label}
+                        className="mt-1"
+                        data-testid={`option-${option.label}`}
+                      />
+                      <Label htmlFor={option.label} className="flex-1 cursor-pointer">
+                        <div className="font-medium mb-1">
+                          {option.label}) {option.text}
+                        </div>
+                        {option.explanation && (
+                          <p className="text-sm text-muted-foreground">
+                            {option.explanation}
+                          </p>
+                        )}
+                      </Label>
+                      {showStatus && (
+                        <div className="mt-1">
+                          {isCorrect ? (
+                            <span className="text-green-600 dark:text-green-400 font-semibold text-sm">✓ Corretto</span>
+                          ) : (
+                            <span className="text-red-600 dark:text-red-400 font-semibold text-sm">✗ Sbagliato</span>
+                          )}
+                        </div>
                       )}
-                    </Label>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             </RadioGroup>
           </CardContent>
         </Card>
+
+        {/* Explanation Card */}
+        {showExplanation && currentQuestion.explanation && (
+          <Card className="mb-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-6">
+              <div className="flex items-start space-x-3">
+                <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Spiegazione</h4>
+                  <p className="text-blue-800 dark:text-blue-200" data-testid="question-explanation">
+                    {currentQuestion.explanation}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Navigation Buttons */}
         <div className="flex items-center justify-between">

@@ -171,6 +171,8 @@ export function AdminLiveCourses() {
   const handleSaveCourse = () => {
     if (!editingCourse) return;
 
+    console.log("Saving course with data:", editingCourse);
+
     if (editingCourse.id) {
       updateCourseMutation.mutate({ id: editingCourse.id, updates: editingCourse });
     } else {

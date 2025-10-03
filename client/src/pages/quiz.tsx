@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import Navigation from "@/components/navigation";
 import Timer from "@/components/ui/timer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages } from "lucide-react";
 
 interface Quiz {
   id: string;
@@ -66,9 +67,15 @@ export default function QuizPage() {
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [showExplanation, setShowExplanation] = useState(false);
   const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [useEnglish, setUseEnglish] = useState(false); // Language toggle
+  const [translatedQuestions, setTranslatedQuestions] = useState<Record<string, any>>({});
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/user"],
+  });
 
   const { data: quizData, isLoading } = useQuery<QuizData>({
     queryKey: ["/api/quizzes", quizId],
@@ -104,6 +111,36 @@ export default function QuizPage() {
       setQuizStartTime(new Date());
     }
   }, [quizData, quizStartTime]);
+
+  // Translate questions if user language is not English
+  useEffect(() => {
+    const translateQuestions = async () => {
+      if (!quizData || !user || useEnglish) return;
+      
+      const userLanguage = (user as any).language;
+      if (!userLanguage || userLanguage === 'en') return;
+      
+      try {
+        const response = await apiRequest("POST", "/api/translate-questions", {
+          questions: quizData.questions,
+          targetLanguage: userLanguage
+        });
+        const data = await response.json();
+        
+        if (data.translatedQuestions) {
+          const translationMap: Record<string, any> = {};
+          data.translatedQuestions.forEach((tq: any) => {
+            translationMap[tq.id] = tq;
+          });
+          setTranslatedQuestions(translationMap);
+        }
+      } catch (error) {
+        console.error("Translation failed:", error);
+      }
+    };
+    
+    translateQuestions();
+  }, [quizData, user, useEnglish]);
 
   // Timer countdown
   useEffect(() => {
@@ -406,8 +443,29 @@ export default function QuizPage() {
     );
   }
 
+  // Get current question with translation if available
+  const getCurrentQuestion = () => {
+    const originalQuestion = quizData.questions[currentQuestionIndex];
+    
+    // If using English or no translation available, return original
+    if (useEnglish || !translatedQuestions[originalQuestion.id]) {
+      return originalQuestion;
+    }
+    
+    // Apply translation
+    const translation = translatedQuestions[originalQuestion.id];
+    return {
+      ...originalQuestion,
+      question: translation.question,
+      options: originalQuestion.options.map((opt: any, idx: number) => ({
+        ...opt,
+        text: translation.options[idx] || opt.text
+      }))
+    };
+  };
+
   // Quiz Interface
-  const currentQuestion = quizData.questions[currentQuestionIndex];
+  const currentQuestion = getCurrentQuestion();
   const progress = ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
 
   return (
@@ -429,6 +487,18 @@ export default function QuizPage() {
                 </p>
               </div>
               <div className="flex items-center space-x-4">
+                {/* Language Toggle */}
+                {(user as any)?.language && (user as any).language !== 'en' && (
+                  <div className="flex items-center space-x-2 bg-accent/10 px-3 py-1.5 rounded-md">
+                    <Languages className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{useEnglish ? 'EN' : ((user as any).language || 'IT').toUpperCase()}</span>
+                    <Switch 
+                      checked={useEnglish} 
+                      onCheckedChange={setUseEnglish}
+                      data-testid="toggle-language"
+                    />
+                  </div>
+                )}
                 <Timer timeRemaining={timeRemaining} />
                 <Button
                   variant="ghost"

@@ -2,6 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
+import OpenAI from "openai";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -248,6 +249,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user language:", error);
       res.status(500).json({ message: "Failed to update language" });
+    }
+  });
+
+  // Translate quiz questions to target language
+  app.post('/api/translate-questions', isAuthenticated, async (req: any, res) => {
+    try {
+      const { questions, targetLanguage } = req.body;
+      
+      if (!questions || !Array.isArray(questions)) {
+        return res.status(400).json({ message: "Invalid questions array" });
+      }
+
+      const validLanguages = ['it', 'es', 'fr'];
+      if (!targetLanguage || !validLanguages.includes(targetLanguage)) {
+        return res.status(400).json({ message: "Invalid target language" });
+      }
+
+      const languageNames: Record<string, string> = {
+        'it': 'Italian',
+        'es': 'Spanish',
+        'fr': 'French'
+      };
+
+      // Prepare questions for translation
+      const questionsToTranslate = questions.map((q: any) => ({
+        id: q.id,
+        question: q.question,
+        options: q.options.map((opt: any) => opt.text)
+      }));
+
+      // Call OpenAI for translation
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional translator. Translate quiz questions and answers to ${languageNames[targetLanguage]}. Maintain technical accuracy and clarity.`
+          },
+          {
+            role: "user",
+            content: `Translate the following quiz questions to ${languageNames[targetLanguage]}. Return ONLY a JSON array with this structure:
+[
+  {
+    "id": "question-id",
+    "question": "translated question text",
+    "options": ["option 1 translated", "option 2 translated", "option 3 translated", "option 4 translated"]
+  }
+]
+
+Questions to translate:
+${JSON.stringify(questionsToTranslate)}`
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 16000
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error('No translation received');
+      }
+
+      const parsed = JSON.parse(content);
+      const translatedQuestions = Array.isArray(parsed) ? parsed : parsed.questions || [];
+
+      res.json({ translatedQuestions });
+    } catch (error) {
+      console.error("Error translating questions:", error);
+      res.status(500).json({ message: "Failed to translate questions" });
     }
   });
 

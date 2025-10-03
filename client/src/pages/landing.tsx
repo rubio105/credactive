@@ -234,8 +234,8 @@ export default function Landing() {
                   </div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 inline-block">
-                  <div className="text-5xl font-bold mb-2">€30</div>
-                  <div className="text-lg text-white/80">Pagamento unico - Accesso a vita</div>
+                  <div className="text-5xl font-bold mb-2">€90</div>
+                  <div className="text-lg text-white/80">All'anno - Accesso completo</div>
                 </div>
                 <Button 
                   size="lg"
@@ -246,7 +246,7 @@ export default function Landing() {
                   <Crown className="w-5 h-5 mr-2" />
                   Sblocca Ora
                 </Button>
-                <p className="text-sm text-white/70 mt-4">Pagamento sicuro con Stripe • Garanzia 30 giorni soddisfatti o rimborsati</p>
+                <p className="text-sm text-white/70 mt-4">Pagamento sicuro con Stripe • Cancellabile in qualsiasi momento</p>
               </div>
             </CardContent>
           </Card>

@@ -250,9 +250,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerId = customer.id;
       }
 
-      // Create a one-time payment intent for €30
+      // Create a one-time payment intent for €90 (annual subscription)
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: 3000, // €30 in cents
+        amount: 9000, // €90 in cents
         currency: 'eur',
         customer: customerId,
         metadata: {

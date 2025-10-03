@@ -65,7 +65,7 @@ const CheckoutForm = () => {
         data-testid="button-pay"
       >
         <Shield className="w-5 h-5 mr-2" />
-        {isProcessing ? "Processando..." : "Paga €30"}
+        {isProcessing ? "Processando..." : "Paga €90"}
       </Button>
     </form>
   );
@@ -229,8 +229,8 @@ export default function Subscribe() {
 
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardContent className="p-6 text-center">
-                <div className="text-5xl font-bold mb-2">€30</div>
-                <p className="text-white/80">Pagamento unico • Accesso a vita</p>
+                <div className="text-5xl font-bold mb-2">€90</div>
+                <p className="text-white/80">Abbonamento annuale • Rinnovo automatico</p>
               </CardContent>
             </Card>
 
@@ -246,7 +246,7 @@ export default function Subscribe() {
               </div>
               <div className="flex items-center space-x-3">
                 <CheckCircle className="w-5 h-5" />
-                <span className="text-sm">Nessun costo nascosto o abbonamento ricorrente</span>
+                <span className="text-sm">Abbonamento annuale - Cancellabile in qualsiasi momento</span>
               </div>
             </div>
           </div>
@@ -297,9 +297,9 @@ export default function Subscribe() {
             <h3 className="text-xl font-bold mb-6 text-center">Domande Frequenti</h3>
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <h4 className="font-semibold mb-2">È davvero un pagamento unico?</h4>
+                <h4 className="font-semibold mb-2">Come funziona l'abbonamento?</h4>
                 <p className="text-sm text-muted-foreground">
-                  Sì, paghi una sola volta €30 e ottieni l'accesso a vita a tutti i contenuti attuali e futuri.
+                  L'abbonamento Premium costa €90 all'anno e si rinnova automaticamente. Puoi cancellarlo in qualsiasi momento.
                 </p>
               </div>
               <div>

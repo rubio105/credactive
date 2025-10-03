@@ -1,6 +1,6 @@
 # Overview
 
-This is a quiz platform application that helps users test their knowledge in cyber security and related topics. The platform offers various quiz categories including cyber security awareness, professional certifications (CISM, CISSP), compliance standards (ISO 27001, GDPR), and AI security topics. Users can take quizzes, track their progress, receive detailed reports, and subscribe to premium content through Stripe.
+This is a quiz platform application that helps users test their knowledge in cyber security and related topics. The platform offers various quiz categories including cyber security awareness, professional certifications (CISM, CISSP), compliance standards (ISO 27001, GDPR), and AI security topics. Users can take quizzes, track their progress, receive detailed reports, and subscribe to premium content for €90/year through Stripe.
 
 The application is built as a full-stack TypeScript project with a React frontend and Express backend, using PostgreSQL for data persistence.
 

@@ -137,6 +137,11 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.id, id));
   }
 
+  async getUserById(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
   // Quiz operations
   async getCategories(): Promise<Category[]> {
     return await db.select().from(categories).orderBy(categories.sortOrder, categories.name);

@@ -557,17 +557,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user info
       const user = await storage.getUserById(report.userId);
-      const userName = escapeHtml(user?.name || 'Utente');
+      const userName = escapeHtml(user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utente' : 'Utente');
 
       // Format date
-      const reportDate = new Date(report.createdAt).toLocaleDateString('it-IT', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      const reportDate = report.createdAt 
+        ? new Date(report.createdAt).toLocaleDateString('it-IT', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        : new Date().toLocaleDateString('it-IT', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
 
       // Check if this is an Insight Discovery report
-      const isInsightReport = 'dominantColor' in report.reportData;
+      const isInsightReport = 'dominantColor' in (report.reportData as any);
 
       // Create HTML content
       let htmlContent = `
@@ -845,12 +851,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .then(async (questions) => {
           // Save all generated questions to database
           for (const q of questions) {
+            // Find the correct answer from options
+            const correctOption = q.options.find(opt => opt.isCorrect);
+            const correctAnswer = correctOption?.text || q.options[0]?.text || '';
+            
             await storage.createQuestion({
               quizId: quiz.id,
               question: q.question,
               options: q.options as any,
+              correctAnswer,
               explanation: q.explanation,
-              difficulty: q.difficulty,
+              imageUrl: '',
+              category: categoryName,
             });
           }
           console.log(`Successfully generated and saved ${questions.length} questions for ${quiz.title}`);

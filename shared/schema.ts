@@ -163,6 +163,17 @@ export const liveCourseEnrollments = pgTable("live_course_enrollments", {
   enrolledAt: timestamp("enrolled_at").defaultNow(),
 });
 
+// Content pages (CMS for static pages)
+export const contentPages = pgTable("content_pages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: varchar("slug", { length: 100 }).notNull().unique(), // e.g., "privacy", "terms", "about", "contact"
+  title: varchar("title", { length: 200 }).notNull(),
+  content: text("content").notNull(), // HTML content (sanitized)
+  isPublished: boolean("is_published").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   quizAttempts: many(userQuizAttempts),
@@ -271,6 +282,7 @@ export type QuizReport = typeof quizReports.$inferSelect;
 export type LiveCourse = typeof liveCourses.$inferSelect;
 export type LiveCourseSession = typeof liveCourseSessions.$inferSelect;
 export type LiveCourseEnrollment = typeof liveCourseEnrollments.$inferSelect;
+export type ContentPage = typeof contentPages.$inferSelect;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -282,6 +294,7 @@ export const insertQuizReportSchema = createInsertSchema(quizReports);
 export const insertLiveCourseSchema = createInsertSchema(liveCourses).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertLiveCourseSessionSchema = createInsertSchema(liveCourseSessions).omit({ id: true, createdAt: true });
 export const insertLiveCourseEnrollmentSchema = createInsertSchema(liveCourseEnrollments).omit({ id: true, enrolledAt: true });
+export const insertContentPageSchema = createInsertSchema(contentPages).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
@@ -292,3 +305,4 @@ export type InsertQuizReport = z.infer<typeof insertQuizReportSchema>;
 export type InsertLiveCourse = z.infer<typeof insertLiveCourseSchema>;
 export type InsertLiveCourseSession = z.infer<typeof insertLiveCourseSessionSchema>;
 export type InsertLiveCourseEnrollment = z.infer<typeof insertLiveCourseEnrollmentSchema>;
+export type InsertContentPage = z.infer<typeof insertContentPageSchema>;

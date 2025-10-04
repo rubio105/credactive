@@ -34,12 +34,18 @@ import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  createUser(user: Partial<User>): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User>;
   updateUserStripeCustomer(userId: string, stripeCustomerId: string): Promise<User>;
   updateUserLanguage(userId: string, language: string): Promise<User>;
+  setPasswordResetToken(userId: string, token: string, expires: Date): Promise<void>;
+  updateUserPassword(userId: string, password: string): Promise<void>;
+  clearPasswordResetToken(userId: string): Promise<void>;
   
   // Admin User operations
   getAllUsers(): Promise<User[]>;
@@ -194,6 +200,59 @@ export class DatabaseStorage implements IStorage {
   async getUserById(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.passwordResetToken, token));
+    return user;
+  }
+
+  async createUser(userData: Partial<User>): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData as any)
+      .returning();
+    return user;
+  }
+
+  async setPasswordResetToken(userId: string, token: string, expires: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        passwordResetToken: token,
+        passwordResetExpires: expires,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async updateUserPassword(userId: string, password: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        password,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async clearPasswordResetToken(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
   }
 
   // Quiz operations

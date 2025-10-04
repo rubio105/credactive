@@ -7,8 +7,12 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { insertUserQuizAttemptSchema, insertContentPageSchema, updateContentPageSchema } from "@shared/schema";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import passport from "passport";
+import { sendPasswordResetEmail, sendWelcomeEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
@@ -106,9 +110,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/quiz-documents', express.static(pdfUploadDir));
 
   // Auth routes
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, language } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e password sono obbligatori" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email.toLowerCase());
+      if (existingUser) {
+        return res.status(400).json({ message: "Email già registrata" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const user = await storage.createUser({
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        firstName,
+        lastName,
+        language: language || 'it',
+        emailVerified: true,
+      });
+
+      // Send welcome email (async, don't block response)
+      sendWelcomeEmail(user.email, user.firstName || undefined).catch(err => 
+        console.error("Failed to send welcome email:", err)
+      );
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Errore durante il login" });
+        }
+        res.json(user);
+      });
+    } catch (error) {
+      console.error("Error during registration:", error);
+      res.status(500).json({ message: "Errore durante la registrazione" });
+    }
+  });
+
+  app.post('/api/auth/login', (req, res, next) => {
+    passport.authenticate('local', (err: any, user: any, info: any) => {
+      if (err) {
+        return res.status(500).json({ message: "Errore durante il login" });
+      }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || "Email o password non corretti" });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Errore durante il login" });
+        }
+        res.json(user);
+      });
+    })(req, res, next);
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Errore durante il logout" });
+      }
+      res.json({ message: "Logout effettuato con successo" });
+    });
+  });
+
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email obbligatoria" });
+      }
+
+      const user = await storage.getUserByEmail(email.toLowerCase());
+      
+      if (!user) {
+        return res.json({ message: "Se l'email esiste, riceverai le istruzioni per il reset" });
+      }
+
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+
+      await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
+
+      await sendPasswordResetEmail(user.email, resetToken);
+
+      res.json({ message: "Se l'email esiste, riceverai le istruzioni per il reset" });
+    } catch (error) {
+      console.error("Error during forgot password:", error);
+      res.status(500).json({ message: "Errore durante il reset della password" });
+    }
+  });
+
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, password } = req.body;
+
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token e password sono obbligatori" });
+      }
+
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+        return res.status(400).json({ message: "Token non valido o scaduto" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      await storage.updateUserPassword(user.id, hashedPassword);
+      await storage.clearPasswordResetToken(user.id);
+
+      res.json({ message: "Password aggiornata con successo" });
+    } catch (error) {
+      console.error("Error during password reset:", error);
+      res.status(500).json({ message: "Errore durante il reset della password" });
+    }
+  });
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {

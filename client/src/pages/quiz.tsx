@@ -87,31 +87,43 @@ export default function QuizPage() {
 
   const submitQuizMutation = useMutation({
     mutationFn: async (quizAttempt: any) => {
-      const response = await apiRequest("POST", "/api/quiz-attempts", quizAttempt);
-      return response.json();
+      console.log('[Quiz Submit] Starting mutation with data:', quizAttempt);
+      console.log('[Quiz Submit] Is Insight Discovery:', isInsightDiscovery);
+      
+      const response = await apiRequest("/api/quiz-attempts", "POST", quizAttempt);
+      const data = await response.json();
+      console.log('[Quiz Submit] Success! Attempt ID:', data.id);
+      return data;
     },
     onSuccess: (data) => {
+      console.log('[Quiz Submit] onSuccess called with data:', data);
+      console.log('[Quiz Submit] isInsightDiscovery flag:', isInsightDiscovery);
+      
       setAttemptId(data.id); // Save attempt ID for report link
       queryClient.invalidateQueries({ queryKey: ["/api/user/dashboard"] });
       
       // For Insight Discovery, redirect directly to report
       if (isInsightDiscovery) {
+        console.log('[Quiz Submit] Redirecting to Insight Discovery report...');
         toast({
           title: "Profilo Generato!",
           description: "Il tuo profilo Insight Discovery è pronto.",
         });
         // Redirect to report page
         setTimeout(() => {
+          console.log('[Quiz Submit] Executing redirect to /report/' + data.id);
           setLocation(`/report/${data.id}`);
         }, 500);
       } else {
+        console.log('[Quiz Submit] Showing standard quiz completion toast');
         toast({
           title: "Quiz Completato!",
           description: `Hai ottenuto ${data.score}% di risposte corrette.`,
         });
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('[Quiz Submit] onError called:', error);
       toast({
         title: "Errore",
         description: "Impossibile salvare i risultati del quiz.",

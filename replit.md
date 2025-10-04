@@ -158,3 +158,19 @@ Preferred communication style: Simple, everyday language.
   - Added informative toast messages during generation (15-30 second wait time)
   - Implemented 60-second timeout with specific error messaging
   - Success confirmation when audio is ready to play
+
+- **Extended Audio Security Enhancement** (October 4, 2025): Server-side validation for extended audio generation
+  - Frontend now sends only `language` parameter to backend (removed client-provided correctness data)
+  - Backend retrieves question from database and validates all data server-side
+  - Normalizes option formats to handle strings, objects, and arrays
+  - Extended audio always explains the correct answer based on database truth
+  - Prevents client manipulation of feedback received
+  - Simplified and more secure implementation
+
+- **Quiz Submission Bug Fix** (October 4, 2025): Fixed critical parameter ordering bug
+  - Problem: `apiRequest` called with parameters in wrong order: `apiRequest("POST", "/api/quiz-attempts", data)`
+  - Correct signature: `apiRequest(url, method, data)` 
+  - Fix applied: Changed to `apiRequest("/api/quiz-attempts", "POST", data)`
+  - Bug was causing "Failed to execute 'fetch' on 'Window': '/api/quiz-attempts' is not a valid HTTP method" error
+  - Quiz submissions now work correctly and save to database
+  - Added comprehensive logging for debugging quiz submission flow

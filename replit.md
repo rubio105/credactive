@@ -121,3 +121,12 @@ Preferred communication style: Simple, everyday language.
   - Footer Component: Created new Footer component showing placement='footer' pages site-wide
   - Home Page: Footer added to display footer pages (Privacy, Terms, etc.)
   - Default: New content pages default to footer placement for visibility
+
+- **Audio Explanations for Quiz Questions** (October 4, 2025): TTS audio support for question explanations
+  - Database: Added `explanationAudioUrl` field to questions table for storing audio file URLs
+  - Backend API: POST endpoint `/api/admin/questions/:id/generate-audio` using OpenAI TTS API (tts-1 model)
+  - Language-specific voices: Italian (nova), English (alloy), Spanish (shimmer)
+  - Audio files stored in `public/audio-explanations/` directory with format `{questionId}-{language}.mp3`
+  - Quiz Interface: "Ascolta" button appears in explanation card when audio is available
+  - Admin Panel: Generate audio button for questions with explanations, language selector prompt (it/en/es)
+  - Play button with green icon for questions that already have audio generated

@@ -94,16 +94,6 @@ export default function Navigation() {
                 </Link>
               </>
             ) : null}
-            <Link href="/chi-siamo">
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-chi-siamo">
-                Chi siamo
-              </Button>
-            </Link>
-            <Link href="/contatti">
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-contatti">
-                Contatti
-              </Button>
-            </Link>
             {headerPages.map((page) => (
               <Link key={page.id} href={`/page/${page.slug}`}>
                 <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid={`nav-${page.slug}`}>

@@ -23,19 +23,6 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Footer Links */}
           <div className="flex flex-wrap justify-center gap-6">
-            {/* Static pages */}
-            <Link href="/chi-siamo">
-              <a className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="footer-chi-siamo">
-                Chi siamo
-              </a>
-            </Link>
-            <Link href="/contatti">
-              <a className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="footer-contatti">
-                Contatti
-              </a>
-            </Link>
-            
-            {/* CMS pages with footer placement */}
             {footerPages.map((page) => (
               <Link key={page.id} href={`/page/${page.slug}`}>
                 <a className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid={`footer-${page.slug}`}>

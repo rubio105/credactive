@@ -308,6 +308,18 @@ export default function QuizPage() {
   const handleExtendedAudio = async () => {
     if (!currentQuestion || !currentQuestion.explanation) return;
     
+    // Don't allow generating audio if no answer is selected
+    if (!selectedAnswer) {
+      toast({
+        title: useEnglish ? "No Answer Selected" : "Nessuna Risposta Selezionata",
+        description: useEnglish 
+          ? "Please select an answer first." 
+          : "Per favore seleziona prima una risposta.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsGeneratingExtendedAudio(true);
     
     // Show informative toast about generation time

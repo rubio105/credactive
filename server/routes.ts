@@ -1491,38 +1491,86 @@ ${JSON.stringify(questionsToTranslate)}`
       
       console.log(`[Extended Audio] Starting generation for question ${id}, language: ${language}`);
       
-      // Get the question
+      // Get the question from database
       const question = await storage.getQuestionById(id);
       if (!question || !question.explanation) {
         console.log(`[Extended Audio] Question or explanation not found for ${id}`);
         return res.status(404).json({ message: "Question or explanation not found" });
       }
 
-      console.log(`[Extended Audio] Question found, explanation length: ${question.explanation.length}`);
+      console.log(`[Extended Audio] Question found: ${question.question}`);
+      
+      // Normalize options (handle multiple formats)
+      const normalizeOptions = (opts: any[]): Array<{label: string; text: string; isCorrect?: boolean}> => {
+        return opts.map((opt, index) => {
+          const label = String.fromCharCode(65 + index); // A, B, C, D...
+          
+          if (typeof opt === 'string') {
+            return { label, text: opt, isCorrect: false };
+          }
+          
+          if (typeof opt === 'object' && opt !== null) {
+            const text = opt.text || opt.label || opt.id || String(opt);
+            return {
+              label: opt.label || opt.id || label,
+              text,
+              isCorrect: opt.isCorrect || false
+            };
+          }
+          
+          return { label, text: String(opt), isCorrect: false };
+        });
+      };
+      
+      const normalizedOptions = normalizeOptions(question.options as any[]);
+      
+      // Find the correct option from database
+      const correctOption = normalizedOptions.find((opt) => 
+        opt.isCorrect || opt.label?.toLowerCase() === question.correctAnswer?.toLowerCase()
+      );
+      
+      if (!correctOption) {
+        console.error(`[Extended Audio] Could not find correct answer in options`);
+        return res.status(500).json({ message: "Question data incomplete" });
+      }
+      
+      console.log(`[Extended Audio] Correct answer: ${correctOption.text}`);
       
       // Initialize OpenAI
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       
-      // Create extended explanation using GPT
+      // Create extended explanation using GPT - always explains the correct answer
       const promptMap: { [key: string]: string } = {
-        it: `Sei un esperto formatore. Espandi la seguente spiegazione in modo più dettagliato e pedagogico con 2-3 frasi complete. Mantieni un tono professionale ma accessibile. IMPORTANTE: Termina con un punto e completa tutte le frasi. Mantieni la lingua italiana.
+        it: `Sei un formatore esperto. Crea una spiegazione vocale approfondita per questa domanda e la sua risposta corretta:
 
-Spiegazione originale:
-${question.explanation}
+Domanda: ${question.question}
+Risposta corretta: ${correctOption.text}
 
-Spiegazione ampliata (2-3 frasi complete):`,
-        en: `You are an expert trainer. Expand the following explanation with 2-3 complete sentences in a more detailed and pedagogical way. Maintain a professional but accessible tone. IMPORTANT: End with a period and complete all sentences. Keep the language in English.
+Spiegazione base: ${question.explanation}
 
-Original explanation:
-${question.explanation}
+Genera una spiegazione vocale di 2-3 frasi complete che approfondisca perché "${correctOption.text}" è la risposta corretta. Usa un tono incoraggiante e pedagogico. IMPORTANTE: Termina con un punto e completa tutte le frasi. Lingua italiana.
 
-Extended explanation (2-3 complete sentences):`,
-        es: `Eres un formador experto. Amplía la siguiente explicación con 2-3 frases completas de forma más detallada y pedagógica. Mantén un tono profesional pero accesible. IMPORTANTE: Termina con un punto y completa todas las frases. Mantén el idioma en español.
+Spiegazione vocale:`,
+        en: `You are an expert trainer. Create an in-depth audio explanation for this question and its correct answer:
 
-Explicación original:
-${question.explanation}
+Question: ${question.question}
+Correct answer: ${correctOption.text}
 
-Explicación ampliada (2-3 frases completas):`
+Base explanation: ${question.explanation}
+
+Generate a 2-3 complete sentence audio explanation that explains in depth why "${correctOption.text}" is the correct answer. Use an encouraging and pedagogical tone. IMPORTANT: End with a period and complete all sentences. English language.
+
+Audio explanation:`,
+        es: `Eres un formador experto. Crea una explicación de audio profunda para esta pregunta y su respuesta correcta:
+
+Pregunta: ${question.question}
+Respuesta correcta: ${correctOption.text}
+
+Explicación base: ${question.explanation}
+
+Genera una explicación de audio de 2-3 frases completas que profundice por qué "${correctOption.text}" es la respuesta correcta. Usa un tono alentador y pedagógico. IMPORTANTE: Termina con un punto y completa todas las frases. Idioma español.
+
+Explicación de audio:`
       };
       
       const prompt = promptMap[language] || promptMap['en'];

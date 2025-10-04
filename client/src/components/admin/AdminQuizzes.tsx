@@ -43,6 +43,7 @@ interface Quiz {
   difficulty: string;
   isPremium: boolean;
   isActive: boolean;
+  maxQuestionsPerAttempt?: number;
   documentPdfUrl?: string;
 }
 
@@ -399,6 +400,24 @@ export function AdminQuizzes() {
                     </a>
                   </div>
                 )}
+              </div>
+              <div>
+                <Label htmlFor="maxQuestions">Numero Domande per Tentativo (opzionale)</Label>
+                <Input
+                  id="maxQuestions"
+                  type="number"
+                  value={editingQuiz.maxQuestionsPerAttempt || ''}
+                  onChange={(e) => setEditingQuiz({ 
+                    ...editingQuiz, 
+                    maxQuestionsPerAttempt: e.target.value ? parseInt(e.target.value) : undefined 
+                  })}
+                  placeholder="Lascia vuoto per tutte le domande"
+                  min="1"
+                  data-testid="input-max-questions"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Limita il numero di domande mostrate per ogni tentativo. Lascia vuoto per mostrare tutte le domande disponibili.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

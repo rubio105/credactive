@@ -1552,9 +1552,17 @@ Explicación ampliada:`
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Length', buffer.length);
       res.send(buffer);
-    } catch (error) {
-      console.error("Error generating extended audio:", error);
-      res.status(500).json({ message: "Failed to generate extended audio" });
+    } catch (error: any) {
+      console.error("[Extended Audio] Error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        response: error.response?.data
+      });
+      res.status(500).json({ 
+        message: "Failed to generate extended audio",
+        error: error.message 
+      });
     }
   });
 

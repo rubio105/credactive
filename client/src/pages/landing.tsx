@@ -122,29 +122,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
-      <section className="py-12 bg-card border-y border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <p className="text-muted-foreground text-sm uppercase tracking-wider font-medium">Trusted by professionals from</p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
-            <div className="flex justify-center" data-testid="partner-techcorp">
-              <span className="text-2xl font-bold text-muted-foreground">TechCorp</span>
-            </div>
-            <div className="flex justify-center" data-testid="partner-secureit">
-              <span className="text-2xl font-bold text-muted-foreground">SecureIT</span>
-            </div>
-            <div className="flex justify-center" data-testid="partner-dataguard">
-              <span className="text-2xl font-bold text-muted-foreground">DataGuard</span>
-            </div>
-            <div className="flex justify-center" data-testid="partner-cybershield">
-              <span className="text-2xl font-bold text-muted-foreground">CyberShield</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Featured Categories with Images */}
       <section className="py-16 bg-gradient-to-b from-background to-secondary/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -104,6 +104,15 @@ export default function QuizPage() {
     },
   });
 
+  // Initialize language preference based on user profile
+  useEffect(() => {
+    if (user) {
+      const userLanguage = (user as any).language;
+      // Default to English if user language is 'en' or not set
+      setUseEnglish(!userLanguage || userLanguage === 'en');
+    }
+  }, [user]);
+
   // Initialize quiz when data loads
   useEffect(() => {
     if (quizData && !quizStartTime) {
@@ -112,18 +121,22 @@ export default function QuizPage() {
     }
   }, [quizData, quizStartTime]);
 
-  // Translate questions if user language is not English
+  // Translate questions based on language toggle
   useEffect(() => {
     const translateQuestions = async () => {
-      if (!quizData || !user || useEnglish) return;
+      // If English is selected, clear translations and use original
+      if (useEnglish) {
+        setTranslatedQuestions({});
+        return;
+      }
       
-      const userLanguage = (user as any).language;
-      if (!userLanguage || userLanguage === 'en') return;
+      // If Italian is selected, translate to Italian
+      if (!quizData || !user) return;
       
       try {
         const response = await apiRequest("POST", "/api/translate-questions", {
           questions: quizData.questions,
-          targetLanguage: userLanguage
+          targetLanguage: 'it' // Always translate to Italian when toggle is off
         });
         const data = await response.json();
         
@@ -487,18 +500,22 @@ export default function QuizPage() {
                 </p>
               </div>
               <div className="flex items-center space-x-4">
-                {/* Language Toggle */}
-                {(user as any)?.language && (user as any).language !== 'en' && (
-                  <div className="flex items-center space-x-2 bg-accent/10 px-3 py-1.5 rounded-md">
-                    <Languages className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{useEnglish ? 'EN' : ((user as any).language || 'IT').toUpperCase()}</span>
-                    <Switch 
-                      checked={useEnglish} 
-                      onCheckedChange={setUseEnglish}
-                      data-testid="toggle-language"
-                    />
-                  </div>
-                )}
+                {/* Language Toggle - Always visible */}
+                <div className="flex items-center space-x-2 bg-accent/10 px-3 py-1.5 rounded-md border border-accent/30">
+                  <Languages className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">
+                    {useEnglish ? 'English' : 'Italiano'}
+                  </span>
+                  <Switch 
+                    checked={useEnglish} 
+                    onCheckedChange={setUseEnglish}
+                    data-testid="toggle-language"
+                    aria-label="Toggle quiz language"
+                  />
+                  <Badge variant="secondary" className="text-xs">
+                    {useEnglish ? 'EN' : 'IT'}
+                  </Badge>
+                </div>
                 <Timer timeRemaining={timeRemaining} />
                 <Button
                   variant="ghost"

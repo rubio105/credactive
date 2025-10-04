@@ -50,6 +50,7 @@ Preferred communication style: Simple, everyday language.
 -   **Question Images**: Supports optional image uploads (max 5MB) for visual questions, stored in `public/question-images/`.
 -   **Live Courses**: Integrated system for purchasing one-time live courses via Stripe, with course details, sessions, and enrollment tracking.
 -   **Content Management**: System for static content pages (e.g., Privacy Policy, Terms of Service) with rich text editing, HTML sanitization, and public API access.
+-   **Language Selection**: Quiz interface includes always-visible language toggle (IT/EN) allowing users to choose quiz language regardless of profile settings. Useful for international certifications like CISSP, CISM that can be taken in multiple languages.
 
 # External Dependencies
 
@@ -59,3 +60,22 @@ Preferred communication style: Simple, everyday language.
 -   **OpenAI**: GPT-4o model for AI-powered question generation.
 -   **UI Libraries**: Radix UI, Lucide React, Tailwind CSS.
 -   **Development Tools**: TypeScript, ESBuild, Vite, TSX.
+
+# Recent Changes (October 2025)
+
+- **Quiz Language Selector** (October 4, 2025): Enhanced language selection for quiz interface
+  - Language toggle now always visible during quizzes (previously hidden for English users)
+  - Clear labels showing "English" or "Italiano" with IT/EN badge
+  - Users can switch quiz language independently from profile language preference
+  - Essential for certifications (CISSP, CISM, OSCP, CEH) available in multiple languages
+  - Toggle positioned in quiz header next to timer for easy access
+
+- **Content Management System (CMS)** (October 4, 2025): Complete system for managing static pages
+  - Database: contentPages table with slug, title, content (HTML), isPublished fields
+  - Backend API: Public routes (/api/content-pages/:slug) with DOMPurify HTML sanitization
+  - Admin Panel: "Pagine" tab with TipTap rich text editor (bold, italic, headings, lists, links, images)
+  - Frontend: DynamicContentPage component for /privacy and /terms routes
+  - Security: HTML sanitized with DOMPurify allowlist before database persistence
+  - Initial seed data for Privacy Policy and Terms of Service
+
+- **UI Consistency** (October 4, 2025): Added "Torna alla Home" button across all admin tabs for consistent navigation

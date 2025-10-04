@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import logoImage from "@assets/image_1759605874808.png";
 import { Link } from "wouter";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 export default function ResetPassword() {
   const [, setLocation] = useLocation();
@@ -24,18 +25,46 @@ export default function ResetPassword() {
       setToken(tokenParam);
     } else {
       toast({
-        title: "Errore",
-        description: "Token mancante o non valido",
+        title: "Link non valido",
+        description: "Il link di recupero password non è valido o è scaduto",
         variant: "destructive",
       });
       setLocation("/forgot-password");
     }
   }, []);
 
+  const validatePassword = (password: string) => {
+    const checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
+    return checks;
+  };
+
+  const passwordChecks = validatePassword(password);
+  const isPasswordValid = Object.values(passwordChecks).every(check => check);
+
   const resetPasswordMutation = useMutation({
     mutationFn: async (data: { token: string; password: string }) => {
-      const res = await apiRequest("/api/auth/reset-password", "POST", data);
-      return await res.json();
+      try {
+        const res = await apiRequest("/api/auth/reset-password", "POST", data);
+        return await res.json();
+      } catch (error: any) {
+        let errorMessage = "Il link di recupero non è valido o è scaduto. Richiedi un nuovo link.";
+        if (error.message) {
+          try {
+            const match = error.message.match(/\{.*\}/);
+            if (match) {
+              const jsonError = JSON.parse(match[0]);
+              errorMessage = jsonError.message || errorMessage;
+            }
+          } catch {}
+        }
+        throw new Error(errorMessage);
+      }
     },
     onSuccess: () => {
       toast({
@@ -47,7 +76,7 @@ export default function ResetPassword() {
     onError: (error: any) => {
       toast({
         title: "Errore",
-        description: error.message || "Token non valido o scaduto",
+        description: error.message || "Il link di recupero non è valido o è scaduto. Richiedi un nuovo link.",
         variant: "destructive",
       });
     },
@@ -56,19 +85,28 @@ export default function ResetPassword() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password !== confirmPassword) {
+    if (!password || !confirmPassword) {
       toast({
-        title: "Errore",
-        description: "Le password non coincidono",
+        title: "Campi obbligatori",
+        description: "Inserisci e conferma la nuova password",
         variant: "destructive",
       });
       return;
     }
 
-    if (password.length < 8) {
+    if (password !== confirmPassword) {
       toast({
-        title: "Errore",
-        description: "La password deve essere di almeno 8 caratteri",
+        title: "Password non corrispondenti",
+        description: "Le due password inserite non coincidono",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isPasswordValid) {
+      toast({
+        title: "Password non valida",
+        description: "La password non soddisfa tutti i requisiti di sicurezza",
         variant: "destructive",
       });
       return;
@@ -86,17 +124,17 @@ export default function ResetPassword() {
           </div>
           <CardTitle className="text-2xl">Reimposta la password</CardTitle>
           <CardDescription>
-            Inserisci la tua nuova password
+            Crea una nuova password sicura per il tuo account
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Nuova Password</Label>
+              <Label htmlFor="password">Nuova Password *</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Minimo 8 caratteri"
+                placeholder="Crea una password sicura"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -104,7 +142,7 @@ export default function ResetPassword() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Conferma Password</Label>
+              <Label htmlFor="confirmPassword">Conferma Password *</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -115,10 +153,69 @@ export default function ResetPassword() {
                 data-testid="input-confirmPassword"
               />
             </div>
+
+            {password && (
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <p className="text-sm font-medium mb-2">Requisiti password:</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    {passwordChecks.length ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className={passwordChecks.length ? "text-green-600" : ""}>
+                      Almeno 8 caratteri
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordChecks.uppercase ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className={passwordChecks.uppercase ? "text-green-600" : ""}>
+                      Una lettera maiuscola (A-Z)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordChecks.lowercase ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className={passwordChecks.lowercase ? "text-green-600" : ""}>
+                      Una lettera minuscola (a-z)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordChecks.number ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className={passwordChecks.number ? "text-green-600" : ""}>
+                      Un numero (0-9)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {passwordChecks.special ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className={passwordChecks.special ? "text-green-600" : ""}>
+                      Un carattere speciale (!@#$%...)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
               className="w-full"
-              disabled={resetPasswordMutation.isPending}
+              disabled={resetPasswordMutation.isPending || !isPasswordValid}
               data-testid="button-submit"
             >
               {resetPasswordMutation.isPending ? "Aggiornamento in corso..." : "Reimposta password"}

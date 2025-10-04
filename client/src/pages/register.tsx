@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import logoImage from "@assets/image_1759605874808.png";
 import { Link } from "wouter";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -36,10 +37,38 @@ export default function Register() {
     newsletterConsent: false,
   });
 
+  const validatePassword = (password: string) => {
+    const checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
+    return checks;
+  };
+
+  const passwordChecks = validatePassword(formData.password);
+  const isPasswordValid = Object.values(passwordChecks).every(check => check);
+
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("/api/auth/register", "POST", data);
-      return await res.json();
+      try {
+        const res = await apiRequest("/api/auth/register", "POST", data);
+        return await res.json();
+      } catch (error: any) {
+        let errorMessage = "Si è verificato un errore. Riprova.";
+        if (error.message) {
+          try {
+            const match = error.message.match(/\{.*\}/);
+            if (match) {
+              const jsonError = JSON.parse(match[0]);
+              errorMessage = jsonError.message || errorMessage;
+            }
+          } catch {}
+        }
+        throw new Error(errorMessage);
+      }
     },
     onSuccess: () => {
       toast({
@@ -50,8 +79,8 @@ export default function Register() {
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Errore durante la registrazione",
+        title: "Errore nella registrazione",
+        description: error.message || "Si è verificato un errore. Riprova.",
         variant: "destructive",
       });
     },
@@ -60,19 +89,37 @@ export default function Register() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
+    if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
       toast({
-        title: "Errore",
-        description: "Le password non coincidono",
+        title: "Campi obbligatori mancanti",
+        description: "Compila tutti i campi obbligatori contrassegnati con *",
         variant: "destructive",
       });
       return;
     }
 
-    if (formData.password.length < 8) {
+    if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Errore",
-        description: "La password deve essere di almeno 8 caratteri",
+        title: "Password non corrispondenti",
+        description: "Le due password inserite non coincidono",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isPasswordValid) {
+      toast({
+        title: "Password non valida",
+        description: "La password non soddisfa tutti i requisiti di sicurezza",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.gender || !formData.profession || !formData.education || !formData.addressCountry) {
+      toast({
+        title: "Selezioni mancanti",
+        description: "Seleziona tutti i campi obbligatori dai menu a tendina",
         variant: "destructive",
       });
       return;
@@ -370,7 +417,7 @@ export default function Register() {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Minimo 8 caratteri"
+                    placeholder="Crea una password sicura"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
@@ -390,6 +437,64 @@ export default function Register() {
                   />
                 </div>
               </div>
+              
+              {formData.password && (
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium mb-2">Requisiti password:</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      {passwordChecks.length ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className={passwordChecks.length ? "text-green-600" : ""}>
+                        Almeno 8 caratteri
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordChecks.uppercase ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className={passwordChecks.uppercase ? "text-green-600" : ""}>
+                        Una lettera maiuscola (A-Z)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordChecks.lowercase ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className={passwordChecks.lowercase ? "text-green-600" : ""}>
+                        Una lettera minuscola (a-z)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordChecks.number ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className={passwordChecks.number ? "text-green-600" : ""}>
+                        Un numero (0-9)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordChecks.special ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className={passwordChecks.special ? "text-green-600" : ""}>
+                        Un carattere speciale (!@#$%...)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Consensi */}
@@ -413,7 +518,7 @@ export default function Register() {
               type="submit"
               className="w-full"
               size="lg"
-              disabled={registerMutation.isPending}
+              disabled={registerMutation.isPending || !isPasswordValid}
               data-testid="button-register"
             >
               {registerMutation.isPending ? "Registrazione in corso..." : "Crea Account"}

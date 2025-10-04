@@ -18,8 +18,22 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
-      const res = await apiRequest("/api/auth/login", "POST", data);
-      return await res.json();
+      try {
+        const res = await apiRequest("/api/auth/login", "POST", data);
+        return await res.json();
+      } catch (error: any) {
+        let errorMessage = "Email o password non corretti. Verifica le tue credenziali.";
+        if (error.message) {
+          try {
+            const match = error.message.match(/\{.*\}/);
+            if (match) {
+              const jsonError = JSON.parse(match[0]);
+              errorMessage = jsonError.message || errorMessage;
+            }
+          } catch {}
+        }
+        throw new Error(errorMessage);
+      }
     },
     onSuccess: () => {
       toast({
@@ -30,8 +44,8 @@ export default function Login() {
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Email o password non corretti",
+        title: "Accesso non riuscito",
+        description: error.message || "Email o password non corretti. Verifica le tue credenziali.",
         variant: "destructive",
       });
     },
@@ -39,6 +53,25 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Campi obbligatori",
+        description: "Inserisci email e password per accedere",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!email.includes("@")) {
+      toast({
+        title: "Email non valida",
+        description: "Inserisci un indirizzo email valido",
+        variant: "destructive",
+      });
+      return;
+    }
+
     loginMutation.mutate({ email, password });
   };
 
@@ -57,7 +90,7 @@ export default function Login() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
@@ -69,7 +102,7 @@ export default function Login() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password *</Label>
               <Input
                 id="password"
                 type="password"

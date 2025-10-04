@@ -93,10 +93,23 @@ export default function QuizPage() {
     onSuccess: (data) => {
       setAttemptId(data.id); // Save attempt ID for report link
       queryClient.invalidateQueries({ queryKey: ["/api/user/dashboard"] });
-      toast({
-        title: "Quiz Completato!",
-        description: `Hai ottenuto ${data.score}% di risposte corrette.`,
-      });
+      
+      // For Insight Discovery, redirect directly to report
+      if (isInsightDiscovery) {
+        toast({
+          title: "Profilo Generato!",
+          description: "Il tuo profilo Insight Discovery è pronto.",
+        });
+        // Redirect to report page
+        setTimeout(() => {
+          setLocation(`/report/${data.id}`);
+        }, 500);
+      } else {
+        toast({
+          title: "Quiz Completato!",
+          description: `Hai ottenuto ${data.score}% di risposte corrette.`,
+        });
+      }
     },
     onError: () => {
       toast({

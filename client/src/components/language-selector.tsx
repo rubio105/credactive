@@ -63,9 +63,15 @@ export default function LanguageSelector({ open, onLanguageSelected }: LanguageS
     }
   };
 
+  // Allow closing dialog and use default language if user closes without selecting
+  const handleClose = () => {
+    // Use Italian as default if user doesn't select anything
+    onLanguageSelected("it");
+  };
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md"  onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
             Seleziona la tua lingua

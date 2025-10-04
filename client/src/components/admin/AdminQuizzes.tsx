@@ -459,21 +459,33 @@ export function AdminQuizzes() {
                 )}
               </div>
               <div>
-                <Label htmlFor="maxQuestions">Numero Domande per Tentativo (opzionale)</Label>
-                <Input
-                  id="maxQuestions"
-                  type="number"
-                  value={editingQuiz.maxQuestionsPerAttempt || ''}
-                  onChange={(e) => setEditingQuiz({ 
+                <Label htmlFor="maxQuestions">Numero Domande per Tentativo (Rotazione)</Label>
+                <Select
+                  value={editingQuiz.maxQuestionsPerAttempt?.toString() || 'all'}
+                  onValueChange={(value) => setEditingQuiz({ 
                     ...editingQuiz, 
-                    maxQuestionsPerAttempt: e.target.value ? parseInt(e.target.value) : undefined 
+                    maxQuestionsPerAttempt: value === 'all' ? undefined : parseInt(value)
                   })}
-                  placeholder="Lascia vuoto per tutte le domande"
-                  min="1"
-                  data-testid="input-max-questions"
-                />
+                >
+                  <SelectTrigger data-testid="select-max-questions">
+                    <SelectValue placeholder="Tutte le domande" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le domande</SelectItem>
+                    <SelectItem value="10">10 domande</SelectItem>
+                    <SelectItem value="20">20 domande</SelectItem>
+                    <SelectItem value="30">30 domande</SelectItem>
+                    <SelectItem value="40">40 domande</SelectItem>
+                    <SelectItem value="50">50 domande</SelectItem>
+                    <SelectItem value="60">60 domande</SelectItem>
+                    <SelectItem value="70">70 domande</SelectItem>
+                    <SelectItem value="80">80 domande</SelectItem>
+                    <SelectItem value="90">90 domande</SelectItem>
+                    <SelectItem value="100">100 domande</SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Limita il numero di domande mostrate per ogni tentativo. Lascia vuoto per mostrare tutte le domande disponibili.
+                  Ad ogni tentativo, l'utente riceverà questo numero di domande casuali dal pool totale. Scegli "Tutte le domande" per non limitare.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">

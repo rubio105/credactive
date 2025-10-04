@@ -10,6 +10,7 @@ import type { Category, Quiz } from "@shared/schema";
 import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine } from "lucide-react";
 import { featuredImages } from "@/lib/stockImages";
 import logoImage from "@assets/image_1759605874808.png";
+import certificationsImage from "@assets/image_1759608591455.png";
 
 export default function Landing() {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -159,7 +160,7 @@ export default function Landing() {
             <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
               <div className="h-48 overflow-hidden">
                 <img 
-                  src={featuredImages.certifications} 
+                  src={certificationsImage} 
                   alt="Certificazioni Professionali" 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />

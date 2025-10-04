@@ -55,8 +55,12 @@ export async function generateQuestions(
     : '\n- Include a "domain" field with the main topic or area covered by the question';
 
   const documentContextSection = documentContext 
-    ? `\n\nIMPORTANT: Base the questions on the following document content. Questions should directly reference concepts, procedures, and information from this document:\n\n${documentContext.substring(0, 30000)}\n\n` 
+    ? `\n\n⚠️ CRITICAL INSTRUCTION: You MUST create questions EXCLUSIVELY from the following document content. DO NOT use general knowledge or external information. Every question, answer option, and explanation must be directly traceable to the text below:\n\n===== DOCUMENT CONTENT START =====\n${documentContext.substring(0, 30000)}\n===== DOCUMENT CONTENT END =====\n\n` 
     : '';
+
+  const questionSourceInstruction = documentContext
+    ? '- ALL questions MUST be based ONLY on the document content provided above\n- DO NOT include general knowledge questions\n- Every answer must be verifiable in the provided document text\n- Reference specific sections, concepts, or procedures from the document'
+    : '- Questions should be realistic and exam-like\n- Cover different subtopics within the domain';
 
   const userPrompt = `Generate ${count} multiple-choice questions for ${quizTitle}.${documentContextSection}
 
@@ -65,8 +69,7 @@ Requirements:
 - Each question must have exactly 4 options (A, B, C, D)
 - Only ONE option should be correct
 - Include a detailed explanation for the correct answer
-- Questions should be realistic and exam-like
-- Cover different subtopics within the domain
+${questionSourceInstruction}
 - Avoid duplicate questions${domainInstructions}
 
 Return ONLY a valid JSON array with this exact structure:

@@ -28,9 +28,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, PlusCircle, X, Upload, Image as ImageIcon } from "lucide-react";
+import { Pencil, Trash2, Plus, PlusCircle, X, Upload, Image as ImageIcon, ArrowLeft } from "lucide-react";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 interface Question {
   id: string;
@@ -228,6 +229,12 @@ export function AdminQuestions() {
 
   return (
     <div>
+      <Button variant="ghost" asChild className="mb-4">
+        <Link href="/" data-testid="button-back-home">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Torna alla Home
+        </Link>
+      </Button>
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gestione Domande</h2>

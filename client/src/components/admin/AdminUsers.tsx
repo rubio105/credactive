@@ -21,9 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 interface User {
   id: string;
@@ -93,6 +94,12 @@ export function AdminUsers() {
 
   return (
     <div>
+      <Button variant="ghost" asChild className="mb-4">
+        <Link href="/" data-testid="button-back-home">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Torna alla Home
+        </Link>
+      </Button>
       <div className="mb-6">
         <h2 className="text-2xl font-bold">Gestione Utenti</h2>
         <p className="text-muted-foreground">Gestisci gli utenti della piattaforma</p>

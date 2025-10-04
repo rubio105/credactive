@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { DollarSign, Save } from "lucide-react";
+import { DollarSign, Save, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 
 interface Settings {
   subscriptionPrice: number;
@@ -49,6 +50,12 @@ export function AdminSettings() {
 
   return (
     <div>
+      <Button variant="ghost" asChild className="mb-4">
+        <Link href="/" data-testid="button-back-home">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Torna alla Home
+        </Link>
+      </Button>
       <div className="mb-6">
         <h2 className="text-2xl font-bold">Impostazioni</h2>
         <p className="text-muted-foreground">Configura le impostazioni della piattaforma</p>

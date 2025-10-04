@@ -74,7 +74,8 @@ export const questions = pgTable("questions", {
   question: text("question").notNull(),
   imageUrl: text("image_url"), // Optional image for the question
   options: jsonb("options").notNull(), // Array of option objects {label, text, explanation}
-  correctAnswer: text("correct_answer").notNull(), // Full text of the correct answer
+  correctAnswer: text("correct_answer"), // Legacy: single correct answer (for backward compatibility)
+  correctAnswers: jsonb("correct_answers"), // Array of correct answer labels for multiple-choice: ["A", "C"]
   explanation: text("explanation"),
   category: varchar("category", { length: 100 }),
   domain: varchar("domain", { length: 200 }), // CISSP domain or topic hint

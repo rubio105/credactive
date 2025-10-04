@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Plus, Sparkles, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
@@ -62,6 +62,8 @@ export function AdminQuizzes() {
   const [aiQuestionCount, setAiQuestionCount] = useState('100');
   const [aiDifficulty, setAiDifficulty] = useState('intermediate');
   const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [generatingJobId, setGeneratingJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -72,6 +74,57 @@ export function AdminQuizzes() {
   });
 
   const allQuizzes = categoriesWithQuizzes?.flatMap(cat => cat.quizzes) || [];
+
+  // Poll for job status when generating
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!generatingJobId || jobStatus !== 'processing') {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const pollJobStatus = async () => {
+      try {
+        const response = await fetch(`/api/admin/generation-jobs/${generatingJobId}`, {
+          credentials: 'include'
+        });
+        const job = await response.json();
+        
+        if (job.status === 'completed') {
+          setJobStatus('completed');
+          setGeneratingJobId(null);
+          queryClient.invalidateQueries({ queryKey: ["/api/categories-with-quizzes"] });
+          toast({
+            title: "Generazione completata!",
+            description: `${job.generatedCount} domande sono state generate con successo.`
+          });
+        } else if (job.status === 'failed') {
+          setJobStatus('failed');
+          setGeneratingJobId(null);
+          toast({
+            title: "Generazione fallita",
+            description: job.error || "Si è verificato un errore durante la generazione.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('Error polling job status:', error);
+      }
+    };
+
+    pollJobStatus(); // Initial check
+    pollIntervalRef.current = setInterval(pollJobStatus, 3000); // Poll every 3 seconds
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [generatingJobId, jobStatus]);
 
   const createMutation = useMutation({
     mutationFn: (data: Partial<Quiz>) => apiRequest("/api/admin/quizzes", "POST", data),
@@ -113,19 +166,23 @@ export function AdminQuizzes() {
   });
 
   const generateAIMutation = useMutation({
-    mutationFn: (data: { quizId: string; count: number; difficulty: string }) =>
-      apiRequest("/api/admin/generate-questions", "POST", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/questions"] });
+    mutationFn: async (data: { quizId: string; count: number; difficulty: string }) => {
+      const response = await apiRequest("/api/admin/generate-questions", "POST", data);
+      return await response.json();
+    },
+    onSuccess: (data: { jobId: string }) => {
+      setGeneratingJobId(data.jobId);
+      setJobStatus('processing');
       toast({ 
         title: "Generazione avviata!", 
-        description: "Le domande verranno generate in background. Potrebbero volerci alcuni minuti."
+        description: "Le domande vengono generate in background. Monitoreremo il progresso..."
       });
       setAiDialogOpen(false);
       setSelectedQuizForAI(null);
     },
     onError: () => {
       toast({ title: "Errore durante la generazione", variant: "destructive" });
+      setJobStatus('idle');
     },
   });
 

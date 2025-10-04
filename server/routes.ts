@@ -144,22 +144,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedQuestions = questions.map(q => {
         const options = Array.isArray(q.options) ? q.options : [];
         const normalizedOptions = options.map((opt: any, idx: number) => {
-          // If option is already in {label, text} format, keep it
-          if (opt && typeof opt === 'object' && opt.label && opt.text !== undefined) {
-            return opt;
-          }
-          // If option is a string, convert to {label, text} format
-          if (typeof opt === 'string') {
-            const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+          const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+          const label = labels[idx] || String.fromCharCode(65 + idx);
+          
+          let text = '';
+          
+          // If option is already an object
+          if (opt && typeof opt === 'object' && !Array.isArray(opt)) {
+            // Extract text as a string, handling nested objects or arrays
+            if (typeof opt.text === 'string') {
+              text = opt.text;
+            } else if (opt.text && typeof opt.text === 'object') {
+              // Handle nested objects (e.g., {it: '...', en: '...'})
+              // Prefer 'it', 'en', 'value' keys, or just stringify first value
+              text = opt.text.it || opt.text.en || opt.text.value || 
+                     Object.values(opt.text)[0] || '';
+              if (typeof text !== 'string') {
+                text = String(text);
+              }
+            } else if (opt.text !== null && opt.text !== undefined) {
+              text = String(opt.text);
+            } else if (opt.value && typeof opt.value === 'string') {
+              text = opt.value;
+            } else {
+              text = '';
+            }
+            
             return {
-              label: labels[idx] || String.fromCharCode(65 + idx),
-              text: opt
+              label: opt.label || label,
+              text,
+              isCorrect: opt.isCorrect ?? false
             };
           }
+          
+          // If option is a string, convert to {label, text} format
+          if (typeof opt === 'string') {
+            return {
+              label,
+              text: opt,
+              isCorrect: false
+            };
+          }
+          
+          // If option is array, join elements
+          if (Array.isArray(opt)) {
+            return {
+              label,
+              text: opt.join(', '),
+              isCorrect: false
+            };
+          }
+          
           // Fallback for unexpected formats
           return {
-            label: String.fromCharCode(65 + idx),
-            text: String(opt)
+            label,
+            text: opt !== null && opt !== undefined ? String(opt) : '',
+            isCorrect: false
           };
         });
         

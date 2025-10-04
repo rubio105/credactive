@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, Quiz, User as UserType } from "@shared/schema";
 import { Crown, ChartLine, BookOpen } from "lucide-react";
+import { getTranslation } from "@/lib/translations";
 
 interface User {
   id: string;
@@ -46,6 +47,9 @@ export default function Home() {
   const { user } = useAuth();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [selectedLiveCourseQuiz, setSelectedLiveCourseQuiz] = useState<{ id: string; title: string } | null>(null);
+  
+  const userLanguage = (user as UserType)?.language;
+  const t = getTranslation(userLanguage).home;
   
   const { data: dashboardData } = useQuery<DashboardData>({
     queryKey: ["/api/user/dashboard"],
@@ -115,20 +119,17 @@ export default function Home() {
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
-              Benvenuto, {(user as User)?.firstName || 'Utente'}!
+              {t.welcome}, {(user as User)?.firstName || 'User'}!
             </h1>
             <p className="text-muted-foreground">
-              Continua il tuo percorso di apprendimento in cybersecurity
+              {t.subtitle}
             </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowLanguageSelector(true)}
-            data-testid="button-change-language"
-            className="ml-4"
-          >
-            Cambia Lingua
-          </Button>
+          <Link href="/dashboard">
+            <Button variant="outline" data-testid="button-view-dashboard">
+              {t.viewDashboard}
+            </Button>
+          </Link>
         </div>
 
         {/* Quick Stats */}
@@ -138,7 +139,7 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Quiz Completati</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t.stats.completed}</p>
                     <p className="text-2xl font-bold" data-testid="stat-completed">
                       {dashboardData.stats.quizzesCompleted}
                     </p>
@@ -152,7 +153,7 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Punteggio Medio</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t.stats.averageScore}</p>
                     <p className="text-2xl font-bold text-success" data-testid="stat-average">
                       {dashboardData.stats.averageScore}%
                     </p>
@@ -166,7 +167,7 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Tempo Totale</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t.stats.timeSpent}</p>
                     <p className="text-2xl font-bold text-accent" data-testid="stat-time">
                       {dashboardData.stats.totalTime}h
                     </p>
@@ -180,7 +181,7 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Giorni Consecutivi</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t.stats.streak}</p>
                     <p className="text-2xl font-bold text-warning" data-testid="stat-streak">
                       {dashboardData.stats.currentStreak}
                     </p>
@@ -198,9 +199,9 @@ export default function Home() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold mb-2">Sblocca Tutti i Quiz</h3>
+                  <h3 className="text-xl font-bold mb-2">{t.noPremium.title}</h3>
                   <p className="text-white/90">
-                    Accedi a oltre 1.000.000 di domande professionali per soli €90 all'anno
+                    {t.noPremium.description}
                   </p>
                 </div>
                 <Link href="/subscribe">
@@ -220,12 +221,7 @@ export default function Home() {
         {/* Available Quizzes */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Quiz Disponibili</h2>
-            <Link href="/dashboard">
-              <Button variant="outline" data-testid="button-view-dashboard">
-                Vedi Dashboard Completa
-              </Button>
-            </Link>
+            <h2 className="text-2xl font-bold">{t.categories.allQuizzes}</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

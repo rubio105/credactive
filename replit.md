@@ -63,6 +63,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 2025)
 
+- **Home Page Multi-Language Support** (October 4, 2025): Internationalization of home page
+  - Created translations system for IT, EN, ES, FR languages
+  - Home page content now displays in user's preferred language (set during registration)
+  - Includes translations for: welcome message, stats labels, premium banner, category titles
+  - Translation system in client/src/lib/translations.ts
+  - Automatically uses user's language preference from profile
+
 - **Live Courses Language Support** (October 4, 2025): Added language field to live courses
   - Database: Added `language` column to live_courses table (values: it, en, es)
   - Admin Panel: Language selector with flags (🇮🇹 Italiano, 🇬🇧 English, 🇪🇸 Español)

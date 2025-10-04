@@ -21,6 +21,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Pencil, Trash2, Plus, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +39,7 @@ interface ContentPage {
   slug: string;
   title: string;
   content: string;
+  placement: string; // 'header', 'footer', 'none'
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
@@ -101,6 +109,7 @@ export function AdminContentPages() {
       slug: '',
       title: '',
       content: '<p>Inserisci qui il contenuto della pagina...</p>',
+      placement: 'footer',
       isPublished: true,
     });
     setIsCreating(true);
@@ -157,6 +166,7 @@ export function AdminContentPages() {
             <TableRow>
               <TableHead>Slug</TableHead>
               <TableHead>Titolo</TableHead>
+              <TableHead>Posizione</TableHead>
               <TableHead>Pubblicata</TableHead>
               <TableHead>Ultima Modifica</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
@@ -167,6 +177,13 @@ export function AdminContentPages() {
               <TableRow key={page.id} data-testid={`row-page-${page.slug}`}>
                 <TableCell className="font-mono text-sm">{page.slug}</TableCell>
                 <TableCell className="font-medium">{page.title}</TableCell>
+                <TableCell>
+                  <Badge variant={page.placement === 'header' ? 'default' : page.placement === 'footer' ? 'secondary' : 'outline'}>
+                    {page.placement === 'header' && '📍 Menu Top'}
+                    {page.placement === 'footer' && '⬇️ Footer'}
+                    {page.placement === 'none' && '—'}
+                  </Badge>
+                </TableCell>
                 <TableCell>
                   {page.isPublished ? (
                     <Badge variant="default" data-testid={`badge-published-${page.slug}`}>Pubblicata</Badge>
@@ -245,6 +262,26 @@ export function AdminContentPages() {
                 placeholder="Privacy Policy"
                 data-testid="input-page-title"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="placement">Posizionamento</Label>
+              <Select
+                value={editingPage?.placement || 'none'}
+                onValueChange={(value) => setEditingPage({ ...editingPage, placement: value })}
+              >
+                <SelectTrigger id="placement" data-testid="select-page-placement">
+                  <SelectValue placeholder="Seleziona posizione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="header">📍 Menu in Alto</SelectItem>
+                  <SelectItem value="footer">⬇️ Footer (in basso)</SelectItem>
+                  <SelectItem value="none">🚫 Nessuna (solo link diretto)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground mt-1">
+                Scegli dove mostrare il link a questa pagina
+              </p>
             </div>
 
             <div>

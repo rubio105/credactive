@@ -8,6 +8,7 @@ import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import LanguageSelector from "@/components/language-selector";
 import { LiveCourseModal } from "@/components/LiveCourseModal";
+import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, Quiz, User as UserType } from "@shared/schema";
@@ -328,6 +329,8 @@ export default function Home() {
           </Card>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

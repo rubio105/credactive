@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings } from "lucide-react";
 import logoImage from "@assets/image_1759523953855.png";
 
@@ -23,9 +24,22 @@ interface User {
   isAdmin: boolean;
 }
 
+interface ContentPage {
+  id: string;
+  slug: string;
+  title: string;
+  placement: string;
+  isPublished: boolean;
+}
+
 export default function Navigation() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const typedUser = user as User;
+
+  const { data: headerPages = [] } = useQuery<ContentPage[]>({
+    queryKey: ["/api/content-pages"],
+    select: (pages) => pages.filter(page => page.placement === 'header' && page.isPublished),
+  });
 
   const handleLogout = () => {
     window.location.href = '/api/logout';
@@ -80,16 +94,13 @@ export default function Navigation() {
                 </Link>
               </>
             ) : null}
-            <Link href="/chi-siamo">
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-about">
-                Chi siamo
-              </Button>
-            </Link>
-            <Link href="/contatti">
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-contact">
-                Contatti
-              </Button>
-            </Link>
+            {headerPages.map((page) => (
+              <Link key={page.id} href={`/${page.slug}`}>
+                <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid={`nav-${page.slug}`}>
+                  {page.title}
+                </Button>
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center space-x-4">

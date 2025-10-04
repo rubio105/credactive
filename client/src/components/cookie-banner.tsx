@@ -57,17 +57,14 @@ export default function CookieBanner() {
                 >
                   Solo necessari
                 </Button>
-                <Link href="/privacy-policy">
-                  <a>
-                    <Button 
-                      variant="ghost"
-                      className="text-sm"
-                      data-testid="link-cookie-policy"
-                    >
-                      Informativa Cookie
-                    </Button>
-                  </a>
-                </Link>
+                <Button 
+                  variant="ghost"
+                  className="text-sm"
+                  onClick={() => window.location.href = '/privacy-policy'}
+                  data-testid="link-cookie-policy"
+                >
+                  Informativa Cookie
+                </Button>
               </div>
             </div>
             <Button

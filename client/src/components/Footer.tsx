@@ -17,16 +17,25 @@ export default function Footer() {
 
   const currentYear = new Date().getFullYear();
 
-  if (footerPages.length === 0) {
-    return null; // Don't show footer if no pages
-  }
-
   return (
     <footer className="bg-card border-t border-border mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Footer Links */}
           <div className="flex flex-wrap justify-center gap-6">
+            {/* Static pages */}
+            <Link href="/chi-siamo">
+              <a className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="footer-chi-siamo">
+                Chi siamo
+              </a>
+            </Link>
+            <Link href="/contatti">
+              <a className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="footer-contatti">
+                Contatti
+              </a>
+            </Link>
+            
+            {/* CMS pages with footer placement */}
             {footerPages.map((page) => (
               <Link key={page.id} href={`/page/${page.slug}`}>
                 <a className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid={`footer-${page.slug}`}>

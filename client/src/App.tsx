@@ -14,6 +14,10 @@ import Admin from "@/pages/admin";
 import ChiSiamo from "@/pages/chi-siamo";
 import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +27,10 @@ function Router() {
     <Switch>
       <Route path="/chi-siamo" component={ChiSiamo} />
       <Route path="/contatti" component={Contatti} />
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

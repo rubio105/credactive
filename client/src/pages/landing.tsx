@@ -14,7 +14,6 @@ import certificationsImage from "@assets/image_1759608591455.png";
 
 export default function Landing() {
   const [activeFilter, setActiveFilter] = useState("all");
-  const [activeDifficultyFilter, setActiveDifficultyFilter] = useState("all");
 
   const { data: categoriesWithQuizzes = [], isLoading } = useQuery<Array<Category & { quizzes: Quiz[] }>>({
     queryKey: ["/api/categories-with-quizzes"],
@@ -22,15 +21,9 @@ export default function Landing() {
 
   const quizCategories = mapCategoriesToQuizCards(categoriesWithQuizzes);
 
-  // Apply category filter first
-  let filteredQuizzes = activeFilter === "all" 
+  const filteredQuizzes = activeFilter === "all" 
     ? quizCategories 
     : quizCategories.filter(quiz => quiz.category === activeFilter);
-  
-  // Then apply difficulty filter
-  if (activeDifficultyFilter !== "all") {
-    filteredQuizzes = filteredQuizzes.filter(quiz => quiz.difficulty === activeDifficultyFilter);
-  }
 
   const handleStartQuiz = (quizId: string, isPremium: boolean) => {
     if (isPremium) {
@@ -214,95 +207,42 @@ export default function Landing() {
           </div>
 
           {/* Filter Tabs */}
-          <div className="space-y-6 mb-12">
-            {/* Category Filters */}
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-3 text-center">Categoria</h3>
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button
-                  variant={activeFilter === "all" ? "default" : "outline"}
-                  onClick={() => setActiveFilter("all")}
-                  className="rounded-full"
-                  data-testid="filter-all"
-                >
-                  Tutti
-                </Button>
-                <Button
-                  variant={activeFilter === "certifications" ? "default" : "outline"}
-                  onClick={() => setActiveFilter("certifications")}
-                  className="rounded-full"
-                  data-testid="filter-certifications"
-                >
-                  <Trophy className="w-4 h-4 mr-2" />
-                  Certificazioni
-                </Button>
-                <Button
-                  variant={activeFilter === "compliance" ? "default" : "outline"}
-                  onClick={() => setActiveFilter("compliance")}
-                  className="rounded-full"
-                  data-testid="filter-compliance"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Compliance
-                </Button>
-                <Button
-                  variant={activeFilter === "ai" ? "default" : "outline"}
-                  onClick={() => setActiveFilter("ai")}
-                  className="rounded-full"
-                  data-testid="filter-ai"
-                >
-                  <ChartLine className="w-4 h-4 mr-2" />
-                  AI & Security
-                </Button>
-              </div>
-            </div>
-            
-            {/* Difficulty Filters */}
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-3 text-center">Livello</h3>
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button
-                  variant={activeDifficultyFilter === "all" ? "default" : "outline"}
-                  onClick={() => setActiveDifficultyFilter("all")}
-                  className="rounded-full"
-                  data-testid="filter-difficulty-all"
-                >
-                  Tutti i livelli
-                </Button>
-                <Button
-                  variant={activeDifficultyFilter === "beginner" ? "default" : "outline"}
-                  onClick={() => setActiveDifficultyFilter("beginner")}
-                  className="rounded-full"
-                  data-testid="filter-difficulty-beginner"
-                >
-                  Principiante
-                </Button>
-                <Button
-                  variant={activeDifficultyFilter === "intermediate" ? "default" : "outline"}
-                  onClick={() => setActiveDifficultyFilter("intermediate")}
-                  className="rounded-full"
-                  data-testid="filter-difficulty-intermediate"
-                >
-                  Intermedio
-                </Button>
-                <Button
-                  variant={activeDifficultyFilter === "advanced" ? "default" : "outline"}
-                  onClick={() => setActiveDifficultyFilter("advanced")}
-                  className="rounded-full"
-                  data-testid="filter-difficulty-advanced"
-                >
-                  Avanzato
-                </Button>
-                <Button
-                  variant={activeDifficultyFilter === "expert" ? "default" : "outline"}
-                  onClick={() => setActiveDifficultyFilter("expert")}
-                  className="rounded-full"
-                  data-testid="filter-difficulty-expert"
-                >
-                  Esperto
-                </Button>
-              </div>
-            </div>
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            <Button
+              variant={activeFilter === "all" ? "default" : "outline"}
+              onClick={() => setActiveFilter("all")}
+              className="rounded-full"
+              data-testid="filter-all"
+            >
+              Tutti
+            </Button>
+            <Button
+              variant={activeFilter === "certifications" ? "default" : "outline"}
+              onClick={() => setActiveFilter("certifications")}
+              className="rounded-full"
+              data-testid="filter-certifications"
+            >
+              <Trophy className="w-4 h-4 mr-2" />
+              Certificazioni
+            </Button>
+            <Button
+              variant={activeFilter === "compliance" ? "default" : "outline"}
+              onClick={() => setActiveFilter("compliance")}
+              className="rounded-full"
+              data-testid="filter-compliance"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Compliance
+            </Button>
+            <Button
+              variant={activeFilter === "ai" ? "default" : "outline"}
+              onClick={() => setActiveFilter("ai")}
+              className="rounded-full"
+              data-testid="filter-ai"
+            >
+              <ChartLine className="w-4 h-4 mr-2" />
+              AI & Security
+            </Button>
           </div>
 
           {/* Quiz Cards Grid */}
@@ -348,7 +288,7 @@ export default function Landing() {
                 <Button 
                   size="lg"
                   className="bg-white text-primary hover:bg-white/90 shadow-xl font-bold text-lg px-12 py-4 h-auto"
-                  onClick={() => window.location.href = '/api/login'}
+                  onClick={() => window.location.href = '/register'}
                   data-testid="button-unlock-now"
                 >
                   <Crown className="w-5 h-5 mr-2" />

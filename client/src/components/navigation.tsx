@@ -41,12 +41,14 @@ export default function Navigation() {
     select: (pages) => pages.filter(page => page.placement === 'header' && page.isPublished),
   });
 
-  const handleLogout = () => {
-    window.location.href = '/api/logout';
-  };
-
-  const handleLogin = () => {
-    window.location.href = '/api/login';
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/';
+    }
   };
 
   const getUserName = () => {
@@ -109,19 +111,21 @@ export default function Navigation() {
             ) : !isAuthenticated ? (
               /* Not Authenticated State */
               <div className="flex items-center space-x-4">
-                <Button 
-                  variant="ghost" 
-                  onClick={handleLogin}
-                  data-testid="button-login"
-                >
-                  Accedi
-                </Button>
-                <Button 
-                  onClick={handleLogin}
-                  data-testid="button-register"
-                >
-                  Registrati
-                </Button>
+                <Link href="/login">
+                  <Button 
+                    variant="ghost" 
+                    data-testid="button-login"
+                  >
+                    Accedi
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button 
+                    data-testid="button-register"
+                  >
+                    Registrati
+                  </Button>
+                </Link>
               </div>
             ) : (
               /* Authenticated State */

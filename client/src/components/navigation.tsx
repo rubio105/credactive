@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings } from "lucide-react";
-import logoImage from "@assets/image_1759523953855.png";
+import logoImage from "@assets/image_1759605874808.png";
 
 interface User {
   id: string;
@@ -70,7 +70,7 @@ export default function Navigation() {
             <div className="flex items-center cursor-pointer" data-testid="logo">
               <img 
                 src={logoImage} 
-                alt="IBI ACADEMY" 
+                alt="CREDACTIVE" 
                 className="h-10 w-auto"
               />
             </div>

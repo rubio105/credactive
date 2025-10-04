@@ -34,7 +34,7 @@ export default function Footer() {
 
           {/* Copyright */}
           <div className="text-sm text-muted-foreground">
-            © {currentYear} IBI ACADEMY. Tutti i diritti riservati.
+            © {currentYear} CREDACTIVE. Tutti i diritti riservati.
           </div>
         </div>
       </div>

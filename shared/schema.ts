@@ -65,6 +65,7 @@ export const quizzes = pgTable("quizzes", {
   difficulty: varchar("difficulty", { length: 20 }).notNull(), // beginner, intermediate, advanced, expert
   isPremium: boolean("is_premium").default(true),
   isActive: boolean("is_active").default(true),
+  documentPdfUrl: text("document_pdf_url"), // Optional: PDF document for AI question generation
   createdAt: timestamp("created_at").defaultNow(),
 });
 

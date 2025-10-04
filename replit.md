@@ -145,3 +145,16 @@ Preferred communication style: Simple, everyday language.
   - Handles strings, objects with language keys (it/en), arrays, and legacy formats
   - Ensures all options have consistent `{label, text, isCorrect}` structure before sending to frontend
   - Frontend `getCurrentQuestion()` safely handles translated options with fallback logic
+
+- **Insight Discovery Report Bug Fix** (October 4, 2025): Fixed personality test report generation
+  - Problem: Color counting was failing due to case-sensitivity issues (id: "a" vs answer: "A")
+  - Solution: Case-insensitive matching for both `id` and `label` fields when finding selected options
+  - Normalized color values to lowercase before counting (handles "Red", "red", "RED")
+  - Fixed nullable `correctAnswer` field causing TypeScript errors
+  - Now correctly generates personality profiles with dominant/secondary colors, strengths, development areas, and recommendations
+
+- **Extended Audio Performance** (October 4, 2025): Improved audio generation speed and UX
+  - Changed from GPT-4o to GPT-4o-mini for 3-4x faster text generation
+  - Added informative toast messages during generation (15-30 second wait time)
+  - Implemented 60-second timeout with specific error messaging
+  - Success confirmation when audio is ready to play

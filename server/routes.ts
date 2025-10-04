@@ -468,7 +468,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Randomize questions order for each quiz attempt
       const shuffledQuestions = shuffleArray(normalizedQuestions);
-      res.json({ quiz, questions: shuffledQuestions });
+      
+      // Limit questions if maxQuestionsPerAttempt is set
+      const limitedQuestions = quiz.maxQuestionsPerAttempt && quiz.maxQuestionsPerAttempt > 0
+        ? shuffledQuestions.slice(0, quiz.maxQuestionsPerAttempt)
+        : shuffledQuestions;
+      
+      res.json({ quiz, questions: limitedQuestions });
     } catch (error) {
       console.error("Error fetching quiz:", error);
       res.status(500).json({ message: "Failed to fetch quiz" });

@@ -43,7 +43,8 @@ Preferred communication style: Simple, everyday language.
 
 -   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Supports shuffled questions, timed quizzes, server-side result generation with detailed reports, and Insight Discovery personality assessments. Includes categories like Cybersecurity, Ethical Hacking, Compliance & Governance, Business & Innovation, Assessment & Leadership.
 -   **Premium Features**: Most content requires an active Stripe subscription.
--   **AI Question Generation**: Admin panel feature using OpenAI GPT-4o for bulk, context-aware question generation (1-1000 questions, configurable difficulty), with background processing and persistence.
+-   **AI Question Generation**: Admin panel feature using OpenAI GPT-4o for bulk, context-aware question generation (1-1000 questions, configurable difficulty), with background processing and persistence. Supports **document-based generation** via PDF upload (max 600 pages, 50MB) - questions are generated from the document content using extracted text as context.
+-   **Document Upload**: Quizzes can have optional PDF documents (max 600 pages) for AI question generation. Backend uses pdf-parse to extract and validate content, storing documents in `/public/quiz-documents/`.
 -   **Question Media**: Supports optional image uploads for questions and audio explanations (TTS) for question and extended explanations, generated via OpenAI.
 -   **Live Courses**: Integrated system for purchasing one-time live courses via Stripe, including course details, sessions, and enrollment tracking. Supports multi-language courses.
 -   **Content Management System (CMS)**: Manages static content pages (e.g., Privacy Policy, Terms of Service) with rich text editing, HTML sanitization, and dynamic placement in site navigation (header/footer).

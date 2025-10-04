@@ -261,23 +261,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: Quiz[] }>> {
-    const allCategories = await db.select().from(categories).orderBy(categories.sortOrder, categories.name);
-    const result = [];
+    // Optimize with a single LEFT JOIN query instead of N+1 queries
+    const rows = await db
+      .select()
+      .from(categories)
+      .leftJoin(quizzes, eq(categories.id, quizzes.categoryId))
+      .orderBy(categories.sortOrder, categories.name, quizzes.title);
 
-    for (const category of allCategories) {
-      const categoryQuizzes = await db
-        .select()
-        .from(quizzes)
-        .where(eq(quizzes.categoryId, category.id))
-        .orderBy(quizzes.title);
+    // Group quizzes by category
+    const categoryMap = new Map<string, Category & { quizzes: Quiz[] }>();
+    
+    for (const row of rows) {
+      const category = row.categories;
+      const quiz = row.quizzes;
       
-      result.push({
-        ...category,
-        quizzes: categoryQuizzes
-      });
+      if (!categoryMap.has(category.id)) {
+        categoryMap.set(category.id, {
+          ...category,
+          quizzes: []
+        });
+      }
+      
+      if (quiz) {
+        categoryMap.get(category.id)!.quizzes.push(quiz);
+      }
     }
 
-    return result;
+    return Array.from(categoryMap.values());
   }
 
   async getAllQuizzes(): Promise<Quiz[]> {

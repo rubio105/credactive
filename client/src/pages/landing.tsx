@@ -60,7 +60,7 @@ export default function Landing() {
                 Prepara le tue <span className="text-accent">Certificazioni</span> con Quiz Professionali
               </h1>
               <p className="text-lg md:text-xl text-white/90">
-                Accedi a oltre 2.000 domande professionali, 10 categorie complete e certificati di completamento con un unico pagamento. Cybersecurity (CISSP, CISM, OSCP), Compliance (ISO 27001, GDPR, NIS2, DORA), Business (Open Innovation, Bilancio) e Leadership.
+                Accedi a oltre 1.000.000 di domande professionali, 10 categorie complete e certificati di completamento con un unico pagamento. Cybersecurity (CISSP, CISM, OSCP), Compliance (ISO 27001, GDPR, NIS2, DORA), Business (Open Innovation, Bilancio) e Leadership.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
@@ -287,7 +287,7 @@ export default function Landing() {
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">Sblocca Tutti i Quiz</h2>
                 <p className="text-lg md:text-xl mb-8 text-white/90">
-                  Accedi a oltre 2.000 domande professionali, 10 categorie complete e certificati di completamento con un unico pagamento.
+                  Accedi a oltre 1.000.000 di domande professionali, 10 categorie complete e certificati di completamento con un unico pagamento.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
                   <div className="flex items-center space-x-2">

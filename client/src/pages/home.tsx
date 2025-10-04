@@ -200,7 +200,7 @@ export default function Home() {
                 <div>
                   <h3 className="text-xl font-bold mb-2">Sblocca Tutti i Quiz</h3>
                   <p className="text-white/90">
-                    Accedi a oltre 2.000 domande professionali per soli €90 all'anno
+                    Accedi a oltre 1.000.000 di domande professionali per soli €90 all'anno
                   </p>
                 </div>
                 <Link href="/subscribe">

@@ -81,12 +81,12 @@ export default function Subscribe() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Non autorizzato",
+        description: "Devi effettuare il login",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/login";
       }, 500);
       return;
     }
@@ -114,12 +114,12 @@ export default function Subscribe() {
         .catch((error) => {
           if (isUnauthorizedError(error)) {
             toast({
-              title: "Unauthorized",
-              description: "You are logged out. Logging in again...",
+              title: "Sessione scaduta",
+              description: "Effettua nuovamente il login",
               variant: "destructive",
             });
             setTimeout(() => {
-              window.location.href = "/api/login";
+              window.location.href = "/login";
             }, 500);
             return;
           }

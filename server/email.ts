@@ -16,9 +16,11 @@ interface SendEmailOptions {
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
   const sendSmtpEmail = new brevo.SendSmtpEmail();
 
+  // Use a generic sender email or the one verified in Brevo
+  // If you have a verified domain in Brevo, update this email
   sendSmtpEmail.sender = {
     name: "CREDACTIVE",
-    email: "noreply@credactive.com",
+    email: process.env.BREVO_SENDER_EMAIL || "noreply@credactive.com",
   };
 
   sendSmtpEmail.to = [{ email: options.to }];
@@ -40,7 +42,12 @@ export async function sendPasswordResetEmail(
   email: string,
   resetToken: string
 ): Promise<void> {
-  const resetUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+  // Get the base URL from environment or use current host
+  const baseUrl = process.env.BASE_URL || 
+                  (process.env.REPLIT_DOMAINS?.split(',')[0] 
+                    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+                    : 'http://localhost:5000');
+  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -111,7 +118,12 @@ export async function sendWelcomeEmail(
   email: string,
   firstName?: string
 ): Promise<void> {
-  const loginUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000'}/login`;
+  // Get the base URL from environment or use current host
+  const baseUrl = process.env.BASE_URL || 
+                  (process.env.REPLIT_DOMAINS?.split(',')[0] 
+                    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+                    : 'http://localhost:5000');
+  const loginUrl = `${baseUrl}/login`;
   
   const name = firstName || email.split('@')[0];
 

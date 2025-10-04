@@ -31,7 +31,7 @@ export default function Landing() {
       document.getElementById('payment-modal')?.classList.remove('hidden');
     } else {
       // Start free quiz
-      window.location.href = `/api/login`;
+      window.location.href = `/login`;
     }
   };
 
@@ -67,7 +67,7 @@ export default function Landing() {
                 <Button 
                   size="lg"
                   className="bg-white text-secondary hover:bg-white/90 shadow-xl text-lg px-8 py-4 h-auto"
-                  onClick={() => window.location.href = '/api/login'}
+                  onClick={() => window.location.href = '/register'}
                   data-testid="button-start-free"
                 >
                   Inizia Gratis

@@ -221,6 +221,14 @@ export default function QuizPage() {
       }, 1000);
       return () => clearTimeout(timer);
     } else if (timeRemaining === 0 && !quizCompleted) {
+      // Show toast when time expires
+      toast({
+        title: useEnglish ? "Time's Up!" : "Tempo Scaduto!",
+        description: useEnglish 
+          ? "The quiz has been automatically submitted. Unanswered questions count as 0 points." 
+          : "Il quiz è stato inviato automaticamente. Le risposte non date contano 0 punti.",
+        variant: "destructive"
+      });
       handleSubmitQuiz();
     }
   }, [timeRemaining, quizCompleted]);

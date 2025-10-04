@@ -172,6 +172,7 @@ export const contentPages = pgTable("content_pages", {
   slug: varchar("slug", { length: 100 }).notNull().unique(), // e.g., "privacy", "terms", "about", "contact"
   title: varchar("title", { length: 200 }).notNull(),
   content: text("content").notNull(), // HTML content (sanitized)
+  placement: varchar("placement", { length: 20 }).default("none"), // 'header', 'footer', 'none'
   isPublished: boolean("is_published").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

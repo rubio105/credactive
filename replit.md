@@ -106,3 +106,10 @@ Preferred communication style: Simple, everyday language.
   - Larger price display (€XX.XX) and clearer session details
   - Better visual separation between session info and enrollment action
   - Improved discoverability of payment flow
+
+- **Featured Categories System** (October 4, 2025): Category highlighting on home page
+  - Database: Added `isFeatured` boolean field to categories table
+  - Admin Panel: New "In Evidenza" column in table and toggle switch in edit dialog
+  - Home Page: Separate "Categorie in Evidenza" section displaying only featured categories
+  - Featured categories inherit images from category imageUrl field
+  - Premium filtering works independently for both featured and regular quiz sections

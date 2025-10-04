@@ -78,6 +78,7 @@ export const questions = pgTable("questions", {
   correctAnswer: text("correct_answer"), // Legacy: single correct answer (for backward compatibility)
   correctAnswers: jsonb("correct_answers"), // Array of correct answer labels for multiple-choice: ["A", "C"]
   explanation: text("explanation"),
+  explanationAudioUrl: text("explanation_audio_url"), // TTS audio URL for the explanation
   category: varchar("category", { length: 100 }),
   domain: varchar("domain", { length: 200 }), // CISSP domain or topic hint
   createdAt: timestamp("created_at").defaultNow(),

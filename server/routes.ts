@@ -1208,7 +1208,9 @@ ${JSON.stringify(questionsToTranslate)}`
               question: q.question,
               options: optionsWithLabels as any,
               correctAnswer,
+              correctAnswers: null,
               explanation: q.explanation,
+              explanationAudioUrl: null,
               imageUrl: '',
               category: categoryName,
               domain: null,
@@ -1321,6 +1323,60 @@ ${JSON.stringify(questionsToTranslate)}`
     } catch (error) {
       console.error("Error deleting content page:", error);
       res.status(500).json({ message: "Failed to delete content page" });
+    }
+  });
+
+  // Generate TTS audio for question explanation
+  app.post('/api/admin/questions/:id/generate-audio', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { language = 'it' } = req.body;
+      
+      // Get the question
+      const question = await storage.getQuestionById(id);
+      if (!question || !question.explanation) {
+        return res.status(404).json({ message: "Question or explanation not found" });
+      }
+
+      // Initialize OpenAI
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      // Choose voice based on language
+      const voiceMap: { [key: string]: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' } = {
+        it: 'nova',   // Italian - female voice
+        en: 'alloy',  // English - neutral voice
+        es: 'shimmer' // Spanish - female voice
+      };
+      
+      const voice = voiceMap[language] || 'alloy';
+
+      // Generate TTS audio
+      const mp3Response = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: voice,
+        input: question.explanation,
+        speed: 1.0,
+      });
+
+      // Convert response to buffer
+      const buffer = Buffer.from(await mp3Response.arrayBuffer());
+      
+      // Save audio file
+      const filename = `${id}-${language}.mp3`;
+      const filepath = path.join(process.cwd(), 'public', 'audio-explanations', filename);
+      await fs.promises.writeFile(filepath, buffer);
+      
+      // Update question with audio URL
+      const audioUrl = `/audio-explanations/${filename}`;
+      await storage.updateQuestion(id, { explanationAudioUrl: audioUrl });
+      
+      res.json({ 
+        message: "Audio generated successfully",
+        audioUrl 
+      });
+    } catch (error) {
+      console.error("Error generating audio:", error);
+      res.status(500).json({ message: "Failed to generate audio" });
     }
   });
 

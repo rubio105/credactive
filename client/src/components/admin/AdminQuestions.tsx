@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, PlusCircle, X, Upload, Image as ImageIcon, ArrowLeft } from "lucide-react";
+import { Pencil, Trash2, Plus, PlusCircle, X, Upload, Image as ImageIcon, ArrowLeft, Volume2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -40,6 +40,7 @@ interface Question {
   imageUrl?: string;
   options: { text: string; isCorrect: boolean }[];
   explanation: string;
+  explanationAudioUrl?: string;
   difficulty: string;
 }
 
@@ -114,6 +115,18 @@ export function AdminQuestions() {
     },
     onError: () => {
       toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
+    },
+  });
+
+  const generateAudioMutation = useMutation({
+    mutationFn: (data: { id: string; language: string }) =>
+      apiRequest(`/api/admin/questions/${data.id}/generate-audio`, "POST", { language: data.language }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/questions"] });
+      toast({ title: "Audio generato con successo" });
+    },
+    onError: () => {
+      toast({ title: "Errore durante la generazione audio", variant: "destructive" });
     },
   });
 
@@ -303,6 +316,40 @@ export function AdminQuestions() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    {question.explanation && !question.explanationAudioUrl && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const language = prompt('Seleziona la lingua per la spiegazione audio (it/en/es):', 'it');
+                          if (language && ['it', 'en', 'es'].includes(language.toLowerCase())) {
+                            generateAudioMutation.mutate({ id: question.id, language: language.toLowerCase() });
+                          } else if (language) {
+                            toast({ title: "Lingua non supportata. Usa: it, en o es", variant: "destructive" });
+                          }
+                        }}
+                        disabled={generateAudioMutation.isPending}
+                        title="Genera audio spiegazione"
+                        data-testid={`button-generate-audio-${question.id}`}
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {question.explanationAudioUrl && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-green-600"
+                        onClick={() => {
+                          const audio = new Audio(question.explanationAudioUrl);
+                          audio.play();
+                        }}
+                        title="Ascolta audio"
+                        data-testid={`button-play-audio-${question.id}`}
+                      >
+                        <Volume2 className="w-4 h-4 fill-current" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"

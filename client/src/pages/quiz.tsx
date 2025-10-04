@@ -12,7 +12,7 @@ import Navigation from "@/components/navigation";
 import Timer from "@/components/ui/timer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages, Volume2 } from "lucide-react";
 
 interface Quiz {
   id: string;
@@ -33,6 +33,7 @@ interface Question {
   }>;
   correctAnswer: string;
   explanation?: string;
+  explanationAudioUrl?: string;
   category?: string;
   domain?: string; // CISSP domain or topic hint
 }
@@ -621,8 +622,25 @@ export default function QuizPage() {
             <CardContent className="p-6">
               <div className="flex items-start space-x-3">
                 <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
-                <div>
-                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Spiegazione</h4>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100">Spiegazione</h4>
+                    {currentQuestion.explanationAudioUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const audio = new Audio(currentQuestion.explanationAudioUrl);
+                          audio.play();
+                        }}
+                        className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900"
+                        data-testid="button-play-audio"
+                      >
+                        <Volume2 className="w-4 h-4 mr-1" />
+                        Ascolta
+                      </Button>
+                    )}
+                  </div>
                   <p className="text-blue-800 dark:text-blue-200" data-testid="question-explanation">
                     {currentQuestion.explanation}
                   </p>

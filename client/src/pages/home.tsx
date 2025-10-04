@@ -69,9 +69,22 @@ export default function Home() {
     }
   }, [user]);
 
+  // Filter featured categories (those marked as "In Evidenza")
+  const featuredCategories = categoriesWithQuizzes.filter(cat => cat.isFeatured);
+  const featuredQuizzes = mapCategoriesToQuizCards(featuredCategories);
+
+  // All other quizzes (not in featured categories)
+  const nonFeaturedCategories = categoriesWithQuizzes.filter(cat => !cat.isFeatured);
+  const nonFeaturedQuizzes = mapCategoriesToQuizCards(nonFeaturedCategories);
+
+  // Apply premium filter
+  const availableFeaturedQuizzes = (user as User)?.isPremium 
+    ? featuredQuizzes 
+    : featuredQuizzes.filter(quiz => !quiz.isPremium);
+
   const availableQuizzes = (user as User)?.isPremium 
-    ? quizCategories 
-    : quizCategories.filter(quiz => !quiz.isPremium);
+    ? nonFeaturedQuizzes 
+    : nonFeaturedQuizzes.filter(quiz => !quiz.isPremium);
 
   // Quiz with live courses
   const liveCourseQuizTitles = [
@@ -216,6 +229,28 @@ export default function Home() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Featured Categories */}
+        {availableFeaturedQuizzes.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">{t.categories.featured}</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableFeaturedQuizzes.map((quiz) => (
+                <QuizCard
+                  key={quiz.id}
+                  quiz={quiz}
+                  onStartQuiz={() => handleStartQuiz(quiz.id, quiz.isPremium)}
+                  onLiveCourse={() => handleLiveCourse(quiz.id, quiz.title)}
+                  hasLiveCourse={hasLiveCourse(quiz.title)}
+                  showPremiumBadge={!(user as User)?.isPremium}
+                />
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Available Quizzes */}

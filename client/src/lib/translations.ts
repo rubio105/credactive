@@ -17,6 +17,7 @@ export const translations = {
       },
       categories: {
         title: "Categorie",
+        featured: "Categorie in Evidenza",
         allQuizzes: "Tutti i Quiz"
       },
       emptyState: {
@@ -56,6 +57,7 @@ export const translations = {
       },
       categories: {
         title: "Categories",
+        featured: "Featured Categories",
         allQuizzes: "All Quizzes"
       },
       emptyState: {
@@ -95,6 +97,7 @@ export const translations = {
       },
       categories: {
         title: "Categorías",
+        featured: "Categorías Destacadas",
         allQuizzes: "Todos los Cuestionarios"
       },
       emptyState: {
@@ -134,6 +137,7 @@ export const translations = {
       },
       categories: {
         title: "Catégories",
+        featured: "Catégories en Vedette",
         allQuizzes: "Tous les Quiz"
       },
       emptyState: {

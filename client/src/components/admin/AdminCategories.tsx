@@ -35,6 +35,7 @@ interface Category {
   icon: string;
   color: string;
   isPremium: boolean;
+  isFeatured: boolean;
   sortOrder: number;
   imageUrl?: string;
 }
@@ -103,6 +104,7 @@ export function AdminCategories() {
       icon: '',
       color: '',
       isPremium: true,
+      isFeatured: false,
       sortOrder: 0,
     });
     setIsCreating(true);
@@ -183,6 +185,7 @@ export function AdminCategories() {
               <TableHead>Descrizione</TableHead>
               <TableHead>Ordine</TableHead>
               <TableHead>Premium</TableHead>
+              <TableHead>In Evidenza</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
           </TableHeader>
@@ -198,6 +201,13 @@ export function AdminCategories() {
                     <Badge variant="default">Premium</Badge>
                   ) : (
                     <Badge variant="secondary">Free</Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {category.isFeatured ? (
+                    <Badge variant="default">Sì</Badge>
+                  ) : (
+                    <Badge variant="outline">No</Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
@@ -326,6 +336,15 @@ export function AdminCategories() {
                   checked={editingCategory.isPremium}
                   onCheckedChange={(checked) => setEditingCategory({ ...editingCategory, isPremium: checked })}
                   data-testid="switch-isPremium"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isFeatured">In Evidenza (Home Page)</Label>
+                <Switch
+                  id="isFeatured"
+                  checked={editingCategory.isFeatured}
+                  onCheckedChange={(checked) => setEditingCategory({ ...editingCategory, isFeatured: checked })}
+                  data-testid="switch-isFeatured"
                 />
               </div>
             </div>

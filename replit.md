@@ -43,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Key Features
 
--   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Supports shuffled questions, customizable quiz lengths (10, 20, 30, 50, 100, or all questions), timed quizzes, server-side result generation with detailed reports, and Insight Discovery personality assessments. Category filters available on landing and home pages. Includes categories like Cybersecurity, Ethical Hacking, Compliance & Governance, Business & Innovation, Assessment & Leadership.
+-   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Supports shuffled questions, customizable quiz lengths (10, 20, 30, 50, 100, or all questions), **admin-controlled question rotation** (admins can set max questions per attempt), timed quizzes, server-side result generation with detailed reports, and Insight Discovery personality assessments. Category filters available on landing and home pages. Includes categories like Cybersecurity, Ethical Hacking, Compliance & Governance, Business & Innovation, Assessment & Leadership.
 -   **Premium Features**: Most content requires an active Stripe subscription.
 -   **AI Question Generation**: Admin panel feature using OpenAI GPT-4o for bulk, context-aware question generation (1-1000 questions, configurable difficulty), with background processing and persistence. Supports **document-based generation** via PDF upload (max 600 pages, 50MB) - questions are generated from the document content using extracted text as context.
 -   **Document Upload**: Quizzes can have optional PDF documents (max 600 pages) for AI question generation. Backend uses pdf-parse to extract and validate content, storing documents in `/public/quiz-documents/`.
@@ -52,6 +52,7 @@ Preferred communication style: Simple, everyday language.
 -   **Content Management System (CMS)**: Manages static content pages (e.g., Privacy Policy, Terms of Service) with rich text editing, HTML sanitization, and dynamic placement in site navigation (header/footer).
 -   **Internationalization**: Multi-language support for home page, live courses, and a prominent in-quiz language selector (IT/EN/ES) allowing users to switch quiz language independently of profile settings, with dynamic audio language sync.
 -   **UI/UX**: Utilizes `shadcn/ui` for a modern, consistent interface. Includes features like featured categories on the home page, improved live course enrollment UX, and consistent navigation within the admin panel.
+-   **Admin Panel Enhancements**: Comprehensive user management showing all registration data (demographics, contact info, consents including newsletter opt-in). Quiz rotation control allowing admins to limit questions per attempt. Tab-based admin interface at `/admin` for managing users, categories, quizzes, questions, live courses, content pages, and settings.
 
 # External Dependencies
 

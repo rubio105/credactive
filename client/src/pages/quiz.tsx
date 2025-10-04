@@ -69,6 +69,7 @@ export default function QuizPage() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [useEnglish, setUseEnglish] = useState(false); // Language toggle
+  const [isInsightDiscovery, setIsInsightDiscovery] = useState(false); // Personality test flag
   const [translatedQuestions, setTranslatedQuestions] = useState<Record<string, any>>({});
   const [isGeneratingExtendedAudio, setIsGeneratingExtendedAudio] = useState(false);
 
@@ -120,6 +121,10 @@ export default function QuizPage() {
     if (quizData && !quizStartTime) {
       setTimeRemaining(quizData.quiz.duration * 60); // Convert minutes to seconds
       setQuizStartTime(new Date());
+      
+      // Check if this is Insight Discovery personality test
+      const isPersonalityTest = quizData.quiz.title.toLowerCase().includes('insight discovery');
+      setIsInsightDiscovery(isPersonalityTest);
     }
   }, [quizData, quizStartTime]);
 
@@ -175,9 +180,10 @@ export default function QuizPage() {
       const questionId = quizData.questions[currentQuestionIndex]?.id;
       const savedAnswer = answers[questionId] || "";
       setSelectedAnswer(savedAnswer);
-      setShowExplanation(!!savedAnswer); // Show explanation if answer was already selected
+      // Don't show explanation for personality tests
+      setShowExplanation(!isInsightDiscovery && !!savedAnswer);
     }
-  }, [currentQuestionIndex, answers, quizData]);
+  }, [currentQuestionIndex, answers, quizData, isInsightDiscovery]);
 
   const handleAnswerChange = (answer: string) => {
     if (!quizData) return;
@@ -188,7 +194,8 @@ export default function QuizPage() {
       ...prev,
       [questionId]: answer
     }));
-    setShowExplanation(Boolean(answer)); // Show explanation only if answer is not empty
+    // Don't show explanation for personality tests - just record the answer
+    setShowExplanation(!isInsightDiscovery && Boolean(answer));
   };
 
   const handleNextQuestion = () => {
@@ -658,7 +665,8 @@ export default function QuizPage() {
                 {currentQuestion.options.map((option) => {
                   const isSelected = selectedAnswer === option.label;
                   const isCorrect = option.label === currentQuestion.correctAnswer;
-                  const showStatus = showExplanation && isSelected;
+                  // Don't show right/wrong status for personality tests
+                  const showStatus = !isInsightDiscovery && showExplanation && isSelected;
                   
                   return (
                     <div 
@@ -668,7 +676,9 @@ export default function QuizPage() {
                           ? isCorrect 
                             ? 'border-green-500 bg-green-50 dark:bg-green-950'
                             : 'border-red-500 bg-red-50 dark:bg-red-950'
-                          : 'border-border hover:border-primary hover:bg-primary/5'
+                          : isSelected && isInsightDiscovery
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary hover:bg-primary/5'
                       }`}
                     >
                       <RadioGroupItem 
@@ -699,8 +709,8 @@ export default function QuizPage() {
           </CardContent>
         </Card>
 
-        {/* Explanation Card */}
-        {showExplanation && currentQuestion.explanation && (
+        {/* Explanation Card - Don't show for personality tests */}
+        {!isInsightDiscovery && showExplanation && currentQuestion.explanation && (
           <Card className="mb-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
             <CardContent className="p-6">
               <div className="flex items-start space-x-3">

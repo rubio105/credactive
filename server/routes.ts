@@ -1506,12 +1506,12 @@ Explicación ampliada:`
       console.log(`[Extended Audio] Generating extended explanation with GPT-4o-mini...`);
       const gptStartTime = Date.now();
       
-      // Generate extended explanation using gpt-4o-mini for faster response
+      // Generate extended explanation using gpt-4o-mini for faster response (limited to ~20 seconds of audio)
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 60, // ~60 tokens = ~45 words = ~20 seconds of audio at 2-3 words/sec
       });
       
       const gptDuration = Date.now() - gptStartTime;

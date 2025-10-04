@@ -909,7 +909,11 @@ ${JSON.stringify(questionsToTranslate)}`
   app.patch('/api/admin/quizzes/:id', isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const quiz = await storage.updateQuiz(id, req.body);
+      
+      // Filter allowed fields for update (exclude id, createdAt)
+      const { id: _id, createdAt, ...allowedUpdates } = req.body;
+      
+      const quiz = await storage.updateQuiz(id, allowedUpdates);
       res.json(quiz);
     } catch (error) {
       console.error("Error updating quiz:", error);

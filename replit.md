@@ -174,3 +174,12 @@ Preferred communication style: Simple, everyday language.
   - Bug was causing "Failed to execute 'fetch' on 'Window': '/api/quiz-attempts' is not a valid HTTP method" error
   - Quiz submissions now work correctly and save to database
   - Added comprehensive logging for debugging quiz submission flow
+
+- **Insight Discovery Redirect Fix** (October 4, 2025): Fixed redirect to personality report after quiz submission
+  - Problem: `setQuizCompleted(true)` was called immediately, causing premature UI render before mutation completed
+  - This prevented the redirect from /quiz/:id to /report/:attemptId for Insight Discovery quizzes
+  - Fix: For Insight Discovery quizzes, skip `setQuizCompleted(true)` and wait for mutation success
+  - Component now waits for backend response before any UI change
+  - `onSuccess` callback triggers redirect via `setLocation(/report/${attemptId})`
+  - Redirect now works correctly - personality report displays with dominant color, strengths, recommendations
+  - Regular quizzes maintain existing behavior (show results immediately without redirect)

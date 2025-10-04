@@ -287,8 +287,11 @@ export default function QuizPage() {
       categoryScores: categoryResults,
     };
 
-    setResults(quizResults);
-    setQuizCompleted(true);
+    // For Insight Discovery, don't show local results - wait for redirect
+    if (!isInsightDiscovery) {
+      setResults(quizResults);
+      setQuizCompleted(true);
+    }
 
     // Submit to backend
     submitQuizMutation.mutate({

@@ -63,7 +63,7 @@ export function generateQuizReport(
       question: question.question,
       category: question.category,
       userAnswer: ans.answer,
-      correctAnswer: question.correctAnswer,
+      correctAnswer: question.correctAnswer || '',
       isCorrect: ans.isCorrect,
     });
   });
@@ -298,14 +298,26 @@ export function generateInsightDiscoveryReport(
     if (!question) return;
 
     const options = question.options as Array<{
-      id: string;
+      id?: string;
+      label?: string;
       text: string;
-      color: string;
+      color?: string;
     }>;
-    const selectedOption = options.find((opt) => opt.id === ans.answer);
     
-    if (selectedOption?.color && colorCounts[selectedOption.color] !== undefined) {
-      colorCounts[selectedOption.color]++;
+    // Find the selected option by matching answer (case-insensitive) against both id and label
+    const selectedOption = options.find((opt) => {
+      const optId = opt.id?.toLowerCase() || '';
+      const optLabel = opt.label?.toLowerCase() || '';
+      const answer = ans.answer?.toLowerCase() || '';
+      return optId === answer || optLabel === answer;
+    });
+    
+    // Normalize color to lowercase before counting
+    if (selectedOption?.color) {
+      const normalizedColor = selectedOption.color.toLowerCase();
+      if (colorCounts[normalizedColor] !== undefined) {
+        colorCounts[normalizedColor]++;
+      }
     }
   });
 

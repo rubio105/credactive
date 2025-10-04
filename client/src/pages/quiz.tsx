@@ -347,6 +347,7 @@ export default function QuizPage() {
     
     try {
       const language = useEnglish ? 'en' : 'it';
+      const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       
       // Add timeout of 60 seconds for the fetch call
       const controller = new AbortController();
@@ -355,7 +356,11 @@ export default function QuizPage() {
       const response = await fetch('/api/questions/' + currentQuestion.id + '/extended-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ language }),
+        body: JSON.stringify({ 
+          language,
+          userAnswer: selectedAnswer,
+          isCorrect
+        }),
         credentials: 'include',
         signal: controller.signal
       });
@@ -829,7 +834,7 @@ export default function QuizPage() {
             data-testid="button-previous"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Precedente
+            {useEnglish ? 'Previous' : 'Precedente'}
           </Button>
           
           <div className="flex items-center space-x-3">
@@ -838,14 +843,17 @@ export default function QuizPage() {
               onClick={() => handleAnswerChange("")}
               data-testid="button-skip"
             >
-              Salta
+              {useEnglish ? 'Skip' : 'Salta'}
             </Button>
             <Button
               onClick={handleNextQuestion}
               disabled={!selectedAnswer}
               data-testid="button-next"
             >
-              {currentQuestionIndex === quizData.questions.length - 1 ? "Termina" : "Prossima"}
+              {currentQuestionIndex === quizData.questions.length - 1 
+                ? (useEnglish ? 'Finish' : 'Termina') 
+                : (useEnglish ? 'Next' : 'Prossima')
+              }
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -858,7 +866,7 @@ export default function QuizPage() {
               <div className="flex items-start space-x-3">
                 <Lightbulb className="text-accent text-xl mt-1 flex-shrink-0" />
                 <div>
-                  <h4 className="font-semibold text-accent mb-1">Dominio/Area</h4>
+                  <h4 className="font-semibold text-accent mb-1">{useEnglish ? 'Domain/Area' : 'Dominio/Area'}</h4>
                   <p className="text-sm text-muted-foreground" data-testid="question-domain-hint">
                     {currentQuestion.domain}
                   </p>

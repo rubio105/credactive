@@ -1484,12 +1484,14 @@ ${JSON.stringify(questionsToTranslate)}`
   });
 
   // Generate extended TTS audio explanation (amplified version)
-  app.post('/api/questions/:id/extended-audio', isAuthenticated, async (req, res) => {
+  app.post('/api/questions/:id/extended-audio', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { language = 'it' } = req.body;
+      const { language = 'it', userAnswer, isCorrect } = req.body;
+      const userName = req.user?.claims?.first_name || 'studente';
+      const useUserName = Math.random() < 0.3; // Use name 30% of the time
       
-      console.log(`[Extended Audio] Starting generation for question ${id}, language: ${language}`);
+      console.log(`[Extended Audio] Starting generation for question ${id}, language: ${language}, isCorrect: ${isCorrect}`);
       
       // Get the question from database
       const question = await storage.getQuestionById(id);
@@ -1539,36 +1541,101 @@ ${JSON.stringify(questionsToTranslate)}`
       // Initialize OpenAI
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       
-      // Create extended explanation using GPT - always explains the correct answer
-      const promptMap: { [key: string]: string } = {
-        it: `Sei un formatore esperto. Crea una spiegazione vocale approfondita per questa domanda e la sua risposta corretta:
+      // Create personalized explanation based on whether user answered correctly
+      const greeting = useUserName ? userName : '';
+      
+      const promptMap: { [key: string]: string } = isCorrect ? {
+        // CORRECT ANSWER - Congratulate and explain why it's right
+        it: `Sei un formatore esperto. L'utente ${greeting ? greeting + ' ' : ''}ha risposto CORRETTAMENTE a questa domanda:
 
 Domanda: ${question.question}
-Risposta corretta: ${correctOption.text}
+Risposta corretta: ${correctOption.label}) ${correctOption.text}
 
 Spiegazione base: ${question.explanation}
 
-Genera una spiegazione vocale di 2-3 frasi complete che approfondisca perché "${correctOption.text}" è la risposta corretta. Usa un tono incoraggiante e pedagogico. IMPORTANTE: Termina con un punto e completa tutte le frasi. Lingua italiana.
+Genera una spiegazione vocale incoraggiante di 2-3 frasi complete che:
+1. ${greeting ? `Inizia con "Bravo ${greeting}!" o "Ottimo ${greeting}!"` : 'Inizia con "Bravo!" o "Risposta corretta!"'}
+2. Conferma che ha risposto bene
+3. Approfondisce perché "${correctOption.text}" è la risposta giusta
+
+Usa un tono positivo e pedagogico. IMPORTANTE: Termina con un punto. Solo italiano.
 
 Spiegazione vocale:`,
-        en: `You are an expert trainer. Create an in-depth audio explanation for this question and its correct answer:
+        en: `You are an expert trainer. The user ${greeting ? greeting + ' ' : ''}answered this question CORRECTLY:
 
 Question: ${question.question}
-Correct answer: ${correctOption.text}
+Correct answer: ${correctOption.label}) ${correctOption.text}
 
 Base explanation: ${question.explanation}
 
-Generate a 2-3 complete sentence audio explanation that explains in depth why "${correctOption.text}" is the correct answer. Use an encouraging and pedagogical tone. IMPORTANT: End with a period and complete all sentences. English language.
+Generate an encouraging 2-3 complete sentence audio explanation that:
+1. ${greeting ? `Starts with "Great job ${greeting}!" or "Well done ${greeting}!"` : 'Starts with "Correct!" or "Well done!"'}
+2. Confirms they answered correctly
+3. Explains in depth why "${correctOption.text}" is the right answer
+
+Use a positive and pedagogical tone. IMPORTANT: End with a period. English only.
 
 Audio explanation:`,
-        es: `Eres un formador experto. Crea una explicación de audio profunda para esta pregunta y su respuesta correcta:
+        es: `Eres un formador experto. El usuario ${greeting ? greeting + ' ' : ''}respondió CORRECTAMENTE esta pregunta:
 
 Pregunta: ${question.question}
-Respuesta correcta: ${correctOption.text}
+Respuesta correcta: ${correctOption.label}) ${correctOption.text}
 
 Explicación base: ${question.explanation}
 
-Genera una explicación de audio de 2-3 frases completas que profundice por qué "${correctOption.text}" es la respuesta correcta. Usa un tono alentador y pedagógico. IMPORTANTE: Termina con un punto y completa todas las frases. Idioma español.
+Genera una explicación de audio alentadora de 2-3 frases completas que:
+1. ${greeting ? `Comienza con "¡Muy bien ${greeting}!" o "¡Excelente ${greeting}!"` : 'Comienza con "¡Correcto!" o "¡Muy bien!"'}
+2. Confirma que respondió correctamente
+3. Explica en profundidad por qué "${correctOption.text}" es la respuesta correcta
+
+Usa un tono positivo y pedagógico. IMPORTANTE: Termina con un punto. Solo español.
+
+Explicación de audio:`
+      } : {
+        // WRONG ANSWER - Indicate correct answer and explain
+        it: `Sei un formatore esperto. L'utente ${greeting ? greeting + ' ' : ''}ha risposto SBAGLIATO a questa domanda:
+
+Domanda: ${question.question}
+Risposta corretta: ${correctOption.label}) ${correctOption.text}
+
+Spiegazione base: ${question.explanation}
+
+Genera una spiegazione vocale costruttiva di 2-3 frasi complete che:
+1. ${greeting ? `Inizia con "${greeting}, la risposta corretta è la ${correctOption.label}."` : 'Inizia con "La risposta corretta è la ' + correctOption.label + '."'}
+2. Spiega perché "${correctOption.text}" è la risposta giusta
+3. Aiuta a comprendere il concetto
+
+Usa un tono pedagogico e costruttivo (NON punitivo). IMPORTANTE: Termina con un punto. Solo italiano.
+
+Spiegazione vocale:`,
+        en: `You are an expert trainer. The user ${greeting ? greeting + ' ' : ''}answered this question INCORRECTLY:
+
+Question: ${question.question}
+Correct answer: ${correctOption.label}) ${correctOption.text}
+
+Base explanation: ${question.explanation}
+
+Generate a constructive 2-3 complete sentence audio explanation that:
+1. ${greeting ? `Starts with "${greeting}, the correct answer is ${correctOption.label}."` : 'Starts with "The correct answer is ' + correctOption.label + '."'}
+2. Explains why "${correctOption.text}" is the right answer
+3. Helps understand the concept
+
+Use a pedagogical and constructive tone (NOT punitive). IMPORTANT: End with a period. English only.
+
+Audio explanation:`,
+        es: `Eres un formador experto. El usuario ${greeting ? greeting + ' ' : ''}respondió INCORRECTAMENTE esta pregunta:
+
+Pregunta: ${question.question}
+Respuesta correcta: ${correctOption.label}) ${correctOption.text}
+
+Explicación base: ${question.explanation}
+
+Genera una explicación de audio constructiva de 2-3 frases completas que:
+1. ${greeting ? `Comienza con "${greeting}, la respuesta correcta es la ${correctOption.label}."` : 'Comienza con "La respuesta correcta es la ' + correctOption.label + '."'}
+2. Explica por qué "${correctOption.text}" es la respuesta correcta
+3. Ayuda a comprender el concepto
+
+Usa un tono pedagógico y constructivo (NO punitivo). IMPORTANTE: Termina con un punto. Solo español.
 
 Explicación de audio:`
       };

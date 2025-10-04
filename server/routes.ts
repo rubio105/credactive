@@ -1570,6 +1570,16 @@ ${JSON.stringify(questionsToTranslate)}`
         return res.status(404).json({ message: "Quiz not found" });
       }
 
+      // Create generation job
+      const job = await storage.createGenerationJob({
+        quizId: quiz.id,
+        requestedCount: count,
+        generatedCount: 0,
+        status: 'pending',
+        difficulty,
+        error: null,
+      });
+
       // Import dynamically to avoid circular dependencies
       const { generateQuestionsInBatches } = await import('./aiQuestionGenerator');
       
@@ -1592,57 +1602,111 @@ ${JSON.stringify(questionsToTranslate)}`
           }
         } catch (error) {
           console.error('Error reading PDF for context:', error);
-          // Continue without document context
         }
       }
       
+      // Return job info immediately
       res.json({ 
         message: "Question generation started", 
+        jobId: job.id,
         quizId, 
         count,
-        status: "processing",
+        status: "pending",
         documentBased: !!documentContext
       });
+
+      // Update job status to processing
+      await storage.updateGenerationJob(job.id, { status: 'processing' });
 
       // Generate questions in background
       generateQuestionsInBatches(quiz.title, categoryName, count, 20, difficulty, documentContext)
         .then(async (questions) => {
           // Save all generated questions to database
+          let savedCount = 0;
           for (const q of questions) {
-            // Find the correct answer and get its label (A, B, C, D)
-            const correctIndex = q.options.findIndex(opt => opt.isCorrect);
-            const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
-            const correctAnswer = labels[correctIndex] || 'A';
-            
-            // Create options with labels
-            const optionsWithLabels = q.options.map((opt, idx) => ({
-              label: labels[idx],
-              text: opt.text,
-              isCorrect: opt.isCorrect
-            }));
-            
-            await storage.createQuestion({
-              quizId: quiz.id,
-              question: q.question,
-              options: optionsWithLabels as any,
-              correctAnswer,
-              correctAnswers: null,
-              explanation: q.explanation,
-              explanationAudioUrl: null,
-              imageUrl: '',
-              category: categoryName,
-              domain: null,
-            });
+            try {
+              // Find the correct answer and get its label (A, B, C, D)
+              const correctIndex = q.options.findIndex(opt => opt.isCorrect);
+              const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+              const correctAnswer = labels[correctIndex] || 'A';
+              
+              // Create options with labels
+              const optionsWithLabels = q.options.map((opt, idx) => ({
+                label: labels[idx],
+                text: opt.text,
+                isCorrect: opt.isCorrect
+              }));
+              
+              await storage.createQuestion({
+                quizId: quiz.id,
+                question: q.question,
+                options: optionsWithLabels as any,
+                correctAnswer,
+                correctAnswers: null,
+                explanation: q.explanation,
+                explanationAudioUrl: null,
+                imageUrl: '',
+                category: categoryName,
+                domain: null,
+              });
+              savedCount++;
+            } catch (error) {
+              console.error('Error saving question:', error);
+            }
           }
-          console.log(`Successfully generated and saved ${questions.length} questions for ${quiz.title}`);
+          
+          // Update job as completed
+          await storage.updateGenerationJob(job.id, {
+            status: 'completed',
+            generatedCount: savedCount,
+            completedAt: new Date(),
+          });
+          
+          console.log(`Successfully generated and saved ${savedCount} questions for ${quiz.title}`);
         })
-        .catch((error) => {
+        .catch(async (error) => {
           console.error("Error in background question generation:", error);
+          
+          // Update job as failed
+          await storage.updateGenerationJob(job.id, {
+            status: 'failed',
+            error: error.message || 'Unknown error',
+            completedAt: new Date(),
+          });
         });
 
     } catch (error) {
       console.error("Error generating questions:", error);
       res.status(500).json({ message: "Failed to generate questions" });
+    }
+  });
+
+  // Admin - Get generation job status
+  app.get('/api/admin/generation-jobs/:jobId', isAdmin, async (req, res) => {
+    try {
+      const { jobId } = req.params;
+      const job = await storage.getGenerationJobById(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      res.json(job);
+    } catch (error) {
+      console.error("Error fetching generation job:", error);
+      res.status(500).json({ message: "Failed to fetch generation job" });
+    }
+  });
+
+  // Admin - Get all generation jobs for a quiz
+  app.get('/api/admin/quizzes/:quizId/generation-jobs', isAdmin, async (req, res) => {
+    try {
+      const { quizId } = req.params;
+      const jobs = await storage.getGenerationJobsByQuizId(quizId);
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error fetching generation jobs:", error);
+      res.status(500).json({ message: "Failed to fetch generation jobs" });
     }
   });
 

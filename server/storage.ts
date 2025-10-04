@@ -3,6 +3,7 @@ import {
   categories,
   quizzes,
   questions,
+  quizGenerationJobs,
   userQuizAttempts,
   userProgress,
   quizReports,
@@ -15,6 +16,7 @@ import {
   type Category,
   type Quiz,
   type Question,
+  type QuizGenerationJob,
   type UserQuizAttempt,
   type UserProgress,
   type QuizReport,
@@ -25,6 +27,7 @@ import {
   type InsertUserQuizAttempt,
   type InsertUserProgress,
   type InsertQuizReport,
+  type InsertQuizGenerationJob,
   type InsertLiveCourse,
   type InsertLiveCourseSession,
   type InsertLiveCourseEnrollment,
@@ -75,6 +78,12 @@ export interface IStorage {
   createQuestion(question: Omit<Question, 'id' | 'createdAt'>): Promise<Question>;
   updateQuestion(id: string, updates: Partial<Question>): Promise<Question>;
   deleteQuestion(id: string): Promise<void>;
+  
+  // Quiz generation job operations
+  createGenerationJob(job: InsertQuizGenerationJob): Promise<QuizGenerationJob>;
+  updateGenerationJob(id: string, updates: Partial<QuizGenerationJob>): Promise<QuizGenerationJob>;
+  getGenerationJobById(id: string): Promise<QuizGenerationJob | undefined>;
+  getGenerationJobsByQuizId(quizId: string): Promise<QuizGenerationJob[]>;
   
   // User progress operations
   createQuizAttempt(attempt: InsertUserQuizAttempt): Promise<UserQuizAttempt>;
@@ -387,6 +396,40 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuestion(id: string): Promise<void> {
     await db.delete(questions).where(eq(questions.id, id));
+  }
+
+  // Quiz generation job operations
+  async createGenerationJob(jobData: InsertQuizGenerationJob): Promise<QuizGenerationJob> {
+    const [job] = await db
+      .insert(quizGenerationJobs)
+      .values(jobData)
+      .returning();
+    return job;
+  }
+
+  async updateGenerationJob(id: string, updates: Partial<QuizGenerationJob>): Promise<QuizGenerationJob> {
+    const [job] = await db
+      .update(quizGenerationJobs)
+      .set(updates)
+      .where(eq(quizGenerationJobs.id, id))
+      .returning();
+    return job;
+  }
+
+  async getGenerationJobById(id: string): Promise<QuizGenerationJob | undefined> {
+    const [job] = await db
+      .select()
+      .from(quizGenerationJobs)
+      .where(eq(quizGenerationJobs.id, id));
+    return job;
+  }
+
+  async getGenerationJobsByQuizId(quizId: string): Promise<QuizGenerationJob[]> {
+    return await db
+      .select()
+      .from(quizGenerationJobs)
+      .where(eq(quizGenerationJobs.quizId, quizId))
+      .orderBy(desc(quizGenerationJobs.createdAt));
   }
 
   // User progress operations

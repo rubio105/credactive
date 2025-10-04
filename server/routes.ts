@@ -230,28 +230,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quiz attempt submission
   app.post('/api/quiz-attempts', isAuthenticated, async (req: any, res) => {
     try {
+      console.log('[Quiz Submission] Starting quiz submission...');
       const userId = req.user.claims.sub;
+      console.log('[Quiz Submission] User ID:', userId);
+      
       const attemptData = insertUserQuizAttemptSchema.parse({
         ...req.body,
         userId,
       });
+      console.log('[Quiz Submission] Attempt data parsed, quiz ID:', attemptData.quizId);
 
       const attempt = await storage.createQuizAttempt(attemptData);
+      console.log('[Quiz Submission] Attempt created with ID:', attempt.id);
       
       // Update user progress
       const quiz = await storage.getQuizById(attempt.quizId);
+      console.log('[Quiz Submission] Quiz fetched:', quiz?.title);
+      
       if (quiz) {
         await storage.updateUserProgress(userId, quiz.categoryId, attempt);
+        console.log('[Quiz Submission] User progress updated');
         
         // Generate quiz report
         const questions = await storage.getQuestionsByQuizId(attempt.quizId);
+        console.log('[Quiz Submission] Questions fetched:', questions.length);
         
         // Check if this is an Insight Discovery personality test
         const isInsightDiscovery = quiz.title.toLowerCase().includes('insight discovery');
+        console.log('[Quiz Submission] Is Insight Discovery:', isInsightDiscovery);
         
         if (isInsightDiscovery) {
+          console.log('[Quiz Submission] Generating Insight Discovery report...');
           // Generate Insight Discovery personality report
           const insightProfile = generateInsightDiscoveryReport(attempt, questions);
+          console.log('[Quiz Submission] Insight profile generated:', {
+            dominantColor: insightProfile.dominantColor.color,
+            secondaryColor: insightProfile.secondaryColor.color
+          });
           
           await storage.createQuizReport({
             attemptId: attempt.id,
@@ -262,7 +277,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             strengths: insightProfile.strengths,
             recommendations: insightProfile.recommendations,
           });
+          console.log('[Quiz Submission] Insight Discovery report saved successfully');
         } else {
+          console.log('[Quiz Submission] Generating standard quiz report...');
           // Generate standard quiz report
           const reportData = generateQuizReport(attempt, quiz, questions);
           
@@ -275,15 +292,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             strengths: reportData.strengths as any,
             recommendations: reportData.recommendations,
           });
+          console.log('[Quiz Submission] Standard report saved successfully');
         }
       }
 
+      console.log('[Quiz Submission] Sending response to client');
       res.json(attempt);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('[Quiz Submission] Zod validation error:', error.errors);
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      console.error("Error creating quiz attempt:", error);
+      console.error('[Quiz Submission] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        error
+      });
       res.status(500).json({ message: "Failed to save quiz attempt" });
     }
   });
@@ -1481,24 +1505,24 @@ ${JSON.stringify(questionsToTranslate)}`
       
       // Create extended explanation using GPT
       const promptMap: { [key: string]: string } = {
-        it: `Sei un esperto formatore. Espandi la seguente spiegazione in modo più dettagliato e pedagogico, mantenendo un tono professionale ma accessibile. Aggiungi esempi pratici e approfondimenti utili. Mantieni la lingua italiana.
+        it: `Sei un esperto formatore. Espandi la seguente spiegazione in modo più dettagliato e pedagogico con 2-3 frasi complete. Mantieni un tono professionale ma accessibile. IMPORTANTE: Termina con un punto e completa tutte le frasi. Mantieni la lingua italiana.
 
 Spiegazione originale:
 ${question.explanation}
 
-Spiegazione ampliata:`,
-        en: `You are an expert trainer. Expand the following explanation in a more detailed and pedagogical way, maintaining a professional but accessible tone. Add practical examples and useful insights. Keep the language in English.
+Spiegazione ampliata (2-3 frasi complete):`,
+        en: `You are an expert trainer. Expand the following explanation with 2-3 complete sentences in a more detailed and pedagogical way. Maintain a professional but accessible tone. IMPORTANT: End with a period and complete all sentences. Keep the language in English.
 
 Original explanation:
 ${question.explanation}
 
-Extended explanation:`,
-        es: `Eres un formador experto. Amplía la siguiente explicación de forma más detallada y pedagógica, manteniendo un tono profesional pero accesible. Añade ejemplos prácticos y conocimientos útiles. Mantén el idioma en español.
+Extended explanation (2-3 complete sentences):`,
+        es: `Eres un formador experto. Amplía la siguiente explicación con 2-3 frases completas de forma más detallada y pedagógica. Mantén un tono profesional pero accesible. IMPORTANTE: Termina con un punto y completa todas las frases. Mantén el idioma en español.
 
 Explicación original:
 ${question.explanation}
 
-Explicación ampliada:`
+Explicación ampliada (2-3 frases completas):`
       };
       
       const prompt = promptMap[language] || promptMap['en'];
@@ -1511,7 +1535,7 @@ Explicación ampliada:`
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 60, // ~60 tokens = ~45 words = ~20 seconds of audio at 2-3 words/sec
+        max_tokens: 80, // Slightly higher to allow completing sentences, ~20 seconds of audio
       });
       
       const gptDuration = Date.now() - gptStartTime;

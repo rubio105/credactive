@@ -59,6 +59,11 @@ export default function QuizPage() {
   const quizId = params?.quizId;
   const [, setLocation] = useLocation();
   
+  // Get question count from URL query parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedQuestions = urlParams.get('questions');
+  const maxQuestions = requestedQuestions ? parseInt(requestedQuestions) : null;
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -72,6 +77,7 @@ export default function QuizPage() {
   const [isInsightDiscovery, setIsInsightDiscovery] = useState(false); // Personality test flag
   const [translatedQuestions, setTranslatedQuestions] = useState<Record<string, any>>({});
   const [isGeneratingExtendedAudio, setIsGeneratingExtendedAudio] = useState(false);
+  const [limitedQuestions, setLimitedQuestions] = useState<Question[]>([]);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -141,9 +147,29 @@ export default function QuizPage() {
     }
   }, [user]);
 
+  // Limit questions based on URL parameter
+  useEffect(() => {
+    if (quizData && quizData.questions.length > 0) {
+      let questionsToUse = [...quizData.questions];
+      
+      // If maxQuestions is specified and less than total, randomly select
+      if (maxQuestions && maxQuestions < questionsToUse.length) {
+        // Shuffle array using Fisher-Yates algorithm
+        for (let i = questionsToUse.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [questionsToUse[i], questionsToUse[j]] = [questionsToUse[j], questionsToUse[i]];
+        }
+        // Take only the requested number
+        questionsToUse = questionsToUse.slice(0, maxQuestions);
+      }
+      
+      setLimitedQuestions(questionsToUse);
+    }
+  }, [quizData, maxQuestions]);
+
   // Initialize quiz when data loads
   useEffect(() => {
-    if (quizData && !quizStartTime) {
+    if (quizData && !quizStartTime && limitedQuestions.length > 0) {
       setTimeRemaining(quizData.quiz.duration * 60); // Convert minutes to seconds
       setQuizStartTime(new Date());
       
@@ -151,7 +177,7 @@ export default function QuizPage() {
       const isPersonalityTest = quizData.quiz.title.toLowerCase().includes('insight discovery');
       setIsInsightDiscovery(isPersonalityTest);
     }
-  }, [quizData, quizStartTime]);
+  }, [quizData, quizStartTime, limitedQuestions]);
 
   // Translate questions based on language toggle
   useEffect(() => {
@@ -167,7 +193,7 @@ export default function QuizPage() {
       
       try {
         const response = await apiRequest("POST", "/api/translate-questions", {
-          questions: quizData.questions,
+          questions: limitedQuestions,
           targetLanguage: 'it' // Always translate to Italian when toggle is off
         });
         const data = await response.json();
@@ -185,7 +211,7 @@ export default function QuizPage() {
     };
     
     translateQuestions();
-  }, [quizData, user, useEnglish]);
+  }, [quizData, user, useEnglish, limitedQuestions]);
 
   // Timer countdown
   useEffect(() => {
@@ -201,8 +227,8 @@ export default function QuizPage() {
 
   // Load saved answer when question changes
   useEffect(() => {
-    if (quizData) {
-      const questionId = quizData.questions[currentQuestionIndex]?.id;
+    if (limitedQuestions.length > 0) {
+      const questionId = limitedQuestions[currentQuestionIndex]?.id;
       const savedAnswer = answers[questionId] || "";
       setSelectedAnswer(savedAnswer);
       // Don't show explanation for personality tests
@@ -211,9 +237,9 @@ export default function QuizPage() {
   }, [currentQuestionIndex, answers, quizData, isInsightDiscovery]);
 
   const handleAnswerChange = (answer: string) => {
-    if (!quizData) return;
+    if (limitedQuestions.length === 0) return;
     
-    const questionId = quizData.questions[currentQuestionIndex].id;
+    const questionId = limitedQuestions[currentQuestionIndex].id;
     setSelectedAnswer(answer);
     setAnswers(prev => ({
       ...prev,
@@ -224,10 +250,10 @@ export default function QuizPage() {
   };
 
   const handleNextQuestion = () => {
-    if (!quizData) return;
+    if (limitedQuestions.length === 0) return;
 
     setShowExplanation(false); // Hide explanation when moving to next question
-    if (currentQuestionIndex < quizData.questions.length - 1) {
+    if (currentQuestionIndex < limitedQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
       handleSubmitQuiz();
@@ -242,7 +268,7 @@ export default function QuizPage() {
   };
 
   const handleSubmitQuiz = () => {
-    if (!quizData || !quizStartTime) return;
+    if (!quizData || !quizStartTime || limitedQuestions.length === 0) return;
 
     const endTime = new Date();
     const timeSpent = Math.floor((endTime.getTime() - quizStartTime.getTime()) / 1000);
@@ -251,7 +277,7 @@ export default function QuizPage() {
     let correctCount = 0;
     const categoryScores: Record<string, { correct: number; total: number }> = {};
     
-    const answersArray = quizData.questions.map(question => {
+    const answersArray = limitedQuestions.map(question => {
       const userAnswer = answers[question.id] || "";
       const isCorrect = userAnswer === question.correctAnswer;
       
@@ -272,7 +298,7 @@ export default function QuizPage() {
       };
     });
 
-    const score = Math.round((correctCount / quizData.questions.length) * 100);
+    const score = Math.round((correctCount / limitedQuestions.length) * 100);
     
     const categoryResults = Object.entries(categoryScores).map(([category, scores]) => ({
       category,
@@ -282,7 +308,7 @@ export default function QuizPage() {
     const quizResults: QuizResults = {
       score,
       correctAnswers: correctCount,
-      totalQuestions: quizData.questions.length,
+      totalQuestions: limitedQuestions.length,
       timeSpent,
       categoryScores: categoryResults,
     };
@@ -298,7 +324,7 @@ export default function QuizPage() {
       quizId: quizData.quiz.id,
       score,
       correctAnswers: correctCount,
-      totalQuestions: quizData.questions.length,
+      totalQuestions: limitedQuestions.length,
       timeSpent,
       answers: answersArray,
     });
@@ -410,7 +436,7 @@ export default function QuizPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !limitedQuestions || limitedQuestions.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -585,7 +611,7 @@ export default function QuizPage() {
 
   // Get current question with translation if available
   const getCurrentQuestion = () => {
-    const originalQuestion = quizData.questions[currentQuestionIndex];
+    const originalQuestion = limitedQuestions[currentQuestionIndex];
     
     // If using English or no translation available, return original
     if (useEnglish || !translatedQuestions[originalQuestion.id]) {
@@ -615,7 +641,7 @@ export default function QuizPage() {
 
   // Quiz Interface
   const currentQuestion = getCurrentQuestion();
-  const progress = ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
+  const progress = ((currentQuestionIndex + 1) / limitedQuestions.length) * 100;
 
   return (
     <div className="min-h-screen bg-background">
@@ -632,7 +658,7 @@ export default function QuizPage() {
                 </h2>
                 <p className="text-muted-foreground">
                   Domanda <span data-testid="current-question">{currentQuestionIndex + 1}</span> di{' '}
-                  <span data-testid="total-questions">{quizData.questions.length}</span>
+                  <span data-testid="total-questions">{limitedQuestions.length}</span>
                 </p>
               </div>
               <div className="flex items-center space-x-4">
@@ -770,7 +796,7 @@ export default function QuizPage() {
                           size="sm"
                           onClick={() => {
                             // Construct language-specific audio URL
-                            const questionId = quizData.questions[currentQuestionIndex].id;
+                            const questionId = limitedQuestions[currentQuestionIndex].id;
                             const language = useEnglish ? 'en' : 'it';
                             const languageSpecificUrl = `/audio-explanations/${questionId}-${language}.mp3`;
                             
@@ -850,7 +876,7 @@ export default function QuizPage() {
               disabled={!selectedAnswer}
               data-testid="button-next"
             >
-              {currentQuestionIndex === quizData.questions.length - 1 
+              {currentQuestionIndex === limitedQuestions.length - 1 
                 ? (useEnglish ? 'Finish' : 'Termina') 
                 : (useEnglish ? 'Next' : 'Prossima')
               }

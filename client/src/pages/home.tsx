@@ -4,6 +4,22 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import LanguageSelector from "@/components/language-selector";
@@ -12,7 +28,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, Quiz, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 
 interface User {
@@ -48,6 +64,8 @@ export default function Home() {
   const { user } = useAuth();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [selectedLiveCourseQuiz, setSelectedLiveCourseQuiz] = useState<{ id: string; title: string } | null>(null);
+  const [quizConfigDialog, setQuizConfigDialog] = useState<{ quizId: string; quizTitle: string; totalQuestions: number; isPremium: boolean } | null>(null);
+  const [selectedQuestionCount, setSelectedQuestionCount] = useState<string>("all");
   
   const userLanguage = (user as UserType)?.language;
   const t = getTranslation(userLanguage).home;
@@ -106,9 +124,30 @@ export default function Home() {
       // Redirect to subscription page
       window.location.href = '/subscribe';
     } else {
-      // Start quiz
-      window.location.href = `/quiz/${quizId}`;
+      // Show configuration dialog
+      const quiz = quizCategories.find(q => q.id === quizId);
+      if (quiz) {
+        setQuizConfigDialog({
+          quizId,
+          quizTitle: quiz.title,
+          totalQuestions: quiz.questions,
+          isPremium
+        });
+        setSelectedQuestionCount("all");
+      }
     }
+  };
+
+  const handleConfirmStartQuiz = () => {
+    if (!quizConfigDialog) return;
+    
+    const questionCount = selectedQuestionCount === "all" 
+      ? quizConfigDialog.totalQuestions 
+      : parseInt(selectedQuestionCount);
+    
+    // Start quiz with selected number of questions
+    window.location.href = `/quiz/${quizConfigDialog.quizId}?questions=${questionCount}`;
+    setQuizConfigDialog(null);
   };
 
   const handleLiveCourse = (quizId: string, quizTitle: string) => {
@@ -329,6 +368,63 @@ export default function Home() {
           </Card>
         </div>
       </div>
+
+      {/* Quiz Configuration Dialog */}
+      <Dialog open={!!quizConfigDialog} onOpenChange={(open) => !open && setQuizConfigDialog(null)}>
+        <DialogContent data-testid="dialog-quiz-config">
+          <DialogHeader>
+            <DialogTitle>Configura Quiz</DialogTitle>
+            <DialogDescription>
+              Scegli quante domande vuoi affrontare per questo quiz
+            </DialogDescription>
+          </DialogHeader>
+          
+          {quizConfigDialog && (
+            <div className="space-y-4 py-4">
+              <div>
+                <h4 className="font-semibold mb-2">{quizConfigDialog.quizTitle}</h4>
+                <p className="text-sm text-muted-foreground">
+                  Domande disponibili: {quizConfigDialog.totalQuestions}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="question-count">Numero di Domande</Label>
+                <Select value={selectedQuestionCount} onValueChange={setSelectedQuestionCount}>
+                  <SelectTrigger id="question-count" data-testid="select-question-count">
+                    <SelectValue placeholder="Seleziona numero domande" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 domande</SelectItem>
+                    <SelectItem value="20">20 domande</SelectItem>
+                    <SelectItem value="30">30 domande</SelectItem>
+                    <SelectItem value="50">50 domande</SelectItem>
+                    {quizConfigDialog.totalQuestions > 50 && (
+                      <SelectItem value="100">100 domande</SelectItem>
+                    )}
+                    <SelectItem value="all">
+                      Tutte ({quizConfigDialog.totalQuestions} domande)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Le domande saranno selezionate casualmente dal quiz
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuizConfigDialog(null)}>
+              Annulla
+            </Button>
+            <Button onClick={handleConfirmStartQuiz} data-testid="button-confirm-start">
+              <Play className="w-4 h-4 mr-2" />
+              Inizia Quiz
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

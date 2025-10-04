@@ -113,3 +113,11 @@ Preferred communication style: Simple, everyday language.
   - Home Page: Separate "Categorie in Evidenza" section displaying only featured categories
   - Featured categories inherit images from category imageUrl field
   - Premium filtering works independently for both featured and regular quiz sections
+
+- **CMS Page Placement System** (October 4, 2025): Dynamic page positioning in header/footer
+  - Database: Added `placement` field to contentPages table (values: 'header', 'footer', 'none', default: 'footer')
+  - Admin Panel: AdminContentPages displays placement column and selector for each page
+  - Navigation Component: Fetches and displays published pages with placement='header' in top menu
+  - Footer Component: Created new Footer component showing placement='footer' pages site-wide
+  - Home Page: Footer added to display footer pages (Privacy, Terms, etc.)
+  - Default: New content pages default to footer placement for visibility

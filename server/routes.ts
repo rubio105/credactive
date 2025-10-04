@@ -1380,6 +1380,85 @@ ${JSON.stringify(questionsToTranslate)}`
     }
   });
 
+  // Generate extended TTS audio explanation (amplified version)
+  app.post('/api/questions/:id/extended-audio', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { language = 'it' } = req.body;
+      
+      // Get the question
+      const question = await storage.getQuestionById(id);
+      if (!question || !question.explanation) {
+        return res.status(404).json({ message: "Question or explanation not found" });
+      }
+
+      // Initialize OpenAI
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      // Create extended explanation using GPT
+      const promptMap: { [key: string]: string } = {
+        it: `Sei un esperto formatore. Espandi la seguente spiegazione in modo più dettagliato e pedagogico, mantenendo un tono professionale ma accessibile. Aggiungi esempi pratici e approfondimenti utili. Mantieni la lingua italiana.
+
+Spiegazione originale:
+${question.explanation}
+
+Spiegazione ampliata:`,
+        en: `You are an expert trainer. Expand the following explanation in a more detailed and pedagogical way, maintaining a professional but accessible tone. Add practical examples and useful insights. Keep the language in English.
+
+Original explanation:
+${question.explanation}
+
+Extended explanation:`,
+        es: `Eres un formador experto. Amplía la siguiente explicación de forma más detallada y pedagógica, manteniendo un tono profesional pero accesible. Añade ejemplos prácticos y conocimientos útiles. Mantén el idioma en español.
+
+Explicación original:
+${question.explanation}
+
+Explicación ampliada:`
+      };
+      
+      const prompt = promptMap[language] || promptMap['en'];
+      
+      // Generate extended explanation
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 500,
+      });
+      
+      const extendedExplanation = completion.choices[0]?.message?.content || question.explanation;
+      
+      // Choose voice based on language
+      const voiceMap: { [key: string]: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' } = {
+        it: 'nova',   // Italian - female voice
+        en: 'alloy',  // English - neutral voice
+        es: 'shimmer' // Spanish - female voice
+      };
+      
+      const voice = voiceMap[language] || 'alloy';
+
+      // Generate TTS audio from extended explanation
+      const mp3Response = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: voice,
+        input: extendedExplanation,
+        speed: 1.0,
+      });
+
+      // Convert response to buffer
+      const buffer = Buffer.from(await mp3Response.arrayBuffer());
+      
+      // Return audio directly as response
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', buffer.length);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating extended audio:", error);
+      res.status(500).json({ message: "Failed to generate extended audio" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

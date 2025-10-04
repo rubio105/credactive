@@ -12,7 +12,7 @@ import Navigation from "@/components/navigation";
 import Timer from "@/components/ui/timer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages, Volume2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages, Volume2, Mic } from "lucide-react";
 
 interface Quiz {
   id: string;
@@ -70,6 +70,7 @@ export default function QuizPage() {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [useEnglish, setUseEnglish] = useState(false); // Language toggle
   const [translatedQuestions, setTranslatedQuestions] = useState<Record<string, any>>({});
+  const [isGeneratingExtendedAudio, setIsGeneratingExtendedAudio] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -281,6 +282,37 @@ export default function QuizPage() {
   const handleExitQuiz = () => {
     if (confirm("Sei sicuro di voler uscire dal quiz? Il progresso sarà perso.")) {
       window.history.back();
+    }
+  };
+
+  const handleExtendedAudio = async () => {
+    if (!currentQuestion || !currentQuestion.explanation) return;
+    
+    setIsGeneratingExtendedAudio(true);
+    try {
+      const language = useEnglish ? 'en' : 'it';
+      const response = await apiRequest('/api/questions/' + currentQuestion.id + '/extended-audio', 'POST', { language });
+      
+      // Convert response to blob and play
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      await audio.play();
+    } catch (error) {
+      toast({
+        title: useEnglish ? "Error" : "Errore",
+        description: useEnglish 
+          ? "Failed to generate extended audio explanation" 
+          : "Impossibile generare la spiegazione vocale ampliata",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingExtendedAudio(false);
     }
   };
 
@@ -641,6 +673,20 @@ export default function QuizPage() {
                           {useEnglish ? 'Listen' : 'Ascolta'}
                         </Button>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleExtendedAudio}
+                        disabled={isGeneratingExtendedAudio}
+                        className="text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900"
+                        data-testid="button-extended-audio"
+                      >
+                        <Mic className="w-4 h-4 mr-1" />
+                        {isGeneratingExtendedAudio 
+                          ? (useEnglish ? 'Generating...' : 'Generazione...')
+                          : (useEnglish ? 'Extended Audio' : 'Audio Ampliato')
+                        }
+                      </Button>
                     </div>
                   </div>
                   <p className="text-blue-800 dark:text-blue-200" data-testid="question-explanation">

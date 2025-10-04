@@ -64,6 +64,7 @@ export interface QuizCardData {
   category: string;
   gradient: string;
   icon: string;
+  imageUrl?: string;
 }
 
 export function mapQuizToCardData(quiz: Quiz, category: Category): QuizCardData {
@@ -80,6 +81,7 @@ export function mapQuizToCardData(quiz: Quiz, category: Category): QuizCardData 
     category: categoryTypeMap[category.slug] || "certifications",
     gradient: colorGradients[category.color || "blue"] || "from-blue-600 to-blue-700",
     icon: category.icon || "shield-alt",
+    imageUrl: category.imageUrl || undefined,
   };
 }
 

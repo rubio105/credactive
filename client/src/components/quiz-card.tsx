@@ -16,6 +16,7 @@ interface QuizCardProps {
     category?: string;
     gradient: string;
     icon: string;
+    imageUrl?: string;
   };
   onStartQuiz: () => void;
   onLiveCourse?: () => void;
@@ -64,16 +65,31 @@ export default function QuizCard({ quiz, onStartQuiz, onLiveCourse, hasLiveCours
       }`}
       data-testid={`quiz-card-${quiz.id}`}
     >
-      {/* Header with Gradient Background */}
-      <div className={`h-48 bg-gradient-to-br ${quiz.gradient} flex items-center justify-center relative overflow-hidden`}>
-        <div className="absolute inset-0 opacity-20">
-          <div className="w-full h-full bg-black/10" />
-        </div>
-        <IconComponent className="text-white text-6xl relative z-10" />
+      {/* Header with Image or Gradient Background */}
+      <div className="h-48 relative overflow-hidden">
+        {quiz.imageUrl ? (
+          <>
+            <img 
+              src={quiz.imageUrl} 
+              alt={quiz.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          </>
+        ) : (
+          <>
+            <div className={`h-full bg-gradient-to-br ${quiz.gradient} flex items-center justify-center relative`}>
+              <div className="absolute inset-0 opacity-20">
+                <div className="w-full h-full bg-black/10" />
+              </div>
+              <IconComponent className="text-white text-6xl relative z-10" />
+            </div>
+          </>
+        )}
         
         {/* Premium Badge */}
         {quiz.isPremium && showPremiumBadge && (
-          <div className="absolute top-4 right-4 bg-warning text-warning-foreground px-3 py-1 rounded-full text-xs font-bold">
+          <div className="absolute top-4 right-4 bg-warning text-warning-foreground px-3 py-1 rounded-full text-xs font-bold z-20">
             <Crown className="w-3 h-3 mr-1 inline" />
             Premium
           </div>

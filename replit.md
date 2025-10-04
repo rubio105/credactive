@@ -70,8 +70,6 @@ Preferred communication style: Simple, everyday language.
   - Type Safety: Normalizes empty/null imageUrl to undefined throughout the flow
   - Visual Design: Image cards show dark gradient overlay for text readability
 
-# Recent Changes (October 2025)
-
 - **Home Page Multi-Language Support** (October 4, 2025): Internationalization of home page
   - Created translations system for IT, EN, ES, FR languages
   - Home page content now displays in user's preferred language (set during registration)

@@ -166,6 +166,16 @@ Preferred communication style: Simple, everyday language.
     - Fixed apiRequest parameter order (url, method, data) for correct HTTP requests
     - Fixed admin JSON input fields to use draft state for proper editing (October 3, 2025)
   - **UX**: Professional course display with objectives, modular program, benefits list, live dates, payment confirmation flow
+- **Admin Simplification** (October 4, 2025): Removed complex JSON fields from live courses admin
+  - Eliminated programModules and cosaInclude JSON input fields for simpler UX
+  - Admin now uses only simple text fields: title, description, objectives, instructor, duration, price
+  - Added validation for required fields (title, quizId) with user-friendly toast messages
+  - Sanitization prevents server-managed fields from being sent in create/update requests
+  - LiveCourseModal continues to use default fallback content when JSON fields are undefined
+- **Platform Messaging Update** (October 4, 2025): Updated marketing copy across all pages
+  - Changed from "oltre 2.000 domande" to "oltre 1.000.000 di domande" platform-wide
+  - Updated in: home.tsx, landing.tsx (3 locations), chi-siamo.tsx
+  - Reflects long-term vision for massive question database through AI generation scaling
 
 ## Previous Changes
 

@@ -100,3 +100,9 @@ Preferred communication style: Simple, everyday language.
   - Initial seed data for Privacy Policy and Terms of Service
 
 - **UI Consistency** (October 4, 2025): Added "Torna alla Home" button across all admin tabs for consistent navigation
+
+- **Live Course Enrollment UX** (October 4, 2025): Improved clarity of enrollment action
+  - Added prominent "Iscriviti Ora" button for each session (previously entire card was clickable)
+  - Larger price display (€XX.XX) and clearer session details
+  - Better visual separation between session info and enrollment action
+  - Improved discoverability of payment flow

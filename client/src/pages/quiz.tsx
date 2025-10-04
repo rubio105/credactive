@@ -341,8 +341,8 @@ export default function QuizPage() {
     toast({
       title: useEnglish ? "Generating Audio..." : "Generazione in corso...",
       description: useEnglish 
-        ? "Creating an extended audio explanation. This may take 15-30 seconds." 
-        : "Creazione della spiegazione vocale ampliata. Potrebbe richiedere 15-30 secondi.",
+        ? "Creating an extended audio explanation. This may take 20-30 seconds." 
+        : "Creazione della spiegazione vocale ampliata. Potrebbe richiedere 20-30 secondi.",
     });
     
     try {

@@ -13,6 +13,7 @@ import Report from "@/pages/report";
 import Admin from "@/pages/admin";
 import ChiSiamo from "@/pages/chi-siamo";
 import Contatti from "@/pages/contatti";
+import DynamicContentPage from "@/pages/DynamicContentPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,8 @@ function Router() {
     <Switch>
       <Route path="/chi-siamo" component={ChiSiamo} />
       <Route path="/contatti" component={Contatti} />
+      <Route path="/privacy" component={() => <DynamicContentPage slug="privacy-policy" />} />
+      <Route path="/terms" component={() => <DynamicContentPage slug="termini-di-servizio" />} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

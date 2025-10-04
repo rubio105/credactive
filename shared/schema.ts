@@ -102,6 +102,19 @@ export const questions = pgTable("questions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Quiz question generation jobs
+export const quizGenerationJobs = pgTable("quiz_generation_jobs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  quizId: uuid("quiz_id").notNull().references(() => quizzes.id),
+  requestedCount: integer("requested_count").notNull(), // Number of questions requested
+  generatedCount: integer("generated_count").default(0), // Number successfully generated
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, processing, completed, failed
+  error: text("error"), // Error message if failed
+  difficulty: varchar("difficulty", { length: 20 }), // beginner, intermediate, advanced, expert
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
 // User quiz attempts
 export const userQuizAttempts = pgTable("user_quiz_attempts", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -299,6 +312,7 @@ export type UpsertUser = typeof users.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type Quiz = typeof quizzes.$inferSelect;
 export type Question = typeof questions.$inferSelect;
+export type QuizGenerationJob = typeof quizGenerationJobs.$inferSelect;
 export type UserQuizAttempt = typeof userQuizAttempts.$inferSelect;
 export type UserProgress = typeof userProgress.$inferSelect;
 export type QuizReport = typeof quizReports.$inferSelect;
@@ -311,6 +325,7 @@ export type ContentPage = typeof contentPages.$inferSelect;
 export const insertCategorySchema = createInsertSchema(categories);
 export const insertQuizSchema = createInsertSchema(quizzes);
 export const insertQuestionSchema = createInsertSchema(questions);
+export const insertQuizGenerationJobSchema = createInsertSchema(quizGenerationJobs).omit({ id: true, createdAt: true, completedAt: true });
 export const insertUserQuizAttemptSchema = createInsertSchema(userQuizAttempts);
 export const insertUserProgressSchema = createInsertSchema(userProgress);
 export const insertQuizReportSchema = createInsertSchema(quizReports);
@@ -327,6 +342,7 @@ export const updateContentPageSchema = createInsertSchema(contentPages).pick({
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
 export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
+export type InsertQuizGenerationJob = z.infer<typeof insertQuizGenerationJobSchema>;
 export type InsertUserQuizAttempt = z.infer<typeof insertUserQuizAttemptSchema>;
 export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
 export type InsertQuizReport = z.infer<typeof insertQuizReportSchema>;

@@ -1465,12 +1465,17 @@ ${JSON.stringify(questionsToTranslate)}`
       const { id } = req.params;
       const { language = 'it' } = req.body;
       
+      console.log(`[Extended Audio] Starting generation for question ${id}, language: ${language}`);
+      
       // Get the question
       const question = await storage.getQuestionById(id);
       if (!question || !question.explanation) {
+        console.log(`[Extended Audio] Question or explanation not found for ${id}`);
         return res.status(404).json({ message: "Question or explanation not found" });
       }
 
+      console.log(`[Extended Audio] Question found, explanation length: ${question.explanation.length}`);
+      
       // Initialize OpenAI
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       
@@ -1498,15 +1503,22 @@ Explicación ampliada:`
       
       const prompt = promptMap[language] || promptMap['en'];
       
-      // Generate extended explanation
+      console.log(`[Extended Audio] Generating extended explanation with GPT-4o-mini...`);
+      const gptStartTime = Date.now();
+      
+      // Generate extended explanation using gpt-4o-mini for faster response
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_tokens: 500,
       });
       
+      const gptDuration = Date.now() - gptStartTime;
+      console.log(`[Extended Audio] GPT completed in ${gptDuration}ms`);
+      
       const extendedExplanation = completion.choices[0]?.message?.content || question.explanation;
+      console.log(`[Extended Audio] Extended explanation length: ${extendedExplanation.length}`);
       
       // Choose voice based on language
       const voiceMap: { [key: string]: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' } = {
@@ -1517,6 +1529,9 @@ Explicación ampliada:`
       
       const voice = voiceMap[language] || 'alloy';
 
+      console.log(`[Extended Audio] Generating TTS with voice: ${voice}...`);
+      const ttsStartTime = Date.now();
+      
       // Generate TTS audio from extended explanation
       const mp3Response = await openai.audio.speech.create({
         model: "tts-1",
@@ -1525,8 +1540,13 @@ Explicación ampliada:`
         speed: 1.0,
       });
 
+      const ttsDuration = Date.now() - ttsStartTime;
+      console.log(`[Extended Audio] TTS completed in ${ttsDuration}ms`);
+
       // Convert response to buffer
       const buffer = Buffer.from(await mp3Response.arrayBuffer());
+      
+      console.log(`[Extended Audio] Total generation time: ${Date.now() - gptStartTime}ms, buffer size: ${buffer.length} bytes`);
       
       // Return audio directly as response
       res.setHeader('Content-Type', 'audio/mpeg');

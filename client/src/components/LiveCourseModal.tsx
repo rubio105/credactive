@@ -43,6 +43,7 @@ interface LiveCourse {
   cosaInclude?: string[];
   instructor?: string;
   duration?: string;
+  language?: string;
   price: number;
   sessions: LiveCourseSession[];
 }
@@ -272,7 +273,18 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
               )}
             </div>
 
-            <div className="flex gap-4 text-sm">
+            <div className="flex flex-wrap gap-4 text-sm">
+              {courseData.language && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Lingua:</span>
+                  <Badge variant="secondary" data-testid="course-language">
+                    {courseData.language === 'it' && '🇮🇹 Italiano'}
+                    {courseData.language === 'en' && '🇬🇧 English'}
+                    {courseData.language === 'es' && '🇪🇸 Español'}
+                  </Badge>
+                </div>
+              )}
+              
               {courseData.instructor && (
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">Docente:</span>

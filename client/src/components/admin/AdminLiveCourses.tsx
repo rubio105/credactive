@@ -36,6 +36,7 @@ interface LiveCourse {
   objectives?: string;
   instructor?: string;
   duration?: string;
+  language?: string;
   price: number;
   createdAt: string;
   updatedAt?: string;
@@ -262,6 +263,7 @@ export function AdminLiveCourses() {
               <TableRow>
                 <TableHead>Titolo</TableHead>
                 <TableHead>Quiz</TableHead>
+                <TableHead>Lingua</TableHead>
                 <TableHead>Docente</TableHead>
                 <TableHead>Prezzo</TableHead>
                 <TableHead>Azioni</TableHead>
@@ -272,6 +274,11 @@ export function AdminLiveCourses() {
                 <TableRow key={course.id} data-testid={`course-row-${course.id}`}>
                   <TableCell className="font-medium">{course.title}</TableCell>
                   <TableCell>{quizzes?.find(q => q.id === course.quizId)?.title || course.quizId}</TableCell>
+                  <TableCell>
+                    {course.language === 'it' && '🇮🇹 IT'}
+                    {course.language === 'en' && '🇬🇧 EN'}
+                    {course.language === 'es' && '🇪🇸 ES'}
+                  </TableCell>
                   <TableCell>{course.instructor || '-'}</TableCell>
                   <TableCell>€{(course.price / 100).toFixed(2)}</TableCell>
                   <TableCell>
@@ -446,15 +453,33 @@ export function AdminLiveCourses() {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="price">Prezzo (€)</Label>
-              <Input
-                id="price"
-                type="number"
-                value={editingCourse?.price ? editingCourse.price / 100 : 0}
-                onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
-                data-testid="input-course-price"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="language">Lingua del Corso</Label>
+                <Select
+                  value={editingCourse?.language || 'it'}
+                  onValueChange={(value) => setEditingCourse({ ...editingCourse, language: value })}
+                >
+                  <SelectTrigger data-testid="select-course-language">
+                    <SelectValue placeholder="Seleziona lingua" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="it">🇮🇹 Italiano</SelectItem>
+                    <SelectItem value="en">🇬🇧 English</SelectItem>
+                    <SelectItem value="es">🇪🇸 Español</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="price">Prezzo (€)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={editingCourse?.price ? editingCourse.price / 100 : 0}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
+                  data-testid="input-course-price"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

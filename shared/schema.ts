@@ -131,6 +131,7 @@ export const liveCourses = pgTable("live_courses", {
   cosaInclude: jsonb("cosa_include"), // Array of included items (strings)
   instructor: varchar("instructor", { length: 200 }), // Course instructor/teacher
   duration: varchar("duration", { length: 100 }), // Course duration (e.g., "12 ore", "2 giorni")
+  language: varchar("language", { length: 10 }).notNull().default('it'), // Course language: it, en, es
   price: integer("price").notNull(), // Price in cents (e.g., 9000 for €90)
   stripeProductId: varchar("stripe_product_id"),
   stripePriceId: varchar("stripe_price_id"),

@@ -63,6 +63,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 2025)
 
+- **Live Courses Language Support** (October 4, 2025): Added language field to live courses
+  - Database: Added `language` column to live_courses table (values: it, en, es)
+  - Admin Panel: Language selector with flags (🇮🇹 Italiano, 🇬🇧 English, 🇪🇸 Español)
+  - Frontend: Language badge displayed prominently in LiveCourseModal
+  - Clear visibility: Language shown with instructor and duration in course details
+  - Default: Italian (it) for new courses
+
 - **Quiz Language Selector** (October 4, 2025): Enhanced language selection for quiz interface
   - Language toggle now always visible during quizzes (previously hidden for English users)
   - Clear labels showing "English" or "Italiano" with IT/EN badge

@@ -112,10 +112,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { email, password, firstName, lastName, language } = req.body;
+      const { 
+        email, 
+        password, 
+        firstName, 
+        lastName, 
+        dateOfBirth,
+        gender,
+        phone,
+        profession,
+        education,
+        company,
+        addressStreet,
+        addressCity,
+        addressPostalCode,
+        addressProvince,
+        addressCountry,
+        language,
+        newsletterConsent
+      } = req.body;
 
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email e password sono obbligatori" });
+      // Validate required fields
+      if (!email || !password || !firstName || !lastName || !dateOfBirth || 
+          !gender || !profession || !education || !addressStreet || 
+          !addressCity || !addressPostalCode || !addressProvince || !addressCountry) {
+        return res.status(400).json({ message: "Tutti i campi obbligatori devono essere compilati" });
       }
 
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
@@ -130,7 +151,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword,
         firstName,
         lastName,
+        dateOfBirth: new Date(dateOfBirth),
+        gender,
+        phone: phone || null,
+        profession,
+        education,
+        company: company || null,
+        addressStreet,
+        addressCity,
+        addressPostalCode,
+        addressProvince,
+        addressCountry,
         language: language || 'it',
+        newsletterConsent: newsletterConsent || false,
         emailVerified: true,
       });
 

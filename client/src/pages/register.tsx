@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -20,7 +21,19 @@ export default function Register() {
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    dateOfBirth: "",
+    gender: "",
+    phone: "",
+    profession: "",
+    education: "",
+    company: "",
+    addressStreet: "",
+    addressCity: "",
+    addressPostalCode: "",
+    addressProvince: "",
+    addressCountry: "",
     language: "it",
+    newsletterConsent: false,
   });
 
   const registerMutation = useMutation({
@@ -65,111 +78,345 @@ export default function Register() {
       return;
     }
 
-    registerMutation.mutate({
+    const payload = {
       email: formData.email,
       password: formData.password,
       firstName: formData.firstName,
       lastName: formData.lastName,
+      dateOfBirth: formData.dateOfBirth,
+      gender: formData.gender,
+      phone: formData.phone || null,
+      profession: formData.profession,
+      education: formData.education,
+      company: formData.company || null,
+      addressStreet: formData.addressStreet,
+      addressCity: formData.addressCity,
+      addressPostalCode: formData.addressPostalCode,
+      addressProvince: formData.addressProvince,
+      addressCountry: formData.addressCountry,
       language: formData.language,
-    });
+      newsletterConsent: formData.newsletterConsent,
+    };
+
+    registerMutation.mutate(payload);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4 py-8">
+      <Card className="w-full max-w-3xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img src={logoImage} alt="CREDACTIVE" className="h-12" />
           </div>
           <CardTitle className="text-2xl">Crea il tuo account</CardTitle>
           <CardDescription>
-            Inizia la tua preparazione professionale
+            Compila tutti i campi per iniziare la tua preparazione professionale
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nome</Label>
-                <Input
-                  id="firstName"
-                  placeholder="Mario"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  data-testid="input-firstName"
-                />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Dati Personali */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Dati Personali</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">Nome *</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="Mario"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    required
+                    data-testid="input-firstName"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Cognome *</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Rossi"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    required
+                    data-testid="input-lastName"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Data di Nascita *</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    required
+                    data-testid="input-dateOfBirth"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Sesso *</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => setFormData({ ...formData, gender: value })}
+                    required
+                  >
+                    <SelectTrigger data-testid="select-gender">
+                      <SelectValue placeholder="Seleziona..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Maschio</SelectItem>
+                      <SelectItem value="female">Femmina</SelectItem>
+                      <SelectItem value="other">Altro</SelectItem>
+                      <SelectItem value="prefer_not_to_say">Preferisco non specificare</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Contatti */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Contatti</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="nome@esempio.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                    data-testid="input-email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefono</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+39 123 456 7890"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    data-testid="input-phone"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Dati Professionali */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Dati Professionali</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="profession">Professione *</Label>
+                  <Select
+                    value={formData.profession}
+                    onValueChange={(value) => setFormData({ ...formData, profession: value })}
+                    required
+                  >
+                    <SelectTrigger data-testid="select-profession">
+                      <SelectValue placeholder="Seleziona..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="it_security">IT Security Specialist</SelectItem>
+                      <SelectItem value="cybersecurity">Cybersecurity Analyst</SelectItem>
+                      <SelectItem value="compliance">Compliance Officer</SelectItem>
+                      <SelectItem value="risk_manager">Risk Manager</SelectItem>
+                      <SelectItem value="it_manager">IT Manager</SelectItem>
+                      <SelectItem value="consultant">Consulente</SelectItem>
+                      <SelectItem value="developer">Sviluppatore</SelectItem>
+                      <SelectItem value="system_admin">System Administrator</SelectItem>
+                      <SelectItem value="data_protection">Data Protection Officer</SelectItem>
+                      <SelectItem value="auditor">Auditor</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="student">Studente</SelectItem>
+                      <SelectItem value="other">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="education">Livello di Istruzione *</Label>
+                  <Select
+                    value={formData.education}
+                    onValueChange={(value) => setFormData({ ...formData, education: value })}
+                    required
+                  >
+                    <SelectTrigger data-testid="select-education">
+                      <SelectValue placeholder="Seleziona..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="high_school">Diploma</SelectItem>
+                      <SelectItem value="bachelor">Laurea Triennale</SelectItem>
+                      <SelectItem value="master">Laurea Magistrale</SelectItem>
+                      <SelectItem value="phd">Dottorato</SelectItem>
+                      <SelectItem value="certification">Certificazioni Professionali</SelectItem>
+                      <SelectItem value="other">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Cognome</Label>
+                <Label htmlFor="company">Azienda/Organizzazione</Label>
                 <Input
-                  id="lastName"
-                  placeholder="Rossi"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  data-testid="input-lastName"
+                  id="company"
+                  placeholder="Nome azienda (facoltativo)"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  data-testid="input-company"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="nome@esempio.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                data-testid="input-email"
-              />
+
+            {/* Indirizzo */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Indirizzo</h3>
+              <div className="space-y-2">
+                <Label htmlFor="addressStreet">Via *</Label>
+                <Input
+                  id="addressStreet"
+                  placeholder="Via Roma, 123"
+                  value={formData.addressStreet}
+                  onChange={(e) => setFormData({ ...formData, addressStreet: e.target.value })}
+                  required
+                  data-testid="input-addressStreet"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="addressCity">Città *</Label>
+                  <Input
+                    id="addressCity"
+                    placeholder="Milano"
+                    value={formData.addressCity}
+                    onChange={(e) => setFormData({ ...formData, addressCity: e.target.value })}
+                    required
+                    data-testid="input-addressCity"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="addressPostalCode">CAP *</Label>
+                  <Input
+                    id="addressPostalCode"
+                    placeholder="20100"
+                    value={formData.addressPostalCode}
+                    onChange={(e) => setFormData({ ...formData, addressPostalCode: e.target.value })}
+                    required
+                    data-testid="input-addressPostalCode"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="addressProvince">Provincia *</Label>
+                  <Input
+                    id="addressProvince"
+                    placeholder="MI"
+                    value={formData.addressProvince}
+                    onChange={(e) => setFormData({ ...formData, addressProvince: e.target.value })}
+                    required
+                    data-testid="input-addressProvince"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="addressCountry">Nazione *</Label>
+                <Select
+                  value={formData.addressCountry}
+                  onValueChange={(value) => setFormData({ ...formData, addressCountry: value })}
+                  required
+                >
+                  <SelectTrigger data-testid="select-addressCountry">
+                    <SelectValue placeholder="Seleziona..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="IT">Italia</SelectItem>
+                    <SelectItem value="CH">Svizzera</SelectItem>
+                    <SelectItem value="FR">Francia</SelectItem>
+                    <SelectItem value="DE">Germania</SelectItem>
+                    <SelectItem value="ES">Spagna</SelectItem>
+                    <SelectItem value="UK">Regno Unito</SelectItem>
+                    <SelectItem value="US">Stati Uniti</SelectItem>
+                    <SelectItem value="OTHER">Altro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="language">Lingua preferita</Label>
-              <Select
-                value={formData.language}
-                onValueChange={(value) => setFormData({ ...formData, language: value })}
-              >
-                <SelectTrigger data-testid="select-language">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="it">Italiano</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="fr">Français</SelectItem>
-                </SelectContent>
-              </Select>
+
+            {/* Preferenze Account */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Preferenze Account</h3>
+              <div className="space-y-2">
+                <Label htmlFor="language">Lingua preferita *</Label>
+                <Select
+                  value={formData.language}
+                  onValueChange={(value) => setFormData({ ...formData, language: value })}
+                  required
+                >
+                  <SelectTrigger data-testid="select-language">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="it">Italiano</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Español</SelectItem>
+                    <SelectItem value="fr">Français</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Minimo 8 caratteri"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    data-testid="input-password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Conferma Password *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Ripeti la password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    required
+                    data-testid="input-confirmPassword"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Minimo 8 caratteri"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                data-testid="input-password"
-              />
+
+            {/* Consensi */}
+            <div className="space-y-3">
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="newsletterConsent"
+                  checked={formData.newsletterConsent}
+                  onCheckedChange={(checked) => 
+                    setFormData({ ...formData, newsletterConsent: checked as boolean })
+                  }
+                  data-testid="checkbox-newsletter"
+                />
+                <Label htmlFor="newsletterConsent" className="text-sm font-normal leading-tight cursor-pointer">
+                  Desidero ricevere aggiornamenti, offerte e contenuti esclusivi via email
+                </Label>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Conferma Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Ripeti la password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-                data-testid="input-confirmPassword"
-              />
-            </div>
+
             <Button
               type="submit"
               className="w-full"
+              size="lg"
               disabled={registerMutation.isPending}
               data-testid="button-register"
             >
-              {registerMutation.isPending ? "Registrazione in corso..." : "Registrati"}
+              {registerMutation.isPending ? "Registrazione in corso..." : "Crea Account"}
             </Button>
           </form>
           <div className="mt-6 text-center text-sm">

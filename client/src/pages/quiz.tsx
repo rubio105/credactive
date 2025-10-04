@@ -503,10 +503,19 @@ export default function QuizPage() {
     return {
       ...originalQuestion,
       question: translation.question,
-      options: originalQuestion.options.map((opt: any, idx: number) => ({
-        ...opt,
-        text: translation.options[idx] || opt.text
-      }))
+      options: originalQuestion.options.map((opt: any, idx: number) => {
+        // Ensure option has label and text structure
+        const label = opt?.label || String.fromCharCode(65 + idx); // A, B, C, D...
+        const translatedText = Array.isArray(translation.options) 
+          ? translation.options[idx] 
+          : (opt?.text || '');
+        
+        return {
+          label,
+          text: translatedText || opt?.text || '',
+          isCorrect: opt?.isCorrect
+        };
+      })
     };
   };
 

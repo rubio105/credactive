@@ -139,8 +139,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const questions = await storage.getQuestionsByQuizId(quizId);
+      
+      // Normalize question options to ensure {label, text} format
+      const normalizedQuestions = questions.map(q => {
+        const options = Array.isArray(q.options) ? q.options : [];
+        const normalizedOptions = options.map((opt: any, idx: number) => {
+          // If option is already in {label, text} format, keep it
+          if (opt && typeof opt === 'object' && opt.label && opt.text !== undefined) {
+            return opt;
+          }
+          // If option is a string, convert to {label, text} format
+          if (typeof opt === 'string') {
+            const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+            return {
+              label: labels[idx] || String.fromCharCode(65 + idx),
+              text: opt
+            };
+          }
+          // Fallback for unexpected formats
+          return {
+            label: String.fromCharCode(65 + idx),
+            text: String(opt)
+          };
+        });
+        
+        return {
+          ...q,
+          options: normalizedOptions
+        };
+      });
+      
       // Randomize questions order for each quiz attempt
-      const shuffledQuestions = shuffleArray(questions);
+      const shuffledQuestions = shuffleArray(normalizedQuestions);
       res.json({ quiz, questions: shuffledQuestions });
     } catch (error) {
       console.error("Error fetching quiz:", error);

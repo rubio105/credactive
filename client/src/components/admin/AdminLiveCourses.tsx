@@ -28,20 +28,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 
-interface ProgramModule {
-  moduleTitle: string;
-  hours: string;
-  topics?: string;
-}
-
 interface LiveCourse {
   id: string;
   quizId: string;
   title: string;
   description?: string;
   objectives?: string;
-  programModules?: ProgramModule[];
-  cosaInclude?: string[];
   instructor?: string;
   duration?: string;
   price: number;

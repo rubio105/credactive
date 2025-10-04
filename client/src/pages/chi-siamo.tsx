@@ -63,7 +63,7 @@ export default function ChiSiamo() {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="font-semibold mb-2">2.000+ Domande</h3>
+              <h3 className="font-semibold mb-2">1.000.000+ Domande</h3>
               <p className="text-sm text-muted-foreground">
                 Database completo e costantemente aggiornato per tutte le certificazioni
               </p>

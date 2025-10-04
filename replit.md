@@ -29,7 +29,7 @@ Preferred communication style: Simple, everyday language.
 
 -   **Database**: PostgreSQL (Neon's serverless driver).
 -   **ORM**: Drizzle ORM with schema-first design (`shared/schema.ts`).
--   **Schema Design**: Tables for Users (email, hashed password, password reset tokens, Stripe data), Categories, Quizzes, Questions (JSONB for options), User progress, Reports (JSONB), Sessions, Live Courses, and Static Content Pages. Supports category images and audio explanations.
+-   **Schema Design**: Tables for Users (email, hashed password, password reset tokens, Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs (tracks AI generation status and progress), User progress, Reports (JSONB), Sessions, Live Courses, and Static Content Pages. Supports category images and audio explanations.
 -   **Migrations**: Managed by drizzle-kit.
 -   **Type Safety**: End-to-end type safety via Drizzle and shared schema.
 
@@ -43,9 +43,9 @@ Preferred communication style: Simple, everyday language.
 
 ## Key Features
 
--   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Supports shuffled questions, customizable quiz lengths (10, 20, 30, 50, 100, or all questions), **admin-controlled question rotation** (admins can set max questions per attempt), timed quizzes, server-side result generation with detailed reports, and Insight Discovery personality assessments. Category filters available on landing and home pages. Includes categories like Cybersecurity, Ethical Hacking, Compliance & Governance, Business & Innovation, Assessment & Leadership.
+-   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Supports shuffled questions, **admin-controlled question rotation** via dropdown menu (10, 20, 30, 40, 50, 60, 70, 80, 90, 100 questions, or all), ensuring different random questions per attempt from the total pool. Timed quizzes, server-side result generation with detailed reports, and Insight Discovery personality assessments. Category filters available on landing and home pages. Includes categories like Cybersecurity, Ethical Hacking, Compliance & Governance, Business & Innovation, Assessment & Leadership.
 -   **Premium Features**: Most content requires an active Stripe subscription.
--   **AI Question Generation**: Admin panel feature using OpenAI GPT-4o for bulk, context-aware question generation (1-1000 questions, configurable difficulty), with background processing and persistence. Supports **document-based generation** via PDF upload (max 600 pages, 50MB) - questions are generated from the document content using extracted text as context.
+-   **AI Question Generation with Job Tracking**: Admin panel feature using OpenAI GPT-4o for bulk, context-aware question generation (1-1000 questions, configurable difficulty). Features **real-time generation tracking** via `quiz_generation_jobs` table with status monitoring (pending → processing → completed/failed), automatic polling for status updates every 3 seconds, and admin notifications on completion. Supports **document-based exclusive generation** via PDF upload (max 600 pages, 50MB) - when a PDF is uploaded, AI generates questions **ONLY** from the document content, ensuring all questions are directly traceable to the source material.
 -   **Document Upload**: Quizzes can have optional PDF documents (max 600 pages) for AI question generation. Backend uses pdf-parse to extract and validate content, storing documents in `/public/quiz-documents/`.
 -   **Question Media**: Supports optional image uploads for questions and audio explanations (TTS) for question and extended explanations, generated via OpenAI.
 -   **Live Courses**: Integrated system for purchasing one-time live courses via Stripe, including course details, sessions, and enrollment tracking. Supports multi-language courses.

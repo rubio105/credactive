@@ -210,7 +210,7 @@ export default function Home() {
                     data-testid="button-upgrade"
                   >
                     <Crown className="w-4 h-4 mr-2" />
-                    Upgrade
+                    {t.noPremium.upgrade}
                   </Button>
                 </Link>
               </div>
@@ -250,13 +250,13 @@ export default function Home() {
             <Card className="p-12 text-center">
               <CardContent>
                 <Crown className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-2">Nessun Quiz Disponibile</h3>
+                <h3 className="text-xl font-bold mb-2">{t.emptyState.title}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Tutti i quiz richiedono un account Premium
+                  {t.emptyState.description}
                 </p>
                 <Link href="/subscribe">
                   <Button data-testid="button-get-premium">
-                    Ottieni Premium
+                    {t.emptyState.button}
                   </Button>
                 </Link>
               </CardContent>
@@ -268,25 +268,25 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-3">Continua l'Apprendimento</h3>
+              <h3 className="text-lg font-semibold mb-3">{t.quickActions.continueLearning.title}</h3>
               <p className="text-muted-foreground mb-4">
-                Riprendi da dove avevi lasciato o inizia un nuovo quiz
+                {t.quickActions.continueLearning.description}
               </p>
               <Button className="w-full" data-testid="button-continue-learning">
-                Inizia Quiz
+                {t.quickActions.continueLearning.button}
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-3">Le Tue Statistiche</h3>
+              <h3 className="text-lg font-semibold mb-3">{t.quickActions.viewStats.title}</h3>
               <p className="text-muted-foreground mb-4">
-                Visualizza i progressi dettagliati e i risultati dei quiz
+                {t.quickActions.viewStats.description}
               </p>
               <Link href="/dashboard">
                 <Button variant="outline" className="w-full" data-testid="button-view-stats">
-                  Vedi Statistiche
+                  {t.quickActions.viewStats.button}
                 </Button>
               </Link>
             </CardContent>

@@ -234,16 +234,14 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
               {availableSessions.length === 0 ? (
                 <p className="text-muted-foreground text-sm">Nessuna data disponibile al momento.</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {availableSessions.map((session) => (
-                    <button
+                    <div
                       key={session.id}
-                      onClick={() => handleSessionSelect(session)}
-                      className="w-full p-4 border rounded-lg hover:border-primary hover:bg-accent/50 transition-colors text-left"
-                      data-testid={`session-${session.id}`}
+                      className="p-4 border rounded-lg hover:border-primary transition-colors"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="space-y-1 flex-1">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-primary" />
                             <span className="font-medium">
@@ -259,15 +257,22 @@ export function LiveCourseModal({ quizId, quizTitle, isOpen, onClose }: LiveCour
                             {new Date(session.startDate).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - 
                             {new Date(session.endDate).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold">€{(courseData.price / 100).toFixed(2)}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {session.enrolled || 0}/{session.capacity || 30} posti
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {session.enrolled || 0}/{session.capacity || 30} posti disponibili
                           </div>
                         </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">€{(courseData.price / 100).toFixed(2)}</div>
+                        </div>
                       </div>
-                    </button>
+                      <Button
+                        onClick={() => handleSessionSelect(session)}
+                        className="w-full"
+                        data-testid={`button-enroll-${session.id}`}
+                      >
+                        Iscriviti Ora
+                      </Button>
+                    </div>
                   ))}
                 </div>
               )}

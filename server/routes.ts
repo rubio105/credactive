@@ -13,6 +13,9 @@ import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
 
+// Dynamic import for pdf-parse to avoid ESM issues
+const pdfParsePromise = import('pdf-parse');
+
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY. Please set this environment variable.');
 }
@@ -51,6 +54,37 @@ const upload = multer({
   }
 });
 
+// Configure multer for PDF uploads
+const pdfUploadDir = path.join(process.cwd(), 'public', 'quiz-documents');
+if (!fs.existsSync(pdfUploadDir)) {
+  fs.mkdirSync(pdfUploadDir, { recursive: true });
+}
+
+const pdfStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, pdfUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '.pdf');
+  }
+});
+
+const uploadPdf = multer({
+  storage: pdfStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit for large PDFs
+  fileFilter: (req, file, cb) => {
+    const extname = path.extname(file.originalname).toLowerCase() === '.pdf';
+    const mimetype = file.mimetype === 'application/pdf';
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'));
+    }
+  }
+});
+
 // Utility function to shuffle array (Fisher-Yates algorithm)
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -67,6 +101,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serve uploaded images statically
   app.use('/question-images', express.static(uploadDir));
+  
+  // Serve uploaded PDFs statically
+  app.use('/quiz-documents', express.static(pdfUploadDir));
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -737,6 +774,44 @@ ${JSON.stringify(questionsToTranslate)}`
     }
   });
 
+  // Admin - Upload PDF document for quiz
+  app.post('/api/admin/upload-pdf', isAdmin, uploadPdf.single('pdf'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      // Read and parse the PDF to validate page count
+      const pdfBuffer = fs.readFileSync(req.file.path);
+      const pdfParse = (await pdfParsePromise).default;
+      const pdfData = await pdfParse(pdfBuffer);
+      
+      // Validate max 600 pages
+      if (pdfData.numpages > 600) {
+        // Delete the file if it exceeds the limit
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ 
+          message: `PDF troppo grande: ${pdfData.numpages} pagine. Massimo consentito: 600 pagine.` 
+        });
+      }
+      
+      const pdfUrl = `/quiz-documents/${req.file.filename}`;
+      res.json({ 
+        url: pdfUrl, 
+        filename: req.file.filename,
+        pages: pdfData.numpages,
+        text: pdfData.text // Include extracted text for AI generation
+      });
+    } catch (error) {
+      console.error("Error uploading PDF:", error);
+      // Clean up file on error
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({ message: "Failed to upload PDF" });
+    }
+  });
+
   // Admin - Get pricing settings (simplified - could be database-backed)
   app.get('/api/admin/pricing', isAdmin, async (req, res) => {
     try {
@@ -1282,15 +1357,34 @@ ${JSON.stringify(questionsToTranslate)}`
       const category = categories.find(c => c.id === quiz.categoryId);
       const categoryName = category?.name || 'General';
       
+      // Extract PDF document text if available
+      let documentContext: string | undefined;
+      if (quiz.documentPdfUrl) {
+        try {
+          const pdfPath = path.join(process.cwd(), 'public', quiz.documentPdfUrl.replace(/^\//, ''));
+          if (fs.existsSync(pdfPath)) {
+            const pdfBuffer = fs.readFileSync(pdfPath);
+            const pdfParse = (await pdfParsePromise).default;
+            const pdfData = await pdfParse(pdfBuffer);
+            documentContext = pdfData.text;
+            console.log(`Loaded PDF context: ${pdfData.numpages} pages, ${pdfData.text.length} characters`);
+          }
+        } catch (error) {
+          console.error('Error reading PDF for context:', error);
+          // Continue without document context
+        }
+      }
+      
       res.json({ 
         message: "Question generation started", 
         quizId, 
         count,
-        status: "processing"
+        status: "processing",
+        documentBased: !!documentContext
       });
 
       // Generate questions in background
-      generateQuestionsInBatches(quiz.title, categoryName, count, 20, difficulty)
+      generateQuestionsInBatches(quiz.title, categoryName, count, 20, difficulty, documentContext)
         .then(async (questions) => {
           // Save all generated questions to database
           for (const q of questions) {

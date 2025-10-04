@@ -44,7 +44,8 @@ export async function generateQuestions(
   quizTitle: string,
   category: string,
   count: number,
-  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert' = 'intermediate'
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert' = 'intermediate',
+  documentContext?: string
 ): Promise<GeneratedQuestion[]> {
   
   const systemPrompt = certificationPrompts[category] || certificationPrompts['CISSP'];
@@ -53,7 +54,11 @@ export async function generateQuestions(
     ? '\n- For CISSP questions, include a "domain" field with one of the 8 CISSP domains: "Security and Risk Management", "Asset Security", "Security Architecture and Engineering", "Communication and Network Security", "Identity and Access Management", "Security Assessment and Testing", "Security Operations", or "Software Development Security"'
     : '\n- Include a "domain" field with the main topic or area covered by the question';
 
-  const userPrompt = `Generate ${count} multiple-choice questions for ${quizTitle}.
+  const documentContextSection = documentContext 
+    ? `\n\nIMPORTANT: Base the questions on the following document content. Questions should directly reference concepts, procedures, and information from this document:\n\n${documentContext.substring(0, 30000)}\n\n` 
+    : '';
+
+  const userPrompt = `Generate ${count} multiple-choice questions for ${quizTitle}.${documentContextSection}
 
 Requirements:
 - Difficulty level: ${difficulty}
@@ -113,7 +118,8 @@ export async function generateQuestionsInBatches(
   category: string,
   totalCount: number,
   batchSize: number = 20,
-  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert' = 'intermediate'
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert' = 'intermediate',
+  documentContext?: string
 ): Promise<GeneratedQuestion[]> {
   const allQuestions: GeneratedQuestion[] = [];
   const batches = Math.ceil(totalCount / batchSize);
@@ -122,7 +128,7 @@ export async function generateQuestionsInBatches(
     const count = Math.min(batchSize, totalCount - allQuestions.length);
     console.log(`Generating batch ${i + 1}/${batches} (${count} questions)...`);
     
-    const batchQuestions = await generateQuestions(quizTitle, category, count, difficulty);
+    const batchQuestions = await generateQuestions(quizTitle, category, count, difficulty, documentContext);
     allQuestions.push(...batchQuestions);
     
     // Small delay between batches to avoid rate limiting

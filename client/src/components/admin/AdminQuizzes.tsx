@@ -43,6 +43,7 @@ interface Quiz {
   difficulty: string;
   isPremium: boolean;
   isActive: boolean;
+  documentPdfUrl?: string;
 }
 
 interface Category {
@@ -59,6 +60,7 @@ export function AdminQuizzes() {
   const [selectedQuizForAI, setSelectedQuizForAI] = useState<Quiz | null>(null);
   const [aiQuestionCount, setAiQuestionCount] = useState('100');
   const [aiDifficulty, setAiDifficulty] = useState('intermediate');
+  const [uploadingPdf, setUploadingPdf] = useState(false);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -158,6 +160,52 @@ export function AdminQuizzes() {
     });
     setIsCreating(true);
     setIsDialogOpen(true);
+  };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: 'Errore',
+        description: 'Solo file PDF sono consentiti',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingPdf(true);
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+
+      const response = await fetch('/api/admin/upload-pdf', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload fallito');
+      }
+
+      const data = await response.json();
+      setEditingQuiz({ ...editingQuiz, documentPdfUrl: data.url });
+      toast({
+        title: 'PDF caricato',
+        description: `${data.pages} pagine elaborate con successo`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Errore upload',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingPdf(false);
+    }
   };
 
   const handleSave = () => {
@@ -321,6 +369,36 @@ export function AdminQuizzes() {
                   onChange={(e) => setEditingQuiz({ ...editingQuiz, description: e.target.value })}
                   data-testid="textarea-description"
                 />
+              </div>
+              <div>
+                <Label htmlFor="pdf-document">Documento PDF (opzionale)</Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Carica un documento PDF (max 600 pagine) per generare domande basate sul contenuto
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="pdf-document"
+                    type="file"
+                    accept=".pdf"
+                    onChange={handlePdfUpload}
+                    disabled={uploadingPdf}
+                    data-testid="input-pdf-document"
+                  />
+                  {uploadingPdf && <span className="text-sm text-muted-foreground">Caricamento...</span>}
+                </div>
+                {editingQuiz.documentPdfUrl && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge variant="outline">PDF caricato</Badge>
+                    <a 
+                      href={editingQuiz.documentPdfUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Visualizza documento
+                    </a>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

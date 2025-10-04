@@ -66,6 +66,8 @@ export default function Home() {
   const [selectedLiveCourseQuiz, setSelectedLiveCourseQuiz] = useState<{ id: string; title: string } | null>(null);
   const [quizConfigDialog, setQuizConfigDialog] = useState<{ quizId: string; quizTitle: string; totalQuestions: number; isPremium: boolean } | null>(null);
   const [selectedQuestionCount, setSelectedQuestionCount] = useState<string>("all");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeDifficultyFilter, setActiveDifficultyFilter] = useState("all");
   
   const userLanguage = (user as UserType)?.language;
   const t = getTranslation(userLanguage).home;
@@ -96,14 +98,38 @@ export default function Home() {
   const nonFeaturedCategories = categoriesWithQuizzes.filter(cat => !cat.isFeatured);
   const nonFeaturedQuizzes = mapCategoriesToQuizCards(nonFeaturedCategories);
 
-  // Apply premium filter
-  const availableFeaturedQuizzes = (user as User)?.isPremium 
+  // Apply filters to featured quizzes
+  let filteredFeatured = (user as User)?.isPremium 
     ? featuredQuizzes 
     : featuredQuizzes.filter(quiz => !quiz.isPremium);
+  
+  // Apply category filter
+  if (activeFilter !== "all") {
+    filteredFeatured = filteredFeatured.filter(quiz => quiz.category === activeFilter);
+  }
+  
+  // Apply difficulty filter
+  if (activeDifficultyFilter !== "all") {
+    filteredFeatured = filteredFeatured.filter(quiz => quiz.difficulty === activeDifficultyFilter);
+  }
 
-  const availableQuizzes = (user as User)?.isPremium 
+  // Apply filters to non-featured quizzes
+  let filteredQuizzes = (user as User)?.isPremium 
     ? nonFeaturedQuizzes 
     : nonFeaturedQuizzes.filter(quiz => !quiz.isPremium);
+  
+  // Apply category filter
+  if (activeFilter !== "all") {
+    filteredQuizzes = filteredQuizzes.filter(quiz => quiz.category === activeFilter);
+  }
+  
+  // Apply difficulty filter
+  if (activeDifficultyFilter !== "all") {
+    filteredQuizzes = filteredQuizzes.filter(quiz => quiz.difficulty === activeDifficultyFilter);
+  }
+
+  const availableFeaturedQuizzes = filteredFeatured;
+  const availableQuizzes = filteredQuizzes;
 
   // Quiz with live courses
   const liveCourseQuizTitles = [
@@ -270,6 +296,108 @@ export default function Home() {
             </CardContent>
           </Card>
         )}
+
+        {/* Filter Section */}
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="space-y-6">
+              {/* Category Filters */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Categoria</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={activeFilter === "all" ? "default" : "outline"}
+                    onClick={() => setActiveFilter("all")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-all-home"
+                  >
+                    Tutti
+                  </Button>
+                  <Button
+                    variant={activeFilter === "certifications" ? "default" : "outline"}
+                    onClick={() => setActiveFilter("certifications")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-certifications-home"
+                  >
+                    Certificazioni
+                  </Button>
+                  <Button
+                    variant={activeFilter === "compliance" ? "default" : "outline"}
+                    onClick={() => setActiveFilter("compliance")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-compliance-home"
+                  >
+                    Compliance
+                  </Button>
+                  <Button
+                    variant={activeFilter === "ai" ? "default" : "outline"}
+                    onClick={() => setActiveFilter("ai")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-ai-home"
+                  >
+                    AI & Security
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Difficulty Filters */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Livello</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={activeDifficultyFilter === "all" ? "default" : "outline"}
+                    onClick={() => setActiveDifficultyFilter("all")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-difficulty-all-home"
+                  >
+                    Tutti i livelli
+                  </Button>
+                  <Button
+                    variant={activeDifficultyFilter === "beginner" ? "default" : "outline"}
+                    onClick={() => setActiveDifficultyFilter("beginner")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-difficulty-beginner-home"
+                  >
+                    Principiante
+                  </Button>
+                  <Button
+                    variant={activeDifficultyFilter === "intermediate" ? "default" : "outline"}
+                    onClick={() => setActiveDifficultyFilter("intermediate")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-difficulty-intermediate-home"
+                  >
+                    Intermedio
+                  </Button>
+                  <Button
+                    variant={activeDifficultyFilter === "advanced" ? "default" : "outline"}
+                    onClick={() => setActiveDifficultyFilter("advanced")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-difficulty-advanced-home"
+                  >
+                    Avanzato
+                  </Button>
+                  <Button
+                    variant={activeDifficultyFilter === "expert" ? "default" : "outline"}
+                    onClick={() => setActiveDifficultyFilter("expert")}
+                    size="sm"
+                    className="rounded-full"
+                    data-testid="filter-difficulty-expert-home"
+                  >
+                    Esperto
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Featured Categories */}
         {availableFeaturedQuizzes.length > 0 && (

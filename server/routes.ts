@@ -321,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
     try {
       const { quizId } = req.params;
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       
       const quiz = await storage.getQuizById(quizId);
       if (!quiz) {
@@ -426,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/quiz-attempts', isAuthenticated, async (req: any, res) => {
     try {
       console.log('[Quiz Submission] Starting quiz submission...');
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       console.log('[Quiz Submission] User ID:', userId);
       
       const attemptData = insertUserQuizAttemptSchema.parse({
@@ -510,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User dashboard data
   app.get('/api/user/dashboard', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       const [attempts, progress] = await Promise.all([
         storage.getUserQuizAttempts(userId, 10),
@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user language
   app.post('/api/user/language', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { language } = req.body;
 
       const validLanguages = ['it', 'en', 'es', 'fr'];
@@ -643,7 +643,7 @@ ${JSON.stringify(questionsToTranslate)}`
       }
 
       // Check if user owns this report
-      if (report.userId !== req.user.claims.sub) {
+      if (report.userId !== req.user.id) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -656,7 +656,7 @@ ${JSON.stringify(questionsToTranslate)}`
 
   // Stripe subscription endpoint
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user.id;
     let user = await storage.getUser(userId);
 
     if (!user) {
@@ -718,7 +718,7 @@ ${JSON.stringify(questionsToTranslate)}`
   app.post('/api/payment-success', isAuthenticated, async (req: any, res) => {
     try {
       const { paymentIntentId } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
 
       // Verify payment with Stripe
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -1098,7 +1098,7 @@ ${JSON.stringify(questionsToTranslate)}`
   // Purchase live course - Create payment intent
   app.post('/api/live-courses/purchase', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { courseId, sessionId } = req.body;
 
       if (!courseId || !sessionId) {
@@ -1166,7 +1166,7 @@ ${JSON.stringify(questionsToTranslate)}`
   app.post('/api/live-courses/confirm-enrollment', isAuthenticated, async (req: any, res) => {
     try {
       const { paymentIntentId, courseId, sessionId } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
 
       // Verify payment with Stripe
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -1215,7 +1215,7 @@ ${JSON.stringify(questionsToTranslate)}`
       }
 
       // Check if user owns this report
-      if (report.userId !== req.user.claims.sub) {
+      if (report.userId !== req.user.id) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 

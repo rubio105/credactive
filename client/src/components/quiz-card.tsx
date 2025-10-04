@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,9 @@ const levelColors = {
 
 export default function QuizCard({ quiz, onStartQuiz, onLiveCourse, hasLiveCourse = false, showPremiumBadge = true }: QuizCardProps) {
   const IconComponent = iconMap[quiz.icon] || Shield;
+  const [imageError, setImageError] = useState(false);
+  
+  const showImage = Boolean(quiz.imageUrl) && !imageError;
   
   return (
     <Card 
@@ -67,12 +71,14 @@ export default function QuizCard({ quiz, onStartQuiz, onLiveCourse, hasLiveCours
     >
       {/* Header with Image or Gradient Background */}
       <div className="h-48 relative overflow-hidden">
-        {quiz.imageUrl ? (
+        {showImage ? (
           <>
             <img 
               src={quiz.imageUrl} 
               alt={quiz.title}
               className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+              loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
           </>

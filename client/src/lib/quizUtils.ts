@@ -69,6 +69,8 @@ export interface QuizCardData {
 
 export function mapQuizToCardData(quiz: Quiz, category: Category): QuizCardData {
   const questionCount = questionCountMap[category.slug] || 50;
+  const imageUrl = category.imageUrl?.trim() || undefined;
+  
   return {
     id: quiz.id,
     title: quiz.title,
@@ -81,7 +83,7 @@ export function mapQuizToCardData(quiz: Quiz, category: Category): QuizCardData 
     category: categoryTypeMap[category.slug] || "certifications",
     gradient: colorGradients[category.color || "blue"] || "from-blue-600 to-blue-700",
     icon: category.icon || "shield-alt",
-    imageUrl: category.imageUrl || undefined,
+    imageUrl,
   };
 }
 

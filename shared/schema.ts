@@ -295,6 +295,11 @@ export const insertLiveCourseSchema = createInsertSchema(liveCourses).omit({ id:
 export const insertLiveCourseSessionSchema = createInsertSchema(liveCourseSessions).omit({ id: true, createdAt: true });
 export const insertLiveCourseEnrollmentSchema = createInsertSchema(liveCourseEnrollments).omit({ id: true, enrolledAt: true });
 export const insertContentPageSchema = createInsertSchema(contentPages).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateContentPageSchema = createInsertSchema(contentPages).pick({ 
+  title: true, 
+  content: true, 
+  isPublished: true 
+}).partial();
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
@@ -306,3 +311,4 @@ export type InsertLiveCourse = z.infer<typeof insertLiveCourseSchema>;
 export type InsertLiveCourseSession = z.infer<typeof insertLiveCourseSessionSchema>;
 export type InsertLiveCourseEnrollment = z.infer<typeof insertLiveCourseEnrollmentSchema>;
 export type InsertContentPage = z.infer<typeof insertContentPageSchema>;
+export type UpdateContentPage = z.infer<typeof updateContentPageSchema>;

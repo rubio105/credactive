@@ -9,6 +9,7 @@ import {
   liveCourses,
   liveCourseSessions,
   liveCourseEnrollments,
+  contentPages,
   type User,
   type UpsertUser,
   type Category,
@@ -20,12 +21,14 @@ import {
   type LiveCourse,
   type LiveCourseSession,
   type LiveCourseEnrollment,
+  type ContentPage,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
   type InsertQuizReport,
   type InsertLiveCourse,
   type InsertLiveCourseSession,
   type InsertLiveCourseEnrollment,
+  type InsertContentPage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -97,6 +100,14 @@ export interface IStorage {
   createLiveCourseEnrollment(enrollment: InsertLiveCourseEnrollment): Promise<LiveCourseEnrollment>;
   updateLiveCourseEnrollment(id: string, updates: Partial<LiveCourseEnrollment>): Promise<LiveCourseEnrollment>;
   getUserEnrollments(userId: string): Promise<LiveCourseEnrollment[]>;
+  
+  // Content page operations
+  getAllContentPages(): Promise<ContentPage[]>;
+  getContentPageBySlug(slug: string): Promise<ContentPage | undefined>;
+  getContentPageById(id: string): Promise<ContentPage | undefined>;
+  createContentPage(page: InsertContentPage): Promise<ContentPage>;
+  updateContentPage(id: string, updates: Partial<ContentPage>): Promise<ContentPage>;
+  deleteContentPage(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -524,6 +535,51 @@ export class DatabaseStorage implements IStorage {
       .from(liveCourseEnrollments)
       .where(eq(liveCourseEnrollments.userId, userId))
       .orderBy(desc(liveCourseEnrollments.enrolledAt));
+  }
+  
+  // Content page operations
+  async getAllContentPages(): Promise<ContentPage[]> {
+    return await db
+      .select()
+      .from(contentPages)
+      .orderBy(contentPages.slug);
+  }
+  
+  async getContentPageBySlug(slug: string): Promise<ContentPage | undefined> {
+    const [page] = await db
+      .select()
+      .from(contentPages)
+      .where(eq(contentPages.slug, slug));
+    return page;
+  }
+  
+  async getContentPageById(id: string): Promise<ContentPage | undefined> {
+    const [page] = await db
+      .select()
+      .from(contentPages)
+      .where(eq(contentPages.id, id));
+    return page;
+  }
+  
+  async createContentPage(page: InsertContentPage): Promise<ContentPage> {
+    const [created] = await db
+      .insert(contentPages)
+      .values(page)
+      .returning();
+    return created;
+  }
+  
+  async updateContentPage(id: string, updates: Partial<ContentPage>): Promise<ContentPage> {
+    const [updated] = await db
+      .update(contentPages)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(contentPages.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteContentPage(id: string): Promise<void> {
+    await db.delete(contentPages).where(eq(contentPages.id, id));
   }
 }
 

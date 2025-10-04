@@ -8,9 +8,10 @@ import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
-import { insertUserQuizAttemptSchema } from "@shared/schema";
+import { insertUserQuizAttemptSchema, insertContentPageSchema, updateContentPageSchema } from "@shared/schema";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
+import DOMPurify from "isomorphic-dompurify";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY. Please set this environment variable.');
@@ -1222,6 +1223,104 @@ ${JSON.stringify(questionsToTranslate)}`
     } catch (error) {
       console.error("Error generating questions:", error);
       res.status(500).json({ message: "Failed to generate questions" });
+    }
+  });
+
+  // Content pages routes (public)
+  app.get('/api/content-pages', async (req, res) => {
+    try {
+      const pages = await storage.getAllContentPages();
+      res.json(pages.filter(p => p.isPublished));
+    } catch (error) {
+      console.error("Error fetching content pages:", error);
+      res.status(500).json({ message: "Failed to fetch content pages" });
+    }
+  });
+  
+  app.get('/api/content-pages/:slug', async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const page = await storage.getContentPageBySlug(slug);
+      if (!page || !page.isPublished) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching content page:", error);
+      res.status(500).json({ message: "Failed to fetch content page" });
+    }
+  });
+  
+  // Admin content pages routes
+  app.get('/api/admin/content-pages', isAdmin, async (req, res) => {
+    try {
+      const pages = await storage.getAllContentPages();
+      res.json(pages);
+    } catch (error) {
+      console.error("Error fetching content pages:", error);
+      res.status(500).json({ message: "Failed to fetch content pages" });
+    }
+  });
+  
+  app.post('/api/admin/content-pages', isAdmin, async (req, res) => {
+    try {
+      const validated = insertContentPageSchema.parse(req.body);
+      
+      // Sanitize HTML content before saving
+      const sanitizedContent = DOMPurify.sanitize(validated.content, {
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel']
+      });
+      
+      const page = await storage.createContentPage({
+        ...validated,
+        content: sanitizedContent
+      });
+      res.json(page);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating content page:", error);
+      res.status(500).json({ message: "Failed to create content page" });
+    }
+  });
+  
+  app.patch('/api/admin/content-pages/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validated = updateContentPageSchema.parse(req.body);
+      
+      // Sanitize HTML content if present
+      const updates = validated.content
+        ? {
+            ...validated,
+            content: DOMPurify.sanitize(validated.content, {
+              ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre'],
+              ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel']
+            })
+          }
+        : validated;
+      
+      const page = await storage.updateContentPage(id, updates);
+      res.json(page);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating content page:", error);
+      res.status(500).json({ message: "Failed to update content page" });
+    }
+  });
+  
+  app.delete('/api/admin/content-pages/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteContentPage(id);
+      res.json({ message: "Content page deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting content page:", error);
+      res.status(500).json({ message: "Failed to delete content page" });
     }
   });
 

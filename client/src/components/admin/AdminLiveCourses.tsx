@@ -71,8 +71,6 @@ export function AdminLiveCourses() {
   const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
   const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [programModulesJson, setProgramModulesJson] = useState<string>('');
-  const [cosaIncludeJson, setCosaIncludeJson] = useState<string>('');
 
   const { data: courses, isLoading: coursesLoading } = useQuery<LiveCourse[]>({
     queryKey: ["/api/admin/live-courses"],
@@ -178,61 +176,36 @@ export function AdminLiveCourses() {
       price: 0,
       quizId: '',
     });
-    setProgramModulesJson('[]');
-    setCosaIncludeJson('[]');
     setIsCourseDialogOpen(true);
   };
 
   const handleEditCourse = (course: LiveCourse) => {
     setEditingCourse(course);
-    setProgramModulesJson(course.programModules ? JSON.stringify(course.programModules, null, 2) : '[]');
-    setCosaIncludeJson(course.cosaInclude ? JSON.stringify(course.cosaInclude, null, 2) : '[]');
     setIsCourseDialogOpen(true);
   };
 
   const handleSaveCourse = () => {
     if (!editingCourse) return;
 
-    // Validate and parse JSON fields
-    let programModules: ProgramModule[] | undefined;
-    let cosaInclude: string[] | undefined;
-
-    try {
-      programModules = programModulesJson ? JSON.parse(programModulesJson) : undefined;
-    } catch (e) {
-      toast({ 
-        title: "Errore JSON", 
-        description: "Il campo 'Programma Moduli' contiene JSON non valido", 
-        variant: "destructive" 
+    // Validate required fields
+    if (!editingCourse.title || !editingCourse.quizId) {
+      toast({
+        title: "Campi mancanti",
+        description: "Titolo e Quiz Associato sono obbligatori",
+        variant: "destructive"
       });
       return;
     }
 
-    try {
-      cosaInclude = cosaIncludeJson ? JSON.parse(cosaIncludeJson) : undefined;
-    } catch (e) {
-      toast({ 
-        title: "Errore JSON", 
-        description: "Il campo 'Cosa Include' contiene JSON non valido", 
-        variant: "destructive" 
-      });
-      return;
-    }
+    // Sanitize: remove server-managed fields and removed JSON fields
+    const { id, createdAt, updatedAt, sessions, programModules, cosaInclude, ...cleanData } = editingCourse as any;
 
-    const courseData = {
-      ...editingCourse,
-      programModules,
-      cosaInclude,
-    };
-
-    console.log("Saving course with data:", courseData);
+    console.log("Saving course with data:", cleanData);
 
     if (editingCourse.id) {
-      // Remove timestamps and id before update
-      const { id, createdAt, updatedAt, ...updates } = courseData as LiveCourse;
-      updateCourseMutation.mutate({ id: editingCourse.id, updates });
+      updateCourseMutation.mutate({ id: editingCourse.id, updates: cleanData });
     } else {
-      createCourseMutation.mutate(courseData);
+      createCourseMutation.mutate(cleanData);
     }
   };
 
@@ -458,36 +431,6 @@ export function AdminLiveCourses() {
                 data-testid="input-course-objectives"
                 rows={3}
               />
-            </div>
-            <div>
-              <Label htmlFor="programModules">Programma Moduli (JSON)</Label>
-              <Textarea
-                id="programModules"
-                value={programModulesJson}
-                onChange={(e) => setProgramModulesJson(e.target.value)}
-                placeholder='[{"moduleTitle": "Modulo 1", "hours": "3h", "topics": "Introduzione..."}]'
-                data-testid="input-course-program-modules"
-                rows={5}
-                className="font-mono text-xs"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Formato: Array di oggetti con moduleTitle, hours, topics
-              </p>
-            </div>
-            <div>
-              <Label htmlFor="cosaInclude">Cosa Include (JSON array di stringhe)</Label>
-              <Textarea
-                id="cosaInclude"
-                value={cosaIncludeJson}
-                onChange={(e) => setCosaIncludeJson(e.target.value)}
-                placeholder='["Formazione live", "Materiale didattico", "Certificato"]'
-                data-testid="input-course-cosa-include"
-                rows={4}
-                className="font-mono text-xs"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Formato: Array di stringhe
-              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

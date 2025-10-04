@@ -170,8 +170,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               text = '';
             }
             
+            // Use opt.label, opt.id (uppercase if lowercase), or generated label
+            let finalLabel = label;
+            if (opt.label) {
+              finalLabel = opt.label;
+            } else if (opt.id) {
+              // Convert lowercase id to uppercase (a -> A)
+              finalLabel = typeof opt.id === 'string' ? opt.id.toUpperCase() : String(opt.id);
+            }
+            
             return {
-              label: opt.label || label,
+              label: finalLabel,
               text,
               isCorrect: opt.isCorrect ?? false
             };

@@ -31,6 +31,19 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  dateOfBirth?: string;
+  gender?: string;
+  phone?: string;
+  profession?: string;
+  education?: string;
+  company?: string;
+  addressStreet?: string;
+  addressCity?: string;
+  addressPostalCode?: string;
+  addressProvince?: string;
+  addressCountry?: string;
+  newsletterConsent: boolean;
+  language?: string;
   isPremium: boolean;
   isAdmin: boolean;
   createdAt: string;
@@ -112,6 +125,9 @@ export function AdminUsers() {
               <TableHead>Email</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Cognome</TableHead>
+              <TableHead>Telefono</TableHead>
+              <TableHead>Lingua</TableHead>
+              <TableHead>Consenso Newsletter</TableHead>
               <TableHead>Premium</TableHead>
               <TableHead>Admin</TableHead>
               <TableHead>Data Registrazione</TableHead>
@@ -124,6 +140,17 @@ export function AdminUsers() {
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.firstName}</TableCell>
                 <TableCell>{user.lastName}</TableCell>
+                <TableCell data-testid={`cell-phone-${user.id}`}>{user.phone || '-'}</TableCell>
+                <TableCell data-testid={`cell-language-${user.id}`}>
+                  {user.language ? user.language.toUpperCase() : '-'}
+                </TableCell>
+                <TableCell data-testid={`cell-newsletter-${user.id}`}>
+                  {user.newsletterConsent ? (
+                    <Badge variant="default">Sì</Badge>
+                  ) : (
+                    <Badge variant="secondary">No</Badge>
+                  )}
+                </TableCell>
                 <TableCell>
                   {user.isPremium ? (
                     <Badge variant="default" data-testid={`badge-premium-${user.id}`}>Premium</Badge>
@@ -196,6 +223,88 @@ export function AdminUsers() {
                   onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
                   data-testid="input-lastName"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Data di Nascita</Label>
+                  <Input 
+                    value={editingUser.dateOfBirth ? new Date(editingUser.dateOfBirth).toLocaleDateString('it-IT') : '-'} 
+                    disabled 
+                    data-testid="input-dateOfBirth"
+                  />
+                </div>
+                <div>
+                  <Label>Genere</Label>
+                  <Input 
+                    value={editingUser.gender || '-'} 
+                    disabled 
+                    data-testid="input-gender"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Telefono</Label>
+                  <Input 
+                    value={editingUser.phone || '-'} 
+                    disabled 
+                    data-testid="input-phone"
+                  />
+                </div>
+                <div>
+                  <Label>Lingua</Label>
+                  <Input 
+                    value={editingUser.language ? editingUser.language.toUpperCase() : '-'} 
+                    disabled 
+                    data-testid="input-language"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Professione</Label>
+                  <Input 
+                    value={editingUser.profession || '-'} 
+                    disabled 
+                    data-testid="input-profession"
+                  />
+                </div>
+                <div>
+                  <Label>Formazione</Label>
+                  <Input 
+                    value={editingUser.education || '-'} 
+                    disabled 
+                    data-testid="input-education"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Azienda</Label>
+                <Input 
+                  value={editingUser.company || '-'} 
+                  disabled 
+                  data-testid="input-company"
+                />
+              </div>
+              <div>
+                <Label>Indirizzo</Label>
+                <Input 
+                  value={[
+                    editingUser.addressStreet,
+                    editingUser.addressCity,
+                    editingUser.addressPostalCode,
+                    editingUser.addressProvince,
+                    editingUser.addressCountry
+                  ].filter(Boolean).join(', ') || '-'} 
+                  disabled 
+                  data-testid="input-address"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Consenso Newsletter</Label>
+                <Badge variant={editingUser.newsletterConsent ? "default" : "secondary"} data-testid="badge-newsletter">
+                  {editingUser.newsletterConsent ? "Sì" : "No"}
+                </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="isPremium">Accesso Premium</Label>

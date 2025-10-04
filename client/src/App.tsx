@@ -23,8 +23,6 @@ function Router() {
     <Switch>
       <Route path="/chi-siamo" component={ChiSiamo} />
       <Route path="/contatti" component={Contatti} />
-      <Route path="/privacy" component={() => <DynamicContentPage slug="privacy-policy" />} />
-      <Route path="/terms" component={() => <DynamicContentPage slug="termini-di-servizio" />} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
@@ -37,6 +35,7 @@ function Router() {
           <Route path="/admin" component={Admin} />
         </>
       )}
+      <Route path="/page/:slug" component={DynamicContentPage} />
       <Route component={NotFound} />
     </Switch>
   );

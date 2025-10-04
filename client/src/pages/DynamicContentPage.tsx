@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRoute } from "wouter";
 import Navigation from "@/components/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText } from "lucide-react";
 
 interface DynamicContentPageProps {
-  slug: string;
+  slug?: string;
 }
 
 interface ContentPage {
@@ -18,7 +19,9 @@ interface ContentPage {
   updatedAt: string;
 }
 
-export default function DynamicContentPage({ slug }: DynamicContentPageProps) {
+export default function DynamicContentPage(props: DynamicContentPageProps | any) {
+  const [, params] = useRoute("/page/:slug");
+  const slug = props?.slug || params?.slug || "";
   const { data: page, isLoading, error } = useQuery<ContentPage>({
     queryKey: ["/api/content-pages", slug],
     queryFn: async () => {

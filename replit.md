@@ -123,10 +123,25 @@ Preferred communication style: Simple, everyday language.
   - Default: New content pages default to footer placement for visibility
 
 - **Audio Explanations for Quiz Questions** (October 4, 2025): TTS audio support for question explanations
-  - Database: Added `explanationAudioUrl` field to questions table for storing audio file URLs
+  - Database: Added `explanationAudioUrl` and `extendedExplanationAudioUrl` fields to questions table for storing audio file URLs
   - Backend API: POST endpoint `/api/admin/questions/:id/generate-audio` using OpenAI TTS API (tts-1 model)
   - Language-specific voices: Italian (nova), English (alloy), Spanish (shimmer)
   - Audio files stored in `public/audio-explanations/` directory with format `{questionId}-{language}.mp3`
   - Quiz Interface: "Ascolta" button appears in explanation card when audio is available
   - Admin Panel: Generate audio button for questions with explanations, language selector prompt (it/en/es)
   - Play button with green icon for questions that already have audio generated
+  - **Extended Audio Explanations**: "Spiegazione Vocale" button in quiz interface generates amplified audio explanations using GPT-4o to expand written text, then converts to TTS audio
+  - Extended audio stored in `public/audio-explanations/extended/` directory
+  - Backend endpoint `/api/admin/questions/:id/generate-extended-audio` with language parameter
+
+- **Quiz Interface Translation** (October 4, 2025): Language-specific UI labels in quiz interface
+  - Quiz labels (Spiegazione/Explanation, Dominio/Domain, Corretto/Correct, Sbagliato/Incorrect) now translate based on quiz language toggle
+  - Ensures complete language immersion for international certifications
+  - Language toggle affects both question content and UI labels throughout quiz experience
+
+- **Robust Question Option Normalization** (October 4, 2025): Critical fix for quiz option display issues
+  - Enhanced backend normalization in `/api/quizzes/:quizId` endpoint to handle all option data formats
+  - Prevents "[object Object]" display bugs by intelligently extracting text from nested structures
+  - Handles strings, objects with language keys (it/en), arrays, and legacy formats
+  - Ensures all options have consistent `{label, text, isCorrect}` structure before sending to frontend
+  - Frontend `getCurrentQuestion()` safely handles translated options with fallback logic

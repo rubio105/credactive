@@ -764,8 +764,29 @@ export default function QuizPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            const audio = new Audio(currentQuestion.explanationAudioUrl);
-                            audio.play();
+                            // Construct language-specific audio URL
+                            const questionId = quizData.questions[currentQuestionIndex].id;
+                            const language = useEnglish ? 'en' : 'it';
+                            const languageSpecificUrl = `/audio-explanations/${questionId}-${language}.mp3`;
+                            
+                            const audio = new Audio(languageSpecificUrl);
+                            audio.onerror = () => {
+                              // Fallback to the stored URL if language-specific file doesn't exist
+                              const fallbackAudio = new Audio(currentQuestion.explanationAudioUrl);
+                              fallbackAudio.play().catch((err) => {
+                                console.error('Audio playback failed:', err);
+                                toast({
+                                  title: useEnglish ? 'Error' : 'Errore',
+                                  description: useEnglish 
+                                    ? 'Audio not available for this language' 
+                                    : 'Audio non disponibile per questa lingua',
+                                  variant: 'destructive'
+                                });
+                              });
+                            };
+                            audio.play().catch(() => {
+                              // Error will be handled by onerror event
+                            });
                           }}
                           className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900"
                           data-testid="button-play-audio"

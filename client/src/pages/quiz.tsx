@@ -289,9 +289,35 @@ export default function QuizPage() {
     if (!currentQuestion || !currentQuestion.explanation) return;
     
     setIsGeneratingExtendedAudio(true);
+    
+    // Show informative toast about generation time
+    toast({
+      title: useEnglish ? "Generating Audio..." : "Generazione in corso...",
+      description: useEnglish 
+        ? "Creating an extended audio explanation. This may take 15-30 seconds." 
+        : "Creazione della spiegazione vocale ampliata. Potrebbe richiedere 15-30 secondi.",
+    });
+    
     try {
       const language = useEnglish ? 'en' : 'it';
-      const response = await apiRequest('/api/questions/' + currentQuestion.id + '/extended-audio', 'POST', { language });
+      
+      // Add timeout of 60 seconds for the fetch call
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      
+      const response = await fetch('/api/questions/' + currentQuestion.id + '/extended-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language }),
+        credentials: 'include',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate audio');
+      }
       
       // Convert response to blob and play
       const audioBlob = await response.blob();
@@ -303,14 +329,30 @@ export default function QuizPage() {
       };
       
       await audio.play();
-    } catch (error) {
+      
+      // Show success toast
       toast({
-        title: useEnglish ? "Error" : "Errore",
-        description: useEnglish 
-          ? "Failed to generate extended audio explanation" 
-          : "Impossibile generare la spiegazione vocale ampliata",
-        variant: "destructive",
+        title: useEnglish ? "Audio Ready" : "Audio Pronto",
+        description: useEnglish ? "Playing extended audio explanation" : "Riproduzione della spiegazione vocale ampliata",
       });
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        toast({
+          title: useEnglish ? "Timeout" : "Timeout",
+          description: useEnglish 
+            ? "Audio generation took too long. Please try again." 
+            : "La generazione dell'audio ha richiesto troppo tempo. Riprova.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: useEnglish ? "Error" : "Errore",
+          description: useEnglish 
+            ? "Failed to generate extended audio explanation" 
+            : "Impossibile generare la spiegazione vocale ampliata",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsGeneratingExtendedAudio(false);
     }

@@ -66,7 +66,7 @@ export default function QuizPage() {
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [quizStartTime, setQuizStartTime] = useState<Date | null>(null);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [results, setResults] = useState<QuizResults | null>(null);
@@ -215,6 +215,11 @@ export default function QuizPage() {
 
   // Timer countdown
   useEffect(() => {
+    // Guard: Don't run timer until quiz is properly initialized
+    if (!quizStartTime || timeRemaining === null) {
+      return;
+    }
+
     if (timeRemaining > 0 && !quizCompleted) {
       const timer = setTimeout(() => {
         setTimeRemaining(timeRemaining - 1);
@@ -231,7 +236,7 @@ export default function QuizPage() {
       });
       handleSubmitQuiz();
     }
-  }, [timeRemaining, quizCompleted]);
+  }, [timeRemaining, quizCompleted, quizStartTime]);
 
   // Load saved answer when question changes
   useEffect(() => {
@@ -686,7 +691,7 @@ export default function QuizPage() {
                     {useEnglish ? 'EN' : 'IT'}
                   </Badge>
                 </div>
-                <Timer timeRemaining={timeRemaining} />
+                {timeRemaining !== null && <Timer timeRemaining={timeRemaining} />}
                 <Button
                   variant="ghost"
                   size="sm"

@@ -402,6 +402,53 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteQuiz(id: string): Promise<void> {
+    // Delete in correct order to avoid foreign key constraint violations
+    
+    // 1. Delete quiz reports (references userQuizAttempts)
+    const attempts = await db
+      .select({ id: userQuizAttempts.id })
+      .from(userQuizAttempts)
+      .where(eq(userQuizAttempts.quizId, id));
+    
+    const attemptIds = attempts.map(a => a.id);
+    if (attemptIds.length > 0) {
+      await db.delete(quizReports).where(
+        sql`${quizReports.attemptId} IN (${sql.join(attemptIds.map(id => sql`${id}`), sql`, `)})`
+      );
+    }
+    
+    // 2. Delete user quiz attempts
+    await db.delete(userQuizAttempts).where(eq(userQuizAttempts.quizId, id));
+    
+    // 3. Delete quiz generation jobs
+    await db.delete(quizGenerationJobs).where(eq(quizGenerationJobs.quizId, id));
+    
+    // 4. Delete questions
+    await db.delete(questions).where(eq(questions.quizId, id));
+    
+    // 5. Delete live course related data
+    const courses = await db
+      .select({ id: liveCourses.id })
+      .from(liveCourses)
+      .where(eq(liveCourses.quizId, id));
+    
+    const courseIds = courses.map(c => c.id);
+    if (courseIds.length > 0) {
+      // Delete enrollments first
+      await db.delete(liveCourseEnrollments).where(
+        sql`${liveCourseEnrollments.courseId} IN (${sql.join(courseIds.map(id => sql`${id}`), sql`, `)})`
+      );
+      
+      // Delete sessions
+      await db.delete(liveCourseSessions).where(
+        sql`${liveCourseSessions.courseId} IN (${sql.join(courseIds.map(id => sql`${id}`), sql`, `)})`
+      );
+      
+      // Delete courses
+      await db.delete(liveCourses).where(eq(liveCourses.quizId, id));
+    }
+    
+    // 6. Finally delete the quiz itself
     await db.delete(quizzes).where(eq(quizzes.id, id));
   }
 

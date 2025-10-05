@@ -105,6 +105,10 @@ Return ONLY a valid JSON array with this exact structure:
 ]`;
 
   try {
+    // GPT-4o has a max output of 16384 tokens. Each question typically needs ~600-800 tokens.
+    // We cap at 15000 to leave margin for safety, allowing ~18-25 questions per call
+    const maxTokens = Math.min(count * 900, 15000);
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // Using gpt-4o as it's more reliable for structured output
       messages: [
@@ -112,7 +116,7 @@ Return ONLY a valid JSON array with this exact structure:
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      max_tokens: Math.min(count * 800, 16000), // Cap at 16000 (GPT-4o limit is 16384)
+      max_tokens: maxTokens,
     });
 
     const content = response.choices[0].message.content;
@@ -136,7 +140,7 @@ export async function generateQuestionsInBatches(
   quizTitle: string,
   category: string,
   totalCount: number,
-  batchSize: number = 20,
+  batchSize: number = 15,
   difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert' = 'intermediate',
   documentContext?: string,
   language: string = 'it'
@@ -151,11 +155,15 @@ export async function generateQuestionsInBatches(
     const batchQuestions = await generateQuestions(quizTitle, category, count, difficulty, documentContext, language);
     allQuestions.push(...batchQuestions);
     
+    console.log(`Batch ${i + 1} complete: generated ${batchQuestions.length} questions (total: ${allQuestions.length}/${totalCount})`);
+    
     // Small delay between batches to avoid rate limiting
     if (i < batches - 1) {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
   
-  return allQuestions.slice(0, totalCount);
+  const finalQuestions = allQuestions.slice(0, totalCount);
+  console.log(`Final result: ${finalQuestions.length} questions out of ${totalCount} requested`);
+  return finalQuestions;
 }

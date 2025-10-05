@@ -23,6 +23,7 @@ import Logout from "@/pages/logout";
 import NotFound from "@/pages/not-found";
 import CorsiOnDemand from "@/pages/corsi-on-demand";
 import CorsoOnDemand from "@/pages/corso-on-demand";
+import Settings from "@/pages/settings";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -48,6 +49,7 @@ function Router() {
           <Route path="/admin" component={Admin} />
           <Route path="/corsi-on-demand" component={CorsiOnDemand} />
           <Route path="/corsi-on-demand/:courseId" component={CorsoOnDemand} />
+          <Route path="/settings" component={Settings} />
         </>
       )}
       <Route path="/page/:slug" component={DynamicContentPage} />

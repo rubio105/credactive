@@ -21,6 +21,8 @@ import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import Logout from "@/pages/logout";
 import NotFound from "@/pages/not-found";
+import CorsiOnDemand from "@/pages/corsi-on-demand";
+import CorsoOnDemand from "@/pages/corso-on-demand";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -44,6 +46,8 @@ function Router() {
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/report/:attemptId" component={Report} />
           <Route path="/admin" component={Admin} />
+          <Route path="/corsi-on-demand" component={CorsiOnDemand} />
+          <Route path="/corsi-on-demand/:courseId" component={CorsoOnDemand} />
         </>
       )}
       <Route path="/page/:slug" component={DynamicContentPage} />

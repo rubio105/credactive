@@ -7,7 +7,7 @@ import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount } from "@shared/schema";
-import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine } from "lucide-react";
+import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Calendar, Users, Video } from "lucide-react";
 import { featuredImages } from "@/lib/stockImages";
 import logoImage from "@assets/image_1759658677025.png";
 import certificationsImage from "@assets/image_1759608591455.png";
@@ -196,6 +196,66 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Live Courses Section - Prominently Displayed */}
+      <section className="py-16 bg-gradient-to-br from-accent/10 via-primary/5 to-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Card className="border-2 border-accent/30 shadow-2xl overflow-hidden">
+            <div className="gradient-primary text-white p-8 md:p-12">
+              <div className="text-center max-w-4xl mx-auto">
+                <div className="inline-block p-4 bg-white/20 rounded-full mb-6">
+                  <Calendar className="w-12 h-12" />
+                </div>
+                <h2 className="text-3xl md:text-5xl font-bold mb-4">
+                  📅 Corsi Live con Esperti
+                </h2>
+                <p className="text-lg md:text-xl text-white/90 mb-8">
+                  Partecipa ai nostri corsi live interattivi con docenti certificati. Sessioni in diretta, Q&A in tempo reale e certificati di partecipazione.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <Video className="w-8 h-8 mb-3 mx-auto" />
+                    <h3 className="font-bold text-lg mb-2">Sessioni Live</h3>
+                    <p className="text-sm text-white/80">Lezioni interattive con docenti esperti in tempo reale</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <Users className="w-8 h-8 mb-3 mx-auto" />
+                    <h3 className="font-bold text-lg mb-2">Classi Ridotte</h3>
+                    <p className="text-sm text-white/80">Massima attenzione con gruppi di apprendimento limitati</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <Trophy className="w-8 h-8 mb-3 mx-auto" />
+                    <h3 className="font-bold text-lg mb-2">Certificato</h3>
+                    <p className="text-sm text-white/80">Attestato di partecipazione riconosciuto al termine</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button 
+                    size="lg"
+                    className="bg-white text-primary hover:bg-white/90 shadow-xl font-bold text-lg px-12 py-6 h-auto"
+                    onClick={() => window.location.href = '/register'}
+                    data-testid="button-view-live-courses"
+                  >
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Scopri i Corsi Live
+                  </Button>
+                  <Button 
+                    size="lg"
+                    variant="outline"
+                    className="bg-white/10 border-white text-white hover:bg-white/20 font-bold text-lg px-12 py-6 h-auto backdrop-blur-sm"
+                    onClick={() => window.location.href = '/register'}
+                    data-testid="button-register-for-course"
+                  >
+                    Registrati Ora
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </section>
+
       {/* Quiz Catalog */}
       <section className="py-16" id="quiz-catalog">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -206,44 +266,57 @@ export default function Landing() {
             </p>
           </div>
 
-          {/* Filter Tabs */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            <Button
-              variant={activeFilter === "all" ? "default" : "outline"}
-              onClick={() => setActiveFilter("all")}
-              className="rounded-full"
-              data-testid="filter-all"
-            >
-              Tutti
-            </Button>
-            <Button
-              variant={activeFilter === "certifications" ? "default" : "outline"}
-              onClick={() => setActiveFilter("certifications")}
-              className="rounded-full"
-              data-testid="filter-certifications"
-            >
-              <Trophy className="w-4 h-4 mr-2" />
-              Certificazioni
-            </Button>
-            <Button
-              variant={activeFilter === "compliance" ? "default" : "outline"}
-              onClick={() => setActiveFilter("compliance")}
-              className="rounded-full"
-              data-testid="filter-compliance"
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Compliance
-            </Button>
-            <Button
-              variant={activeFilter === "ai" ? "default" : "outline"}
-              onClick={() => setActiveFilter("ai")}
-              className="rounded-full"
-              data-testid="filter-ai"
-            >
-              <ChartLine className="w-4 h-4 mr-2" />
-              AI & Security
-            </Button>
-          </div>
+          {/* Filter Section - Prominently Displayed */}
+          <Card className="mb-12 border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-lg">
+            <CardContent className="p-6 md:p-8">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl md:text-3xl font-bold mb-2 text-primary">
+                  🎯 Filtra per Categoria
+                </h3>
+                <p className="text-muted-foreground">
+                  Seleziona la categoria che ti interessa per visualizzare i quiz specifici
+                </p>
+              </div>
+              
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button
+                  variant={activeFilter === "all" ? "default" : "outline"}
+                  onClick={() => setActiveFilter("all")}
+                  className="rounded-full text-base px-6 py-5 h-auto font-semibold"
+                  data-testid="filter-all"
+                >
+                  Tutti
+                </Button>
+                <Button
+                  variant={activeFilter === "certifications" ? "default" : "outline"}
+                  onClick={() => setActiveFilter("certifications")}
+                  className="rounded-full text-base px-6 py-5 h-auto font-semibold"
+                  data-testid="filter-certifications"
+                >
+                  <Trophy className="w-5 h-5 mr-2" />
+                  Certificazioni
+                </Button>
+                <Button
+                  variant={activeFilter === "compliance" ? "default" : "outline"}
+                  onClick={() => setActiveFilter("compliance")}
+                  className="rounded-full text-base px-6 py-5 h-auto font-semibold"
+                  data-testid="filter-compliance"
+                >
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  Compliance
+                </Button>
+                <Button
+                  variant={activeFilter === "ai" ? "default" : "outline"}
+                  onClick={() => setActiveFilter("ai")}
+                  className="rounded-full text-base px-6 py-5 h-auto font-semibold"
+                  data-testid="filter-ai"
+                >
+                  <ChartLine className="w-5 h-5 mr-2" />
+                  AI & Security
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Quiz Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">

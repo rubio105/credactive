@@ -38,7 +38,7 @@ export default function Navigation() {
 
   const { data: headerPages = [] } = useQuery<ContentPage[]>({
     queryKey: ["/api/content-pages"],
-    select: (pages) => pages.filter(page => page.placement === 'header' && page.isPublished),
+    select: (pages) => pages.filter(page => page.placement === 'header' && page.isPublished && page.slug !== 'chi-siamo'),
   });
 
   const handleLogout = async () => {

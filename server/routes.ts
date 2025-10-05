@@ -1703,6 +1703,7 @@ ${JSON.stringify(questionsToTranslate)}`
                 imageUrl: '',
                 category: categoryName,
                 domain: null,
+                language: userLanguage, // Save the language used for generation
               });
               savedCount++;
             } catch (error) {

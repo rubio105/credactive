@@ -99,6 +99,7 @@ export const questions = pgTable("questions", {
   explanationAudioUrl: text("explanation_audio_url"), // TTS audio URL for the explanation
   category: varchar("category", { length: 100 }),
   domain: varchar("domain", { length: 200 }), // CISSP domain or topic hint
+  language: varchar("language", { length: 5 }).default('it'), // Original language of the question (it, en, es, fr)
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -36,6 +36,7 @@ interface Question {
   explanationAudioUrl?: string;
   category?: string;
   domain?: string; // CISSP domain or topic hint
+  language?: string; // Original language of the question (it, en, es, fr)
 }
 
 interface QuizData {
@@ -182,19 +183,28 @@ export default function QuizPage() {
   // Translate questions based on language toggle
   useEffect(() => {
     const translateQuestions = async () => {
-      // If English is selected, clear translations and use original
-      if (useEnglish) {
+      if (!quizData || !user) return;
+      
+      // Determine target language based on toggle
+      const targetLanguage = useEnglish ? 'en' : 'it';
+      
+      // Find questions that need translation (where original language differs from target)
+      const questionsNeedingTranslation = limitedQuestions.filter(q => {
+        const originalLang = q.language || 'it'; // Default to Italian if no language specified
+        return originalLang !== targetLanguage;
+      });
+      
+      // If no questions need translation, clear translations and use originals
+      if (questionsNeedingTranslation.length === 0) {
         setTranslatedQuestions({});
         return;
       }
       
-      // If Italian is selected, translate to Italian
-      if (!quizData || !user) return;
-      
+      // Translate only questions that need it
       try {
         const response = await apiRequest("/api/translate-questions", "POST", {
-          questions: limitedQuestions,
-          targetLanguage: 'it' // Always translate to Italian when toggle is off
+          questions: questionsNeedingTranslation,
+          targetLanguage
         });
         const data = await response.json();
         

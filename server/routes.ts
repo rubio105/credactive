@@ -982,6 +982,17 @@ ${JSON.stringify(questionsToTranslate)}`
     }
   });
 
+  // Admin - Get all questions (must be before :id route)
+  app.get('/api/admin/questions', isAdmin, async (req, res) => {
+    try {
+      const questions = await storage.getAllQuestions();
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      res.status(500).json({ message: "Failed to fetch questions" });
+    }
+  });
+
   // Admin - Get question by ID
   app.get('/api/admin/questions/:id', isAdmin, async (req, res) => {
     try {

@@ -76,6 +76,7 @@ export interface IStorage {
   deleteQuiz(id: string): Promise<void>;
   
   // Admin Question operations
+  getAllQuestions(): Promise<Question[]>;
   createQuestion(question: Omit<Question, 'id' | 'createdAt'>): Promise<Question>;
   updateQuestion(id: string, updates: Partial<Question>): Promise<Question>;
   deleteQuestion(id: string): Promise<void>;
@@ -346,6 +347,13 @@ export class DatabaseStorage implements IStorage {
       .from(questions)
       .where(eq(questions.quizId, quizId))
       .orderBy(sql`RANDOM()`); // Randomize question order
+  }
+
+  async getAllQuestions(): Promise<Question[]> {
+    return await db
+      .select()
+      .from(questions)
+      .orderBy(questions.quizId);
   }
 
   async getQuestionById(id: string): Promise<Question | undefined> {

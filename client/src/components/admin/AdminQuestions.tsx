@@ -28,8 +28,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil, Trash2, Plus, PlusCircle, X, Upload, Image as ImageIcon, ArrowLeft, Volume2 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
@@ -66,6 +67,13 @@ export function AdminQuestions() {
   const [questionType, setQuestionType] = useState<string>('all'); // all, ai, manual
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Reset selections when filters change to prevent deleting hidden questions
+  useEffect(() => {
+    setSelectedQuestions(new Set());
+  }, [selectedCategory, selectedQuiz, questionType]);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -114,6 +122,22 @@ export function AdminQuestions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/questions"] });
       toast({ title: "Domanda eliminata con successo" });
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      // Delete all selected questions in parallel
+      await Promise.all(ids.map(id => apiRequest(`/api/admin/questions/${id}`, "DELETE")));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/questions"] });
+      setSelectedQuestions(new Set());
+      setIsDeleteDialogOpen(false);
+      toast({ title: `${selectedQuestions.size} domande eliminate con successo` });
     },
     onError: () => {
       toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
@@ -229,6 +253,32 @@ export function AdminQuestions() {
     return categories?.find(c => c.id === quiz?.categoryId)?.name || '';
   };
 
+  const toggleQuestionSelection = (questionId: string) => {
+    const newSelected = new Set(selectedQuestions);
+    if (newSelected.has(questionId)) {
+      newSelected.delete(questionId);
+    } else {
+      newSelected.add(questionId);
+    }
+    setSelectedQuestions(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedQuestions.size === filteredQuestions.length) {
+      setSelectedQuestions(new Set());
+    } else {
+      setSelectedQuestions(new Set(filteredQuestions.map(q => q.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmBulkDelete = () => {
+    bulkDeleteMutation.mutate(Array.from(selectedQuestions));
+  };
+
   const filteredQuestions = questions?.filter(q => {
     // Filter by quiz
     if (selectedQuiz !== 'all' && q.quizId !== selectedQuiz) return false;
@@ -273,6 +323,23 @@ export function AdminQuestions() {
           Nuova Domanda
         </Button>
       </div>
+
+      {selectedQuestions.size > 0 && (
+        <div className="mb-4 flex justify-between items-center bg-muted p-3 rounded-lg">
+          <span className="text-sm font-medium">
+            {selectedQuestions.size} domand{selectedQuestions.size === 1 ? 'a' : 'e'} selezionat{selectedQuestions.size === 1 ? 'a' : 'e'}
+          </span>
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={handleBulkDelete}
+            data-testid="button-bulk-delete"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Elimina Selezionate
+          </Button>
+        </div>
+      )}
 
       <div className="mb-4 flex gap-4">
         <div className="flex-1">
@@ -322,6 +389,13 @@ export function AdminQuestions() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedQuestions.size === filteredQuestions.length && filteredQuestions.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                  data-testid="checkbox-select-all"
+                />
+              </TableHead>
               <TableHead>Domanda</TableHead>
               <TableHead>Quiz</TableHead>
               <TableHead>Categoria</TableHead>
@@ -333,6 +407,13 @@ export function AdminQuestions() {
           <TableBody>
             {filteredQuestions.map((question) => (
               <TableRow key={question.id} data-testid={`row-question-${question.id}`}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedQuestions.has(question.id)}
+                    onCheckedChange={() => toggleQuestionSelection(question.id)}
+                    data-testid={`checkbox-question-${question.id}`}
+                  />
+                </TableCell>
                 <TableCell className="max-w-md">
                   <div className="flex items-center gap-2">
                     <div className="truncate font-medium">{question.question}</div>
@@ -593,6 +674,32 @@ export function AdminQuestions() {
               data-testid="button-save-question"
             >
               {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogDescription>
+              Sei sicuro di voler eliminare {selectedQuestions.size} domand{selectedQuestions.size === 1 ? 'a' : 'e'}?
+              Questa azione non può essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmBulkDelete}
+              disabled={bulkDeleteMutation.isPending}
+              data-testid="button-confirm-bulk-delete"
+            >
+              {bulkDeleteMutation.isPending ? "Eliminazione..." : "Elimina"}
             </Button>
           </DialogFooter>
         </DialogContent>

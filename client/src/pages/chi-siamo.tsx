@@ -14,7 +14,7 @@ export default function ChiSiamo() {
             Chi siamo
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            IBI ACADEMY
+            CREDACTIVE ACADEMY
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             La piattaforma leader per la preparazione alle certificazioni professionali in Cybersecurity, Compliance, Business Innovation e Leadership
@@ -31,7 +31,7 @@ export default function ChiSiamo() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                IBI ACADEMY nasce con l'obiettivo di rendere accessibile e di qualità la formazione professionale. 
+                CREDACTIVE ACADEMY nasce con l'obiettivo di rendere accessibile e di qualità la formazione professionale. 
                 Aiutiamo professionisti e aziende a raggiungere le certificazioni più importanti del settore attraverso 
                 un metodo di apprendimento interattivo, pratico e sempre aggiornato.
               </p>
@@ -98,7 +98,7 @@ export default function ChiSiamo() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              IBI ACADEMY è composta da un team di esperti certificati nei diversi domini di competenza. 
+              CREDACTIVE ACADEMY è composta da un team di esperti certificati nei diversi domini di competenza. 
               I nostri autori hanno esperienza diretta nelle certificazioni che insegnano e lavorano quotidianamente 
               per mantenere i contenuti aggiornati con le ultime evoluzioni del settore.
             </p>

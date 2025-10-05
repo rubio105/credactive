@@ -46,7 +46,7 @@ export default function AdminPage() {
       <div className="border-b">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold">Pannello Amministrativo</h1>
-          <p className="text-muted-foreground mt-1">Gestione completa della piattaforma IBI ACADEMY</p>
+          <p className="text-muted-foreground mt-1">Gestione completa della piattaforma CREDACTIVE ACADEMY</p>
         </div>
       </div>
 

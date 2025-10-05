@@ -1,6 +1,6 @@
 # Overview
 
-CREDACTIVE (formerly IBI ACADEMY) is a professional online platform designed for quiz-based certification preparation across various domains, including Cybersecurity, Compliance & Governance, Business & Innovation, and Leadership & Assessment. The platform offers quizzes, tracks user progress, generates detailed reports, and provides premium content accessible via a €90/year Stripe subscription. Features traditional email/password authentication with Brevo email service for password recovery and welcome emails. The strategic vision is to become the leading destination for professional certifications, utilizing AI for large-scale question generation to eventually offer over 1,000,000 questions.
+CREDACTIVE ACADEMY is a professional online platform designed for quiz-based certification preparation across various domains, including Cybersecurity, Compliance & Governance, Business & Innovation, and Leadership & Assessment. The platform offers quizzes, tracks user progress, generates detailed reports, and provides premium content accessible via a €90/year Stripe subscription. Features traditional email/password authentication with Brevo email service for password recovery and welcome emails. The strategic vision is to become the leading destination for professional certifications, utilizing AI for large-scale question generation to eventually offer over 1,000,000 questions.
 
 # User Preferences
 

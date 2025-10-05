@@ -1409,7 +1409,7 @@ ${JSON.stringify(questionsToTranslate)}`;
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Report Quiz - IBI ACADEMY</title>
+  <title>Report Quiz - CREDACTIVE ACADEMY</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -1510,7 +1510,7 @@ ${JSON.stringify(questionsToTranslate)}`;
 </head>
 <body>
   <div class="header">
-    <h1>🎓 IBI ACADEMY</h1>
+    <h1>🎓 CREDACTIVE ACADEMY</h1>
     <p>Report Quiz Dettagliato</p>
   </div>
 
@@ -1626,7 +1626,7 @@ ${JSON.stringify(questionsToTranslate)}`;
 
       htmlContent += `
   <div class="footer">
-    <p>Report generato da IBI ACADEMY - Piattaforma #1 per Certificazioni Professionali</p>
+    <p>Report generato da CREDACTIVE ACADEMY - Piattaforma #1 per Certificazioni Professionali</p>
     <p>${reportDate}</p>
   </div>
 </body>

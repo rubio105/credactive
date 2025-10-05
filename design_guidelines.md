@@ -1,4 +1,4 @@
-# IBI ACADEMY - Design Guidelines
+# CREDACTIVE ACADEMY - Design Guidelines
 
 ## Design Approach
 

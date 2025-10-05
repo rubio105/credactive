@@ -70,8 +70,8 @@ export default function Contatti() {
               <CardDescription>Scrivici una mail</CardDescription>
             </CardHeader>
             <CardContent>
-              <a href="mailto:info@ibiacademy.it" className="text-primary hover:underline" data-testid="email-link">
-                info@ibiacademy.it
+              <a href="mailto:info@credactive.it" className="text-primary hover:underline" data-testid="email-link">
+                info@credactive.it
               </a>
             </CardContent>
           </Card>

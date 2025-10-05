@@ -12,7 +12,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen, Play } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play, Video, Calendar } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 
 interface User {
@@ -362,7 +362,7 @@ export default function Home() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold mb-3">{t.quickActions.continueLearning.title}</h3>
@@ -388,6 +388,105 @@ export default function Home() {
               </Link>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Learning Paths */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-6">Percorsi di Formazione</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* On-Demand Courses */}
+            <Card className="hover-scale overflow-hidden">
+              <div className="gradient-premium-plus text-white p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-white/20 rounded-lg">
+                    <Video className="w-8 h-8" />
+                  </div>
+                  {(user as UserType)?.subscriptionTier === 'premium_plus' ? (
+                    <Badge className="bg-white/20 text-white">Disponibile</Badge>
+                  ) : (
+                    <Badge className="bg-white/20 text-white">Premium Plus</Badge>
+                  )}
+                </div>
+                <h3 className="text-2xl font-bold mb-2">Corsi On-Demand</h3>
+                <p className="text-white/90 mb-6">
+                  Accedi a videocorsi professionali completi di quiz interattivi. Impara al tuo ritmo, quando e dove vuoi.
+                </p>
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center space-x-2">
+                    <Play className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">Videolezioni HD di alta qualità</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">Quiz interattivi tra i video</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <ChartLine className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">Monitoraggio progressi dettagliato</span>
+                  </li>
+                </ul>
+                {(user as UserType)?.subscriptionTier === 'premium_plus' ? (
+                  <Link href="/corsi-on-demand">
+                    <Button className="w-full bg-white text-purple-600 hover:bg-white/90" data-testid="button-browse-courses">
+                      Esplora Corsi
+                      <Play className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/subscribe">
+                    <Button className="w-full bg-white text-purple-600 hover:bg-white/90" data-testid="button-upgrade-for-courses">
+                      Sblocca i Corsi
+                      <Crown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </Card>
+
+            {/* Live Courses */}
+            <Card className="hover-scale overflow-hidden">
+              <div className="gradient-primary text-white p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-white/20 rounded-lg">
+                    <Calendar className="w-8 h-8" />
+                  </div>
+                  <Badge className="bg-white/20 text-white">Tutti gli Abbonati</Badge>
+                </div>
+                <h3 className="text-2xl font-bold mb-2">Corsi Live</h3>
+                <p className="text-white/90 mb-6">
+                  Partecipa a sessioni live interattive con esperti del settore. Impara in tempo reale e fai domande direttamente.
+                </p>
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">Sessioni programmate con esperti</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <Play className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">Interazione diretta e Q&A</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <Crown className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">Priorità per Premium Plus</span>
+                  </li>
+                </ul>
+                <Button 
+                  className="w-full bg-white text-primary hover:bg-white/90"
+                  onClick={() => {
+                    const firstLiveCourse = availableFeaturedQuizzes.find(q => hasLiveCourse(q.title)) || 
+                                           availableQuizzes.find(q => hasLiveCourse(q.title));
+                    if (firstLiveCourse) {
+                      handleLiveCourse(firstLiveCourse.id, firstLiveCourse.title);
+                    }
+                  }}
+                  data-testid="button-view-live-courses"
+                >
+                  Vedi Corsi Live
+                  <Play className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
 

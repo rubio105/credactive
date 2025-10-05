@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navigation from "@/components/navigation";
 import Timer from "@/components/ui/timer";
 import { useToast } from "@/hooks/use-toast";
@@ -74,15 +75,23 @@ export default function QuizPage() {
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [showExplanation, setShowExplanation] = useState(false);
   const [attemptId, setAttemptId] = useState<string | null>(null);
-  const [useEnglish, setUseEnglish] = useState(false); // Language toggle
+  const [quizLanguage, setQuizLanguage] = useState<'it' | 'en' | 'es'>('it'); // Language selector
   const [isInsightDiscovery, setIsInsightDiscovery] = useState(false); // Personality test flag
   const [translatedQuestions, setTranslatedQuestions] = useState<Record<string, any>>({});
+  const [translatedQuizTitle, setTranslatedQuizTitle] = useState<string>(''); // Translated quiz title
   const [isGeneratingExtendedAudio, setIsGeneratingExtendedAudio] = useState(false);
   const [limitedQuestions, setLimitedQuestions] = useState<Question[]>([]);
   const [hasUsedAudio, setHasUsedAudio] = useState(false); // Track first audio invocation
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Helper function for UI translations
+  const t = (it: string, en: string, es: string = en) => {
+    if (quizLanguage === 'it') return it;
+    if (quizLanguage === 'es') return es;
+    return en;
+  };
   
   const { data: user } = useQuery({
     queryKey: ["/api/auth/user"],
@@ -114,8 +123,8 @@ export default function QuizPage() {
       if (isInsightDiscovery) {
         console.log('[Quiz Submit] Redirecting to Insight Discovery report...');
         toast({
-          title: "Profilo Generato!",
-          description: "Il tuo profilo Insight Discovery è pronto.",
+          title: t("Profilo Generato!", "Profile Generated!", "¡Perfil Generado!"),
+          description: t("Il tuo profilo Insight Discovery è pronto.", "Your Insight Discovery profile is ready.", "Tu perfil Insight Discovery está listo."),
         });
         // Redirect to report page
         setTimeout(() => {
@@ -125,16 +134,16 @@ export default function QuizPage() {
       } else {
         console.log('[Quiz Submit] Showing standard quiz completion toast');
         toast({
-          title: "Quiz Completato!",
-          description: `Hai ottenuto ${data.score}% di risposte corrette.`,
+          title: t("Quiz Completato!", "Quiz Completed!", "¡Cuestionario Completado!"),
+          description: t(`Hai ottenuto ${data.score}% di risposte corrette.`, `You got ${data.score}% correct answers.`, `Obtuviste ${data.score}% de respuestas correctas.`),
         });
       }
     },
     onError: (error) => {
       console.error('[Quiz Submit] onError called:', error);
       toast({
-        title: "Errore",
-        description: "Impossibile salvare i risultati del quiz.",
+        title: t("Errore", "Error", "Error"),
+        description: t("Impossibile salvare i risultati del quiz.", "Unable to save quiz results.", "No se pudieron guardar los resultados del cuestionario."),
         variant: "destructive",
       });
     },
@@ -144,8 +153,12 @@ export default function QuizPage() {
   useEffect(() => {
     if (user) {
       const userLanguage = (user as any).language;
-      // Default to English if user language is 'en' or not set
-      setUseEnglish(!userLanguage || userLanguage === 'en');
+      // Set quiz language from user preference, default to Italian
+      if (userLanguage === 'en' || userLanguage === 'es') {
+        setQuizLanguage(userLanguage);
+      } else {
+        setQuizLanguage('it');
+      }
     }
   }, [user]);
 
@@ -181,13 +194,13 @@ export default function QuizPage() {
     }
   }, [quizData, quizStartTime, limitedQuestions]);
 
-  // Translate questions based on language toggle
+  // Translate questions and quiz title based on language selector
   useEffect(() => {
     const translateQuestions = async () => {
       if (!quizData || !user) return;
       
-      // Determine target language based on toggle
-      const targetLanguage = useEnglish ? 'en' : 'it';
+      // Use selected language
+      const targetLanguage = quizLanguage;
       
       // Find questions that need translation (where original language differs from target)
       const questionsNeedingTranslation = limitedQuestions.filter(q => {
@@ -195,17 +208,19 @@ export default function QuizPage() {
         return originalLang !== targetLanguage;
       });
       
-      // If no questions need translation, clear translations and use originals
-      if (questionsNeedingTranslation.length === 0) {
+      // If no questions need translation and target is Italian, clear translations
+      if (questionsNeedingTranslation.length === 0 && targetLanguage === 'it') {
         setTranslatedQuestions({});
+        setTranslatedQuizTitle('');
         return;
       }
       
-      // Translate only questions that need it
+      // Translate questions and quiz title
       try {
         const response = await apiRequest("/api/translate-questions", "POST", {
           questions: questionsNeedingTranslation,
-          targetLanguage
+          targetLanguage,
+          quizTitle: quizData.quiz.title // Include quiz title for translation
         });
         const data = await response.json();
         
@@ -216,13 +231,18 @@ export default function QuizPage() {
           });
           setTranslatedQuestions(translationMap);
         }
+        
+        // Set translated quiz title if available
+        if (data.translatedQuizTitle) {
+          setTranslatedQuizTitle(data.translatedQuizTitle);
+        }
       } catch (error) {
         console.error("Translation failed:", error);
       }
     };
     
     translateQuestions();
-  }, [quizData, user, useEnglish, limitedQuestions]);
+  }, [quizData, user, quizLanguage, limitedQuestions]);
 
   // Timer countdown
   useEffect(() => {
@@ -239,10 +259,12 @@ export default function QuizPage() {
     } else if (timeRemaining === 0 && !quizCompleted) {
       // Show toast when time expires
       toast({
-        title: useEnglish ? "Time's Up!" : "Tempo Scaduto!",
-        description: useEnglish 
-          ? "The quiz has been automatically submitted. Unanswered questions count as 0 points." 
-          : "Il quiz è stato inviato automaticamente. Le risposte non date contano 0 punti.",
+        title: t("Tempo Scaduto!", "Time's Up!", "¡Tiempo Agotado!"),
+        description: t(
+          "Il quiz è stato inviato automaticamente. Le risposte non date contano 0 punti.",
+          "The quiz has been automatically submitted. Unanswered questions count as 0 points.",
+          "El cuestionario se ha enviado automáticamente. Las preguntas sin responder cuentan como 0 puntos."
+        ),
         variant: "destructive"
       });
       handleSubmitQuiz();
@@ -368,8 +390,15 @@ export default function QuizPage() {
   };
 
   const handleExitQuiz = () => {
-    if (confirm("Sei sicuro di voler uscire dal quiz? Il progresso sarà perso.")) {
-      window.history.back();
+    const confirmMessage = t(
+      "Sei sicuro di voler uscire dal quiz? Il progresso parziale sarà salvato e le domande non risposte conteranno come sbagliate.",
+      "Are you sure you want to exit the quiz? Your partial progress will be saved and unanswered questions will count as incorrect.",
+      "¿Estás seguro de que quieres salir del cuestionario? Tu progreso parcial se guardará y las preguntas sin responder contarán como incorrectas."
+    );
+    
+    if (confirm(confirmMessage)) {
+      // Submit quiz with current answers (unanswered questions count as 0)
+      handleSubmitQuiz();
     }
   };
 
@@ -379,10 +408,12 @@ export default function QuizPage() {
     // Don't allow generating audio if no answer is selected
     if (!selectedAnswer) {
       toast({
-        title: useEnglish ? "No Answer Selected" : "Nessuna Risposta Selezionata",
-        description: useEnglish 
-          ? "Please select an answer first." 
-          : "Per favore seleziona prima una risposta.",
+        title: t("Nessuna Risposta Selezionata", "No Answer Selected", "No se seleccionó respuesta"),
+        description: t(
+          "Per favore seleziona prima una risposta.",
+          "Please select an answer first.",
+          "Por favor, selecciona una respuesta primero."
+        ),
         variant: "destructive"
       });
       return;
@@ -392,14 +423,16 @@ export default function QuizPage() {
     
     // Show informative toast about generation time
     toast({
-      title: useEnglish ? "Generating Audio..." : "Generazione in corso...",
-      description: useEnglish 
-        ? "Creating an extended audio explanation. This may take 20-30 seconds." 
-        : "Creazione della spiegazione vocale ampliata. Potrebbe richiedere 20-30 secondi.",
+      title: t("Generazione in corso...", "Generating Audio...", "Generando Audio..."),
+      description: t(
+        "Creazione della spiegazione vocale ampliata. Potrebbe richiedere 20-30 secondi.",
+        "Creating an extended audio explanation. This may take 20-30 seconds.",
+        "Creando una explicación de audio extendida. Esto puede tardar 20-30 segundos."
+      ),
     });
     
     try {
-      const language = useEnglish ? 'en' : 'it';
+      const language = quizLanguage;
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       
       // Add timeout of 60 seconds for the fetch call
@@ -441,24 +474,28 @@ export default function QuizPage() {
       
       // Show success toast
       toast({
-        title: useEnglish ? "Audio Ready" : "Audio Pronto",
-        description: useEnglish ? "Playing extended audio explanation" : "Riproduzione della spiegazione vocale ampliata",
+        title: t("Audio Pronto", "Audio Ready", "Audio Listo"),
+        description: t("Riproduzione della spiegazione vocale ampliata", "Playing extended audio explanation", "Reproduciendo explicación de audio extendida"),
       });
     } catch (error: any) {
       if (error.name === 'AbortError') {
         toast({
-          title: useEnglish ? "Timeout" : "Timeout",
-          description: useEnglish 
-            ? "Audio generation took too long. Please try again." 
-            : "La generazione dell'audio ha richiesto troppo tempo. Riprova.",
+          title: "Timeout",
+          description: t(
+            "La generazione dell'audio ha richiesto troppo tempo. Riprova.",
+            "Audio generation took too long. Please try again.",
+            "La generación de audio tardó demasiado. Inténtalo de nuevo."
+          ),
           variant: "destructive",
         });
       } else {
         toast({
-          title: useEnglish ? "Error" : "Errore",
-          description: useEnglish 
-            ? "Failed to generate extended audio explanation" 
-            : "Impossibile generare la spiegazione vocale ampliata",
+          title: t("Errore", "Error", "Error"),
+          description: t(
+            "Impossibile generare la spiegazione vocale ampliata",
+            "Failed to generate extended audio explanation",
+            "No se pudo generar la explicación de audio extendida"
+          ),
           variant: "destructive",
         });
       }
@@ -508,7 +545,7 @@ export default function QuizPage() {
             </div>
             <h2 className="text-4xl font-bold mb-4" data-testid="quiz-completed-title">Quiz Completato!</h2>
             <p className="text-xl text-muted-foreground">
-              Ecco i tuoi risultati per <span className="font-semibold text-foreground">{quizData.quiz.title}</span>
+              Ecco i tuoi risultati per <span className="font-semibold text-foreground">{translatedQuizTitle || quizData.quiz.title}</span>
             </p>
           </div>
 
@@ -644,8 +681,8 @@ export default function QuizPage() {
   const getCurrentQuestion = () => {
     const originalQuestion = limitedQuestions[currentQuestionIndex];
     
-    // If using English or no translation available, return original
-    if (useEnglish || !translatedQuestions[originalQuestion.id]) {
+    // If no translation available, return original
+    if (!translatedQuestions[originalQuestion.id]) {
       return originalQuestion;
     }
     
@@ -685,7 +722,7 @@ export default function QuizPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-2xl font-bold mb-1" data-testid="quiz-title">
-                  {quizData.quiz.title}
+                  {translatedQuizTitle || quizData.quiz.title}
                 </h2>
                 <p className="text-muted-foreground">
                   Domanda <span data-testid="current-question">{currentQuestionIndex + 1}</span> di{' '}
@@ -693,21 +730,19 @@ export default function QuizPage() {
                 </p>
               </div>
               <div className="flex items-center space-x-4">
-                {/* Language Toggle - Always visible */}
-                <div className="flex items-center space-x-2 bg-accent/10 px-3 py-1.5 rounded-md border border-accent/30">
+                {/* Language Selector - IT/EN/ES */}
+                <div className="flex items-center space-x-2">
                   <Languages className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">
-                    {useEnglish ? 'English' : 'Italiano'}
-                  </span>
-                  <Switch 
-                    checked={useEnglish} 
-                    onCheckedChange={setUseEnglish}
-                    data-testid="toggle-language"
-                    aria-label="Toggle quiz language"
-                  />
-                  <Badge variant="secondary" className="text-xs">
-                    {useEnglish ? 'EN' : 'IT'}
-                  </Badge>
+                  <Select value={quizLanguage} onValueChange={(value: 'it' | 'en' | 'es') => setQuizLanguage(value)}>
+                    <SelectTrigger className="w-32" data-testid="select-language">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="it">🇮🇹 Italiano</SelectItem>
+                      <SelectItem value="en">🇬🇧 English</SelectItem>
+                      <SelectItem value="es">🇪🇸 Español</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 {timeRemaining !== null && <Timer timeRemaining={timeRemaining} />}
                 <Button
@@ -742,7 +777,7 @@ export default function QuizPage() {
                   <div className="flex items-start space-x-2">
                     <Lightbulb className="w-4 h-4 text-accent mt-0.5" />
                     <p className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">{useEnglish ? 'Domain:' : 'Dominio:'}</span> {currentQuestion.domain}
+                      <span className="font-medium text-foreground">{t('Dominio:', 'Domain:', 'Dominio:')}</span> {currentQuestion.domain}
                     </p>
                   </div>
                 </div>
@@ -801,9 +836,9 @@ export default function QuizPage() {
                       {showStatus && (
                         <div className="mt-1">
                           {isCorrect ? (
-                            <span className="text-green-600 dark:text-green-400 font-semibold text-sm">✓ {useEnglish ? 'Correct' : 'Corretto'}</span>
+                            <span className="text-green-600 dark:text-green-400 font-semibold text-sm">✓ {t('Corretto', 'Correct', 'Correcto')}</span>
                           ) : (
-                            <span className="text-red-600 dark:text-red-400 font-semibold text-sm">✗ {useEnglish ? 'Wrong' : 'Sbagliato'}</span>
+                            <span className="text-red-600 dark:text-red-400 font-semibold text-sm">✗ {t('Sbagliato', 'Wrong', 'Incorrecto')}</span>
                           )}
                         </div>
                       )}
@@ -823,7 +858,7 @@ export default function QuizPage() {
                 <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-blue-900 dark:text-blue-100">{useEnglish ? 'Explanation' : 'Spiegazione'}</h4>
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100">{t('Spiegazione', 'Explanation', 'Explicación')}</h4>
                     <div className="flex gap-2">
                       {currentQuestion.explanationAudioUrl && (
                         <Button
@@ -832,7 +867,7 @@ export default function QuizPage() {
                           onClick={() => {
                             // Construct language-specific audio URL
                             const questionId = limitedQuestions[currentQuestionIndex].id;
-                            const language = useEnglish ? 'en' : 'it';
+                            const language = quizLanguage;
                             const languageSpecificUrl = `/audio-explanations/${questionId}-${language}.mp3`;
                             
                             const audio = new Audio(languageSpecificUrl);
@@ -842,10 +877,12 @@ export default function QuizPage() {
                               fallbackAudio.play().catch((err) => {
                                 console.error('Audio playback failed:', err);
                                 toast({
-                                  title: useEnglish ? 'Error' : 'Errore',
-                                  description: useEnglish 
-                                    ? 'Audio not available for this language' 
-                                    : 'Audio non disponibile per questa lingua',
+                                  title: t('Errore', 'Error', 'Error'),
+                                  description: t(
+                                    'Audio non disponibile per questa lingua',
+                                    'Audio not available for this language',
+                                    'Audio no disponible para este idioma'
+                                  ),
                                   variant: 'destructive'
                                 });
                               });
@@ -858,7 +895,7 @@ export default function QuizPage() {
                           data-testid="button-play-audio"
                         >
                           <Volume2 className="w-4 h-4 mr-1" />
-                          {useEnglish ? 'Listen' : 'Ascolta'}
+                          {t('Ascolta', 'Listen', 'Escuchar')}
                         </Button>
                       )}
                       <Button
@@ -871,8 +908,8 @@ export default function QuizPage() {
                       >
                         <Mic className="w-4 h-4 mr-1" />
                         {isGeneratingExtendedAudio 
-                          ? (useEnglish ? 'Generating...' : 'Generazione...')
-                          : (useEnglish ? 'Extended Audio' : 'Audio Ampliato')
+                          ? t('Generazione...', 'Generating...', 'Generando...')
+                          : t('Audio Ampliato', 'Extended Audio', 'Audio Extendido')
                         }
                       </Button>
                     </div>
@@ -895,7 +932,7 @@ export default function QuizPage() {
             data-testid="button-previous"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {useEnglish ? 'Previous' : 'Precedente'}
+            {t('Precedente', 'Previous', 'Anterior')}
           </Button>
           
           <div className="flex items-center space-x-3">
@@ -904,7 +941,7 @@ export default function QuizPage() {
               onClick={() => handleAnswerChange("")}
               data-testid="button-skip"
             >
-              {useEnglish ? 'Skip' : 'Salta'}
+              {t('Salta', 'Skip', 'Saltar')}
             </Button>
             <Button
               onClick={handleNextQuestion}
@@ -912,8 +949,8 @@ export default function QuizPage() {
               data-testid="button-next"
             >
               {currentQuestionIndex === limitedQuestions.length - 1 
-                ? (useEnglish ? 'Finish' : 'Termina') 
-                : (useEnglish ? 'Next' : 'Prossima')
+                ? t('Termina', 'Finish', 'Terminar')
+                : t('Prossima', 'Next', 'Siguiente')
               }
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -927,7 +964,7 @@ export default function QuizPage() {
               <div className="flex items-start space-x-3">
                 <Lightbulb className="text-accent text-xl mt-1 flex-shrink-0" />
                 <div>
-                  <h4 className="font-semibold text-accent mb-1">{useEnglish ? 'Domain/Area' : 'Dominio/Area'}</h4>
+                  <h4 className="font-semibold text-accent mb-1">{t('Dominio/Area', 'Domain/Area', 'Dominio/Área')}</h4>
                   <p className="text-sm text-muted-foreground" data-testid="question-domain-hint">
                     {currentQuestion.domain}
                   </p>

@@ -633,19 +633,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Translate quiz questions to target language
   app.post('/api/translate-questions', isAuthenticated, async (req: any, res) => {
     try {
-      const { questions, targetLanguage } = req.body;
+      const { questions, targetLanguage, quizTitle } = req.body;
       
       if (!questions || !Array.isArray(questions)) {
         return res.status(400).json({ message: "Invalid questions array" });
       }
 
-      const validLanguages = ['it', 'es', 'fr'];
+      const validLanguages = ['it', 'en', 'es', 'fr'];
       if (!targetLanguage || !validLanguages.includes(targetLanguage)) {
         return res.status(400).json({ message: "Invalid target language" });
       }
 
       const languageNames: Record<string, string> = {
         'it': 'Italian',
+        'en': 'English',
         'es': 'Spanish',
         'fr': 'French'
       };
@@ -657,6 +658,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         options: q.options.map((opt: any) => opt.text)
       }));
 
+      // Build translation content with quiz title if provided
+      let translationContent = '';
+      if (quizTitle) {
+        translationContent = `Translate the following quiz title and questions to ${languageNames[targetLanguage]}. Return ONLY a JSON object with this structure:
+{
+  "quizTitle": "translated quiz title",
+  "questions": [
+    {
+      "id": "question-id",
+      "question": "translated question text",
+      "options": ["option 1 translated", "option 2 translated", "option 3 translated", "option 4 translated"]
+    }
+  ]
+}
+
+Quiz Title: ${quizTitle}
+
+Questions to translate:
+${JSON.stringify(questionsToTranslate)}`;
+      } else {
+        translationContent = `Translate the following quiz questions to ${languageNames[targetLanguage]}. Return ONLY a JSON object with this structure:
+{
+  "questions": [
+    {
+      "id": "question-id",
+      "question": "translated question text",
+      "options": ["option 1 translated", "option 2 translated", "option 3 translated", "option 4 translated"]
+    }
+  ]
+}
+
+Questions to translate:
+${JSON.stringify(questionsToTranslate)}`;
+      }
+
       // Call OpenAI for translation
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const response = await openai.chat.completions.create({
@@ -664,21 +700,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         messages: [
           {
             role: "system",
-            content: `You are a professional translator. Translate quiz questions and answers to ${languageNames[targetLanguage]}. Maintain technical accuracy and clarity.`
+            content: `You are a professional translator. Translate quiz content to ${languageNames[targetLanguage]}. Maintain technical accuracy and clarity.`
           },
           {
             role: "user",
-            content: `Translate the following quiz questions to ${languageNames[targetLanguage]}. Return ONLY a JSON array with this structure:
-[
-  {
-    "id": "question-id",
-    "question": "translated question text",
-    "options": ["option 1 translated", "option 2 translated", "option 3 translated", "option 4 translated"]
-  }
-]
-
-Questions to translate:
-${JSON.stringify(questionsToTranslate)}`
+            content: translationContent
           }
         ],
         response_format: { type: "json_object" },
@@ -692,8 +718,9 @@ ${JSON.stringify(questionsToTranslate)}`
 
       const parsed = JSON.parse(content);
       const translatedQuestions = Array.isArray(parsed) ? parsed : parsed.questions || [];
+      const translatedQuizTitle = parsed.quizTitle || '';
 
-      res.json({ translatedQuestions });
+      res.json({ translatedQuestions, translatedQuizTitle });
     } catch (error) {
       console.error("Error translating questions:", error);
       res.status(500).json({ message: "Failed to translate questions" });

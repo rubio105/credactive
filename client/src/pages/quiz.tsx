@@ -247,7 +247,8 @@ export default function QuizPage() {
       // Don't show explanation for personality tests
       setShowExplanation(!isInsightDiscovery && !!savedAnswer);
     }
-  }, [currentQuestionIndex, answers, quizData, isInsightDiscovery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestionIndex, limitedQuestions.length, isInsightDiscovery]);
 
   const handleAnswerChange = (answer: string) => {
     if (limitedQuestions.length === 0) return;

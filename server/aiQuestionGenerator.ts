@@ -62,9 +62,12 @@ export async function generateQuestions(
     ? '- ALL questions MUST be based ONLY on the document content provided above\n- DO NOT include general knowledge questions\n- Every answer must be verifiable in the provided document text\n- Reference specific sections, concepts, or procedures from the document'
     : '- Questions should be realistic and exam-like\n- Cover different subtopics within the domain';
 
-  const userPrompt = `Generate ${count} multiple-choice questions for ${quizTitle}.${documentContextSection}
+  const userPrompt = `Generate ${count} multiple-choice questions for ${quizTitle} IN ITALIAN LANGUAGE.${documentContextSection}
+
+IMPORTANT: Generate ALL content (questions, options, and explanations) in ITALIAN language.
 
 Requirements:
+- Language: ITALIAN (Italiano)
 - Difficulty level: ${difficulty}
 - Each question must have exactly 4 options (A, B, C, D)
 - Only ONE option should be correct

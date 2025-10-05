@@ -780,7 +780,13 @@ export default function QuizPage() {
                 {/* Language Selector - IT/EN/ES */}
                 <div className="flex items-center space-x-2">
                   <Languages className="w-4 h-4 text-muted-foreground" />
-                  <Select value={quizLanguage} onValueChange={(value: 'it' | 'en' | 'es') => setQuizLanguage(value)}>
+                  <Select 
+                    value={quizLanguage} 
+                    onValueChange={(value: 'it' | 'en' | 'es') => {
+                      console.log('[Language Selector] Changed from', quizLanguage, 'to', value);
+                      setQuizLanguage(value);
+                    }}
+                  >
                     <SelectTrigger className="w-32" data-testid="select-language">
                       <SelectValue />
                     </SelectTrigger>

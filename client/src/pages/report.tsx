@@ -18,6 +18,15 @@ import {
   Target,
   Clock,
   Palette,
+  User,
+  Brain,
+  Heart,
+  Users,
+  UserPlus,
+  Shield,
+  Zap,
+  BookOpen,
+  Briefcase,
 } from "lucide-react";
 
 interface ReportData {
@@ -60,6 +69,19 @@ interface InsightProfile {
   workingStyle: string;
   communicationStyle: string;
   recommendations: string;
+  detailedAnalysis?: {
+    profileDescription: string;
+    behavioralPatterns: string[];
+    stressManagement: string[];
+    leadershipStyle: string[];
+    teamInteraction: string[];
+    decisionMaking: string[];
+    conflictResolution: string[];
+    motivationalDrivers: string[];
+    learningPreferences: string[];
+    careerGuidance: string[];
+    actionPlan: string[];
+  };
 }
 
 interface QuizReport {
@@ -216,7 +238,7 @@ export default function ReportPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Strengths */}
           <Card className="border-green-200 dark:border-green-800">
             <CardHeader>
@@ -257,6 +279,221 @@ export default function ReportPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Detailed Analysis Sections */}
+        {data.detailedAnalysis && (
+          <>
+            {/* Profile Description */}
+            <Card className="mb-6 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950 border-indigo-200 dark:border-indigo-800">
+              <CardHeader>
+                <CardTitle className="flex items-center text-indigo-900 dark:text-indigo-100">
+                  <User className="w-5 h-5 mr-2" />
+                  Descrizione Profilo Completa
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-line text-indigo-800 dark:text-indigo-200" data-testid="text-profile-description">
+                  {data.detailedAnalysis.profileDescription}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Behavioral Patterns */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Brain className="w-5 h-5 mr-2" />
+                  Pattern Comportamentali
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {data.detailedAnalysis.behavioralPatterns.map((pattern, index) => (
+                    <div key={index} className="flex items-start" data-testid={`behavioral-pattern-${index}`}>
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">{pattern}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Stress Management & Leadership */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Heart className="w-5 h-5 mr-2" />
+                    Gestione dello Stress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.detailedAnalysis.stressManagement.map((tip, index) => (
+                      <div key={index} className="flex items-start" data-testid={`stress-tip-${index}`}>
+                        <span className="text-sm">{tip}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="w-5 h-5 mr-2" />
+                    Stile di Leadership
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.detailedAnalysis.leadershipStyle.map((style, index) => (
+                      <div key={index} className="flex items-start" data-testid={`leadership-style-${index}`}>
+                        <span className="text-sm">{style}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Team Interaction & Decision Making */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <UserPlus className="w-5 h-5 mr-2" />
+                    Interazione nel Team
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.detailedAnalysis.teamInteraction.map((interaction, index) => (
+                      <div key={index} className="flex items-start" data-testid={`team-interaction-${index}`}>
+                        <span className="text-sm">{interaction}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Lightbulb className="w-5 h-5 mr-2" />
+                    Processo Decisionale
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.detailedAnalysis.decisionMaking.map((decision, index) => (
+                      <div key={index} className="flex items-start" data-testid={`decision-making-${index}`}>
+                        <span className="text-sm">{decision}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Conflict Resolution & Motivational Drivers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="w-5 h-5 mr-2" />
+                    Risoluzione dei Conflitti
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.detailedAnalysis.conflictResolution.map((resolution, index) => (
+                      <div key={index} className="flex items-start" data-testid={`conflict-resolution-${index}`}>
+                        <span className="text-sm">{resolution}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Zap className="w-5 h-5 mr-2" />
+                    Driver Motivazionali
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.detailedAnalysis.motivationalDrivers.map((driver, index) => (
+                      <div key={index} className="flex items-start" data-testid={`motivational-driver-${index}`}>
+                        <span className="text-sm">{driver}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Learning Preferences & Career Guidance */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BookOpen className="w-5 h-5 mr-2" />
+                    Preferenze di Apprendimento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.detailedAnalysis.learningPreferences.map((preference, index) => (
+                      <div key={index} className="flex items-start" data-testid={`learning-preference-${index}`}>
+                        <span className="text-sm">{preference}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Briefcase className="w-5 h-5 mr-2" />
+                    Guida alla Carriera
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.detailedAnalysis.careerGuidance.map((guidance, index) => (
+                      <div key={index} className="flex items-start" data-testid={`career-guidance-${index}`}>
+                        <span className="text-sm">{guidance}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Plan */}
+            <Card className="mb-6 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800">
+              <CardHeader>
+                <CardTitle className="flex items-center text-emerald-900 dark:text-emerald-100">
+                  <Target className="w-5 h-5 mr-2" />
+                  Piano d'Azione Personalizzato
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1">
+                  {data.detailedAnalysis.actionPlan.map((action, index) => (
+                    <p key={index} className="text-sm text-emerald-800 dark:text-emerald-200" data-testid={`action-plan-${index}`}>
+                      {action}
+                    </p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     );
   }

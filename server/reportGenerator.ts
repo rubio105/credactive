@@ -380,6 +380,19 @@ interface InsightProfile {
   workingStyle: string;
   communicationStyle: string;
   recommendations: string;
+  detailedAnalysis: {
+    profileDescription: string;
+    behavioralPatterns: string[];
+    stressManagement: string[];
+    leadershipStyle: string[];
+    teamInteraction: string[];
+    decisionMaking: string[];
+    conflictResolution: string[];
+    motivationalDrivers: string[];
+    learningPreferences: string[];
+    careerGuidance: string[];
+    actionPlan: string[];
+  };
 }
 
 const colorNames: Record<string, string> = {
@@ -394,6 +407,15 @@ const colorTraits: Record<string, {
   developmentAreas: string[];
   workingStyle: string;
   communicationStyle: string;
+  behavioralPatterns: string[];
+  stressManagement: string[];
+  leadershipStyle: string[];
+  teamInteraction: string[];
+  decisionMaking: string[];
+  conflictResolution: string[];
+  motivationalDrivers: string[];
+  learningPreferences: string[];
+  careerGuidance: string[];
 }> = {
   red: {
     strengths: [
@@ -410,6 +432,60 @@ const colorTraits: Record<string, {
     ],
     workingStyle: 'Orientato all\'azione, competitivo e focalizzato sui risultati. Preferisce un ambiente dinamico con sfide da superare.',
     communicationStyle: 'Diretto, conciso e assertivo. Va dritto al punto e apprezza la franchezza.',
+    behavioralPatterns: [
+      'Prendi decisioni rapide basandoti sull\'istinto e sull\'esperienza',
+      'Affronti le sfide con determinazione, vedendole come opportunità',
+      'Tendi a prendere il controllo in situazioni di crisi',
+      'Ti concentri sui risultati finali piuttosto che sui processi'
+    ],
+    stressManagement: [
+      'Sotto stress, diventi più direttivo e impaziente',
+      'Strategia efficace: Canalizza l\'energia in attività fisica o nuovi progetti',
+      'Evita di isolarti - condividi le sfide con il team',
+      'Pratica tecniche di rilassamento per bilanciare l\'intensità'
+    ],
+    leadershipStyle: [
+      'Guidi con l\'esempio, mostrando determinazione e coraggio',
+      'Stabilisci obiettivi chiari e sfidanti per il team',
+      'Sei efficace nelle situazioni di crisi e cambiamento rapido',
+      'Sviluppa: coinvolgimento del team e ascolto delle loro prospettive'
+    ],
+    teamInteraction: [
+      'Sei il catalizzatore che spinge il team all\'azione',
+      'Valorizzi l\'efficienza e l\'orientamento ai risultati',
+      'Potresti essere percepito come troppo diretto o impaziente',
+      'Riconosci e celebra i successi del team, non solo i risultati'
+    ],
+    decisionMaking: [
+      'Decidi rapidamente, confidando nell\'istinto e nell\'esperienza',
+      'Valuti le opzioni in base al potenziale impatto sui risultati',
+      'Sei disposto ad assumerti rischi calcolati',
+      'Bilancia velocità decisionale con considerazione dell\'impatto sulle persone'
+    ],
+    conflictResolution: [
+      'Affronti i conflitti direttamente, senza evitarli',
+      'Cerchi soluzioni rapide che permettano di andare avanti',
+      'Potresti tendere a imporre la tua visione',
+      'Sviluppa: ascolto delle diverse prospettive prima di decidere'
+    ],
+    motivationalDrivers: [
+      'Sfide ambiziose e obiettivi che sembrano impossibili',
+      'Riconoscimento dei risultati ottenuti',
+      'Autonomia nel prendere decisioni',
+      'Opportunità di guidare e fare la differenza'
+    ],
+    learningPreferences: [
+      'Apprendi meglio attraverso l\'azione e l\'esperienza diretta',
+      'Preferisci formazione pratica, orientata ai risultati',
+      'Ti piacciono simulazioni e casi studio concreti',
+      'Cerca opportunità di applicare immediatamente ciò che impari'
+    ],
+    careerGuidance: [
+      'Eccelli in ruoli di leadership e gestione con obiettivi chiari',
+      'Ambienti ideali: startup, turnaround, progetti di trasformazione',
+      'Ruoli adatti: CEO, direttore operativo, sales manager, imprenditore',
+      'Sviluppa competenze di coaching e mentoring per crescere come leader'
+    ]
   },
   yellow: {
     strengths: [
@@ -426,6 +502,60 @@ const colorTraits: Record<string, {
     ],
     workingStyle: 'Creativo, collaborativo e orientato alle persone. Preferisce ambienti dinamici e sociali.',
     communicationStyle: 'Espressivo, narrativo e coinvolgente. Usa storie ed emozioni per connettersi.',
+    behavioralPatterns: [
+      'Generi idee creative e innovative con facilità',
+      'Coinvolgi gli altri con entusiasmo e energia positiva',
+      'Preferisci varietà e nuove esperienze alla routine',
+      'Costruisci reti ampie di relazioni personali e professionali'
+    ],
+    stressManagement: [
+      'Sotto stress, potresti diventare dispersivo o evitare i problemi',
+      'Strategia efficace: Condividi le preoccupazioni con persone di fiducia',
+      'Mantieni una routine di base per bilanciare la spontaneità',
+      'Usa la creatività come valvola di sfogo per lo stress'
+    ],
+    leadershipStyle: [
+      'Ispiri il team con visione ed entusiasmo',
+      'Crei un ambiente di lavoro positivo e motivante',
+      'Sei efficace nel cambiamento e nell\'innovazione',
+      'Sviluppa: follow-through e accountability per i risultati'
+    ],
+    teamInteraction: [
+      'Sei l\'anima del team, creando energia e coesione',
+      'Faciliti la comunicazione e la collaborazione',
+      'Potresti mancare di focus sui dettagli operativi',
+      'Assicurati di tradurre l\'entusiasmo in azioni concrete'
+    ],
+    decisionMaking: [
+      'Consideri l\'impatto emotivo e relazionale delle decisioni',
+      'Cerchi input e consenso dal gruppo',
+      'Ti basi sull\'intuizione e sulle possibilità future',
+      'Bilancia creatività con analisi pratica dei rischi'
+    ],
+    conflictResolution: [
+      'Cerchi di sdrammatizzare e trovare punti in comune',
+      'Usi l\'empatia e le relazioni per mediare',
+      'Potresti evitare confronti difficili',
+      'Sviluppa: capacità di affrontare conflitti anche scomodi'
+    ],
+    motivationalDrivers: [
+      'Riconoscimento pubblico e apprezzamento',
+      'Opportunità di essere creativi e innovativi',
+      'Lavoro con persone positive e stimolanti',
+      'Varietà e nuove sfide che mantengono alto l\'interesse'
+    ],
+    learningPreferences: [
+      'Apprendi meglio in contesti interattivi e di gruppo',
+      'Preferisci formazione coinvolgente con elementi creativi',
+      'Ti piacciono discussioni, workshop e brainstorming',
+      'Cerca contenuti ispiranti e applicazioni innovative'
+    ],
+    careerGuidance: [
+      'Eccelli in ruoli creativi, di comunicazione e relazione',
+      'Ambienti ideali: marketing, comunicazione, innovazione, vendite',
+      'Ruoli adatti: creative director, brand manager, consulente, formatore',
+      'Sviluppa competenze di project management per massimizzare l\'impatto'
+    ]
   },
   green: {
     strengths: [
@@ -442,6 +572,60 @@ const colorTraits: Record<string, {
     ],
     workingStyle: 'Collaborativo, stabile e orientato al team. Preferisce ambienti armoniosi e prevedibili.',
     communicationStyle: 'Empatico, paziente e attento. Ascolta attivamente e risponde con cura.',
+    behavioralPatterns: [
+      'Crei stabilità e armonia nell\'ambiente di lavoro',
+      'Supporti gli altri con pazienza e dedizione',
+      'Preferisci cambiamenti graduali e ben pianificati',
+      'Costruisci relazioni profonde e durature'
+    ],
+    stressManagement: [
+      'Sotto stress, tendi a interiorizzare e ritirarti',
+      'Strategia efficace: Parla con persone di fiducia dei tuoi bisogni',
+      'Stabilisci confini chiari per proteggerti dal sovraccarico',
+      'Pratica l\'assertività in situazioni a basso rischio'
+    ],
+    leadershipStyle: [
+      'Guidi con empatia, supportando lo sviluppo del team',
+      'Crei un ambiente di lavoro sicuro e collaborativo',
+      'Sei efficace nel costruire team coesi e fedeli',
+      'Sviluppa: capacità di prendere decisioni difficili quando necessario'
+    ],
+    teamInteraction: [
+      'Sei il collante che tiene unito il team',
+      'Faciliti la collaborazione e risolvi tensioni',
+      'Potresti evitare confronti necessari per mantenere l\'armonia',
+      'Esprimi le tue opinioni - il team ha bisogno della tua prospettiva'
+    ],
+    decisionMaking: [
+      'Consideri attentamente l\'impatto sulle persone coinvolte',
+      'Cerchi consenso e armonia nelle decisioni',
+      'Ti prendi tempo per riflettere prima di decidere',
+      'Bilancia il desiderio di armonia con la necessità di decisioni tempestive'
+    ],
+    conflictResolution: [
+      'Sei un mediatore naturale, cercando soluzioni win-win',
+      'Ascolti tutte le parti con genuina empatia',
+      'Potresti compromettere i tuoi bisogni per la pace',
+      'Sviluppa: capacità di affrontare conflitti anche quando scomodo'
+    ],
+    motivationalDrivers: [
+      'Ambiente di lavoro armonioso e rispettoso',
+      'Relazioni autentiche e significative',
+      'Contribuire al benessere degli altri',
+      'Stabilità e sicurezza nel lungo termine'
+    ],
+    learningPreferences: [
+      'Apprendi meglio in ambienti sicuri e strutturati',
+      'Preferisci apprendimento graduale con tempo per assimilare',
+      'Ti piacciono case study e applicazioni pratiche',
+      'Cerca formazione che rispetti i tuoi tempi e stile'
+    ],
+    careerGuidance: [
+      'Eccelli in ruoli di supporto, caring e servizio',
+      'Ambienti ideali: HR, healthcare, educazione, customer service',
+      'Ruoli adatti: HR manager, counselor, team coordinator, mediatore',
+      'Sviluppa competenze di leadership per amplificare il tuo impatto'
+    ]
   },
   blue: {
     strengths: [
@@ -458,6 +642,60 @@ const colorTraits: Record<string, {
     ],
     workingStyle: 'Analitico, metodico e orientato alla qualità. Preferisce ambienti strutturati e ben organizzati.',
     communicationStyle: 'Preciso, basato sui fatti e dettagliato. Fornisce informazioni accurate.',
+    behavioralPatterns: [
+      'Analizzi situazioni in profondità prima di agire',
+      'Cerchi precisione e qualità in tutto ciò che fai',
+      'Preferisci processi strutturati e sistematici',
+      'Basi le tue conclusioni su dati e fatti verificabili'
+    ],
+    stressManagement: [
+      'Sotto stress, potresti diventare eccessivamente critico o ritirato',
+      'Strategia efficace: Bilancia analisi con momenti di relax',
+      'Accetta che non tutto può essere perfetto o controllato',
+      'Condividi le preoccupazioni invece di analizzarle da solo'
+    ],
+    leadershipStyle: [
+      'Guidi con competenza, dati e pianificazione strategica',
+      'Crei sistemi e processi che garantiscono la qualità',
+      'Sei efficace in contesti tecnici e complessi',
+      'Sviluppa: flessibilità e competenze relazionali per ispirare il team'
+    ],
+    teamInteraction: [
+      'Sei la garanzia di qualità e precisione del team',
+      'Fornisci analisi approfondite e soluzioni ponderate',
+      'Potresti essere percepito come troppo critico o distante',
+      'Riconosci anche i progressi, non solo le imperfezioni'
+    ],
+    decisionMaking: [
+      'Raccogli e analizzi tutti i dati disponibili',
+      'Valuti rischi e benefici in modo sistematico',
+      'Cerchi la soluzione ottimale basata su logica',
+      'Bilancia il desiderio di perfezione con la necessità di decidere'
+    ],
+    conflictResolution: [
+      'Affronti i conflitti con logica e obiettività',
+      'Cerchi soluzioni basate su fatti e standard',
+      'Potresti minimizzare l\'aspetto emotivo dei conflitti',
+      'Sviluppa: empatia e considerazione dei fattori umani'
+    ],
+    motivationalDrivers: [
+      'Opportunità di eccellere in competenza e qualità',
+      'Riconoscimento dell\'expertise e della precisione',
+      'Autonomia nell\'organizzare il proprio lavoro',
+      'Progetti complessi che richiedono analisi approfondita'
+    ],
+    learningPreferences: [
+      'Apprendi meglio attraverso studio approfondito e riflessione',
+      'Preferisci formazione strutturata con materiali dettagliati',
+      'Ti piacciono teoria, ricerca e documentazione tecnica',
+      'Cerca opportunità di specializzazione e maestria'
+    ],
+    careerGuidance: [
+      'Eccelli in ruoli tecnici, analitici e di expertise',
+      'Ambienti ideali: R&D, finanza, quality assurance, ingegneria',
+      'Ruoli adatti: analista, ricercatore, technical specialist, auditor',
+      'Sviluppa competenze comunicative per tradurre la complessità in semplicità'
+    ]
   },
 };
 
@@ -520,6 +758,8 @@ export function generateInsightDiscoveryReport(
 
   const dominantColor = colorScores[0];
   const secondaryColor = colorScores[1];
+  const thirdColor = colorScores[2];
+  const lowestColor = colorScores[3];
 
   // Get traits for dominant color
   const traits = colorTraits[dominantColor.color] || colorTraits.red;
@@ -531,6 +771,11 @@ export function generateInsightDiscoveryReport(
     colorScores
   );
 
+  // Generate detailed analysis
+  const profileDescription = generateProfileDescription(dominantColor, secondaryColor, thirdColor, lowestColor);
+  
+  const actionPlan = generateActionPlan(dominantColor, secondaryColor, lowestColor, traits);
+
   return {
     dominantColor,
     secondaryColor,
@@ -540,6 +785,19 @@ export function generateInsightDiscoveryReport(
     workingStyle: traits.workingStyle,
     communicationStyle: traits.communicationStyle,
     recommendations,
+    detailedAnalysis: {
+      profileDescription,
+      behavioralPatterns: traits.behavioralPatterns,
+      stressManagement: traits.stressManagement,
+      leadershipStyle: traits.leadershipStyle,
+      teamInteraction: traits.teamInteraction,
+      decisionMaking: traits.decisionMaking,
+      conflictResolution: traits.conflictResolution,
+      motivationalDrivers: traits.motivationalDrivers,
+      learningPreferences: traits.learningPreferences,
+      careerGuidance: traits.careerGuidance,
+      actionPlan
+    }
   };
 }
 
@@ -608,4 +866,83 @@ function getCombinationTrait(dominant: string, secondary: string): string {
   };
 
   return combinations[dominant]?.[secondary] || 'unica nel suo approccio al lavoro e alle relazioni';
+}
+
+function generateProfileDescription(
+  dominant: ColorScore, 
+  secondary: ColorScore, 
+  third: ColorScore,
+  lowest: ColorScore
+): string {
+  const descriptions: string[] = [];
+  
+  descriptions.push(`🎨 **Il Tuo Profilo Insight Discovery Completo**\n`);
+  descriptions.push(`Il tuo profilo mostra una personalità principalmente ${dominant.name} (${dominant.percentage}%), che rappresenta la tua energia dominante e il tuo approccio naturale alla vita professionale e personale.\n`);
+  
+  descriptions.push(`**Distribuzione delle Energie:**`);
+  descriptions.push(`• ${dominant.name}: ${dominant.percentage}% - La tua energia principale`);
+  descriptions.push(`• ${secondary.name}: ${secondary.percentage}% - La tua energia di supporto`);
+  descriptions.push(`• ${third.name}: ${third.percentage}% - Energia complementare`);
+  descriptions.push(`• ${lowest.name}: ${lowest.percentage}% - Energia da sviluppare\n`);
+  
+  if (dominant.percentage > 40) {
+    descriptions.push(`La tua forte predominanza ${dominant.name} indica un profilo distintivo e ben definito. Questo ti rende particolarmente efficace in contesti che valorizzano le caratteristiche di questa energia, ma potrebbe anche rappresentare un'opportunità per sviluppare maggiore flessibilità integrando le altre energie.\n`);
+  } else if (dominant.percentage < 30) {
+    descriptions.push(`Il tuo profilo mostra un'interessante distribuzione equilibrata tra le energie. Questa versatilità ti permette di adattarti facilmente a diversi contesti e persone, rendendoti un prezioso elemento di connessione nei team diversificati.\n`);
+  }
+  
+  if (lowest.percentage < 15) {
+    descriptions.push(`La tua energia ${lowest.name} (${lowest.percentage}%) rappresenta un'area significativa di crescita. Sviluppare questa dimensione può arricchire notevolmente il tuo profilo e amplificare la tua efficacia in situazioni che richiedono queste competenze.`);
+  }
+  
+  return descriptions.join('\n');
+}
+
+function generateActionPlan(
+  dominant: ColorScore,
+  secondary: ColorScore,
+  lowest: ColorScore,
+  traits: any
+): string[] {
+  const plan: string[] = [];
+  
+  plan.push(`**Piano d'Azione Personalizzato per il Tuo Sviluppo:**\n`);
+  
+  plan.push(`**1. Valorizza i Tuoi Punti di Forza (Energia ${dominant.name})**`);
+  plan.push(`   • Identifica 2-3 situazioni questa settimana dove puoi usare le tue capacità ${dominant.name.toLowerCase()}`);
+  plan.push(`   • Condividi con il team come le tue competenze naturali possono contribuire ai progetti`);
+  plan.push(`   • Cerca opportunità di leadership o ruoli che valorizzino la tua energia dominante\n`);
+  
+  plan.push(`**2. Integra la Tua Energia Secondaria (${secondary.name})**`);
+  plan.push(`   • Riconosci come la tua energia ${secondary.name.toLowerCase()} completa quella ${dominant.name.toLowerCase()}`);
+  plan.push(`   • Pratica l'utilizzo consapevole di entrambe le energie in situazioni complesse`);
+  plan.push(`   • Cerca feedback su come bilanci queste due dimensioni\n`);
+  
+  plan.push(`**3. Sviluppa l'Energia Meno Espressa (${lowest.name})**`);
+  plan.push(`   • Identifica una persona nel tuo team con forte energia ${lowest.name.toLowerCase()} e osserva il suo approccio`);
+  plan.push(`   • Scegli UN comportamento tipico dell'energia ${lowest.name.toLowerCase()} da praticare questa settimana`);
+  plan.push(`   • Rifletti su come questo amplia le tue capacità e prospettive\n`);
+  
+  plan.push(`**4. Gestione dello Stress e Bilanciamento**`);
+  plan.push(`   • Riconosci i segnali di stress tipici del profilo ${dominant.name.toLowerCase()}`);
+  plan.push(`   • Implementa almeno una strategia di gestione dello stress suggerita`);
+  plan.push(`   • Crea un sistema di supporto con persone di energie diverse\n`);
+  
+  plan.push(`**5. Crescita Professionale a 90 Giorni**`);
+  plan.push(`   • Scegli UN'area di sviluppo dalle aree suggerite e crea un piano specifico`);
+  plan.push(`   • Trova un mentor o coach che possa supportarti in questo percorso`);
+  plan.push(`   • Misura i progressi con feedback regolari dal team\n`);
+  
+  plan.push(`**6. Interazione con Altri Profili**`);
+  plan.push(`   • Identifica i profili dominanti dei tuoi colleghi chiave`);
+  plan.push(`   • Adatta consapevolmente il tuo stile di comunicazione a ciascuno`);
+  plan.push(`   • Valuta l'efficacia delle tue interazioni e aggiusta l'approccio\n`);
+  
+  plan.push(`**Azioni Immediate (Questa Settimana):**`);
+  plan.push(`✓ Condividi i risultati di questo test con il tuo manager/team`);
+  plan.push(`✓ Identifica una situazione dove puoi applicare un nuovo comportamento`);
+  plan.push(`✓ Richiedi feedback su un'area di sviluppo specifica`);
+  plan.push(`✓ Rifletti su come le tue energie influenzano le tue decisioni quotidiane`);
+  
+  return plan;
 }

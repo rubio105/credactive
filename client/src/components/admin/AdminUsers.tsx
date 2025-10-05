@@ -248,7 +248,7 @@ export function AdminUsers() {
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent data-testid="dialog-edit-user">
+        <DialogContent className="max-h-[90vh] flex flex-col" data-testid="dialog-edit-user">
           <DialogHeader>
             <DialogTitle>Modifica Utente</DialogTitle>
             <DialogDescription>
@@ -256,7 +256,7 @@ export function AdminUsers() {
             </DialogDescription>
           </DialogHeader>
           {editingUser && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-2">
               <div>
                 <Label>Email</Label>
                 <Input value={editingUser.email} disabled />
@@ -393,14 +393,14 @@ export function AdminUsers() {
       </Dialog>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent data-testid="dialog-create-user">
+        <DialogContent className="max-h-[90vh] flex flex-col" data-testid="dialog-create-user">
           <DialogHeader>
             <DialogTitle>Crea Nuovo Utente</DialogTitle>
             <DialogDescription>
               Inserisci i dati del nuovo utente
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div>
               <Label htmlFor="newEmail">Email *</Label>
               <Input

@@ -730,6 +730,7 @@ ${JSON.stringify(questionsToTranslate)}`;
   // Stripe subscription endpoint
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     const userId = req.user?.claims?.sub || req.user?.id;
+    const { tier } = req.body;
     let user = await storage.getUser(userId);
 
     if (!user) {
@@ -763,14 +764,19 @@ ${JSON.stringify(questionsToTranslate)}`;
         customerId = customer.id;
       }
 
-      // Create a one-time payment intent for €90 (annual subscription)
+      // Determine amount and tier based on request
+      const selectedTier = tier === 'premium_plus' ? 'premium_plus' : 'premium';
+      const amount = selectedTier === 'premium_plus' ? 14900 : 9900; // €149 or €99 in cents
+
+      // Create a one-time payment intent
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: 9000, // €90 in cents
+        amount,
         currency: 'eur',
         customer: customerId,
         metadata: {
           userId: userId,
-          type: 'premium_access',
+          type: 'subscription',
+          tier: selectedTier,
         },
       });
 
@@ -780,6 +786,7 @@ ${JSON.stringify(questionsToTranslate)}`;
       res.json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
+        tier: selectedTier,
       });
     } catch (error: any) {
       console.error("Error creating payment intent:", error);
@@ -797,9 +804,10 @@ ${JSON.stringify(questionsToTranslate)}`;
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       
       if (paymentIntent.status === 'succeeded' && paymentIntent.metadata.userId === userId) {
-        // Update user to premium
-        await storage.updateUserStripeInfo(userId, paymentIntent.customer as string, 'premium_lifetime');
-        res.json({ success: true, message: "Premium access activated" });
+        // Update user to the appropriate tier
+        const tier = paymentIntent.metadata.tier || 'premium';
+        await storage.updateUserStripeInfo(userId, paymentIntent.customer as string, tier);
+        res.json({ success: true, message: `${tier === 'premium_plus' ? 'Premium Plus' : 'Premium'} access activated` });
       } else {
         res.status(400).json({ message: "Payment verification failed" });
       }

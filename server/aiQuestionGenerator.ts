@@ -88,21 +88,23 @@ Requirements:
 ${questionSourceInstruction}
 - Avoid duplicate questions${domainInstructions}
 
-Return ONLY a valid JSON array with this exact structure:
-[
-  {
-    "question": "The question text here?",
-    "options": [
-      {"text": "Option A text", "isCorrect": false},
-      {"text": "Option B text", "isCorrect": true},
-      {"text": "Option C text", "isCorrect": false},
-      {"text": "Option D text", "isCorrect": false}
-    ],
-    "explanation": "Detailed explanation of why the correct answer is correct and why others are wrong.",
-    "difficulty": "${difficulty}",
-    "domain": "Security and Risk Management"
-  }
-]`;
+Return a JSON object with a "questions" array containing exactly ${count} questions. Use this exact structure:
+{
+  "questions": [
+    {
+      "question": "The question text here?",
+      "options": [
+        {"text": "Option A text", "isCorrect": false},
+        {"text": "Option B text", "isCorrect": true},
+        {"text": "Option C text", "isCorrect": false},
+        {"text": "Option D text", "isCorrect": false}
+      ],
+      "explanation": "Detailed explanation of why the correct answer is correct and why others are wrong.",
+      "difficulty": "${difficulty}",
+      "domain": "Security and Risk Management"
+    }
+  ]
+}`;
 
   try {
     // Check if OpenAI API key is configured

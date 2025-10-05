@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Image, DollarSign, Calendar, FileText } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Image, DollarSign, Calendar, FileText, Video } from "lucide-react";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminCategories } from "@/components/admin/AdminCategories";
 import { AdminQuizzes } from "@/components/admin/AdminQuizzes";
@@ -10,6 +10,7 @@ import { AdminQuestions } from "@/components/admin/AdminQuestions";
 import { AdminSettings } from "@/components/admin/AdminSettings";
 import { AdminLiveCourses } from "@/components/admin/AdminLiveCourses";
 import { AdminContentPages } from "@/components/admin/AdminContentPages";
+import { AdminOnDemandCourses } from "@/components/admin/AdminOnDemandCourses";
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
@@ -52,7 +53,7 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-7 mb-8">
+          <TabsList className="grid w-full grid-cols-8 mb-8">
             <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Utenti</span>
@@ -72,6 +73,10 @@ export default function AdminPage() {
             <TabsTrigger value="live-courses" className="flex items-center gap-2" data-testid="tab-live-courses">
               <Calendar className="w-4 h-4" />
               <span className="hidden sm:inline">Corsi Live</span>
+            </TabsTrigger>
+            <TabsTrigger value="on-demand-courses" className="flex items-center gap-2" data-testid="tab-on-demand-courses">
+              <Video className="w-4 h-4" />
+              <span className="hidden sm:inline">Corsi On-Demand</span>
             </TabsTrigger>
             <TabsTrigger value="pages" className="flex items-center gap-2" data-testid="tab-pages">
               <FileText className="w-4 h-4" />
@@ -101,6 +106,10 @@ export default function AdminPage() {
 
           <TabsContent value="live-courses">
             <AdminLiveCourses />
+          </TabsContent>
+
+          <TabsContent value="on-demand-courses">
+            <AdminOnDemandCourses />
           </TabsContent>
 
           <TabsContent value="pages">

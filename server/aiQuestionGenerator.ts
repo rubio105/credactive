@@ -138,17 +138,29 @@ Return a JSON object with a "questions" array containing exactly ${count} questi
     }
     
     console.log(`Received content length: ${content.length} characters`);
+    console.log('OpenAI raw response (first 1000 chars):', content.substring(0, 1000));
     
-    let parsed = JSON.parse(content);
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+      console.log('Parsed JSON structure:', JSON.stringify(parsed, null, 2).substring(0, 500));
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response as JSON:', parseError);
+      console.error('Content that failed to parse:', content);
+      throw new Error('OpenAI response is not valid JSON');
+    }
     
     // Handle both array and object with questions array
     const questions = Array.isArray(parsed) ? parsed : parsed.questions || [];
     
     console.log(`Parsed ${questions.length} questions from OpenAI response`);
+    console.log('Questions array type:', typeof questions, 'isArray:', Array.isArray(questions));
     
     if (questions.length === 0) {
-      console.error('OpenAI returned 0 questions. Response:', content.substring(0, 500));
-      throw new Error('OpenAI generated 0 questions. This may indicate an issue with the prompt or API configuration.');
+      console.error('OpenAI returned 0 questions.');
+      console.error('Full response:', content);
+      console.error('Parsed object keys:', Object.keys(parsed));
+      throw new Error('OpenAI generated 0 questions. Full response logged above.');
     }
     
     return questions.slice(0, count);

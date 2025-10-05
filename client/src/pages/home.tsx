@@ -11,7 +11,7 @@ import { LiveCourseModal } from "@/components/LiveCourseModal";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
-import type { Category, Quiz, User as UserType } from "@shared/schema";
+import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
 import { Crown, ChartLine, BookOpen, Play } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 
@@ -57,7 +57,7 @@ export default function Home() {
     queryKey: ["/api/user/dashboard"],
   });
 
-  const { data: categoriesWithQuizzes = [] } = useQuery<Array<Category & { quizzes: Quiz[] }>>({
+  const { data: categoriesWithQuizzes = [] } = useQuery<Array<Category & { quizzes: QuizWithCount[] }>>({
     queryKey: ["/api/categories-with-quizzes"],
   });
 
@@ -122,7 +122,7 @@ export default function Home() {
       // Start quiz directly with all questions configured by admin
       const quiz = quizCategories.find(q => q.id === quizId);
       if (quiz) {
-        window.location.href = `/quiz/${quizId}?questions=${quiz.questions}`;
+        window.location.href = `/quiz/${quizId}?questions=${quiz.questionCount}`;
       }
     }
   };

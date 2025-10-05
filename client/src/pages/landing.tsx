@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
-import type { Category, Quiz } from "@shared/schema";
+import type { Category, QuizWithCount } from "@shared/schema";
 import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine } from "lucide-react";
 import { featuredImages } from "@/lib/stockImages";
 import logoImage from "@assets/image_1759605874808.png";
@@ -15,7 +15,7 @@ import certificationsImage from "@assets/image_1759608591455.png";
 export default function Landing() {
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const { data: categoriesWithQuizzes = [], isLoading } = useQuery<Array<Category & { quizzes: Quiz[] }>>({
+  const { data: categoriesWithQuizzes = [], isLoading } = useQuery<Array<Category & { quizzes: QuizWithCount[] }>>({
     queryKey: ["/api/categories-with-quizzes"],
   });
 

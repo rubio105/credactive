@@ -1,4 +1,4 @@
-import type { Category, Quiz } from "@shared/schema";
+import type { Category, QuizWithCount } from "@shared/schema";
 
 const colorGradients: Record<string, string> = {
   blue: "from-blue-600 to-blue-700",
@@ -57,7 +57,7 @@ export interface QuizCardData {
   title: string;
   description: string;
   duration: number;
-  questions: number;
+  questionCount: number;
   difficulty: string;
   level: string;
   isPremium: boolean;
@@ -67,8 +67,9 @@ export interface QuizCardData {
   imageUrl?: string;
 }
 
-export function mapQuizToCardData(quiz: Quiz, category: Category): QuizCardData {
-  const questionCount = questionCountMap[category.slug] || 50;
+export function mapQuizToCardData(quiz: QuizWithCount, category: Category): QuizCardData {
+  // Use the actual questionCount from the database, with fallback to static map if needed
+  const questionCount = quiz.questionCount ?? questionCountMap[category.slug] ?? 50;
   const imageUrl = category.imageUrl?.trim() || undefined;
   
   return {
@@ -76,7 +77,7 @@ export function mapQuizToCardData(quiz: Quiz, category: Category): QuizCardData 
     title: quiz.title,
     description: quiz.description || category.description || "",
     duration: quiz.duration,
-    questions: questionCount,
+    questionCount,
     difficulty: difficultyMap[quiz.difficulty] || quiz.difficulty,
     level: levelMap[quiz.difficulty] || "Standard",
     isPremium: quiz.isPremium || false,
@@ -88,7 +89,7 @@ export function mapQuizToCardData(quiz: Quiz, category: Category): QuizCardData 
 }
 
 export function mapCategoriesToQuizCards(
-  categoriesWithQuizzes: Array<Category & { quizzes: Quiz[] }>
+  categoriesWithQuizzes: Array<Category & { quizzes: QuizWithCount[] }>
 ): QuizCardData[] {
   const quizCards: QuizCardData[] = [];
 

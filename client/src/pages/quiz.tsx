@@ -747,13 +747,14 @@ export default function QuizPage() {
             </div>
 
             {/* Answer Options */}
-            <RadioGroup value={selectedAnswer} onValueChange={handleAnswerChange}>
+            <RadioGroup value={selectedAnswer} onValueChange={handleAnswerChange} disabled={!isInsightDiscovery && showExplanation}>
               <div className="space-y-4">
                 {currentQuestion.options.map((option) => {
                   const isSelected = selectedAnswer === option.label;
                   const isCorrect = option.label === currentQuestion.correctAnswer;
                   // Don't show right/wrong status for personality tests
                   const showStatus = !isInsightDiscovery && showExplanation && isSelected;
+                  const isDisabled = !isInsightDiscovery && showExplanation;
                   
                   return (
                     <div 
@@ -765,7 +766,9 @@ export default function QuizPage() {
                             : 'border-red-500 bg-red-50 dark:bg-red-950'
                           : isSelected && isInsightDiscovery
                             ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary hover:bg-primary/5'
+                            : isDisabled 
+                              ? 'border-border bg-muted/30 cursor-not-allowed opacity-60'
+                              : 'border-border hover:border-primary hover:bg-primary/5'
                       }`}
                     >
                       <RadioGroupItem 
@@ -773,8 +776,9 @@ export default function QuizPage() {
                         id={option.label}
                         className="mt-1"
                         data-testid={`option-${option.label}`}
+                        disabled={isDisabled}
                       />
-                      <Label htmlFor={option.label} className="flex-1 cursor-pointer">
+                      <Label htmlFor={option.label} className={`flex-1 ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                         <div className="font-medium mb-1">
                           {option.label}) {option.text}
                         </div>

@@ -50,6 +50,7 @@ export const users = pgTable("users", {
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
   isPremium: boolean("is_premium").default(false),
+  subscriptionTier: varchar("subscription_tier", { length: 20 }).default("free"), // free, premium, premium_plus
   isAdmin: boolean("is_admin").default(false),
   language: varchar("language", { length: 2 }), // it, en, es, fr
   createdAt: timestamp("created_at").defaultNow(),
@@ -211,6 +212,62 @@ export const contentPages = pgTable("content_pages", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// On-demand courses
+export const onDemandCourses = pgTable("on_demand_courses", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  categoryId: uuid("category_id").references(() => categories.id), // Optional: link to quiz category
+  instructor: varchar("instructor", { length: 200 }),
+  difficulty: varchar("difficulty", { length: 20 }), // beginner, intermediate, advanced, expert
+  duration: varchar("duration", { length: 100 }), // Total course duration estimate
+  thumbnailUrl: text("thumbnail_url"), // Course thumbnail image
+  isPremiumPlus: boolean("is_premium_plus").default(true), // Requires Premium Plus subscription
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Course videos
+export const courseVideos = pgTable("course_videos", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: uuid("course_id").notNull().references(() => onDemandCourses.id),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  videoUrl: text("video_url").notNull(), // URL to video (YouTube, Vimeo, or uploaded)
+  duration: integer("duration"), // Duration in seconds
+  sortOrder: integer("sort_order").notNull().default(0), // Order of video in course
+  thumbnailUrl: text("thumbnail_url"),
+  requiresQuiz: boolean("requires_quiz").default(true), // Must answer questions to unlock next video
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Video quiz questions (to unlock next video)
+export const videoQuestions = pgTable("video_questions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: uuid("video_id").notNull().references(() => courseVideos.id),
+  question: text("question").notNull(),
+  options: jsonb("options").notNull(), // Array of {label, text}
+  correctAnswer: varchar("correct_answer", { length: 10 }).notNull(), // e.g., "A", "B", "C", "D"
+  explanation: text("explanation"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User video progress tracking
+export const userVideoProgress = pgTable("user_video_progress", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  courseId: uuid("course_id").notNull().references(() => onDemandCourses.id),
+  videoId: uuid("video_id").notNull().references(() => courseVideos.id),
+  completed: boolean("completed").default(false),
+  quizPassed: boolean("quiz_passed").default(false), // Passed the quiz to unlock next video
+  watchedSeconds: integer("watched_seconds").default(0), // Track progress within video
+  lastWatchedAt: timestamp("last_watched_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   quizAttempts: many(userQuizAttempts),
@@ -307,6 +364,45 @@ export const liveCourseEnrollmentsRelations = relations(liveCourseEnrollments, (
   }),
 }));
 
+export const onDemandCoursesRelations = relations(onDemandCourses, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [onDemandCourses.categoryId],
+    references: [categories.id],
+  }),
+  videos: many(courseVideos),
+}));
+
+export const courseVideosRelations = relations(courseVideos, ({ one, many }) => ({
+  course: one(onDemandCourses, {
+    fields: [courseVideos.courseId],
+    references: [onDemandCourses.id],
+  }),
+  questions: many(videoQuestions),
+  progress: many(userVideoProgress),
+}));
+
+export const videoQuestionsRelations = relations(videoQuestions, ({ one }) => ({
+  video: one(courseVideos, {
+    fields: [videoQuestions.videoId],
+    references: [courseVideos.id],
+  }),
+}));
+
+export const userVideoProgressRelations = relations(userVideoProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userVideoProgress.userId],
+    references: [users.id],
+  }),
+  course: one(onDemandCourses, {
+    fields: [userVideoProgress.courseId],
+    references: [onDemandCourses.id],
+  }),
+  video: one(courseVideos, {
+    fields: [userVideoProgress.videoId],
+    references: [courseVideos.id],
+  }),
+}));
+
 // Types
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
@@ -321,6 +417,10 @@ export type LiveCourse = typeof liveCourses.$inferSelect;
 export type LiveCourseSession = typeof liveCourseSessions.$inferSelect;
 export type LiveCourseEnrollment = typeof liveCourseEnrollments.$inferSelect;
 export type ContentPage = typeof contentPages.$inferSelect;
+export type OnDemandCourse = typeof onDemandCourses.$inferSelect;
+export type CourseVideo = typeof courseVideos.$inferSelect;
+export type VideoQuestion = typeof videoQuestions.$inferSelect;
+export type UserVideoProgress = typeof userVideoProgress.$inferSelect;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -339,6 +439,10 @@ export const updateContentPageSchema = createInsertSchema(contentPages).pick({
   content: true, 
   isPublished: true 
 }).partial();
+export const insertOnDemandCourseSchema = createInsertSchema(onDemandCourses).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCourseVideoSchema = createInsertSchema(courseVideos).omit({ id: true, createdAt: true });
+export const insertVideoQuestionSchema = createInsertSchema(videoQuestions).omit({ id: true, createdAt: true });
+export const insertUserVideoProgressSchema = createInsertSchema(userVideoProgress).omit({ id: true, lastWatchedAt: true, completedAt: true });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
@@ -352,6 +456,10 @@ export type InsertLiveCourseSession = z.infer<typeof insertLiveCourseSessionSche
 export type InsertLiveCourseEnrollment = z.infer<typeof insertLiveCourseEnrollmentSchema>;
 export type InsertContentPage = z.infer<typeof insertContentPageSchema>;
 export type UpdateContentPage = z.infer<typeof updateContentPageSchema>;
+export type InsertOnDemandCourse = z.infer<typeof insertOnDemandCourseSchema>;
+export type InsertCourseVideo = z.infer<typeof insertCourseVideoSchema>;
+export type InsertVideoQuestion = z.infer<typeof insertVideoQuestionSchema>;
+export type InsertUserVideoProgress = z.infer<typeof insertUserVideoProgressSchema>;
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

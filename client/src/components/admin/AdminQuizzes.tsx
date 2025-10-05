@@ -167,10 +167,22 @@ export function AdminQuizzes() {
 
   const generateAIMutation = useMutation({
     mutationFn: async (data: { quizId: string; count: number; difficulty: string }) => {
-      const response = await apiRequest("/api/admin/generate-questions", "POST", data);
-      return await response.json();
+      console.log('=== MUTATION STARTING ===');
+      console.log('Sending data:', data);
+      try {
+        const response = await apiRequest("/api/admin/generate-questions", "POST", data);
+        console.log('Response received:', response);
+        console.log('Response status:', response.status);
+        const jsonData = await response.json();
+        console.log('Response JSON:', jsonData);
+        return jsonData;
+      } catch (error) {
+        console.error('Mutation error:', error);
+        throw error;
+      }
     },
     onSuccess: (data: { jobId: string }) => {
+      console.log('=== MUTATION SUCCESS ===', data);
       setGeneratingJobId(data.jobId);
       setJobStatus('processing');
       toast({ 
@@ -180,7 +192,8 @@ export function AdminQuizzes() {
       setAiDialogOpen(false);
       setSelectedQuizForAI(null);
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('=== MUTATION ERROR ===', error);
       toast({ title: "Errore durante la generazione", variant: "destructive" });
       setJobStatus('idle');
     },

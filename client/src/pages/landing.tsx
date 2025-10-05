@@ -7,7 +7,7 @@ import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount } from "@shared/schema";
-import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Calendar, Users, Video } from "lucide-react";
+import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Calendar, Users, Video, Sparkles, Headphones } from "lucide-react";
 import { featuredImages } from "@/lib/stockImages";
 import logoImage from "@assets/image_1759658677025.png";
 import certificationsImage from "@assets/image_1759608591455.png";
@@ -58,10 +58,10 @@ export default function Landing() {
                 Piattaforma #1 per Certificazioni Professionali
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Prepara le tue <span className="text-accent">Certificazioni</span> con Quiz Professionali
+                Prepara le tue <span className="text-accent">Certificazioni</span> con Quiz e Corsi Professionali
               </h1>
               <p className="text-lg md:text-xl text-white/90">
-                Accedi a oltre 1.000.000 di domande professionali, 10 categorie complete e certificati di completamento con un unico pagamento. Cybersecurity (CISSP, CISM, OSCP), Compliance (ISO 27001, GDPR, NIS2, DORA), Business (Open Innovation, Bilancio) e Leadership.
+                Quiz professionali e corsi completi per la tua formazione. Oltre 1.000.000 di domande, 10 categorie e certificati di completamento. Cybersecurity (CISSP, CISM, OSCP), Compliance (ISO 27001, GDPR, NIS2, DORA), Business (Open Innovation, Bilancio) e Leadership.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
@@ -89,11 +89,11 @@ export default function Landing() {
                   <span className="text-sm">1.000.000+ Domande</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-success" />
-                  <span className="text-sm">10 Categorie</span>
+                  <Video className="w-5 h-5 text-success" />
+                  <span className="text-sm">Corsi On-Demand</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-success" />
+                  <Calendar className="w-5 h-5 text-success" />
                   <span className="text-sm">Corsi Live</span>
                 </div>
               </div>
@@ -329,48 +329,125 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Upgrade CTA */}
-          <Card className="gradient-primary text-white shadow-2xl overflow-hidden">
-            <CardContent className="p-8 md:p-12 text-center">
-              <div className="max-w-3xl mx-auto">
-                <div className="inline-block p-4 bg-white/20 rounded-full mb-6">
-                  <Crown className="w-12 h-12" />
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">Sblocca Tutti i Quiz</h2>
-                <p className="text-lg md:text-xl mb-8 text-white/90">
-                  Accedi a oltre 1.000.000 di domande professionali, 10 categorie complete e certificati di completamento con un unico pagamento.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-6 h-6" />
-                    <span className="font-medium">Accesso illimitato</span>
+          {/* Subscription Plans */}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Scegli il Tuo Piano</h2>
+            <p className="text-xl text-muted-foreground">
+              Quiz professionali e corsi per la tua formazione certificata
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Premium Plan */}
+            <Card className="relative border-2 hover:border-primary transition-all shadow-xl">
+              <CardContent className="p-8">
+                <div className="mb-6">
+                  <div className="inline-block p-3 bg-primary/10 rounded-lg mb-4">
+                    <Crown className="w-8 h-8 text-primary" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-6 h-6" />
-                    <span className="font-medium">Aggiornamenti inclusi</span>
+                  <h3 className="text-2xl font-bold mb-2">Premium</h3>
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-bold">€99</span>
+                    <span className="text-muted-foreground ml-2">/anno</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-6 h-6" />
-                    <span className="font-medium">Supporto prioritario</span>
+                  <p className="text-muted-foreground">
+                    Accesso completo a tutti i quiz professionali
+                  </p>
+                </div>
+
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>10 categorie di quiz professionali</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>Oltre 1.000.000 di domande aggiornate</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>Certificati di completamento</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>Dashboard e statistiche avanzate</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>Supporto via email</span>
                   </div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 inline-block">
-                  <div className="text-5xl font-bold mb-2">€90</div>
-                  <div className="text-lg text-white/80">All'anno - Accesso completo</div>
-                </div>
+
                 <Button 
-                  size="lg"
-                  className="bg-white text-primary hover:bg-white/90 shadow-xl font-bold text-lg px-12 py-4 h-auto"
                   onClick={() => window.location.href = '/register'}
-                  data-testid="button-unlock-now"
+                  className="w-full py-6 text-lg font-semibold"
+                  data-testid="button-select-premium-home"
                 >
-                  <Crown className="w-5 h-5 mr-2" />
-                  Sblocca Ora
+                  Inizia con Premium
                 </Button>
-                <p className="text-sm text-white/70 mt-4">Pagamento sicuro con Stripe • Cancellabile in qualsiasi momento</p>
+              </CardContent>
+            </Card>
+
+            {/* Premium Plus Plan */}
+            <Card className="relative border-2 border-primary shadow-2xl">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <Badge className="px-4 py-1 bg-primary text-primary-foreground">
+                  PIÙ POPOLARE
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
+              
+              <CardContent className="p-8">
+                <div className="mb-6">
+                  <div className="inline-block p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg mb-4">
+                    <Sparkles className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Premium Plus</h3>
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-bold">€149</span>
+                    <span className="text-muted-foreground ml-2">/anno</span>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Tutto in Premium, più corsi e vantaggi esclusivi
+                  </p>
+                </div>
+
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="font-semibold">Tutto incluso in Premium</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Video className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span><strong>Corsi On-Demand</strong> - Videocorsi completi con quiz</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Calendar className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span><strong>Priorità Corsi Live</strong> - Accesso prioritario alle sessioni</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Headphones className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span><strong>Supporto Dedicato</strong> - Consulenza certificazioni</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Users className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span><strong>Eventi Esclusivi</strong> - Webinar e networking</span>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={() => window.location.href = '/register'}
+                  className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  data-testid="button-select-premium-plus-home"
+                >
+                  Inizia con Premium Plus
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-8">
+            Pagamento sicuro con Stripe • Cancellabile in qualsiasi momento • Garanzia 30 giorni
+          </p>
         </div>
       </section>
 

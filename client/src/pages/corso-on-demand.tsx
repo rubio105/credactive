@@ -66,6 +66,7 @@ export default function CorsoOnDemand() {
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
+  const [questionTimers, setQuestionTimers] = useState<Record<string, number>>({});
 
   const isPremiumPlus = user?.subscriptionTier === 'premium_plus';
 
@@ -109,6 +110,38 @@ export default function CorsoOnDemand() {
       }
     }
   }, [course]);
+
+  useEffect(() => {
+    if (showQuiz && questions && questions.length > 0 && !quizSubmitted) {
+      const initialTimers: Record<string, number> = {};
+      questions.forEach(q => {
+        initialTimers[q.id] = 30;
+      });
+      setQuestionTimers(initialTimers);
+    }
+  }, [showQuiz, questions, quizSubmitted]);
+
+  useEffect(() => {
+    if (!showQuiz || quizSubmitted || !questions || questions.length === 0) return;
+
+    const interval = setInterval(() => {
+      setQuestionTimers(prev => {
+        const updated = { ...prev };
+        let hasChanges = false;
+        
+        questions.forEach(q => {
+          if (updated[q.id] > 0) {
+            updated[q.id] = Math.max(0, updated[q.id] - 1);
+            hasChanges = true;
+          }
+        });
+        
+        return hasChanges ? updated : prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [showQuiz, quizSubmitted, questions]);
 
   const currentVideo = course?.videos[currentVideoIndex];
   const currentProgress = course?.userProgress.find(p => p.videoId === currentVideo?.id);
@@ -356,22 +389,31 @@ export default function CorsoOnDemand() {
                         {questions.map((question, qIndex) => {
                           const isAnswered = !!quizAnswers[question.id];
                           const isCorrect = quizResults[question.id];
+                          const timeLeft = questionTimers[question.id] || 0;
+                          const timerColor = timeLeft > 20 ? "text-green-600" : timeLeft > 10 ? "text-yellow-600" : "text-red-600";
                           
                           return (
                             <Card key={question.id} className={quizSubmitted ? (isCorrect ? "border-green-500" : "border-red-500") : ""}>
                               <CardHeader>
-                                <CardTitle className="text-lg flex items-start justify-between">
-                                  <span>
+                                <div className="flex items-start justify-between mb-2">
+                                  <CardTitle className="text-lg flex-1">
                                     {qIndex + 1}. {question.question}
-                                  </span>
-                                  {quizSubmitted && (
-                                    isCorrect ? (
-                                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                                    ) : (
-                                      <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                                    )
-                                  )}
-                                </CardTitle>
+                                  </CardTitle>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {!quizSubmitted && (
+                                      <Badge variant="outline" className={`${timerColor} font-mono text-lg px-3 py-1`}>
+                                        {timeLeft}s
+                                      </Badge>
+                                    )}
+                                    {quizSubmitted && (
+                                      isCorrect ? (
+                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                      ) : (
+                                        <AlertCircle className="w-5 h-5 text-red-500" />
+                                      )
+                                    )}
+                                  </div>
+                                </div>
                               </CardHeader>
                               <CardContent>
                                 <RadioGroup

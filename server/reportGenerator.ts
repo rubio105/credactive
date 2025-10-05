@@ -129,53 +129,238 @@ function generateRecommendations(
 ): string {
   const recommendations: string[] = [];
 
+  // Detailed performance assessment
   if (score < 60) {
     recommendations.push(
-      '📚 Si consiglia di rivedere completamente il materiale di studio prima di riprovare il quiz.'
+      '📚 **Revisione Completa Necessaria**',
+      'Il tuo punteggio indica la necessità di una preparazione più approfondita. Ecco un piano d\'azione consigliato:',
+      '',
+      '**Piano di Studio Consigliato:**',
+      '1. Dedica almeno 2-3 settimane allo studio sistematico',
+      '2. Studia un modulo alla volta, non passare al successivo finché non padroneggi il precedente',
+      '3. Crea flashcard per i concetti chiave',
+      '4. Ripeti il quiz solo dopo aver completato la revisione completa',
+      ''
     );
   } else if (score < 75) {
     recommendations.push(
-      '📖 Buon risultato! Concentrati sui seguenti argomenti per migliorare ulteriormente.'
+      '📖 **Buona Base, Necessari Affinamenti**',
+      'Hai una comprensione discreta degli argomenti. Per raggiungere l\'eccellenza:',
+      '',
+      '**Prossimi Passi:**',
+      '1. Focalizzati sulle aree deboli evidenziate sotto',
+      '2. Dedica 1-2 ore al giorno di studio mirato su questi argomenti',
+      '3. Pratica con quiz aggiuntivi nelle aree deboli',
+      '4. Rivedi gli errori commessi per capire il ragionamento corretto',
+      ''
     );
   } else if (score < 90) {
     recommendations.push(
-      '✨ Ottimo lavoro! Con un po\' più di studio su alcuni argomenti specifici, sarai pronto per la certificazione.'
+      '✨ **Ottimo Livello, Un Ultimo Sforzo**',
+      'Sei molto vicino all\'eccellenza! Per perfezionare la tua preparazione:',
+      '',
+      '**Ultimi Ritocchi:**',
+      '1. Rivedi in dettaglio solo le aree critiche evidenziate',
+      '2. Fai quiz di pratica avanzati per consolidare',
+      '3. Approfondisci i casi d\'uso pratici e scenari reali',
+      '4. Sei quasi pronto per la certificazione ufficiale',
+      ''
     );
   } else {
     recommendations.push(
-      '🎉 Eccellente! Hai dimostrato una solida comprensione degli argomenti. Sei pronto per la certificazione!'
+      '🎉 **Eccellente Padronanza degli Argomenti**',
+      'Hai dimostrato una comprensione solida e completa. Sei pronto per il passo successivo!',
+      '',
+      '**Sei Pronto Per:**',
+      '✓ Sostenere l\'esame di certificazione ufficiale',
+      '✓ Applicare queste competenze in contesti professionali',
+      '✓ Passare a moduli più avanzati o certificazioni correlate',
+      ''
     );
   }
 
   if (weakAreas.length > 0) {
-    recommendations.push('\n🎯 Aree da approfondire:');
-    weakAreas.slice(0, 3).forEach((area) => {
-      recommendations.push(
-        `  • ${area.category}: ${area.wrongCount} errori su ${area.totalCount} domande (${area.percentage}% corretto)`
-      );
+    recommendations.push('🎯 **Analisi Dettagliata Aree da Migliorare:**');
+    recommendations.push('');
+    
+    weakAreas.slice(0, 3).forEach((area, index) => {
+      const priority = index === 0 ? '🔴 PRIORITÀ ALTA' : index === 1 ? '🟡 PRIORITÀ MEDIA' : '🟢 PRIORITÀ BASSA';
+      const performanceLevel = area.percentage < 50 ? 'Critica' : area.percentage < 70 ? 'Insufficiente' : 'Da Rafforzare';
+      
+      recommendations.push(`**${priority} - ${area.category}**`);
+      recommendations.push(`├─ Performance: ${performanceLevel} (${area.percentage}% corrette, ${area.wrongCount}/${area.totalCount} errori)`);
+      
+      // Specific recommendations based on category/topic
+      const categoryAdvice = getCategorySpecificAdvice(area.category, quiz.title);
+      if (categoryAdvice) {
+        recommendations.push(`├─ ${categoryAdvice.study}`);
+        recommendations.push(`├─ ${categoryAdvice.practice}`);
+        recommendations.push(`└─ ${categoryAdvice.resources}`);
+      } else {
+        recommendations.push(`├─ Studio: Rivedi teoria e definizioni di base`);
+        recommendations.push(`├─ Pratica: Risolvi esercizi specifici su questo argomento`);
+        recommendations.push(`└─ Risorse: Consulta documentazione ufficiale e casi pratici`);
+      }
+      recommendations.push('');
     });
   }
 
-  // Specific recommendations based on quiz type
+  // Quiz-specific strategic recommendations
   if (quiz.title.includes('CISSP')) {
     recommendations.push(
-      '\n📌 Per CISSP, focalizzati sui domini in cui hai ottenuto punteggi bassi. Rileggi le normative e i framework correlati.'
+      '📌 **Consigli Specifici CISSP:**',
+      '• Studia gli 8 domini in ordine di priorità in base ai tuoi risultati',
+      '• Focalizzati sul pensiero manageriale, non solo tecnico',
+      '• Memorizza definizioni chiave e acronimi (RTO, RPO, BCP, etc.)',
+      '• Pratica con scenari "cosa faresti se..." per sviluppare il pensiero critico',
+      '• Rivedi i framework: NIST, ISO 27001, COBIT nelle aree deboli'
     );
   } else if (quiz.title.includes('CISM')) {
     recommendations.push(
-      '\n📌 Per CISM, concentrati sulla governance e sulla gestione dei rischi nelle aree deboli identificate.'
+      '📌 **Consigli Specifici CISM:**',
+      '• Concentrati sulla governance e il ruolo del security manager',
+      '• Studia i processi di risk management end-to-end',
+      '• Comprendi come comunicare i rischi al management',
+      '• Rivedi incident response planning e business continuity',
+      '• Pratica con scenari di gestione delle crisi e decision-making'
     );
   } else if (quiz.title.includes('GDPR') || quiz.title.includes('Privacy')) {
     recommendations.push(
-      '\n📌 Per normative privacy, studia gli articoli specifici e le casistiche pratiche nelle aree critiche.'
+      '📌 **Consigli Specifici GDPR/Privacy:**',
+      '• Memorizza gli articoli chiave del GDPR (6, 9, 15-22, 32-36)',
+      '• Comprendi i 6 principi base del trattamento dati (art. 5)',
+      '• Studia i diritti degli interessati e come applicarli praticamente',
+      '• Rivedi le basi giuridiche per il trattamento e quando usarle',
+      '• Pratica con casi reali: DPIA, data breach notification, trasferimenti extra-UE'
     );
-  } else if (quiz.title.includes('ISO')) {
+  } else if (quiz.title.includes('ISO 27001')) {
     recommendations.push(
-      '\n📌 Per ISO 27001/27002, rivedi i controlli e le best practices per le aree con performance inferiori.'
+      '📌 **Consigli Specifici ISO 27001:**',
+      '• Studia l\'Annex A: tutti i 114 controlli e quando applicarli',
+      '• Comprendi il ciclo PDCA applicato all\'ISMS',
+      '• Rivedi il risk assessment e risk treatment',
+      '• Studia le clausole obbligatorie (4-10) in profondità',
+      '• Pratica con scenari di implementazione ISMS da zero'
+    );
+  } else if (quiz.title.includes('NIS2')) {
+    recommendations.push(
+      '📌 **Consigli Specifici NIS2:**',
+      '• Distingui tra soggetti essenziali e importanti e i loro obblighi',
+      '• Studia i requisiti di cybersecurity risk management',
+      '• Memorizza i tempi di notifica incidenti (24h early warning, 72h report)',
+      '• Comprendi supply chain security e third-party risk',
+      '• Rivedi le sanzioni e il framework di enforcement'
+    );
+  } else if (quiz.title.includes('DORA')) {
+    recommendations.push(
+      '📌 **Consigli Specifici DORA:**',
+      '• Focalizzati su ICT risk management per enti finanziari',
+      '• Studia i requisiti di resilienza operativa digitale',
+      '• Comprendi testing (TLPT - Threat-Led Penetration Testing)',
+      '• Rivedi third-party ICT service provider management',
+      '• Studia information sharing arrangements e oversight'
     );
   }
 
   return recommendations.join('\n');
+}
+
+function getCategorySpecificAdvice(category: string, quizTitle: string): { study: string; practice: string; resources: string } | null {
+  const categoryLower = category.toLowerCase();
+  
+  // CISSP specific categories
+  if (categoryLower.includes('security and risk management')) {
+    return {
+      study: 'Studio: Approfondisci CIA Triad, governance, compliance, legal e etica',
+      practice: 'Pratica: Casi di risk assessment e business impact analysis',
+      resources: 'Risorse: NIST RMF, ISO 31000, framework di compliance'
+    };
+  }
+  if (categoryLower.includes('asset security')) {
+    return {
+      study: 'Studio: Classificazione dati, data retention, privacy protection',
+      practice: 'Pratica: Scenari di data lifecycle e handling requirements',
+      resources: 'Risorse: Standard ISO 27001 Annex A.8, data classification schemes'
+    };
+  }
+  if (categoryLower.includes('security architecture')) {
+    return {
+      study: 'Studio: Modelli di sicurezza (Bell-LaPadula, Biba), crittografia, PKI',
+      practice: 'Pratica: Design di architetture sicure, scelta algoritmi crypto',
+      resources: 'Risorse: NIST SP 800-53, security design principles'
+    };
+  }
+  if (categoryLower.includes('communication and network')) {
+    return {
+      study: 'Studio: Protocolli di rete sicuri, VPN, wireless security, network segmentation',
+      practice: 'Pratica: Design di architetture di rete sicure, troubleshooting',
+      resources: 'Risorse: TCP/IP guide, RFC per protocolli sicuri, wireless standards'
+    };
+  }
+  if (categoryLower.includes('identity and access')) {
+    return {
+      study: 'Studio: AAA (Authentication, Authorization, Accounting), SSO, federation, RBAC/ABAC',
+      practice: 'Pratica: Implementazione IAM, access control models, identity federation',
+      resources: 'Risorse: NIST SP 800-63, OAuth/OIDC specs, SAML documentation'
+    };
+  }
+  
+  // GDPR specific categories
+  if (categoryLower.includes('principi') || categoryLower.includes('principles')) {
+    return {
+      study: 'Studio: Art. 5 GDPR - 6 principi fondamentali del trattamento',
+      practice: 'Pratica: Applica principi a casi concreti (minimizzazione, limitazione finalità)',
+      resources: 'Risorse: Linee guida EDPB, decisioni Garante Privacy'
+    };
+  }
+  if (categoryLower.includes('diritti') || categoryLower.includes('rights')) {
+    return {
+      study: 'Studio: Art. 15-22 GDPR - Diritti degli interessati e come esercitarli',
+      practice: 'Pratica: Gestione richieste accesso, cancellazione, portabilità',
+      resources: 'Risorse: Template risposta SAR, procedure standard settore'
+    };
+  }
+  if (categoryLower.includes('basi giuridiche') || categoryLower.includes('lawful')) {
+    return {
+      study: 'Studio: Art. 6 e 9 GDPR - 6 basi giuridiche e categorie particolari',
+      practice: 'Pratica: Scegli base corretta per diversi scenari di trattamento',
+      resources: 'Risorse: Linee guida EDPB su consenso, legittimo interesse'
+    };
+  }
+  
+  // ISO 27001 specific categories
+  if (categoryLower.includes('controlli') || categoryLower.includes('controls')) {
+    return {
+      study: 'Studio: Annex A ISO 27001 - 114 controlli organizzati in 14 domini',
+      practice: 'Pratica: Mapping controlli a rischi specifici, gap analysis',
+      resources: 'Risorse: ISO 27002 implementation guidance, CIS Controls mapping'
+    };
+  }
+  if (categoryLower.includes('risk') || categoryLower.includes('rischi')) {
+    return {
+      study: 'Studio: Metodologie di risk assessment (qualitativo, quantitativo)',
+      practice: 'Pratica: Calcola SLE, ALE, ROI dei controlli, risk treatment',
+      resources: 'Risorse: ISO 27005, NIST SP 800-30, FAIR methodology'
+    };
+  }
+  
+  // Network/Technical categories
+  if (categoryLower.includes('network') || categoryLower.includes('rete')) {
+    return {
+      study: 'Studio: Segmentazione rete, firewall, IDS/IPS, secure protocols',
+      practice: 'Pratica: Design VLAN, ACL, network monitoring, packet analysis',
+      resources: 'Risorse: Wireshark tutorials, network hardening guides'
+    };
+  }
+  if (categoryLower.includes('cryptography') || categoryLower.includes('crittografia')) {
+    return {
+      study: 'Studio: Algoritmi simmetrici/asimmetrici, hash, PKI, key management',
+      practice: 'Pratica: Selezione algoritmi per use case, implementazione TLS/SSL',
+      resources: 'Risorse: NIST crypto standards, OpenSSL documentation'
+    };
+  }
+  
+  return null;
 }
 
 // Insight Discovery specific interfaces and functions

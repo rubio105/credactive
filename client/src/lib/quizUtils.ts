@@ -39,19 +39,6 @@ const categoryTypeMap: Record<string, string> = {
   "secops-ai-automation": "ai",
 };
 
-const questionCountMap: Record<string, number> = {
-  "cyber-security-awareness": 50,
-  "cism": 150,
-  "cissp": 125,
-  "iso-27001": 60,
-  "gdpr": 50,
-  "eu-privacy": 40,
-  "ai-security": 70,
-  "data-protection-privacy": 80,
-  "threat-intelligence-ai": 90,
-  "secops-ai-automation": 75,
-};
-
 export interface QuizCardData {
   id: string;
   title: string;
@@ -68,8 +55,8 @@ export interface QuizCardData {
 }
 
 export function mapQuizToCardData(quiz: QuizWithCount, category: Category): QuizCardData {
-  // Use the actual questionCount from the database, with fallback to static map if needed
-  const questionCount = quiz.questionCount ?? questionCountMap[category.slug] ?? 50;
+  // Use the actual questionCount from the database (should always be present)
+  const questionCount = quiz.questionCount ?? 0;
   const imageUrl = category.imageUrl?.trim() || undefined;
   
   return {

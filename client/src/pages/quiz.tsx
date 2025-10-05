@@ -325,6 +325,24 @@ export default function QuizPage() {
     }
   };
 
+  const handleSkipQuestion = () => {
+    if (limitedQuestions.length === 0) return;
+    
+    const questionId = limitedQuestions[currentQuestionIndex].id;
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: ""
+    }));
+    setSelectedAnswer("");
+    setShowExplanation(false);
+    
+    if (currentQuestionIndex < limitedQuestions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      handleSubmitQuiz();
+    }
+  };
+
   const handleSubmitQuiz = () => {
     if (!quizData || !quizStartTime || limitedQuestions.length === 0) return;
 
@@ -933,7 +951,7 @@ export default function QuizPage() {
           <div className="flex items-center space-x-3">
             <Button
               variant="outline"
-              onClick={() => handleAnswerChange("")}
+              onClick={handleSkipQuestion}
               data-testid="button-skip"
             >
               {t('Salta', 'Skip', 'Saltar')}

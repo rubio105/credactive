@@ -32,6 +32,7 @@ import {
   type InsertLiveCourseSession,
   type InsertLiveCourseEnrollment,
   type InsertContentPage,
+  type QuizWithCount,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -57,7 +58,7 @@ export interface IStorage {
   
   // Quiz operations
   getCategories(): Promise<Category[]>;
-  getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: Quiz[] }>>;
+  getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: QuizWithCount[] }>>;
   getAllQuizzes(): Promise<Quiz[]>;
   getQuizzesByCategory(categoryId: string): Promise<Quiz[]>;
   getQuizById(id: string): Promise<Quiz | undefined>;
@@ -269,7 +270,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(categories).orderBy(categories.sortOrder, categories.name);
   }
 
-  async getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: Quiz[] }>> {
+  async getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: QuizWithCount[] }>> {
     // Optimize with a single LEFT JOIN query instead of N+1 queries
     const rows = await db
       .select()
@@ -277,8 +278,23 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(quizzes, eq(categories.id, quizzes.categoryId))
       .orderBy(categories.sortOrder, categories.name, quizzes.title);
 
+    // Get question counts for all quizzes in one query
+    const questionCounts = await db
+      .select({
+        quizId: questions.quizId,
+        count: sql<number>`cast(count(${questions.id}) as integer)`,
+      })
+      .from(questions)
+      .groupBy(questions.quizId);
+
+    // Create a map of quiz ID to question count
+    const countMap = new Map<string, number>();
+    for (const { quizId, count } of questionCounts) {
+      countMap.set(quizId, count);
+    }
+
     // Group quizzes by category
-    const categoryMap = new Map<string, Category & { quizzes: Quiz[] }>();
+    const categoryMap = new Map<string, Category & { quizzes: QuizWithCount[] }>();
     
     for (const row of rows) {
       const category = row.categories;
@@ -292,7 +308,12 @@ export class DatabaseStorage implements IStorage {
       }
       
       if (quiz) {
-        categoryMap.get(category.id)!.quizzes.push(quiz);
+        // Add question count to quiz
+        const quizWithCount = {
+          ...quiz,
+          questionCount: countMap.get(quiz.id) || 0
+        };
+        categoryMap.get(category.id)!.quizzes.push(quizWithCount);
       }
     }
 

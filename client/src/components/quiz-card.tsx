@@ -10,7 +10,7 @@ interface QuizCardProps {
     title: string;
     description: string;
     duration: number;
-    questions: number;
+    questionCount?: number;
     difficulty: string;
     level: string;
     isPremium: boolean;
@@ -129,7 +129,7 @@ export default function QuizCard({ quiz, onStartQuiz, onLiveCourse, hasLiveCours
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm text-muted-foreground flex items-center" data-testid={`quiz-questions-${quiz.id}`}>
             <HelpCircle className="w-4 h-4 mr-1" />
-            {quiz.questions} domande
+            {quiz.questionCount ?? 0} domande
           </span>
           <Badge 
             variant="outline" 

@@ -351,3 +351,6 @@ export type InsertLiveCourseSession = z.infer<typeof insertLiveCourseSessionSche
 export type InsertLiveCourseEnrollment = z.infer<typeof insertLiveCourseEnrollmentSchema>;
 export type InsertContentPage = z.infer<typeof insertContentPageSchema>;
 export type UpdateContentPage = z.infer<typeof updateContentPageSchema>;
+
+// Extended types for API responses
+export type QuizWithCount = Quiz & { questionCount: number };

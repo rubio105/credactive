@@ -31,9 +31,11 @@ interface OnDemandCourse {
   id: string;
   title: string;
   description?: string;
+  program?: string;
+  instructor?: string;
+  duration?: string;
   thumbnailUrl?: string;
   difficulty: "beginner" | "intermediate" | "advanced";
-  estimatedHours?: number;
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -768,8 +770,9 @@ export function AdminOnDemandCourses() {
           <TableHeader>
             <TableRow>
               <TableHead>Titolo</TableHead>
+              <TableHead>Docente</TableHead>
               <TableHead>Difficoltà</TableHead>
-              <TableHead>Ore Stimate</TableHead>
+              <TableHead>Durata</TableHead>
               <TableHead>Stato</TableHead>
               <TableHead>Azioni</TableHead>
             </TableRow>
@@ -777,7 +780,7 @@ export function AdminOnDemandCourses() {
           <TableBody>
             {!courses || courses.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Nessun corso trovato
                 </TableCell>
               </TableRow>
@@ -786,6 +789,9 @@ export function AdminOnDemandCourses() {
                 <TableRow key={course.id}>
                   <TableCell className="font-medium" data-testid={`text-course-title-${course.id}`}>
                     {course.title}
+                  </TableCell>
+                  <TableCell data-testid={`text-instructor-${course.id}`}>
+                    {course.instructor || "-"}
                   </TableCell>
                   <TableCell data-testid={`text-difficulty-${course.id}`}>
                     <Badge variant={
@@ -798,8 +804,8 @@ export function AdminOnDemandCourses() {
                        'Avanzato'}
                     </Badge>
                   </TableCell>
-                  <TableCell data-testid={`text-hours-${course.id}`}>
-                    {course.estimatedHours ? `${course.estimatedHours}h` : "-"}
+                  <TableCell data-testid={`text-duration-${course.id}`}>
+                    {course.duration || "-"}
                   </TableCell>
                   <TableCell data-testid={`text-status-${course.id}`}>
                     <Badge variant={course.isActive ? "default" : "secondary"}>
@@ -879,9 +885,51 @@ export function AdminOnDemandCourses() {
                   setEditingCourse({ ...editingCourse, description: e.target.value })
                 }
                 placeholder="Descrizione del corso"
-                rows={4}
+                rows={3}
                 data-testid="input-course-description"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="program">Programma del Corso</Label>
+              <Textarea
+                id="program"
+                value={editingCourse?.program || ""}
+                onChange={(e) =>
+                  setEditingCourse({ ...editingCourse, program: e.target.value })
+                }
+                placeholder="Dettagli del programma, moduli, argomenti trattati..."
+                rows={4}
+                data-testid="input-course-program"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="instructor">Docente</Label>
+                <Input
+                  id="instructor"
+                  value={editingCourse?.instructor || ""}
+                  onChange={(e) =>
+                    setEditingCourse({ ...editingCourse, instructor: e.target.value })
+                  }
+                  placeholder="Nome del docente"
+                  data-testid="input-course-instructor"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="duration">Durata</Label>
+                <Input
+                  id="duration"
+                  value={editingCourse?.duration || ""}
+                  onChange={(e) =>
+                    setEditingCourse({ ...editingCourse, duration: e.target.value })
+                  }
+                  placeholder="Es. 10 ore, 2 settimane..."
+                  data-testid="input-course-duration"
+                />
+              </div>
             </div>
 
             <div>
@@ -897,45 +945,24 @@ export function AdminOnDemandCourses() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="difficulty">Difficoltà *</Label>
-                <select
-                  id="difficulty"
-                  className="w-full px-3 py-2 border rounded-md"
-                  value={editingCourse?.difficulty || 'beginner'}
-                  onChange={(e) =>
-                    setEditingCourse({ 
-                      ...editingCourse, 
-                      difficulty: e.target.value as "beginner" | "intermediate" | "advanced" 
-                    })
-                  }
-                  data-testid="select-difficulty"
-                >
-                  <option value="beginner">Principiante</option>
-                  <option value="intermediate">Intermedio</option>
-                  <option value="advanced">Avanzato</option>
-                </select>
-              </div>
-
-              <div>
-                <Label htmlFor="estimatedHours">Ore Stimate</Label>
-                <Input
-                  id="estimatedHours"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={editingCourse?.estimatedHours || ""}
-                  onChange={(e) =>
-                    setEditingCourse({ 
-                      ...editingCourse, 
-                      estimatedHours: e.target.value ? parseFloat(e.target.value) : undefined 
-                    })
-                  }
-                  placeholder="10"
-                  data-testid="input-estimated-hours"
-                />
-              </div>
+            <div>
+              <Label htmlFor="difficulty">Difficoltà *</Label>
+              <select
+                id="difficulty"
+                className="w-full px-3 py-2 border rounded-md"
+                value={editingCourse?.difficulty || 'beginner'}
+                onChange={(e) =>
+                  setEditingCourse({ 
+                    ...editingCourse, 
+                    difficulty: e.target.value as "beginner" | "intermediate" | "advanced" 
+                  })
+                }
+                data-testid="select-difficulty"
+              >
+                <option value="beginner">Principiante</option>
+                <option value="intermediate">Intermedio</option>
+                <option value="advanced">Avanzato</option>
+              </select>
             </div>
 
             <div className="flex items-center gap-2">

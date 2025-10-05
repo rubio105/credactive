@@ -464,7 +464,7 @@ export function AdminQuizzes() {
                   value={editingQuiz.maxQuestionsPerAttempt?.toString() || 'all'}
                   onValueChange={(value) => setEditingQuiz({ 
                     ...editingQuiz, 
-                    maxQuestionsPerAttempt: value === 'all' ? undefined : parseInt(value)
+                    maxQuestionsPerAttempt: value === 'all' ? null as any : parseInt(value)
                   })}
                 >
                   <SelectTrigger data-testid="select-max-questions">

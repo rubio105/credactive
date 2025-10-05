@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings } from "lucide-react";
-import logoImage from "@assets/image_1759605874808.png";
+import logoImage from "@assets/image_1759658677025.png";
 
 interface User {
   id: string;

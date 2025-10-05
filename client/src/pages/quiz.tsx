@@ -245,19 +245,26 @@ export default function QuizPage() {
         });
         const data = await response.json();
         
-        console.log('[Translation] API response:', {
+        console.log('[Translation] Raw API response data:', data);
+        console.log('[Translation] API response analysis:', {
           hasTranslatedQuestions: !!data.translatedQuestions,
           translatedCount: data.translatedQuestions?.length || 0,
-          hasTranslatedTitle: !!data.translatedQuizTitle
+          hasTranslatedTitle: !!data.translatedQuizTitle,
+          firstQuestionSample: data.translatedQuestions?.[0]
         });
         
-        if (data.translatedQuestions) {
+        if (data.translatedQuestions && Array.isArray(data.translatedQuestions)) {
           const translationMap: Record<string, any> = {};
           data.translatedQuestions.forEach((tq: any) => {
+            console.log('[Translation] Processing question:', { id: tq.id, hasQuestion: !!tq.question, hasOptions: !!tq.options });
             translationMap[tq.id] = tq;
           });
+          console.log('[Translation] Translation map created with', Object.keys(translationMap).length, 'entries');
+          console.log('[Translation] Calling setTranslatedQuestions...');
           setTranslatedQuestions(translationMap);
-          console.log('[Translation] Applied translations for', Object.keys(translationMap).length, 'questions');
+          console.log('[Translation] setTranslatedQuestions called successfully');
+        } else {
+          console.error('[Translation] Invalid translatedQuestions:', data.translatedQuestions);
         }
         
         // Set translated quiz title if available

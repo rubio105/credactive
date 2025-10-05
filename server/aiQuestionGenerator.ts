@@ -45,8 +45,21 @@ export async function generateQuestions(
   category: string,
   count: number,
   difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert' = 'intermediate',
-  documentContext?: string
+  documentContext?: string,
+  language: string = 'it'
 ): Promise<GeneratedQuestion[]> {
+  
+  const supportedLanguages = ['it', 'en', 'es', 'fr'];
+  const validatedLanguage = supportedLanguages.includes(language) ? language : 'it';
+  
+  const languageNames: Record<string, string> = {
+    'it': 'Italian (Italiano)',
+    'en': 'English',
+    'es': 'Spanish (Español)',
+    'fr': 'French (Français)'
+  };
+  
+  const languageName = languageNames[validatedLanguage];
   
   const systemPrompt = certificationPrompts[category] || certificationPrompts['CISSP'];
   
@@ -62,12 +75,12 @@ export async function generateQuestions(
     ? '- ALL questions MUST be based ONLY on the document content provided above\n- DO NOT include general knowledge questions\n- Every answer must be verifiable in the provided document text\n- Reference specific sections, concepts, or procedures from the document'
     : '- Questions should be realistic and exam-like\n- Cover different subtopics within the domain';
 
-  const userPrompt = `Generate ${count} multiple-choice questions for ${quizTitle} IN ITALIAN LANGUAGE.${documentContextSection}
+  const userPrompt = `Generate ${count} multiple-choice questions for ${quizTitle} in ${languageName}.${documentContextSection}
 
-IMPORTANT: Generate ALL content (questions, options, and explanations) in ITALIAN language.
+IMPORTANT: Generate ALL content (questions, options, and explanations) in ${languageName}.
 
 Requirements:
-- Language: ITALIAN (Italiano)
+- Language: ${languageName}
 - Difficulty level: ${difficulty}
 - Each question must have exactly 4 options (A, B, C, D)
 - Only ONE option should be correct
@@ -125,7 +138,8 @@ export async function generateQuestionsInBatches(
   totalCount: number,
   batchSize: number = 20,
   difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert' = 'intermediate',
-  documentContext?: string
+  documentContext?: string,
+  language: string = 'it'
 ): Promise<GeneratedQuestion[]> {
   const allQuestions: GeneratedQuestion[] = [];
   const batches = Math.ceil(totalCount / batchSize);
@@ -134,7 +148,7 @@ export async function generateQuestionsInBatches(
     const count = Math.min(batchSize, totalCount - allQuestions.length);
     console.log(`Generating batch ${i + 1}/${batches} (${count} questions)...`);
     
-    const batchQuestions = await generateQuestions(quizTitle, category, count, difficulty, documentContext);
+    const batchQuestions = await generateQuestions(quizTitle, category, count, difficulty, documentContext, language);
     allQuestions.push(...batchQuestions);
     
     // Small delay between batches to avoid rate limiting

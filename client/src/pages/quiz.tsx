@@ -79,6 +79,7 @@ export default function QuizPage() {
   const [translatedQuestions, setTranslatedQuestions] = useState<Record<string, any>>({});
   const [isGeneratingExtendedAudio, setIsGeneratingExtendedAudio] = useState(false);
   const [limitedQuestions, setLimitedQuestions] = useState<Question[]>([]);
+  const [hasUsedAudio, setHasUsedAudio] = useState(false); // Track first audio invocation
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -411,11 +412,15 @@ export default function QuizPage() {
         body: JSON.stringify({ 
           language,
           userAnswer: selectedAnswer,
-          isCorrect
+          isCorrect,
+          isFirstAudio: !hasUsedAudio // Pass flag for first audio invocation
         }),
         credentials: 'include',
         signal: controller.signal
       });
+      
+      // Mark that audio has been used in this quiz session
+      setHasUsedAudio(true);
       
       clearTimeout(timeoutId);
       

@@ -1922,9 +1922,15 @@ ${JSON.stringify(questionsToTranslate)}`
   app.post('/api/questions/:id/extended-audio', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { language = 'it', userAnswer, isCorrect } = req.body;
-      const userName = req.user?.claims?.first_name || 'studente';
-      const useUserName = Math.random() < 0.3; // Use name 30% of the time
+      const { language = 'it', userAnswer, isCorrect, isFirstAudio = false } = req.body;
+      
+      // Get user's first name from either Replit OIDC or local auth
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const user = userId ? await storage.getUser(userId) : null;
+      const userName = user?.firstName || req.user?.claims?.first_name || 'studente';
+      
+      // Use name ALWAYS on first audio invocation, never after
+      const useUserName = isFirstAudio;
       
       console.log(`[Extended Audio] Starting generation for question ${id}, language: ${language}, isCorrect: ${isCorrect}`);
       

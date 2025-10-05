@@ -197,8 +197,12 @@ export default function QuizPage() {
   // Translate questions and quiz title based on language selector
   useEffect(() => {
     const translateQuestions = async () => {
-      if (!quizData || !user) {
-        console.log('[Translation] Skipped - missing data:', { hasQuizData: !!quizData, hasUser: !!user });
+      if (!quizData || !user || limitedQuestions.length === 0) {
+        console.log('[Translation] Skipped - missing data:', { 
+          hasQuizData: !!quizData, 
+          hasUser: !!user,
+          questionCount: limitedQuestions.length 
+        });
         return;
       }
       
@@ -283,7 +287,7 @@ export default function QuizPage() {
     };
     
     translateQuestions();
-  }, [quizData, user, quizLanguage, limitedQuestions]);
+  }, [quizData, user, quizLanguage]);
 
   // Timer countdown
   useEffect(() => {

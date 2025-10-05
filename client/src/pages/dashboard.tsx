@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,8 @@ import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Trophy, ChartLine, Clock, Flame, ShieldCheck, BookOpen, Award, Star, Download } from "lucide-react";
 
 interface DashboardData {
@@ -47,6 +48,52 @@ interface User {
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const paymentProcessedRef = useRef(false);
+
+  // Handle Stripe payment success callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const paymentIntentId = urlParams.get('payment_intent');
+
+    if (paymentStatus === 'success' && paymentIntentId && !paymentProcessedRef.current && isAuthenticated) {
+      paymentProcessedRef.current = true;
+      setIsProcessingPayment(true);
+      
+      apiRequest('/api/payment-success', 'POST', { paymentIntentId })
+        .then(async (response) => {
+          const data = await response.json();
+          
+          if (!data.success) {
+            throw new Error(data.message || 'Payment verification failed');
+          }
+          
+          await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          await queryClient.invalidateQueries({ queryKey: ["/api/user/dashboard"] });
+          
+          toast({
+            title: "Pagamento Completato!",
+            description: "Il tuo abbonamento è stato attivato con successo.",
+          });
+          
+          window.history.replaceState({}, '', '/dashboard');
+        })
+        .catch((error) => {
+          console.error('Payment verification error:', error);
+          paymentProcessedRef.current = false;
+          toast({
+            title: "Errore Verifica Pagamento",
+            description: error.message || "Contatta il supporto se il problema persiste.",
+            variant: "destructive",
+          });
+        })
+        .finally(() => {
+          setIsProcessingPayment(false);
+        });
+    }
+  }, [toast, isAuthenticated]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -82,7 +129,7 @@ export default function Dashboard() {
     }
   }, [error, toast]);
 
-  if (isLoading || isDashboardLoading) {
+  if (isLoading || isDashboardLoading || isProcessingPayment) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -90,7 +137,9 @@ export default function Dashboard() {
           <div className="flex items-center justify-center min-h-96">
             <div className="text-center">
               <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Caricamento dashboard...</p>
+              <p className="text-muted-foreground">
+                {isProcessingPayment ? "Verifica pagamento in corso..." : "Caricamento dashboard..."}
+              </p>
             </div>
           </div>
         </div>

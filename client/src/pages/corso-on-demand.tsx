@@ -9,7 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Video, CheckCircle, Lock, Play, AlertCircle } from "lucide-react";
+import { ArrowLeft, Video, CheckCircle, Lock, Play, AlertCircle, Crown } from "lucide-react";
+import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -58,7 +59,7 @@ interface CourseWithVideos {
 export default function CorsoOnDemand() {
   const { courseId } = useParams<{ courseId: string }>();
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -66,9 +67,11 @@ export default function CorsoOnDemand() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
 
-  const { data: course, isLoading } = useQuery<CourseWithVideos>({
+  const isPremiumPlus = user?.subscriptionTier === 'premium_plus';
+
+  const { data: course, isLoading: courseLoading } = useQuery<CourseWithVideos>({
     queryKey: ["/api/on-demand-courses", courseId],
-    enabled: !!courseId,
+    enabled: !!courseId && isPremiumPlus,
   });
 
   const { data: questions } = useQuery<VideoQuestion[]>({
@@ -210,7 +213,7 @@ export default function CorsoOnDemand() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading || courseLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -219,6 +222,31 @@ export default function CorsoOnDemand() {
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-muted-foreground">Caricamento corso...</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isPremiumPlus) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="max-w-4xl mx-auto px-4 py-16">
+          <Card className="text-center p-12">
+            <div className="inline-block p-4 bg-purple-500/10 rounded-full mb-6">
+              <Lock className="w-12 h-12 text-purple-600" />
+            </div>
+            <h1 className="text-3xl font-bold mb-4">Accesso Premium Plus Richiesto</h1>
+            <p className="text-lg text-muted-foreground mb-8">
+              Questo corso è disponibile solo per gli abbonati Premium Plus.
+            </p>
+            <Link href="/subscribe">
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                <Crown className="w-5 h-5 mr-2" />
+                Passa a Premium Plus
+              </Button>
+            </Link>
+          </Card>
         </div>
       </div>
     );

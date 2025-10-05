@@ -443,6 +443,9 @@ export const insertOnDemandCourseSchema = createInsertSchema(onDemandCourses).om
 export const insertCourseVideoSchema = createInsertSchema(courseVideos).omit({ id: true, createdAt: true });
 export const insertVideoQuestionSchema = createInsertSchema(videoQuestions).omit({ id: true, createdAt: true });
 export const insertUserVideoProgressSchema = createInsertSchema(userVideoProgress).omit({ id: true, lastWatchedAt: true, completedAt: true });
+export const updateOnDemandCourseSchema = insertOnDemandCourseSchema.partial();
+export const updateCourseVideoSchema = insertCourseVideoSchema.partial();
+export const updateVideoQuestionSchema = insertVideoQuestionSchema.partial();
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;

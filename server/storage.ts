@@ -11,6 +11,10 @@ import {
   liveCourseSessions,
   liveCourseEnrollments,
   contentPages,
+  onDemandCourses,
+  courseVideos,
+  videoQuestions,
+  userVideoProgress,
   type User,
   type UpsertUser,
   type Category,
@@ -24,6 +28,10 @@ import {
   type LiveCourseSession,
   type LiveCourseEnrollment,
   type ContentPage,
+  type OnDemandCourse,
+  type CourseVideo,
+  type VideoQuestion,
+  type UserVideoProgress,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
   type InsertQuizReport,
@@ -32,6 +40,10 @@ import {
   type InsertLiveCourseSession,
   type InsertLiveCourseEnrollment,
   type InsertContentPage,
+  type InsertOnDemandCourse,
+  type InsertCourseVideo,
+  type InsertVideoQuestion,
+  type InsertUserVideoProgress,
   type QuizWithCount,
 } from "@shared/schema";
 import { db } from "./db";
@@ -117,6 +129,31 @@ export interface IStorage {
   createLiveCourseEnrollment(enrollment: InsertLiveCourseEnrollment): Promise<LiveCourseEnrollment>;
   updateLiveCourseEnrollment(id: string, updates: Partial<LiveCourseEnrollment>): Promise<LiveCourseEnrollment>;
   getUserEnrollments(userId: string): Promise<LiveCourseEnrollment[]>;
+  
+  // On-demand course operations
+  createOnDemandCourse(course: InsertOnDemandCourse): Promise<OnDemandCourse>;
+  updateOnDemandCourse(id: string, updates: Partial<OnDemandCourse>): Promise<OnDemandCourse>;
+  deleteOnDemandCourse(id: string): Promise<void>;
+  getOnDemandCourseById(id: string): Promise<OnDemandCourse | undefined>;
+  getAllOnDemandCourses(includeInactive?: boolean): Promise<OnDemandCourse[]>;
+  
+  // Course video operations
+  createCourseVideo(video: InsertCourseVideo): Promise<CourseVideo>;
+  updateCourseVideo(id: string, updates: Partial<CourseVideo>): Promise<CourseVideo>;
+  deleteCourseVideo(id: string): Promise<void>;
+  getVideosByCourseId(courseId: string): Promise<CourseVideo[]>;
+  getCourseVideoById(id: string): Promise<CourseVideo | undefined>;
+  
+  // Video question operations
+  createVideoQuestion(question: InsertVideoQuestion): Promise<VideoQuestion>;
+  updateVideoQuestion(id: string, updates: Partial<VideoQuestion>): Promise<VideoQuestion>;
+  deleteVideoQuestion(id: string): Promise<void>;
+  getQuestionsByVideoId(videoId: string): Promise<VideoQuestion[]>;
+  
+  // User video progress operations
+  upsertUserVideoProgress(progress: InsertUserVideoProgress): Promise<UserVideoProgress>;
+  getUserVideoProgress(userId: string, courseId: string): Promise<UserVideoProgress[]>;
+  getUserCourseProgress(userId: string, courseId: string): Promise<{completed: number; total: number}>;
   
   // Content page operations
   getAllContentPages(): Promise<ContentPage[]>;
@@ -723,6 +760,162 @@ export class DatabaseStorage implements IStorage {
       .from(liveCourseEnrollments)
       .where(eq(liveCourseEnrollments.userId, userId))
       .orderBy(desc(liveCourseEnrollments.enrolledAt));
+  }
+
+  // On-demand course operations
+  async createOnDemandCourse(course: InsertOnDemandCourse): Promise<OnDemandCourse> {
+    const [created] = await db
+      .insert(onDemandCourses)
+      .values(course)
+      .returning();
+    return created;
+  }
+
+  async updateOnDemandCourse(id: string, updates: Partial<OnDemandCourse>): Promise<OnDemandCourse> {
+    const [updated] = await db
+      .update(onDemandCourses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(onDemandCourses.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteOnDemandCourse(id: string): Promise<void> {
+    await db.delete(onDemandCourses).where(eq(onDemandCourses.id, id));
+  }
+
+  async getOnDemandCourseById(id: string): Promise<OnDemandCourse | undefined> {
+    const [course] = await db
+      .select()
+      .from(onDemandCourses)
+      .where(eq(onDemandCourses.id, id));
+    return course;
+  }
+
+  async getAllOnDemandCourses(includeInactive: boolean = false): Promise<OnDemandCourse[]> {
+    if (includeInactive) {
+      return await db
+        .select()
+        .from(onDemandCourses)
+        .orderBy(onDemandCourses.sortOrder);
+    }
+    return await db
+      .select()
+      .from(onDemandCourses)
+      .where(eq(onDemandCourses.isActive, true))
+      .orderBy(onDemandCourses.sortOrder);
+  }
+
+  // Course video operations
+  async createCourseVideo(video: InsertCourseVideo): Promise<CourseVideo> {
+    const [created] = await db
+      .insert(courseVideos)
+      .values(video)
+      .returning();
+    return created;
+  }
+
+  async updateCourseVideo(id: string, updates: Partial<CourseVideo>): Promise<CourseVideo> {
+    const [updated] = await db
+      .update(courseVideos)
+      .set(updates)
+      .where(eq(courseVideos.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCourseVideo(id: string): Promise<void> {
+    await db.delete(courseVideos).where(eq(courseVideos.id, id));
+  }
+
+  async getVideosByCourseId(courseId: string): Promise<CourseVideo[]> {
+    return await db
+      .select()
+      .from(courseVideos)
+      .where(eq(courseVideos.courseId, courseId))
+      .orderBy(courseVideos.sortOrder);
+  }
+
+  async getCourseVideoById(id: string): Promise<CourseVideo | undefined> {
+    const [video] = await db
+      .select()
+      .from(courseVideos)
+      .where(eq(courseVideos.id, id));
+    return video;
+  }
+
+  // Video question operations
+  async createVideoQuestion(question: InsertVideoQuestion): Promise<VideoQuestion> {
+    const [created] = await db
+      .insert(videoQuestions)
+      .values(question)
+      .returning();
+    return created;
+  }
+
+  async updateVideoQuestion(id: string, updates: Partial<VideoQuestion>): Promise<VideoQuestion> {
+    const [updated] = await db
+      .update(videoQuestions)
+      .set(updates)
+      .where(eq(videoQuestions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteVideoQuestion(id: string): Promise<void> {
+    await db.delete(videoQuestions).where(eq(videoQuestions.id, id));
+  }
+
+  async getQuestionsByVideoId(videoId: string): Promise<VideoQuestion[]> {
+    return await db
+      .select()
+      .from(videoQuestions)
+      .where(eq(videoQuestions.videoId, videoId))
+      .orderBy(videoQuestions.sortOrder);
+  }
+
+  // User video progress operations
+  async upsertUserVideoProgress(progress: InsertUserVideoProgress): Promise<UserVideoProgress> {
+    const [upserted] = await db
+      .insert(userVideoProgress)
+      .values(progress)
+      .onConflictDoUpdate({
+        target: [userVideoProgress.userId, userVideoProgress.videoId],
+        set: {
+          ...progress,
+          lastWatchedAt: new Date(),
+        },
+      })
+      .returning();
+    return upserted;
+  }
+
+  async getUserVideoProgress(userId: string, courseId: string): Promise<UserVideoProgress[]> {
+    return await db
+      .select()
+      .from(userVideoProgress)
+      .where(
+        and(
+          eq(userVideoProgress.userId, userId),
+          eq(userVideoProgress.courseId, courseId)
+        )
+      );
+  }
+
+  async getUserCourseProgress(userId: string, courseId: string): Promise<{completed: number; total: number}> {
+    const [result] = await db
+      .select({
+        completed: sql<number>`count(*) filter (where ${userVideoProgress.completed} = true)`,
+        total: sql<number>`count(*)`
+      })
+      .from(userVideoProgress)
+      .where(
+        and(
+          eq(userVideoProgress.userId, userId),
+          eq(userVideoProgress.courseId, courseId)
+        )
+      );
+    return result || { completed: 0, total: 0 };
   }
   
   // Content page operations

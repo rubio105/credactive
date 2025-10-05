@@ -8,7 +8,17 @@ import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
-import { insertUserQuizAttemptSchema, insertContentPageSchema, updateContentPageSchema } from "@shared/schema";
+import { 
+  insertUserQuizAttemptSchema, 
+  insertContentPageSchema, 
+  updateContentPageSchema,
+  insertOnDemandCourseSchema,
+  insertCourseVideoSchema,
+  insertVideoQuestionSchema,
+  updateOnDemandCourseSchema,
+  updateCourseVideoSchema,
+  updateVideoQuestionSchema
+} from "@shared/schema";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
@@ -1318,6 +1328,335 @@ ${JSON.stringify(questionsToTranslate)}`;
     } catch (error) {
       console.error("Error confirming enrollment:", error);
       res.status(500).json({ message: "Failed to confirm enrollment" });
+    }
+  });
+
+  // ====================
+  // ON-DEMAND COURSES
+  // ====================
+
+  // Admin - On-Demand Courses CRUD
+  app.get('/api/admin/on-demand-courses', isAdmin, async (req, res) => {
+    try {
+      const courses = await storage.getAllOnDemandCourses(true); // Include inactive courses for admin
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching on-demand courses:", error);
+      res.status(500).json({ message: "Failed to fetch on-demand courses" });
+    }
+  });
+
+  app.post('/api/admin/on-demand-courses', isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertOnDemandCourseSchema.parse(req.body);
+      const course = await storage.createOnDemandCourse(validatedData);
+      res.json(course);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      console.error("Error creating on-demand course:", error);
+      res.status(500).json({ message: "Failed to create on-demand course" });
+    }
+  });
+
+  app.put('/api/admin/on-demand-courses/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const existing = await storage.getOnDemandCourseById(id);
+      if (!existing) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      const validatedData = updateOnDemandCourseSchema.parse(req.body);
+      const course = await storage.updateOnDemandCourse(id, validatedData);
+      res.json(course);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      console.error("Error updating on-demand course:", error);
+      res.status(500).json({ message: "Failed to update on-demand course" });
+    }
+  });
+
+  app.delete('/api/admin/on-demand-courses/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const existing = await storage.getOnDemandCourseById(id);
+      if (!existing) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      await storage.deleteOnDemandCourse(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting on-demand course:", error);
+      res.status(500).json({ message: "Failed to delete on-demand course" });
+    }
+  });
+
+  // Admin - Course Videos CRUD
+  app.get('/api/admin/on-demand-courses/:courseId/videos', isAdmin, async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const videos = await storage.getVideosByCourseId(courseId);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching course videos:", error);
+      res.status(500).json({ message: "Failed to fetch course videos" });
+    }
+  });
+
+  app.post('/api/admin/on-demand-courses/:courseId/videos', isAdmin, async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const validatedData = insertCourseVideoSchema.parse({
+        ...req.body,
+        courseId
+      });
+      const video = await storage.createCourseVideo(validatedData);
+      res.json(video);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      console.error("Error creating course video:", error);
+      res.status(500).json({ message: "Failed to create course video" });
+    }
+  });
+
+  app.put('/api/admin/course-videos/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const existing = await storage.getCourseVideoById(id);
+      if (!existing) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+      const validatedData = updateCourseVideoSchema.parse(req.body);
+      const video = await storage.updateCourseVideo(id, validatedData);
+      res.json(video);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      console.error("Error updating course video:", error);
+      res.status(500).json({ message: "Failed to update course video" });
+    }
+  });
+
+  app.delete('/api/admin/course-videos/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const existing = await storage.getCourseVideoById(id);
+      if (!existing) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+      await storage.deleteCourseVideo(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting course video:", error);
+      res.status(500).json({ message: "Failed to delete course video" });
+    }
+  });
+
+  // Admin - Video Questions CRUD
+  app.get('/api/admin/course-videos/:videoId/questions', isAdmin, async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const questions = await storage.getQuestionsByVideoId(videoId);
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching video questions:", error);
+      res.status(500).json({ message: "Failed to fetch video questions" });
+    }
+  });
+
+  app.post('/api/admin/course-videos/:videoId/questions', isAdmin, async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const validatedData = insertVideoQuestionSchema.parse({
+        ...req.body,
+        videoId
+      });
+      const question = await storage.createVideoQuestion(validatedData);
+      res.json(question);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      console.error("Error creating video question:", error);
+      res.status(500).json({ message: "Failed to create video question" });
+    }
+  });
+
+  app.put('/api/admin/video-questions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = updateVideoQuestionSchema.parse(req.body);
+      const question = await storage.updateVideoQuestion(id, validatedData);
+      res.json(question);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      console.error("Error updating video question:", error);
+      res.status(500).json({ message: "Failed to update video question" });
+    }
+  });
+
+  app.delete('/api/admin/video-questions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      // Note: No getVideoQuestionById method exists - questions are fetched by video ID  
+      // If needed, add defensive delete handling in storage layer
+      await storage.deleteVideoQuestion(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting video question:", error);
+      res.status(500).json({ message: "Failed to delete video question" });
+    }
+  });
+
+  // Public - Get all on-demand courses (Premium Plus users only)
+  app.get('/api/on-demand-courses', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const userId = user?.claims?.sub || user?.id;
+      const dbUser = await storage.getUserById(userId);
+      
+      // Check if user has Premium Plus subscription
+      if (dbUser?.subscriptionTier !== 'premium_plus') {
+        return res.status(403).json({ message: "Premium Plus subscription required" });
+      }
+
+      const courses = await storage.getAllOnDemandCourses();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching on-demand courses:", error);
+      res.status(500).json({ message: "Failed to fetch on-demand courses" });
+    }
+  });
+
+  // Public - Get single on-demand course with videos
+  app.get('/api/on-demand-courses/:courseId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { courseId } = req.params;
+      const user = req.user;
+      const userId = user?.claims?.sub || user?.id;
+      const dbUser = await storage.getUserById(userId);
+      
+      // Check if user has Premium Plus subscription
+      if (dbUser?.subscriptionTier !== 'premium_plus') {
+        return res.status(403).json({ message: "Premium Plus subscription required" });
+      }
+
+      const course = await storage.getOnDemandCourseById(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      const videos = await storage.getVideosByCourseId(courseId);
+      const progress = await storage.getUserVideoProgress(userId, courseId);
+      
+      res.json({ course, videos, progress });
+    } catch (error) {
+      console.error("Error fetching on-demand course:", error);
+      res.status(500).json({ message: "Failed to fetch on-demand course" });
+    }
+  });
+
+  // Public - Get video with questions
+  app.get('/api/course-videos/:videoId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { videoId } = req.params;
+      const user = req.user;
+      const userId = user?.claims?.sub || user?.id;
+      const dbUser = await storage.getUserById(userId);
+      
+      // Check if user has Premium Plus subscription
+      if (dbUser?.subscriptionTier !== 'premium_plus') {
+        return res.status(403).json({ message: "Premium Plus subscription required" });
+      }
+
+      const video = await storage.getCourseVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      const questions = await storage.getQuestionsByVideoId(videoId);
+      res.json({ video, questions });
+    } catch (error) {
+      console.error("Error fetching video:", error);
+      res.status(500).json({ message: "Failed to fetch video" });
+    }
+  });
+
+  // Public - Submit video quiz and update progress
+  app.post('/api/course-videos/:videoId/submit-quiz', isAuthenticated, async (req: any, res) => {
+    try {
+      const { videoId } = req.params;
+      const { answers } = req.body; // Array of {questionId, answer}
+      const user = req.user;
+      const userId = user?.claims?.sub || user?.id;
+
+      const video = await storage.getCourseVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      const questions = await storage.getQuestionsByVideoId(videoId);
+      
+      // Check answers
+      let correct = 0;
+      for (const answer of answers) {
+        const question = questions.find(q => q.id === answer.questionId);
+        if (question && question.correctAnswer === answer.answer) {
+          correct++;
+        }
+      }
+
+      const passed = correct === questions.length; // All correct to pass
+      
+      // Update progress
+      await storage.upsertUserVideoProgress({
+        userId,
+        courseId: video.courseId,
+        videoId,
+        completed: passed,
+        quizPassed: passed,
+        watchedSeconds: 0
+      });
+
+      res.json({ passed, correct, total: questions.length });
+    } catch (error) {
+      console.error("Error submitting video quiz:", error);
+      res.status(500).json({ message: "Failed to submit video quiz" });
+    }
+  });
+
+  // Public - Update video watch progress
+  app.post('/api/course-videos/:videoId/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const { videoId } = req.params;
+      const { watchedSeconds } = req.body;
+      const user = req.user;
+      const userId = user?.claims?.sub || user?.id;
+
+      const video = await storage.getCourseVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      await storage.upsertUserVideoProgress({
+        userId,
+        courseId: video.courseId,
+        videoId,
+        watchedSeconds
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating video progress:", error);
+      res.status(500).json({ message: "Failed to update video progress" });
     }
   });
 

@@ -17,8 +17,8 @@ import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
 
-// Dynamic import for pdf-parse to avoid ESM issues
-const pdfParsePromise = import('pdf-parse');
+// Dynamic import for pdf-parse (CommonJS module)
+// Note: pdf-parse doesn't have a .default export in ESM context
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY. Please set this environment variable.');
@@ -1004,7 +1004,7 @@ ${JSON.stringify(questionsToTranslate)}`
       
       // Read and parse the PDF to validate page count
       const pdfBuffer = fs.readFileSync(req.file.path);
-      const pdfParse = (await pdfParsePromise).default;
+      const pdfParse = (await import('pdf-parse')) as any;
       const pdfData = await pdfParse(pdfBuffer);
       
       // Validate max 600 pages
@@ -1595,7 +1595,7 @@ ${JSON.stringify(questionsToTranslate)}`
           const pdfPath = path.join(process.cwd(), 'public', quiz.documentPdfUrl.replace(/^\//, ''));
           if (fs.existsSync(pdfPath)) {
             const pdfBuffer = fs.readFileSync(pdfPath);
-            const pdfParse = (await pdfParsePromise).default;
+            const pdfParse = (await import('pdf-parse')) as any;
             const pdfData = await pdfParse(pdfBuffer);
             documentContext = pdfData.text;
             console.log(`Loaded PDF context: ${pdfData.numpages} pages, ${pdfData.text.length} characters`);

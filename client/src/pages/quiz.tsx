@@ -715,13 +715,26 @@ export default function QuizPage() {
   const getCurrentQuestion = () => {
     const originalQuestion = limitedQuestions[currentQuestionIndex];
     
+    console.log('[getCurrentQuestion] Looking for translation:', {
+      questionId: originalQuestion.id,
+      hasTranslations: Object.keys(translatedQuestions).length > 0,
+      totalTranslations: Object.keys(translatedQuestions).length,
+      translationFound: !!translatedQuestions[originalQuestion.id]
+    });
+    
     // If no translation available, return original
     if (!translatedQuestions[originalQuestion.id]) {
+      console.log('[getCurrentQuestion] No translation found, using original');
       return originalQuestion;
     }
     
     // Apply translation
     const translation = translatedQuestions[originalQuestion.id];
+    console.log('[getCurrentQuestion] Applying translation:', {
+      originalQuestion: originalQuestion.question.substring(0, 50),
+      translatedQuestion: translation.question.substring(0, 50)
+    });
+    
     return {
       ...originalQuestion,
       question: translation.question,

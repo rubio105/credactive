@@ -1,0 +1,32 @@
+[Info] Successfully preconnected to https://fonts.googleapis.com/
+[Info] Successfully preconnected to https://fonts.gstatic.com/
+[Debug] [vite] connecting... (client, line 495)
+[Debug] [vite] connected. (client, line 618)
+[Info] Successfully preconnected to https://api.stripe.com/
+[Log] [Translation] Skipped - missing data: – Object (quiz.tsx, line 146)
+Object
+[Log] [Translation] Starting translation to: – "it" (quiz.tsx, line 150)
+[Log] [Translation] Questions analysis: – Object (quiz.tsx, line 155)
+Object
+[Log] [Translation] No questions need translation (quiz.tsx, line 162)
+[Log] [Translation] Clearing translations (returning to Italian) (quiz.tsx, line 164)
+[Log] [Translation] Starting translation to: – "it" (quiz.tsx, line 150)
+[Log] [Translation] Questions analysis: – Object (quiz.tsx, line 155)
+Object
+[Log] [Translation] No questions need translation (quiz.tsx, line 162)
+[Log] [Translation] Clearing translations (returning to Italian) (quiz.tsx, line 164)
+[Log] [Translation] Starting translation to: – "en" (quiz.tsx, line 150)
+[Log] [Translation] Questions analysis: – Object (quiz.tsx, line 155)
+Object
+[Log] [Translation] Calling API with: – Object (quiz.tsx, line 171)
+Object
+[Log] [Translation] Starting translation to: – "es" (quiz.tsx, line 150)
+[Log] [Translation] Questions analysis: – {totalQuestions: 30, questionsNeedingTranslation: 30, targetLanguage: "es", …} (quiz.tsx, line 155)
+{totalQuestions: 30, questionsNeedingTranslation: 30, targetLanguage: "es", sampleQuestionLanguages: ["it", "it", "it"]}ObjectquestionsNeedingTranslation: 30sampleQuestionLanguages: ["it", "it", "it"]Array (3)targetLanguage: "es"totalQuestions: 30Prototipo Object
+[Log] [Translation] Calling API with: – {questionCount: 30, targetLanguage: "es", quizTitle: "Insight Discovery - Test di Personalità"} (quiz.tsx, line 171)
+[Log] [Translation] API response: – {hasTranslatedQuestions: true, translatedCount: 30, hasTranslatedTitle: true} (quiz.tsx, line 183)
+[Log] [Translation] Applied translations for – 30 – "questions" (quiz.tsx, line 194)
+[Log] [Translation] Applied quiz title translation: – "Insight Discovery - Personality Test" (quiz.tsx, line 198)
+[Log] [Translation] API response: – {hasTranslatedQuestions: true, translatedCount: 30, hasTranslatedTitle: true} (quiz.tsx, line 183)
+[Log] [Translation] Applied translations for – 30 – "questions" (quiz.tsx, line 194)
+[Log] [Translation] Applied quiz title translation: – "Descubrimiento de Perspectivas - Test de Personalidad" (quiz.tsx, line 198)

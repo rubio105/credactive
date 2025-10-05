@@ -55,8 +55,10 @@ export interface QuizCardData {
 }
 
 export function mapQuizToCardData(quiz: QuizWithCount, category: Category): QuizCardData {
-  // Use the actual questionCount from the database (should always be present)
-  const questionCount = quiz.questionCount ?? 0;
+  // Use maxQuestionsPerAttempt if set (rotation), otherwise use total questionCount
+  const questionCount = quiz.maxQuestionsPerAttempt && quiz.maxQuestionsPerAttempt > 0 
+    ? quiz.maxQuestionsPerAttempt 
+    : quiz.questionCount ?? 0;
   const imageUrl = category.imageUrl?.trim() || undefined;
   
   return {

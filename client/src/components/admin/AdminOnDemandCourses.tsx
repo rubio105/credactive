@@ -27,11 +27,18 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface OnDemandCourse {
   id: string;
   title: string;
   description?: string;
   program?: string;
+  categoryId: string;
   instructor?: string;
   duration?: string;
   thumbnailUrl?: string;
@@ -52,13 +59,14 @@ interface CourseVideo {
   createdAt: string;
 }
 
-interface VideoQuestion {
+interface CourseQuestion {
   id: string;
-  videoId: string;
+  courseId: string;
   question: string;
-  options: string[];
-  correctAnswer: number;
+  options: { label: string; text: string }[];
+  correctAnswer: string;
   explanation?: string;
+  sortOrder?: number;
   createdAt: string;
 }
 
@@ -66,12 +74,16 @@ export function AdminOnDemandCourses() {
   const { toast } = useToast();
   const [editingCourse, setEditingCourse] = useState<Partial<OnDemandCourse> | null>(null);
   const [editingVideo, setEditingVideo] = useState<Partial<CourseVideo> | null>(null);
-  const [editingQuestion, setEditingQuestion] = useState<Partial<VideoQuestion> | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<Partial<CourseQuestion> | null>(null);
   const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"videos" | "questions">("videos");
+
+  const { data: categories } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
 
   const { data: courses, isLoading: coursesLoading } = useQuery<OnDemandCourse[]>({
     queryKey: ["/api/admin/on-demand-courses"],
@@ -82,9 +94,9 @@ export function AdminOnDemandCourses() {
     enabled: !!selectedCourseId,
   });
 
-  const { data: questions } = useQuery<VideoQuestion[]>({
-    queryKey: ["/api/admin/course-videos", selectedVideoId, "questions"],
-    enabled: !!selectedVideoId,
+  const { data: questions } = useQuery<CourseQuestion[]>({
+    queryKey: ["/api/admin/on-demand-courses", selectedCourseId, "questions"],
+    enabled: !!selectedCourseId,
   });
 
   const createCourseMutation = useMutation({
@@ -182,10 +194,10 @@ export function AdminOnDemandCourses() {
   });
 
   const createQuestionMutation = useMutation({
-    mutationFn: (data: { videoId: string; question: Partial<VideoQuestion> }) =>
-      apiRequest(`/api/admin/course-videos/${data.videoId}/questions`, "POST", data.question),
+    mutationFn: (data: { courseId: string; question: Partial<CourseQuestion> }) =>
+      apiRequest(`/api/admin/on-demand-courses/${data.courseId}/questions`, "POST", data.question),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/course-videos", selectedVideoId, "questions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/on-demand-courses", selectedCourseId, "questions"] });
       toast({ title: "Domanda creata con successo" });
       setIsQuestionDialogOpen(false);
       setEditingQuestion(null);
@@ -200,10 +212,10 @@ export function AdminOnDemandCourses() {
   });
 
   const updateQuestionMutation = useMutation({
-    mutationFn: (data: { id: string; updates: Partial<VideoQuestion> }) =>
-      apiRequest(`/api/admin/video-questions/${data.id}`, "PUT", data.updates),
+    mutationFn: (data: { id: string; updates: Partial<CourseQuestion> }) =>
+      apiRequest(`/api/admin/course-questions/${data.id}`, "PUT", data.updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/course-videos", selectedVideoId, "questions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/on-demand-courses", selectedCourseId, "questions"] });
       toast({ title: "Domanda aggiornata con successo" });
       setIsQuestionDialogOpen(false);
       setEditingQuestion(null);
@@ -218,9 +230,9 @@ export function AdminOnDemandCourses() {
   });
 
   const deleteQuestionMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/admin/video-questions/${id}`, "DELETE"),
+    mutationFn: (id: string) => apiRequest(`/api/admin/course-questions/${id}`, "DELETE"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/course-videos", selectedVideoId, "questions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/on-demand-courses", selectedCourseId, "questions"] });
       toast({ title: "Domanda eliminata con successo" });
     },
     onError: () => {
@@ -232,6 +244,7 @@ export function AdminOnDemandCourses() {
     setEditingCourse({
       title: '',
       description: '',
+      categoryId: categories?.[0]?.id || '',
       difficulty: 'beginner',
       isActive: true,
     });
@@ -246,6 +259,11 @@ export function AdminOnDemandCourses() {
   const handleSaveCourse = () => {
     if (!editingCourse?.title) {
       toast({ title: "Il titolo è obbligatorio", variant: "destructive" });
+      return;
+    }
+
+    if (!editingCourse?.categoryId) {
+      toast({ title: "La categoria è obbligatoria", variant: "destructive" });
       return;
     }
 
@@ -297,18 +315,25 @@ export function AdminOnDemandCourses() {
   };
 
   const handleCreateQuestion = () => {
-    if (!selectedVideoId) return;
+    if (!selectedCourseId) return;
     
+    const maxOrder = questions?.reduce((max, q) => Math.max(max, q.sortOrder || 0), 0) || 0;
     setEditingQuestion({
-      videoId: selectedVideoId,
+      courseId: selectedCourseId,
       question: '',
-      options: ['', '', '', ''],
-      correctAnswer: 0,
+      options: [
+        { label: 'A', text: '' },
+        { label: 'B', text: '' },
+        { label: 'C', text: '' },
+        { label: 'D', text: '' }
+      ],
+      correctAnswer: 'A',
+      sortOrder: maxOrder + 1,
     });
     setIsQuestionDialogOpen(true);
   };
 
-  const handleEditQuestion = (question: VideoQuestion) => {
+  const handleEditQuestion = (question: CourseQuestion) => {
     setEditingQuestion(question);
     setIsQuestionDialogOpen(true);
   };
@@ -319,7 +344,7 @@ export function AdminOnDemandCourses() {
       return;
     }
 
-    if (!editingQuestion.options || editingQuestion.options.some(opt => !opt.trim())) {
+    if (!editingQuestion.options || editingQuestion.options.some(opt => !opt.text.trim())) {
       toast({ title: "Tutte le opzioni sono obbligatorie", variant: "destructive" });
       return;
     }
@@ -331,7 +356,7 @@ export function AdminOnDemandCourses() {
       });
     } else {
       createQuestionMutation.mutate({
-        videoId: selectedVideoId!,
+        courseId: selectedCourseId!,
         question: editingQuestion,
       });
     }
@@ -341,93 +366,200 @@ export function AdminOnDemandCourses() {
     return <div className="text-center py-8">Caricamento...</div>;
   }
 
-  if (selectedVideoId && questions) {
-    const video = videos?.find(v => v.id === selectedVideoId);
+  if (selectedCourseId && (videos || questions)) {
+    const course = courses?.find(c => c.id === selectedCourseId);
+    const [activeTab, setActiveTab] = useState<"videos" | "questions">("videos");
+
     return (
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Domande Video: {video?.title}</CardTitle>
+              <CardTitle>Gestione Corso: {course?.title}</CardTitle>
               <CardDescription>
-                Gestisci le domande per questo video
+                Gestisci video e domande del corso
               </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedVideoId(null)}
-                data-testid="button-back-to-videos"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Torna ai Video
-              </Button>
-              <Button
-                onClick={handleCreateQuestion}
-                size="sm"
-                data-testid="button-add-question"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Domanda
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedCourseId(null)}
+              data-testid="button-back-to-courses"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Torna ai Corsi
+            </Button>
+          </div>
+          <div className="flex gap-2 mt-4">
+            <Button
+              variant={activeTab === "videos" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("videos")}
+              data-testid="tab-videos"
+            >
+              <Video className="w-4 h-4 mr-2" />
+              Video
+            </Button>
+            <Button
+              variant={activeTab === "questions" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("questions")}
+              data-testid="tab-questions"
+            >
+              Domande
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Domanda</TableHead>
-                <TableHead>Risposta Corretta</TableHead>
-                <TableHead>Azioni</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground">
-                    Nessuna domanda trovata
-                  </TableCell>
-                </TableRow>
-              ) : (
-                questions.map((question) => (
-                  <TableRow key={question.id}>
-                    <TableCell className="max-w-md truncate" data-testid={`text-question-${question.id}`}>
-                      {question.question}
-                    </TableCell>
-                    <TableCell data-testid={`text-answer-${question.id}`}>
-                      {question.options[question.correctAnswer]}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditQuestion(question)}
-                          data-testid={`button-edit-question-${question.id}`}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (confirm("Sei sicuro di voler eliminare questa domanda?")) {
-                              deleteQuestionMutation.mutate(question.id);
-                            }
-                          }}
-                          data-testid={`button-delete-question-${question.id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {activeTab === "videos" ? (
+            <>
+              <div className="flex justify-end mb-4">
+                <Button
+                  onClick={handleCreateVideo}
+                  size="sm"
+                  data-testid="button-add-video"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Aggiungi Video
+                </Button>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ordine</TableHead>
+                    <TableHead>Titolo</TableHead>
+                    <TableHead>URL</TableHead>
+                    <TableHead>Durata (min)</TableHead>
+                    <TableHead>Azioni</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {!videos || videos.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        Nessun video trovato
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    videos
+                      .sort((a, b) => a.orderIndex - b.orderIndex)
+                      .map((video) => (
+                        <TableRow key={video.id}>
+                          <TableCell data-testid={`text-order-${video.id}`}>{video.orderIndex}</TableCell>
+                          <TableCell data-testid={`text-title-${video.id}`}>{video.title}</TableCell>
+                          <TableCell className="max-w-xs truncate" data-testid={`text-url-${video.id}`}>
+                            <a 
+                              href={video.videoUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {video.videoUrl}
+                            </a>
+                          </TableCell>
+                          <TableCell data-testid={`text-duration-${video.id}`}>
+                            {video.duration || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditVideo(video)}
+                                data-testid={`button-edit-video-${video.id}`}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (confirm("Sei sicuro di voler eliminare questo video?")) {
+                                    deleteVideoMutation.mutate(video.id);
+                                  }
+                                }}
+                                data-testid={`button-delete-video-${video.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                  )}
+                </TableBody>
+              </Table>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-end mb-4">
+                <Button
+                  onClick={handleCreateQuestion}
+                  size="sm"
+                  data-testid="button-add-question"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Aggiungi Domanda
+                </Button>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Domanda</TableHead>
+                    <TableHead>Risposta Corretta</TableHead>
+                    <TableHead>Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {!questions || questions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground">
+                        Nessuna domanda trovata
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    questions.map((question) => {
+                      const correctOption = question.options.find(opt => opt.label === question.correctAnswer);
+                      return (
+                        <TableRow key={question.id}>
+                          <TableCell className="max-w-md truncate" data-testid={`text-question-${question.id}`}>
+                            {question.question}
+                          </TableCell>
+                          <TableCell data-testid={`text-answer-${question.id}`}>
+                            {correctOption?.label}: {correctOption?.text}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditQuestion(question)}
+                                data-testid={`button-edit-question-${question.id}`}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (confirm("Sei sicuro di voler eliminare questa domanda?")) {
+                                    deleteQuestionMutation.mutate(question.id);
+                                  }
+                                }}
+                                data-testid={`button-delete-question-${question.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </>
+          )}
         </CardContent>
 
         <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
@@ -457,20 +589,25 @@ export function AdminOnDemandCourses() {
 
               <div className="space-y-2">
                 <Label>Opzioni di Risposta *</Label>
-                {[0, 1, 2, 3].map((index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <span className="text-sm font-medium w-8">{index + 1}.</span>
+                {['A', 'B', 'C', 'D'].map((label, index) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <span className="text-sm font-medium w-8">{label}.</span>
                     <Input
-                      value={editingQuestion?.options?.[index] || ""}
+                      value={editingQuestion?.options?.[index]?.text || ""}
                       onChange={(e) => {
-                        const newOptions = [...(editingQuestion?.options || ['', '', '', ''])];
-                        newOptions[index] = e.target.value;
+                        const newOptions = [...(editingQuestion?.options || [
+                          { label: 'A', text: '' },
+                          { label: 'B', text: '' },
+                          { label: 'C', text: '' },
+                          { label: 'D', text: '' }
+                        ])];
+                        newOptions[index] = { label, text: e.target.value };
                         setEditingQuestion({ ...editingQuestion, options: newOptions });
                       }}
-                      placeholder={`Opzione ${index + 1}`}
+                      placeholder={`Opzione ${label}`}
                       data-testid={`input-option-${index}`}
                     />
-                    {editingQuestion?.correctAnswer === index && (
+                    {editingQuestion?.correctAnswer === label && (
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                     )}
                   </div>
@@ -479,23 +616,23 @@ export function AdminOnDemandCourses() {
 
               <div>
                 <Label htmlFor="correctAnswer">Risposta Corretta *</Label>
-                <Input
+                <select
                   id="correctAnswer"
-                  type="number"
-                  min="0"
-                  max="3"
-                  value={editingQuestion?.correctAnswer ?? 0}
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={editingQuestion?.correctAnswer || 'A'}
                   onChange={(e) =>
                     setEditingQuestion({ 
                       ...editingQuestion, 
-                      correctAnswer: parseInt(e.target.value) || 0 
+                      correctAnswer: e.target.value 
                     })
                   }
-                  data-testid="input-correct-answer"
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Indice della risposta corretta (0-3)
-                </p>
+                  data-testid="select-correct-answer"
+                >
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
               </div>
 
               <div>
@@ -526,121 +663,6 @@ export function AdminOnDemandCourses() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </Card>
-    );
-  }
-
-  if (selectedCourseId && videos) {
-    const course = courses?.find(c => c.id === selectedCourseId);
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Video del Corso: {course?.title}</CardTitle>
-              <CardDescription>
-                Gestisci i video e le domande associate
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedCourseId(null)}
-                data-testid="button-back-to-courses"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Torna ai Corsi
-              </Button>
-              <Button
-                onClick={handleCreateVideo}
-                size="sm"
-                data-testid="button-add-video"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Video
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ordine</TableHead>
-                <TableHead>Titolo</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Durata (min)</TableHead>
-                <TableHead>Azioni</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {videos.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    Nessun video trovato
-                  </TableCell>
-                </TableRow>
-              ) : (
-                videos
-                  .sort((a, b) => a.orderIndex - b.orderIndex)
-                  .map((video) => (
-                    <TableRow key={video.id}>
-                      <TableCell data-testid={`text-order-${video.id}`}>{video.orderIndex}</TableCell>
-                      <TableCell data-testid={`text-title-${video.id}`}>{video.title}</TableCell>
-                      <TableCell className="max-w-xs truncate" data-testid={`text-url-${video.id}`}>
-                        <a 
-                          href={video.videoUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {video.videoUrl}
-                        </a>
-                      </TableCell>
-                      <TableCell data-testid={`text-duration-${video.id}`}>
-                        {video.duration || "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedVideoId(video.id)}
-                            data-testid={`button-manage-questions-${video.id}`}
-                          >
-                            <Video className="w-4 h-4 mr-2" />
-                            Domande
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditVideo(video)}
-                            data-testid={`button-edit-video-${video.id}`}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm("Sei sicuro di voler eliminare questo video?")) {
-                                deleteVideoMutation.mutate(video.id);
-                              }
-                            }}
-                            data-testid={`button-delete-video-${video.id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-
         <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -874,6 +896,26 @@ export function AdminOnDemandCourses() {
                 placeholder="Nome del corso"
                 data-testid="input-course-title"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="categoryId">Categoria *</Label>
+              <select
+                id="categoryId"
+                className="w-full px-3 py-2 border rounded-md"
+                value={editingCourse?.categoryId || ''}
+                onChange={(e) =>
+                  setEditingCourse({ ...editingCourse, categoryId: e.target.value })
+                }
+                data-testid="select-category"
+              >
+                <option value="">Seleziona categoria</option>
+                {categories?.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

@@ -15,9 +15,11 @@ import {
   insertOnDemandCourseSchema,
   insertCourseVideoSchema,
   insertVideoQuestionSchema,
+  insertCourseQuestionSchema,
   updateOnDemandCourseSchema,
   updateCourseVideoSchema,
-  updateVideoQuestionSchema
+  updateVideoQuestionSchema,
+  updateCourseQuestionSchema
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -1521,6 +1523,62 @@ ${JSON.stringify(questionsToTranslate)}`;
     } catch (error) {
       console.error("Error deleting video question:", error);
       res.status(500).json({ message: "Failed to delete video question" });
+    }
+  });
+
+  // Admin - Course Questions CRUD (at course level, not video level)
+  app.get('/api/admin/on-demand-courses/:courseId/questions', isAdmin, async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const questions = await storage.getQuestionsByCourseId(courseId);
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching course questions:", error);
+      res.status(500).json({ message: "Failed to fetch course questions" });
+    }
+  });
+
+  app.post('/api/admin/on-demand-courses/:courseId/questions', isAdmin, async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const validatedData = insertCourseQuestionSchema.parse({
+        ...req.body,
+        courseId
+      });
+      const question = await storage.createCourseQuestion(validatedData);
+      res.json(question);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      console.error("Error creating course question:", error);
+      res.status(500).json({ message: "Failed to create course question" });
+    }
+  });
+
+  app.put('/api/admin/course-questions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = updateCourseQuestionSchema.parse(req.body);
+      const question = await storage.updateCourseQuestion(id, validatedData);
+      res.json(question);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      console.error("Error updating course question:", error);
+      res.status(500).json({ message: "Failed to update course question" });
+    }
+  });
+
+  app.delete('/api/admin/course-questions/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCourseQuestion(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting course question:", error);
+      res.status(500).json({ message: "Failed to delete course question" });
     }
   });
 

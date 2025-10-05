@@ -14,6 +14,7 @@ import {
   onDemandCourses,
   courseVideos,
   videoQuestions,
+  courseQuestions,
   userVideoProgress,
   type User,
   type UpsertUser,
@@ -31,6 +32,7 @@ import {
   type OnDemandCourse,
   type CourseVideo,
   type VideoQuestion,
+  type CourseQuestion,
   type UserVideoProgress,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
@@ -43,6 +45,7 @@ import {
   type InsertOnDemandCourse,
   type InsertCourseVideo,
   type InsertVideoQuestion,
+  type InsertCourseQuestion,
   type InsertUserVideoProgress,
   type QuizWithCount,
 } from "@shared/schema";
@@ -149,6 +152,12 @@ export interface IStorage {
   updateVideoQuestion(id: string, updates: Partial<VideoQuestion>): Promise<VideoQuestion>;
   deleteVideoQuestion(id: string): Promise<void>;
   getQuestionsByVideoId(videoId: string): Promise<VideoQuestion[]>;
+  
+  // Course question operations (at course level, not video level)
+  createCourseQuestion(question: InsertCourseQuestion): Promise<CourseQuestion>;
+  updateCourseQuestion(id: string, updates: Partial<CourseQuestion>): Promise<CourseQuestion>;
+  deleteCourseQuestion(id: string): Promise<void>;
+  getQuestionsByCourseId(courseId: string): Promise<CourseQuestion[]>;
   
   // User video progress operations
   upsertUserVideoProgress(progress: InsertUserVideoProgress): Promise<UserVideoProgress>;
@@ -872,6 +881,36 @@ export class DatabaseStorage implements IStorage {
       .from(videoQuestions)
       .where(eq(videoQuestions.videoId, videoId))
       .orderBy(videoQuestions.sortOrder);
+  }
+
+  // Course question operations (at course level, not video level)
+  async createCourseQuestion(question: InsertCourseQuestion): Promise<CourseQuestion> {
+    const [created] = await db
+      .insert(courseQuestions)
+      .values(question)
+      .returning();
+    return created;
+  }
+
+  async updateCourseQuestion(id: string, updates: Partial<CourseQuestion>): Promise<CourseQuestion> {
+    const [updated] = await db
+      .update(courseQuestions)
+      .set(updates)
+      .where(eq(courseQuestions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCourseQuestion(id: string): Promise<void> {
+    await db.delete(courseQuestions).where(eq(courseQuestions.id, id));
+  }
+
+  async getQuestionsByCourseId(courseId: string): Promise<CourseQuestion[]> {
+    return await db
+      .select()
+      .from(courseQuestions)
+      .where(eq(courseQuestions.courseId, courseId))
+      .orderBy(courseQuestions.sortOrder);
   }
 
   // User video progress operations

@@ -218,7 +218,7 @@ export const onDemandCourses = pgTable("on_demand_courses", {
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   program: text("program"), // Course syllabus/program description
-  categoryId: uuid("category_id").references(() => categories.id), // Optional: link to quiz category
+  categoryId: uuid("category_id").notNull().references(() => categories.id), // Required: link to quiz category
   instructor: varchar("instructor", { length: 200 }),
   difficulty: varchar("difficulty", { length: 20 }), // beginner, intermediate, advanced, expert
   duration: varchar("duration", { length: 100 }), // Total course duration estimate
@@ -248,6 +248,18 @@ export const courseVideos = pgTable("course_videos", {
 export const videoQuestions = pgTable("video_questions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   videoId: uuid("video_id").notNull().references(() => courseVideos.id),
+  question: text("question").notNull(),
+  options: jsonb("options").notNull(), // Array of {label, text}
+  correctAnswer: varchar("correct_answer", { length: 10 }).notNull(), // e.g., "A", "B", "C", "D"
+  explanation: text("explanation"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Course quiz questions (at the end of the course, without video dependency)
+export const courseQuestions = pgTable("course_questions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: uuid("course_id").notNull().references(() => onDemandCourses.id),
   question: text("question").notNull(),
   options: jsonb("options").notNull(), // Array of {label, text}
   correctAnswer: varchar("correct_answer", { length: 10 }).notNull(), // e.g., "A", "B", "C", "D"
@@ -371,6 +383,7 @@ export const onDemandCoursesRelations = relations(onDemandCourses, ({ one, many 
     references: [categories.id],
   }),
   videos: many(courseVideos),
+  questions: many(courseQuestions),
 }));
 
 export const courseVideosRelations = relations(courseVideos, ({ one, many }) => ({
@@ -386,6 +399,13 @@ export const videoQuestionsRelations = relations(videoQuestions, ({ one }) => ({
   video: one(courseVideos, {
     fields: [videoQuestions.videoId],
     references: [courseVideos.id],
+  }),
+}));
+
+export const courseQuestionsRelations = relations(courseQuestions, ({ one }) => ({
+  course: one(onDemandCourses, {
+    fields: [courseQuestions.courseId],
+    references: [onDemandCourses.id],
   }),
 }));
 
@@ -421,6 +441,7 @@ export type ContentPage = typeof contentPages.$inferSelect;
 export type OnDemandCourse = typeof onDemandCourses.$inferSelect;
 export type CourseVideo = typeof courseVideos.$inferSelect;
 export type VideoQuestion = typeof videoQuestions.$inferSelect;
+export type CourseQuestion = typeof courseQuestions.$inferSelect;
 export type UserVideoProgress = typeof userVideoProgress.$inferSelect;
 
 // Insert schemas
@@ -443,10 +464,12 @@ export const updateContentPageSchema = createInsertSchema(contentPages).pick({
 export const insertOnDemandCourseSchema = createInsertSchema(onDemandCourses).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCourseVideoSchema = createInsertSchema(courseVideos).omit({ id: true, createdAt: true });
 export const insertVideoQuestionSchema = createInsertSchema(videoQuestions).omit({ id: true, createdAt: true });
+export const insertCourseQuestionSchema = createInsertSchema(courseQuestions).omit({ id: true, createdAt: true });
 export const insertUserVideoProgressSchema = createInsertSchema(userVideoProgress).omit({ id: true, lastWatchedAt: true, completedAt: true });
 export const updateOnDemandCourseSchema = insertOnDemandCourseSchema.partial();
 export const updateCourseVideoSchema = insertCourseVideoSchema.partial();
 export const updateVideoQuestionSchema = insertVideoQuestionSchema.partial();
+export const updateCourseQuestionSchema = insertCourseQuestionSchema.partial();
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
@@ -463,6 +486,7 @@ export type UpdateContentPage = z.infer<typeof updateContentPageSchema>;
 export type InsertOnDemandCourse = z.infer<typeof insertOnDemandCourseSchema>;
 export type InsertCourseVideo = z.infer<typeof insertCourseVideoSchema>;
 export type InsertVideoQuestion = z.infer<typeof insertVideoQuestionSchema>;
+export type InsertCourseQuestion = z.infer<typeof insertCourseQuestionSchema>;
 export type InsertUserVideoProgress = z.infer<typeof insertUserVideoProgressSchema>;
 
 // Extended types for API responses

@@ -6,6 +6,14 @@ CREDACTIVE ACADEMY is a professional online platform designed for quiz-based cer
 
 Preferred communication style: Simple, everyday language.
 
+# Known Issues
+
+-   **In-Quiz Language Selector**: The language selector (IT/EN/ES) translates UI elements but does not currently translate questions and answers during quiz execution due to a React state synchronization issue. The translation API backend works correctly - this is a frontend rendering issue that requires further investigation.
+
+# Admin Access
+
+-   **Admin User**: v.pepoli@prohmed.ai (password: test123) - Full admin and premium privileges
+
 # System Architecture
 
 ## Frontend

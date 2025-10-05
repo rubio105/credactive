@@ -198,17 +198,11 @@ export default function QuizPage() {
   useEffect(() => {
     const translateQuestions = async () => {
       if (!quizData || !user || limitedQuestions.length === 0) {
-        console.log('[Translation] Skipped - missing data:', { 
-          hasQuizData: !!quizData, 
-          hasUser: !!user,
-          questionCount: limitedQuestions.length 
-        });
         return;
       }
       
       // Use selected language
       const targetLanguage = quizLanguage;
-      console.log('[Translation] Starting translation to:', targetLanguage);
       
       // Find questions that need translation (where original language differs from target)
       const questionsNeedingTranslation = limitedQuestions.filter(q => {
@@ -216,18 +210,9 @@ export default function QuizPage() {
         return originalLang !== targetLanguage;
       });
       
-      console.log('[Translation] Questions analysis:', {
-        totalQuestions: limitedQuestions.length,
-        questionsNeedingTranslation: questionsNeedingTranslation.length,
-        targetLanguage,
-        sampleQuestionLanguages: limitedQuestions.slice(0, 3).map(q => q.language || 'it')
-      });
-      
       // If no questions need translation, clear translations or keep current state
       if (questionsNeedingTranslation.length === 0) {
-        console.log('[Translation] No questions need translation');
         if (targetLanguage === 'it') {
-          console.log('[Translation] Clearing translations (returning to Italian)');
           setTranslatedQuestions({});
           setTranslatedQuizTitle('');
         }
@@ -236,48 +221,27 @@ export default function QuizPage() {
       
       // Translate questions and quiz title
       try {
-        console.log('[Translation] Calling API with:', {
-          questionCount: questionsNeedingTranslation.length,
-          targetLanguage,
-          quizTitle: quizData.quiz.title
-        });
-        
         const response = await apiRequest("/api/translate-questions", "POST", {
           questions: questionsNeedingTranslation,
           targetLanguage,
-          quizTitle: quizData.quiz.title // Include quiz title for translation
+          quizTitle: quizData.quiz.title
         });
         const data = await response.json();
-        
-        console.log('[Translation] Raw API response data:', data);
-        console.log('[Translation] API response analysis:', {
-          hasTranslatedQuestions: !!data.translatedQuestions,
-          translatedCount: data.translatedQuestions?.length || 0,
-          hasTranslatedTitle: !!data.translatedQuizTitle,
-          firstQuestionSample: data.translatedQuestions?.[0]
-        });
         
         if (data.translatedQuestions && Array.isArray(data.translatedQuestions)) {
           const translationMap: Record<string, any> = {};
           data.translatedQuestions.forEach((tq: any) => {
-            console.log('[Translation] Processing question:', { id: tq.id, hasQuestion: !!tq.question, hasOptions: !!tq.options });
             translationMap[tq.id] = tq;
           });
-          console.log('[Translation] Translation map created with', Object.keys(translationMap).length, 'entries');
-          console.log('[Translation] Calling setTranslatedQuestions...');
           setTranslatedQuestions(translationMap);
-          console.log('[Translation] setTranslatedQuestions called successfully');
-        } else {
-          console.error('[Translation] Invalid translatedQuestions:', data.translatedQuestions);
         }
         
         // Set translated quiz title if available
         if (data.translatedQuizTitle) {
           setTranslatedQuizTitle(data.translatedQuizTitle);
-          console.log('[Translation] Applied quiz title translation:', data.translatedQuizTitle);
         }
       } catch (error) {
-        console.error("[Translation] Failed:", error);
+        console.error("Translation failed:", error);
         toast({
           title: "Errore di traduzione",
           description: "Impossibile tradurre le domande. Per favore riprova.",
@@ -726,26 +690,13 @@ export default function QuizPage() {
   const getCurrentQuestion = () => {
     const originalQuestion = limitedQuestions[currentQuestionIndex];
     
-    console.log('[getCurrentQuestion] Looking for translation:', {
-      questionId: originalQuestion.id,
-      hasTranslations: Object.keys(translatedQuestions).length > 0,
-      totalTranslations: Object.keys(translatedQuestions).length,
-      translationFound: !!translatedQuestions[originalQuestion.id]
-    });
-    
     // If no translation available, return original
     if (!translatedQuestions[originalQuestion.id]) {
-      console.log('[getCurrentQuestion] No translation found, using original');
       return originalQuestion;
     }
     
     // Apply translation
     const translation = translatedQuestions[originalQuestion.id];
-    console.log('[getCurrentQuestion] Applying translation:', {
-      originalQuestion: originalQuestion.question.substring(0, 50),
-      translatedQuestion: translation.question.substring(0, 50)
-    });
-    
     return {
       ...originalQuestion,
       question: translation.question,
@@ -791,13 +742,7 @@ export default function QuizPage() {
                 {/* Language Selector - IT/EN/ES */}
                 <div className="flex items-center space-x-2">
                   <Languages className="w-4 h-4 text-muted-foreground" />
-                  <Select 
-                    value={quizLanguage} 
-                    onValueChange={(value: 'it' | 'en' | 'es') => {
-                      console.log('[Language Selector] Changed from', quizLanguage, 'to', value);
-                      setQuizLanguage(value);
-                    }}
-                  >
+                  <Select value={quizLanguage} onValueChange={(value: 'it' | 'en' | 'es') => setQuizLanguage(value)}>
                     <SelectTrigger className="w-32" data-testid="select-language">
                       <SelectValue />
                     </SelectTrigger>

@@ -602,20 +602,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { questions, targetLanguage, quizTitle } = req.body;
       
-      console.log('[Translation API] Request received:', {
-        questionCount: questions?.length || 0,
-        targetLanguage,
-        hasQuizTitle: !!quizTitle
-      });
-      
       if (!questions || !Array.isArray(questions)) {
-        console.log('[Translation API] Invalid questions array');
         return res.status(400).json({ message: "Invalid questions array" });
       }
 
       const validLanguages = ['it', 'en', 'es', 'fr'];
       if (!targetLanguage || !validLanguages.includes(targetLanguage)) {
-        console.log('[Translation API] Invalid target language:', targetLanguage);
         return res.status(400).json({ message: "Invalid target language" });
       }
 
@@ -632,11 +624,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         question: q.question,
         options: q.options.map((opt: any) => opt.text)
       }));
-
-      console.log('[Translation API] Prepared questions:', {
-        count: questionsToTranslate.length,
-        sampleQuestion: questionsToTranslate[0]?.question.substring(0, 50) + '...'
-      });
 
       // Build translation content with quiz title if provided
       let translationContent = '';
@@ -673,8 +660,6 @@ Questions to translate:
 ${JSON.stringify(questionsToTranslate)}`;
       }
 
-      console.log('[Translation API] Calling OpenAI for translation...');
-      
       // Call OpenAI for translation
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const response = await openai.chat.completions.create({
@@ -695,24 +680,16 @@ ${JSON.stringify(questionsToTranslate)}`;
 
       const content = response.choices[0].message.content;
       if (!content) {
-        console.log('[Translation API] No content received from OpenAI');
         throw new Error('No translation received');
       }
 
-      console.log('[Translation API] OpenAI response received, parsing...');
-      
       const parsed = JSON.parse(content);
       const translatedQuestions = Array.isArray(parsed) ? parsed : parsed.questions || [];
       const translatedQuizTitle = parsed.quizTitle || '';
 
-      console.log('[Translation API] Success:', {
-        translatedQuestionCount: translatedQuestions.length,
-        hasTranslatedTitle: !!translatedQuizTitle
-      });
-
       res.json({ translatedQuestions, translatedQuizTitle });
     } catch (error) {
-      console.error("[Translation API] Error:", error);
+      console.error("Error translating questions:", error);
       res.status(500).json({ message: "Failed to translate questions" });
     }
   });

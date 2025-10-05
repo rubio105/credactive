@@ -217,6 +217,7 @@ export const onDemandCourses = pgTable("on_demand_courses", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
+  program: text("program"), // Course syllabus/program description
   categoryId: uuid("category_id").references(() => categories.id), // Optional: link to quiz category
   instructor: varchar("instructor", { length: 200 }),
   difficulty: varchar("difficulty", { length: 20 }), // beginner, intermediate, advanced, expert

@@ -192,7 +192,7 @@ export default function QuizPage() {
       if (!quizData || !user) return;
       
       try {
-        const response = await apiRequest("POST", "/api/translate-questions", {
+        const response = await apiRequest("/api/translate-questions", "POST", {
           questions: limitedQuestions,
           targetLanguage: 'it' // Always translate to Italian when toggle is off
         });

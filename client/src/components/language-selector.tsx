@@ -41,7 +41,7 @@ export default function LanguageSelector({ open, onLanguageSelected }: LanguageS
 
     setIsSubmitting(true);
     try {
-      await apiRequest("POST", "/api/user/language", { language: selectedLanguage });
+      await apiRequest("/api/user/language", "POST", { language: selectedLanguage });
 
       // Invalidate user query to refetch with new language
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });

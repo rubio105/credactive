@@ -96,7 +96,7 @@ export default function Subscribe() {
     if (isAuthenticated && user) {
       setIsCreatingPayment(true);
       
-      apiRequest("POST", "/api/create-subscription")
+      apiRequest("/api/create-subscription", "POST")
         .then((res) => res.json())
         .then((data) => {
           if (data.status === 'active') {

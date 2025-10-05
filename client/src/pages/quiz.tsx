@@ -239,16 +239,18 @@ export default function QuizPage() {
   }, [timeRemaining, quizCompleted, quizStartTime]);
 
   // Load saved answer when question changes
+  // Track current question ID instead of full array to avoid re-renders on array instance changes
+  const currentQuestionId = limitedQuestions[currentQuestionIndex]?.id;
+  
   useEffect(() => {
-    if (limitedQuestions.length > 0) {
-      const questionId = limitedQuestions[currentQuestionIndex]?.id;
-      const savedAnswer = answers[questionId] || "";
+    if (limitedQuestions.length > 0 && currentQuestionId) {
+      const savedAnswer = answers[currentQuestionId] || "";
       setSelectedAnswer(savedAnswer);
       // Don't show explanation for personality tests
       setShowExplanation(!isInsightDiscovery && !!savedAnswer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentQuestionIndex, limitedQuestions.length, isInsightDiscovery]);
+  }, [currentQuestionIndex, currentQuestionId, isInsightDiscovery]);
 
   const handleAnswerChange = (answer: string) => {
     if (limitedQuestions.length === 0) return;

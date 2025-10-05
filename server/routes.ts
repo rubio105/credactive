@@ -216,58 +216,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Temporary endpoint to create admin user in production
-  app.post('/api/setup-admin-user', async (req, res) => {
-    try {
-      const { setupKey } = req.body;
-      
-      // Simple security check - use a key only you know
-      if (setupKey !== 'CREDACTIVE_SETUP_2025') {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-
-      const adminEmail = 'ruben@credactive.academy';
-      const adminPassword = 'Credactive2025!Admin';
-
-      // Check if admin already exists
-      const existing = await storage.getUserByEmail(adminEmail);
-      if (existing) {
-        return res.json({ message: "Admin user already exists", email: adminEmail });
-      }
-
-      // Create admin user
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
-      await storage.createUser({
-        email: adminEmail,
-        password: hashedPassword,
-        firstName: 'Ruben',
-        lastName: 'Admin',
-        isAdmin: true,
-        isPremium: true,
-        emailVerified: true,
-        language: 'it',
-        dateOfBirth: new Date('1990-01-01'),
-        gender: 'male',
-        profession: 'it_manager',
-        education: 'master',
-        addressStreet: 'Via Admin',
-        addressCity: 'Milano',
-        addressPostalCode: '20100',
-        addressProvince: 'MI',
-        addressCountry: 'IT',
-        newsletterConsent: false,
-      });
-
-      res.json({ 
-        message: "Admin user created successfully",
-        email: adminEmail,
-        note: "You can now login with this email"
-      });
-    } catch (error: any) {
-      console.error('Error creating admin:', error);
-      res.status(500).json({ message: error.message || "Failed to create admin" });
-    }
-  });
 
   app.post('/api/auth/forgot-password', passwordResetLimiter, async (req, res) => {
     try {

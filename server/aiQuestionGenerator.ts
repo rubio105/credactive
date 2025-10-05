@@ -105,9 +105,18 @@ Return ONLY a valid JSON array with this exact structure:
 ]`;
 
   try {
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured. Please add it to your environment secrets.');
+    }
+
+    console.log(`Requesting ${count} questions for "${quizTitle}" (category: ${category}, difficulty: ${difficulty}, language: ${language})`);
+    
     // GPT-4o has a max output of 16384 tokens. Each question typically needs ~600-800 tokens.
     // We cap at 15000 to leave margin for safety, allowing ~18-25 questions per call
     const maxTokens = Math.min(count * 900, 15000);
+    
+    console.log(`Using max_tokens: ${maxTokens} for ${count} questions`);
     
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // Using gpt-4o as it's more reliable for structured output
@@ -119,18 +128,38 @@ Return ONLY a valid JSON array with this exact structure:
       max_tokens: maxTokens,
     });
 
+    console.log(`OpenAI responded with ${response.choices[0].finish_reason}, usage: ${JSON.stringify(response.usage)}`);
+
     const content = response.choices[0].message.content;
     if (!content) {
       throw new Error('No content received from OpenAI');
     }
+    
+    console.log(`Received content length: ${content.length} characters`);
+    
     let parsed = JSON.parse(content);
     
     // Handle both array and object with questions array
     const questions = Array.isArray(parsed) ? parsed : parsed.questions || [];
     
+    console.log(`Parsed ${questions.length} questions from OpenAI response`);
+    
+    if (questions.length === 0) {
+      console.error('OpenAI returned 0 questions. Response:', content.substring(0, 500));
+      throw new Error('OpenAI generated 0 questions. This may indicate an issue with the prompt or API configuration.');
+    }
+    
     return questions.slice(0, count);
   } catch (error) {
     console.error('Error generating questions:', error);
+    
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     const message = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Failed to generate questions: ${message}`);
   }

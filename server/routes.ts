@@ -1665,8 +1665,8 @@ ${JSON.stringify(questionsToTranslate)}`;
       const user = userId ? await storage.getUser(userId) : null;
       const userLanguage = user?.language || 'it';
 
-      // Generate questions in background
-      generateQuestionsInBatches(quiz.title, categoryName, count, 20, difficulty, documentContext, userLanguage)
+      // Generate questions in background (using batch size of 15 for better token distribution)
+      generateQuestionsInBatches(quiz.title, categoryName, count, 15, difficulty, documentContext, userLanguage)
         .then(async (questions) => {
           // CRITICAL: Limit to exactly the requested count to prevent over-generation
           const questionsToSave = questions.slice(0, count);

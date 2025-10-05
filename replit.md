@@ -23,6 +23,12 @@ Preferred communication style: Simple, everyday language.
 -   **Authentication**: Email/password authentication via Passport.js Local Strategy with bcrypt for password hashing; `express-session` with PostgreSQL store (httpOnly, secure cookies, 1-week TTL).
 -   **Email Service**: Brevo for transactional emails (welcome emails, password reset with secure tokens).
 -   **Database Access**: Drizzle ORM for type-safe queries, shared schema between frontend and backend.
+-   **Security Measures**: 
+    -   Rate limiting on critical endpoints (5 login attempts/15min, 3 registration/hour, 3 password resets/hour, 20 AI requests/hour)
+    -   Helmet.js security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
+    -   CORS configured for Replit domains with credentials support
+    -   XSS protection via DOMPurify for user-generated content
+    -   SQL injection prevention through Drizzle ORM parameterized queries
 -   **Build Process**: `tsx` for development, `esbuild` for production server bundle, `vite` for client bundle.
 
 ## Data Storage
@@ -61,6 +67,6 @@ Preferred communication style: Simple, everyday language.
 -   **Replit Platform Services**: Replit-specific Vite plugins, environment variables.
 -   **Neon Database**: Serverless PostgreSQL.
 -   **OpenAI**: GPT-4o and GPT-4o-mini models for AI-powered question generation and text-to-speech (TTS) audio for explanations.
--   **Security Libraries**: bcryptjs for password hashing.
+-   **Security Libraries**: bcryptjs for password hashing, Helmet.js for HTTP headers, express-rate-limit for abuse prevention, CORS for cross-origin control, DOMPurify for XSS protection.
 -   **UI Libraries**: Radix UI, Lucide React, Tailwind CSS.
 -   **Development Tools**: TypeScript, ESBuild, Vite, TSX.

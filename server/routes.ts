@@ -191,17 +191,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/auth/login', authLimiter, (req, res, next) => {
+    console.log('=== LOGIN ATTEMPT ===');
+    console.log('Email:', req.body.email);
+    console.log('Password provided:', !!req.body.password);
+    
     passport.authenticate('local', (err: any, user: any, info: any) => {
+      console.log('Passport authenticate callback:');
+      console.log('- Error:', err);
+      console.log('- User:', user ? `${user.email} (id: ${user.id})` : null);
+      console.log('- Info:', info);
+      
       if (err) {
+        console.error('Login error:', err);
         return res.status(500).json({ message: "Errore durante il login" });
       }
       if (!user) {
+        console.log('Login failed - no user returned');
         return res.status(401).json({ message: info?.message || "Email o password non corretti" });
       }
       req.login(user, (err) => {
         if (err) {
+          console.error('Session login error:', err);
           return res.status(500).json({ message: "Errore durante il login" });
         }
+        console.log('Login successful!');
         res.json(user);
       });
     })(req, res, next);

@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Video, CheckCircle, Lock, Play, AlertCircle, Crown } from "lucide-react";
+import { ArrowLeft, Video, CheckCircle, Lock, Play, AlertCircle, Crown, Clock, HelpCircle } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -147,12 +147,18 @@ export default function CorsoOnDemand() {
   const currentProgress = course?.userProgress.find(p => p.videoId === currentVideo?.id);
   const canAccessVideo = (index: number) => {
     if (index === 0) return true;
+    if (!course) return false;
     
-    const previousVideo = course?.videos[index - 1];
-    const previousProgress = course?.userProgress.find(p => p.videoId === previousVideo?.id);
+    const previousVideo = course.videos[index - 1];
+    if (!previousVideo) return false;
+    
+    const previousProgress = course.userProgress.find(p => p.videoId === previousVideo.id);
     
     if (!previousProgress || !previousProgress.completed) return false;
-    if (previousVideo?.requiresQuiz && !previousProgress.quizPassed) return false;
+    
+    if (previousVideo.requiresQuiz === true && previousProgress.quizPassed !== true) {
+      return false;
+    }
     
     return true;
   };
@@ -505,64 +511,92 @@ export default function CorsoOnDemand() {
                 <CardDescription>{course.videos.length} video</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {course.videos.map((video, index) => {
                     const progress = course.userProgress.find(p => p.videoId === video.id);
                     const isCompleted = progress?.completed && (!video.requiresQuiz || progress.quizPassed);
                     const isCurrent = index === currentVideoIndex;
                     const canAccess = canAccessVideo(index);
+                    const needsQuiz = progress?.completed && video.requiresQuiz && !progress?.quizPassed;
+                    
+                    let statusBadge = null;
+                    let statusText = "";
+                    
+                    if (isCompleted) {
+                      statusBadge = <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">Completato</Badge>;
+                    } else if (needsQuiz) {
+                      statusBadge = <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">Quiz Richiesto</Badge>;
+                      statusText = "Completa il quiz per sbloccare il prossimo video";
+                    } else if (!canAccess) {
+                      statusBadge = <Badge variant="outline" className="opacity-50">Bloccato</Badge>;
+                      statusText = "Completa il video precedente per sbloccare";
+                    }
 
                     return (
-                      <button
-                        key={video.id}
-                        onClick={() => {
-                          if (canAccess) {
-                            setCurrentVideoIndex(index);
-                            setShowQuiz(false);
-                            setQuizSubmitted(false);
-                            setQuizAnswers({});
-                            setQuizResults({});
-                          }
-                        }}
-                        disabled={!canAccess}
-                        className={`w-full text-left p-3 rounded-lg transition-colors ${
-                          isCurrent 
-                            ? "bg-primary text-primary-foreground" 
-                            : canAccess
-                            ? "hover:bg-muted"
-                            : "opacity-50 cursor-not-allowed"
-                        }`}
-                        data-testid={`button-video-${video.id}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3 flex-1">
-                            <div className={`flex-shrink-0 ${isCurrent ? "text-primary-foreground" : ""}`}>
+                      <div key={video.id} className="relative">
+                        {index > 0 && (
+                          <div className={`absolute left-6 -top-1 h-2 w-0.5 ${isCompleted ? "bg-green-500" : "bg-border"}`} />
+                        )}
+                        <button
+                          onClick={() => {
+                            if (canAccess) {
+                              setCurrentVideoIndex(index);
+                              setShowQuiz(false);
+                              setQuizSubmitted(false);
+                              setQuizAnswers({});
+                              setQuizResults({});
+                            }
+                          }}
+                          disabled={!canAccess}
+                          className={`w-full text-left p-3 rounded-lg transition-all ${
+                            isCurrent 
+                              ? "bg-primary text-primary-foreground shadow-md" 
+                              : canAccess
+                              ? "hover:bg-muted hover:shadow-sm"
+                              : "opacity-60 cursor-not-allowed"
+                          }`}
+                          data-testid={`button-video-${video.id}`}
+                          title={statusText}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`flex-shrink-0 mt-0.5 ${isCurrent ? "text-primary-foreground" : ""}`}>
                               {isCompleted ? (
                                 <CheckCircle className="w-5 h-5 text-green-500" />
                               ) : canAccess ? (
                                 <Play className="w-5 h-5" />
                               ) : (
-                                <Lock className="w-5 h-5" />
+                                <Lock className="w-5 h-5 text-muted-foreground" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={`font-medium truncate ${isCurrent ? "text-primary-foreground" : ""}`}>
-                                {index + 1}. {video.title}
-                              </p>
-                              {video.duration && (
-                                <p className={`text-sm ${isCurrent ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                                  {Math.floor(video.duration / 60)} min
+                              <div className="flex items-center justify-between mb-1">
+                                <p className={`font-medium ${isCurrent ? "text-primary-foreground" : ""}`}>
+                                  {index + 1}. {video.title}
                                 </p>
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {video.duration && (
+                                  <span className={`text-xs ${isCurrent ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                                    <Clock className="w-3 h-3 inline mr-1" />
+                                    {Math.floor(video.duration / 60)} min
+                                  </span>
+                                )}
+                                {video.requiresQuiz && (
+                                  <Badge variant="outline" className={`text-xs ${isCurrent ? "border-primary-foreground/30" : ""}`}>
+                                    <HelpCircle className="w-3 h-3 mr-1" />
+                                    Quiz
+                                  </Badge>
+                                )}
+                              </div>
+                              {statusBadge && (
+                                <div className="mt-2">
+                                  {statusBadge}
+                                </div>
                               )}
                             </div>
                           </div>
-                          {video.requiresQuiz && (
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              Quiz
-                            </Badge>
-                          )}
-                        </div>
-                      </button>
+                        </button>
+                      </div>
                     );
                   })}
                 </div>

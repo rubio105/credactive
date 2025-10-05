@@ -16,6 +16,12 @@ import { sendPasswordResetEmail, sendWelcomeEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
+import { 
+  authLimiter, 
+  registrationLimiter, 
+  passwordResetLimiter, 
+  aiGenerationLimiter 
+} from "./rateLimits";
 
 // Dynamic import for pdf-parse (CommonJS module)
 // Note: pdf-parse doesn't have a .default export in ESM context
@@ -110,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/quiz-documents', express.static(pdfUploadDir));
 
   // Auth routes
-  app.post('/api/auth/register', async (req, res) => {
+  app.post('/api/auth/register', registrationLimiter, async (req, res) => {
     try {
       const { 
         email, 
@@ -184,7 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/login', (req, res, next) => {
+  app.post('/api/auth/login', authLimiter, (req, res, next) => {
     passport.authenticate('local', (err: any, user: any, info: any) => {
       if (err) {
         return res.status(500).json({ message: "Errore durante il login" });
@@ -263,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/forgot-password', async (req, res) => {
+  app.post('/api/auth/forgot-password', passwordResetLimiter, async (req, res) => {
     try {
       const { email } = req.body;
 
@@ -291,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/reset-password', async (req, res) => {
+  app.post('/api/auth/reset-password', passwordResetLimiter, async (req, res) => {
     try {
       const { token, password } = req.body;
 
@@ -631,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Translate quiz questions to target language
-  app.post('/api/translate-questions', isAuthenticated, async (req: any, res) => {
+  app.post('/api/translate-questions', isAuthenticated, aiGenerationLimiter, async (req: any, res) => {
     try {
       const { questions, targetLanguage, quizTitle } = req.body;
       
@@ -1645,7 +1651,7 @@ ${JSON.stringify(questionsToTranslate)}`;
   });
 
   // Admin - Generate AI questions
-  app.post('/api/admin/generate-questions', isAdmin, async (req, res) => {
+  app.post('/api/admin/generate-questions', isAdmin, aiGenerationLimiter, async (req, res) => {
     try {
       const { quizId, count, difficulty = 'intermediate' } = req.body;
       
@@ -1906,7 +1912,7 @@ ${JSON.stringify(questionsToTranslate)}`;
   });
 
   // Generate TTS audio for question explanation
-  app.post('/api/admin/questions/:id/generate-audio', isAdmin, async (req, res) => {
+  app.post('/api/admin/questions/:id/generate-audio', isAdmin, aiGenerationLimiter, async (req, res) => {
     try {
       const { id } = req.params;
       const { language = 'it' } = req.body;
@@ -1960,7 +1966,7 @@ ${JSON.stringify(questionsToTranslate)}`;
   });
 
   // Generate extended TTS audio explanation (amplified version)
-  app.post('/api/questions/:id/extended-audio', isAuthenticated, async (req: any, res) => {
+  app.post('/api/questions/:id/extended-audio', isAuthenticated, aiGenerationLimiter, async (req: any, res) => {
     try {
       const { id } = req.params;
       const { language = 'it', userAnswer, isCorrect, isFirstAudio = false } = req.body;

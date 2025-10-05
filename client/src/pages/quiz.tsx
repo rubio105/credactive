@@ -197,10 +197,14 @@ export default function QuizPage() {
   // Translate questions and quiz title based on language selector
   useEffect(() => {
     const translateQuestions = async () => {
-      if (!quizData || !user) return;
+      if (!quizData || !user) {
+        console.log('[Translation] Skipped - missing data:', { hasQuizData: !!quizData, hasUser: !!user });
+        return;
+      }
       
       // Use selected language
       const targetLanguage = quizLanguage;
+      console.log('[Translation] Starting translation to:', targetLanguage);
       
       // Find questions that need translation (where original language differs from target)
       const questionsNeedingTranslation = limitedQuestions.filter(q => {
@@ -208,15 +212,32 @@ export default function QuizPage() {
         return originalLang !== targetLanguage;
       });
       
-      // If no questions need translation and target is Italian, clear translations
-      if (questionsNeedingTranslation.length === 0 && targetLanguage === 'it') {
-        setTranslatedQuestions({});
-        setTranslatedQuizTitle('');
+      console.log('[Translation] Questions analysis:', {
+        totalQuestions: limitedQuestions.length,
+        questionsNeedingTranslation: questionsNeedingTranslation.length,
+        targetLanguage,
+        sampleQuestionLanguages: limitedQuestions.slice(0, 3).map(q => q.language || 'it')
+      });
+      
+      // If no questions need translation, clear translations or keep current state
+      if (questionsNeedingTranslation.length === 0) {
+        console.log('[Translation] No questions need translation');
+        if (targetLanguage === 'it') {
+          console.log('[Translation] Clearing translations (returning to Italian)');
+          setTranslatedQuestions({});
+          setTranslatedQuizTitle('');
+        }
         return;
       }
       
       // Translate questions and quiz title
       try {
+        console.log('[Translation] Calling API with:', {
+          questionCount: questionsNeedingTranslation.length,
+          targetLanguage,
+          quizTitle: quizData.quiz.title
+        });
+        
         const response = await apiRequest("/api/translate-questions", "POST", {
           questions: questionsNeedingTranslation,
           targetLanguage,
@@ -224,20 +245,33 @@ export default function QuizPage() {
         });
         const data = await response.json();
         
+        console.log('[Translation] API response:', {
+          hasTranslatedQuestions: !!data.translatedQuestions,
+          translatedCount: data.translatedQuestions?.length || 0,
+          hasTranslatedTitle: !!data.translatedQuizTitle
+        });
+        
         if (data.translatedQuestions) {
           const translationMap: Record<string, any> = {};
           data.translatedQuestions.forEach((tq: any) => {
             translationMap[tq.id] = tq;
           });
           setTranslatedQuestions(translationMap);
+          console.log('[Translation] Applied translations for', Object.keys(translationMap).length, 'questions');
         }
         
         // Set translated quiz title if available
         if (data.translatedQuizTitle) {
           setTranslatedQuizTitle(data.translatedQuizTitle);
+          console.log('[Translation] Applied quiz title translation:', data.translatedQuizTitle);
         }
       } catch (error) {
-        console.error("Translation failed:", error);
+        console.error("[Translation] Failed:", error);
+        toast({
+          title: "Errore di traduzione",
+          description: "Impossibile tradurre le domande. Per favore riprova.",
+          variant: "destructive"
+        });
       }
     };
     

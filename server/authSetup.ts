@@ -45,16 +45,25 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 };
 
 export const isAdmin: RequestHandler = async (req, res, next) => {
+  console.log('=== isAdmin middleware ===');
+  console.log('isAuthenticated:', req.isAuthenticated());
+  console.log('req.user:', req.user);
+  
   if (!req.isAuthenticated() || !req.user) {
+    console.log('Rejecting: Not authenticated');
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const user = req.user as any;
+  console.log('User ID:', user.id);
   const dbUser = await storage.getUser(user.id);
+  console.log('DB User:', dbUser);
 
   if (!dbUser?.isAdmin) {
+    console.log('Rejecting: Not admin. isAdmin:', dbUser?.isAdmin);
     return res.status(403).json({ message: "Forbidden: Admin access required" });
   }
 
+  console.log('User is admin, allowing access');
   return next();
 };

@@ -1600,6 +1600,9 @@ ${JSON.stringify(questionsToTranslate)}`;
 
   // Admin - Generate AI questions
   app.post('/api/admin/generate-questions', isAdmin, aiGenerationLimiter, async (req, res) => {
+    console.log('=== GENERATE QUESTIONS ROUTE CALLED ===');
+    console.log('User:', req.user);
+    console.log('Request body:', req.body);
     try {
       const { quizId, count, difficulty = 'intermediate' } = req.body;
       

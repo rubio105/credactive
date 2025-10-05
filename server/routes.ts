@@ -1676,9 +1676,12 @@ ${JSON.stringify(questionsToTranslate)}`
       // Generate questions in background
       generateQuestionsInBatches(quiz.title, categoryName, count, 20, difficulty, documentContext, userLanguage)
         .then(async (questions) => {
+          // CRITICAL: Limit to exactly the requested count to prevent over-generation
+          const questionsToSave = questions.slice(0, count);
+          
           // Save all generated questions to database
           let savedCount = 0;
-          for (const q of questions) {
+          for (const q of questionsToSave) {
             try {
               // Find the correct answer and get its label (A, B, C, D)
               const correctIndex = q.options.findIndex(opt => opt.isCorrect);

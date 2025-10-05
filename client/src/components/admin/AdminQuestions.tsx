@@ -42,6 +42,7 @@ interface Question {
   explanation: string;
   explanationAudioUrl?: string;
   difficulty: string;
+  language?: string; // Original language (it, en, es, fr)
 }
 
 interface Quiz {
@@ -62,6 +63,7 @@ export function AdminQuestions() {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedQuiz, setSelectedQuiz] = useState<string>('all');
+  const [questionType, setQuestionType] = useState<string>('all'); // all, ai, manual
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,11 +230,24 @@ export function AdminQuestions() {
   };
 
   const filteredQuestions = questions?.filter(q => {
-    if (selectedQuiz !== 'all') return q.quizId === selectedQuiz;
+    // Filter by quiz
+    if (selectedQuiz !== 'all' && q.quizId !== selectedQuiz) return false;
+    
+    // Filter by category
     if (selectedCategory !== 'all') {
       const quiz = allQuizzes.find(quiz => quiz.id === q.quizId);
-      return quiz?.categoryId === selectedCategory;
+      if (quiz?.categoryId !== selectedCategory) return false;
     }
+    
+    // Filter by question type (AI vs Manual)
+    if (questionType === 'ai') {
+      // AI questions have language field set (not null/undefined)
+      if (!q.language) return false;
+    } else if (questionType === 'manual') {
+      // Manual questions don't have language field or have it as null
+      if (q.language) return false;
+    }
+    
     return true;
   }) || [];
 
@@ -288,6 +303,19 @@ export function AdminQuestions() {
             </SelectContent>
           </Select>
         </div>
+        <div className="flex-1">
+          <Label>Filtra per Tipo</Label>
+          <Select value={questionType} onValueChange={setQuestionType}>
+            <SelectTrigger data-testid="select-filter-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte le domande</SelectItem>
+              <SelectItem value="ai">🤖 Generate dall'AI</SelectItem>
+              <SelectItem value="manual">✍️ Manuali</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="border rounded-lg">
@@ -306,7 +334,14 @@ export function AdminQuestions() {
             {filteredQuestions.map((question) => (
               <TableRow key={question.id} data-testid={`row-question-${question.id}`}>
                 <TableCell className="max-w-md">
-                  <div className="truncate font-medium">{question.question}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="truncate font-medium">{question.question}</div>
+                    {question.language && (
+                      <Badge variant="secondary" className="shrink-0 text-xs">
+                        🤖 AI
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>{getQuizTitle(question.quizId)}</TableCell>
                 <TableCell>{getCategoryName(question.quizId)}</TableCell>
@@ -362,7 +397,11 @@ export function AdminQuestions() {
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        if (confirm('Sei sicuro di voler eliminare questa domanda?')) {
+                        const questionType = question.language ? 'AI' : 'manuale';
+                        const questionPreview = question.question.substring(0, 60) + (question.question.length > 60 ? '...' : '');
+                        const confirmMessage = `⚠️ ELIMINAZIONE DOMANDA ${questionType.toUpperCase()}\n\n"${questionPreview}"\n\nQuiz: ${getQuizTitle(question.quizId)}\n\nQuesta azione è irreversibile. Sei sicuro di voler procedere?`;
+                        
+                        if (confirm(confirmMessage)) {
                           deleteMutation.mutate(question.id);
                         }
                       }}

@@ -859,6 +859,45 @@ ${JSON.stringify(questionsToTranslate)}`
     }
   });
 
+  // Admin - Create user
+  app.post('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, isPremium, isAdmin: isUserAdmin } = req.body;
+
+      // Validate required fields
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e password sono obbligatori" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email.toLowerCase());
+      if (existingUser) {
+        return res.status(400).json({ message: "Un utente con questa email esiste già" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const user = await storage.createUser({
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        isPremium: isPremium || false,
+        isAdmin: isUserAdmin || false,
+        emailVerified: true, // Admin-created users are automatically verified
+      });
+
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   // Admin - Create category
   app.post('/api/admin/categories', isAdmin, async (req, res) => {
     try {

@@ -21,6 +21,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Pencil, Trash2, ArrowLeft, Plus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +52,7 @@ interface User {
   newsletterConsent: boolean;
   language?: string;
   isPremium: boolean;
+  subscriptionTier: string;
   isAdmin: boolean;
   createdAt: string;
 }
@@ -55,6 +63,7 @@ interface NewUser {
   firstName: string;
   lastName: string;
   isPremium: boolean;
+  subscriptionTier: string;
   isAdmin: boolean;
 }
 
@@ -69,6 +78,7 @@ export function AdminUsers() {
     firstName: '',
     lastName: '',
     isPremium: false,
+    subscriptionTier: 'free',
     isAdmin: false,
   });
 
@@ -113,6 +123,7 @@ export function AdminUsers() {
         firstName: '',
         lastName: '',
         isPremium: false,
+        subscriptionTier: 'free',
         isAdmin: false,
       });
     },
@@ -144,7 +155,8 @@ export function AdminUsers() {
       updates: {
         firstName: editingUser.firstName,
         lastName: editingUser.lastName,
-        isPremium: editingUser.isPremium,
+        isPremium: editingUser.subscriptionTier !== 'free',
+        subscriptionTier: editingUser.subscriptionTier,
         isAdmin: editingUser.isAdmin,
       },
     });
@@ -207,7 +219,9 @@ export function AdminUsers() {
                   )}
                 </TableCell>
                 <TableCell>
-                  {user.isPremium ? (
+                  {user.subscriptionTier === 'premium_plus' ? (
+                    <Badge className="bg-gradient-to-r from-warning to-accent text-white" data-testid={`badge-premium-plus-${user.id}`}>Premium Plus</Badge>
+                  ) : user.subscriptionTier === 'premium' ? (
                     <Badge variant="default" data-testid={`badge-premium-${user.id}`}>Premium</Badge>
                   ) : (
                     <Badge variant="secondary" data-testid={`badge-free-${user.id}`}>Free</Badge>
@@ -361,14 +375,21 @@ export function AdminUsers() {
                   {editingUser.newsletterConsent ? "Sì" : "No"}
                 </Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="isPremium">Accesso Premium</Label>
-                <Switch
-                  id="isPremium"
-                  checked={editingUser.isPremium}
-                  onCheckedChange={(checked) => setEditingUser({ ...editingUser, isPremium: checked })}
-                  data-testid="switch-isPremium"
-                />
+              <div>
+                <Label htmlFor="subscriptionTier">Livello Membership</Label>
+                <Select
+                  value={editingUser.subscriptionTier}
+                  onValueChange={(value) => setEditingUser({ ...editingUser, subscriptionTier: value, isPremium: value !== 'free' })}
+                >
+                  <SelectTrigger id="subscriptionTier" data-testid="select-subscriptionTier">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="premium_plus">Premium Plus</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="isAdmin">Amministratore</Label>
@@ -443,14 +464,21 @@ export function AdminUsers() {
                 data-testid="input-new-lastName"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="newIsPremium">Accesso Premium</Label>
-              <Switch
-                id="newIsPremium"
-                checked={newUser.isPremium}
-                onCheckedChange={(checked) => setNewUser({ ...newUser, isPremium: checked })}
-                data-testid="switch-new-isPremium"
-              />
+            <div>
+              <Label htmlFor="newSubscriptionTier">Livello Membership</Label>
+              <Select
+                value={newUser.subscriptionTier}
+                onValueChange={(value) => setNewUser({ ...newUser, subscriptionTier: value, isPremium: value !== 'free' })}
+              >
+                <SelectTrigger id="newSubscriptionTier" data-testid="select-new-subscriptionTier">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="premium_plus">Premium Plus</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="newIsAdmin">Amministratore</Label>
@@ -473,6 +501,7 @@ export function AdminUsers() {
                   firstName: '',
                   lastName: '',
                   isPremium: false,
+                  subscriptionTier: 'free',
                   isAdmin: false,
                 });
               }}

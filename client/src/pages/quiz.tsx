@@ -739,20 +739,6 @@ export default function QuizPage() {
                 </p>
               </div>
               <div className="flex items-center space-x-4">
-                {/* Language Selector - IT/EN/ES */}
-                <div className="flex items-center space-x-2">
-                  <Languages className="w-4 h-4 text-muted-foreground" />
-                  <Select value={quizLanguage} onValueChange={(value: 'it' | 'en' | 'es') => setQuizLanguage(value)}>
-                    <SelectTrigger className="w-32" data-testid="select-language">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="it">🇮🇹 Italiano</SelectItem>
-                      <SelectItem value="en">🇬🇧 English</SelectItem>
-                      <SelectItem value="es">🇪🇸 Español</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 {timeRemaining !== null && <Timer timeRemaining={timeRemaining} />}
                 <Button
                   variant="ghost"

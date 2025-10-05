@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { Pencil, Trash2, ArrowLeft, Plus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -49,10 +49,28 @@ interface User {
   createdAt: string;
 }
 
+interface NewUser {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  isPremium: boolean;
+  isAdmin: boolean;
+}
+
 export function AdminUsers() {
   const { toast } = useToast();
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newUser, setNewUser] = useState<NewUser>({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    isPremium: false,
+    isAdmin: false,
+  });
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
@@ -83,9 +101,40 @@ export function AdminUsers() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: (data: NewUser) => apiRequest('/api/admin/users', 'POST', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "Utente creato con successo" });
+      setIsCreateDialogOpen(false);
+      setNewUser({
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        isPremium: false,
+        isAdmin: false,
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: error.message || "Errore durante la creazione", 
+        variant: "destructive" 
+      });
+    },
+  });
+
   const handleEdit = (user: User) => {
     setEditingUser(user);
     setIsEditDialogOpen(true);
+  };
+
+  const handleCreate = () => {
+    if (!newUser.email || !newUser.password) {
+      toast({ title: "Email e password sono obbligatori", variant: "destructive" });
+      return;
+    }
+    createMutation.mutate(newUser);
   };
 
   const handleSave = () => {
@@ -113,9 +162,15 @@ export function AdminUsers() {
           Torna alla Home
         </Link>
       </Button>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold">Gestione Utenti</h2>
-        <p className="text-muted-foreground">Gestisci gli utenti della piattaforma</p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Gestione Utenti</h2>
+          <p className="text-muted-foreground">Gestisci gli utenti della piattaforma</p>
+        </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-user">
+          <Plus className="w-4 h-4 mr-2" />
+          Aggiungi Utente
+        </Button>
       </div>
 
       <div className="border rounded-lg">
@@ -332,6 +387,104 @@ export function AdminUsers() {
             </Button>
             <Button onClick={handleSave} disabled={updateMutation.isPending} data-testid="button-save-user">
               {updateMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent data-testid="dialog-create-user">
+          <DialogHeader>
+            <DialogTitle>Crea Nuovo Utente</DialogTitle>
+            <DialogDescription>
+              Inserisci i dati del nuovo utente
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newEmail">Email *</Label>
+              <Input
+                id="newEmail"
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                placeholder="utente@esempio.it"
+                data-testid="input-new-email"
+              />
+            </div>
+            <div>
+              <Label htmlFor="newPassword">Password *</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                placeholder="Password sicura"
+                data-testid="input-new-password"
+              />
+            </div>
+            <div>
+              <Label htmlFor="newFirstName">Nome</Label>
+              <Input
+                id="newFirstName"
+                value={newUser.firstName}
+                onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
+                placeholder="Mario"
+                data-testid="input-new-firstName"
+              />
+            </div>
+            <div>
+              <Label htmlFor="newLastName">Cognome</Label>
+              <Input
+                id="newLastName"
+                value={newUser.lastName}
+                onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
+                placeholder="Rossi"
+                data-testid="input-new-lastName"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="newIsPremium">Accesso Premium</Label>
+              <Switch
+                id="newIsPremium"
+                checked={newUser.isPremium}
+                onCheckedChange={(checked) => setNewUser({ ...newUser, isPremium: checked })}
+                data-testid="switch-new-isPremium"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="newIsAdmin">Amministratore</Label>
+              <Switch
+                id="newIsAdmin"
+                checked={newUser.isAdmin}
+                onCheckedChange={(checked) => setNewUser({ ...newUser, isAdmin: checked })}
+                data-testid="switch-new-isAdmin"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsCreateDialogOpen(false);
+                setNewUser({
+                  email: '',
+                  password: '',
+                  firstName: '',
+                  lastName: '',
+                  isPremium: false,
+                  isAdmin: false,
+                });
+              }}
+            >
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleCreate} 
+              disabled={createMutation.isPending} 
+              data-testid="button-save-new-user"
+            >
+              {createMutation.isPending ? "Creazione..." : "Crea Utente"}
             </Button>
           </DialogFooter>
         </DialogContent>

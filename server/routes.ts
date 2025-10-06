@@ -35,6 +35,7 @@ import {
   aiGenerationLimiter 
 } from "./rateLimits";
 import { registerGamificationRoutes } from "./gamificationRoutes";
+import { processQuizCompletion } from "./gamification";
 
 // Dynamic import for pdf-parse (CommonJS module)
 // Note: pdf-parse doesn't have a .default export in ESM context
@@ -537,6 +538,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             recommendations: reportData.recommendations,
           });
           console.log('[Quiz Submission] Standard report saved successfully');
+        }
+        
+        // Process gamification rewards (points, badges, achievements)
+        console.log('[Quiz Submission] Processing gamification rewards...');
+        try {
+          const gamificationResults = await processQuizCompletion(userId, attempt, quiz);
+          console.log('[Quiz Submission] Gamification results:', {
+            pointsEarned: gamificationResults.pointsEarned,
+            newLevel: gamificationResults.newLevel,
+            newBadges: gamificationResults.newBadges.length,
+            newAchievements: gamificationResults.newAchievements.length,
+            streakInfo: gamificationResults.streakInfo,
+          });
+        } catch (gamificationError) {
+          console.error('[Quiz Submission] Error processing gamification:', gamificationError);
+          // Don't fail the quiz submission if gamification fails
         }
       }
 

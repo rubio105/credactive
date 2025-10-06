@@ -7,6 +7,8 @@ import {
   insertAchievementSchema,
   insertDailyChallengeSchema,
 } from "@shared/schema";
+import { generateCertificateBuffer } from "./certificateGenerator";
+import crypto from "crypto";
 
 export function registerGamificationRoutes(app: Express): void {
   // ===============================================
@@ -246,6 +248,128 @@ export function registerGamificationRoutes(app: Express): void {
     } catch (error: any) {
       console.error("Error fetching user certificates:", error);
       res.status(500).json({ message: "Failed to fetch certificates" });
+    }
+  });
+  
+  // Generate certificate for a quiz attempt
+  app.post("/api/certificates/generate/:attemptId", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { attemptId } = req.params;
+      const userId = req.user.id;
+      
+      // Get the quiz attempt
+      const attempt = await storage.getQuizAttemptById(attemptId);
+      if (!attempt) {
+        return res.status(404).json({ message: "Quiz attempt not found" });
+      }
+      
+      // Verify the attempt belongs to the user
+      if (attempt.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Check if score meets minimum threshold (70%)
+      if (attempt.score < 70) {
+        return res.status(400).json({ 
+          message: "Certificate requires minimum score of 70%",
+          currentScore: attempt.score 
+        });
+      }
+      
+      // Check if certificate already exists
+      const existingCertificates = await storage.getUserCertificates(userId);
+      const existingCertificate = existingCertificates.find(c => c.quizAttemptId === attemptId);
+      
+      if (existingCertificate) {
+        return res.json(existingCertificate);
+      }
+      
+      // Get user and quiz details
+      const [user, quiz] = await Promise.all([
+        storage.getUser(userId),
+        storage.getQuizById(attempt.quizId),
+      ]);
+      
+      if (!user || !quiz) {
+        return res.status(404).json({ message: "User or quiz not found" });
+      }
+      
+      // Generate verification code
+      const verificationCode = crypto.randomBytes(8).toString('hex').toUpperCase();
+      
+      // Create certificate record
+      const certificate = await storage.createCertificate({
+        userId,
+        quizId: quiz.id,
+        quizAttemptId: attemptId,
+        quizTitle: quiz.title,
+        score: attempt.score,
+        verificationCode,
+        isPublic: true,
+      });
+      
+      res.status(201).json(certificate);
+    } catch (error: any) {
+      console.error("Error generating certificate:", error);
+      res.status(500).json({ message: "Failed to generate certificate" });
+    }
+  });
+  
+  // Download certificate PDF
+  app.get("/api/certificates/download/:certificateId", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { certificateId } = req.params;
+      const userId = req.user.id;
+      
+      // Get certificate
+      const certificate = await storage.getCertificateById(certificateId);
+      if (!certificate) {
+        return res.status(404).json({ message: "Certificate not found" });
+      }
+      
+      // Verify certificate belongs to user
+      if (certificate.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Get related data
+      const [user, quiz, attempt] = await Promise.all([
+        storage.getUser(userId),
+        storage.getQuizById(certificate.quizId),
+        storage.getQuizAttemptById(certificate.quizAttemptId),
+      ]);
+      
+      if (!user || !quiz || !attempt) {
+        return res.status(404).json({ message: "Related data not found" });
+      }
+      
+      // Generate PDF
+      const pdfBuffer = await generateCertificateBuffer({
+        user,
+        quiz,
+        attempt,
+        verificationCode: certificate.verificationCode,
+        issueDate: certificate.issuedAt,
+      });
+      
+      // Set response headers for PDF download
+      const fileName = `certificate_${quiz.title.replace(/[^a-zA-Z0-9]/g, '_')}_${userId}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error downloading certificate:", error);
+      res.status(500).json({ message: "Failed to download certificate" });
     }
   });
   

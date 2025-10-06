@@ -78,6 +78,38 @@ const upload = multer({
   }
 });
 
+// Configure multer for profile images
+const profileImageDir = path.join(process.cwd(), 'public', 'profile-images');
+if (!fs.existsSync(profileImageDir)) {
+  fs.mkdirSync(profileImageDir, { recursive: true });
+}
+
+const profileImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, profileImageDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadProfileImage = multer({
+  storage: profileImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
+
 // Configure multer for PDF uploads
 const pdfUploadDir = path.join(process.cwd(), 'public', 'quiz-documents');
 if (!fs.existsSync(pdfUploadDir)) {
@@ -1186,6 +1218,35 @@ ${JSON.stringify(questionsToTranslate)}`;
         fs.unlinkSync(req.file.path);
       }
       res.status(500).json({ message: "Failed to upload PDF" });
+    }
+  });
+
+  // User - Upload profile image
+  app.post('/api/user/upload-profile-image', isAuthenticated, uploadProfileImage.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const imageUrl = `/profile-images/${req.file.filename}`;
+      
+      // Update user's profile image URL
+      await storage.updateUser(req.user.id, {
+        profileImageUrl: imageUrl
+      });
+
+      res.json({ url: imageUrl, filename: req.file.filename });
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      // Clean up file on error
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({ message: "Failed to upload profile image" });
     }
   });
 

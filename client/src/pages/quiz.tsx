@@ -344,10 +344,13 @@ export default function QuizPage() {
   
   useEffect(() => {
     if (limitedQuestions.length > 0 && currentQuestionId) {
-      const savedAnswer = answers[currentQuestionId] || "";
+      const currentQ = limitedQuestions[currentQuestionIndex];
+      const savedAnswer = answers[currentQuestionId] || (isMultipleChoice(currentQ) ? [] : "");
       setSelectedAnswer(savedAnswer);
       // Don't show explanation for personality tests
-      setShowExplanation(!isInsightDiscovery && !!savedAnswer);
+      // For arrays, check length; for strings, check truthiness
+      const hasAnswer = Array.isArray(savedAnswer) ? savedAnswer.length > 0 : !!savedAnswer;
+      setShowExplanation(!isInsightDiscovery && hasAnswer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestionIndex, currentQuestionId, isInsightDiscovery]);
@@ -392,13 +395,31 @@ export default function QuizPage() {
   const handleNextQuestion = () => {
     if (limitedQuestions.length === 0) return;
 
+    // Save current answer to answers map before navigating
+    const currentQ = limitedQuestions[currentQuestionIndex];
+    // Normalize the answer based on question type
+    const normalizedAnswer = isMultipleChoice(currentQ)
+      ? (Array.isArray(selectedAnswer) ? selectedAnswer : [])
+      : (typeof selectedAnswer === 'string' ? selectedAnswer : "");
+    
+    const updatedAnswers = {
+      ...answers,
+      [currentQ.id]: normalizedAnswer
+    };
+    setAnswers(updatedAnswers);
+
     setShowExplanation(false); // Hide explanation when moving to next question
     if (currentQuestionIndex < limitedQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       // Reset selectedAnswer based on the next question's type
       const nextQuestion = limitedQuestions[currentQuestionIndex + 1];
-      const savedAnswer = answers[nextQuestion.id];
-      setSelectedAnswer(savedAnswer || (isMultipleChoice(nextQuestion) ? [] : ""));
+      const savedAnswer = updatedAnswers[nextQuestion.id];
+      // Clone arrays to avoid shared references
+      if (isMultipleChoice(nextQuestion)) {
+        setSelectedAnswer(Array.isArray(savedAnswer) ? [...savedAnswer] : []);
+      } else {
+        setSelectedAnswer(typeof savedAnswer === 'string' ? savedAnswer : "");
+      }
     } else {
       handleSubmitQuiz();
     }
@@ -406,28 +427,57 @@ export default function QuizPage() {
 
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
+      // Save current answer to answers map before navigating
+      const currentQ = limitedQuestions[currentQuestionIndex];
+      // Normalize the answer based on question type
+      const normalizedAnswer = isMultipleChoice(currentQ)
+        ? (Array.isArray(selectedAnswer) ? selectedAnswer : [])
+        : (typeof selectedAnswer === 'string' ? selectedAnswer : "");
+      
+      const updatedAnswers = {
+        ...answers,
+        [currentQ.id]: normalizedAnswer
+      };
+      setAnswers(updatedAnswers);
+      
       setShowExplanation(false);
       setCurrentQuestionIndex(currentQuestionIndex - 1);
       // Reset selectedAnswer based on the previous question's type
       const prevQuestion = limitedQuestions[currentQuestionIndex - 1];
-      const savedAnswer = answers[prevQuestion.id];
-      setSelectedAnswer(savedAnswer || (isMultipleChoice(prevQuestion) ? [] : ""));
+      const savedAnswer = updatedAnswers[prevQuestion.id];
+      // Clone arrays to avoid shared references
+      if (isMultipleChoice(prevQuestion)) {
+        setSelectedAnswer(Array.isArray(savedAnswer) ? [...savedAnswer] : []);
+      } else {
+        setSelectedAnswer(typeof savedAnswer === 'string' ? savedAnswer : "");
+      }
     }
   };
 
   const handleSkipQuestion = () => {
     if (limitedQuestions.length === 0) return;
     
-    const questionId = limitedQuestions[currentQuestionIndex].id;
+    const currentQ = limitedQuestions[currentQuestionIndex];
+    // Normalize empty answer based on question type
+    const emptyAnswer = isMultipleChoice(currentQ) ? [] : "";
+    
     setAnswers(prev => ({
       ...prev,
-      [questionId]: ""
+      [currentQ.id]: emptyAnswer
     }));
-    setSelectedAnswer("");
+    setSelectedAnswer(emptyAnswer);
     setShowExplanation(false);
     
     if (currentQuestionIndex < limitedQuestions.length - 1) {
+      const nextQuestion = limitedQuestions[currentQuestionIndex + 1];
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      // Load next question's answer
+      const savedAnswer = answers[nextQuestion.id];
+      if (isMultipleChoice(nextQuestion)) {
+        setSelectedAnswer(Array.isArray(savedAnswer) ? [...savedAnswer] : []);
+      } else {
+        setSelectedAnswer(typeof savedAnswer === 'string' ? savedAnswer : "");
+      }
     } else {
       handleSubmitQuiz();
     }
@@ -439,12 +489,23 @@ export default function QuizPage() {
     const endTime = new Date();
     const timeSpent = Math.floor((endTime.getTime() - quizStartTime.getTime()) / 1000);
     
+    // Merge current answer with saved answers for complete results
+    const currentQ = limitedQuestions[currentQuestionIndex];
+    const normalizedCurrentAnswer = isMultipleChoice(currentQ)
+      ? (Array.isArray(selectedAnswer) ? selectedAnswer : [])
+      : (typeof selectedAnswer === 'string' ? selectedAnswer : "");
+    
+    const finalAnswers = {
+      ...answers,
+      [currentQ.id]: normalizedCurrentAnswer
+    };
+    
     // Calculate results
     let correctCount = 0;
     const categoryScores: Record<string, { correct: number; total: number }> = {};
     
     const answersArray = limitedQuestions.map(question => {
-      const userAnswer = answers[question.id] || "";
+      const userAnswer = finalAnswers[question.id] || (isMultipleChoice(question) ? [] : "");
       let isCorrect = false;
       
       // Check if it's a multiple choice question
@@ -525,7 +586,7 @@ export default function QuizPage() {
     );
     
     if (confirm(confirmMessage)) {
-      // Submit quiz with current answers (unanswered questions count as 0)
+      // handleSubmitQuiz will include current answer automatically
       handleSubmitQuiz();
     }
   };

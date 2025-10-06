@@ -196,6 +196,7 @@ export default function Register() {
                     placeholder="Mario"
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    autoComplete="given-name"
                     required
                     data-testid="input-firstName"
                   />
@@ -207,6 +208,7 @@ export default function Register() {
                     placeholder="Rossi"
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    autoComplete="family-name"
                     required
                     data-testid="input-lastName"
                   />
@@ -221,6 +223,7 @@ export default function Register() {
                     type="date"
                     value={formData.dateOfBirth}
                     onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    autoComplete="bday"
                     required
                     data-testid="input-dateOfBirth"
                   />
@@ -258,6 +261,7 @@ export default function Register() {
                     placeholder="nome@esempio.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    autoComplete="email"
                     required
                     data-testid="input-email"
                   />
@@ -270,6 +274,7 @@ export default function Register() {
                     placeholder="+39 123 456 7890"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    autoComplete="tel"
                     data-testid="input-phone"
                   />
                 </div>
@@ -335,6 +340,7 @@ export default function Register() {
                   placeholder="Nome azienda (facoltativo)"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  autoComplete="organization"
                   data-testid="input-company"
                 />
               </div>
@@ -350,6 +356,7 @@ export default function Register() {
                   placeholder="Via Roma, 123"
                   value={formData.addressStreet}
                   onChange={(e) => setFormData({ ...formData, addressStreet: e.target.value })}
+                  autoComplete="street-address"
                   required
                   data-testid="input-addressStreet"
                 />
@@ -362,6 +369,7 @@ export default function Register() {
                     placeholder="Milano"
                     value={formData.addressCity}
                     onChange={(e) => setFormData({ ...formData, addressCity: e.target.value })}
+                    autoComplete="address-level2"
                     required
                     data-testid="input-addressCity"
                   />
@@ -373,6 +381,7 @@ export default function Register() {
                     placeholder="20100"
                     value={formData.addressPostalCode}
                     onChange={(e) => setFormData({ ...formData, addressPostalCode: e.target.value })}
+                    autoComplete="postal-code"
                     required
                     data-testid="input-addressPostalCode"
                   />
@@ -384,6 +393,7 @@ export default function Register() {
                     placeholder="MI"
                     value={formData.addressProvince}
                     onChange={(e) => setFormData({ ...formData, addressProvince: e.target.value })}
+                    autoComplete="address-level1"
                     required
                     data-testid="input-addressProvince"
                   />
@@ -443,6 +453,7 @@ export default function Register() {
                     placeholder="Crea una password sicura"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    autoComplete="new-password"
                     required
                     data-testid="input-password"
                   />
@@ -455,6 +466,7 @@ export default function Register() {
                     placeholder="Ripeti la password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    autoComplete="new-password"
                     required
                     data-testid="input-confirmPassword"
                   />

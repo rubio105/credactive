@@ -485,4 +485,54 @@ export function registerGamificationRoutes(app: Express): void {
       res.status(500).json({ message: "Failed to fetch user stats" });
     }
   });
+
+  // Get aggregated gamification data for dashboard
+  app.get("/api/user/gamification", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Get all badges (both earned and not earned)
+      const allBadges = await storage.getAllBadges();
+      const userBadges = await storage.getUserBadges(req.user.id);
+      const userBadgeIds = new Set(userBadges.map(b => b.id));
+      
+      // Combine badges with earned status
+      const badges = allBadges.filter(b => b.isActive).map(badge => ({
+        id: badge.id,
+        name: badge.name,
+        description: badge.description,
+        iconUrl: badge.iconUrl,
+        earnedAt: userBadgeIds.has(badge.id) 
+          ? userBadges.find(ub => ub.id === badge.id)?.earnedAt 
+          : undefined
+      }));
+      
+      // Get leaderboard position
+      const leaderboardPosition = await storage.getUserLeaderboardPosition(req.user.id, undefined, 'all_time') || {
+        rank: 0,
+        totalPoints: user.totalPoints || 0
+      };
+      
+      res.json({
+        profile: {
+          totalPoints: user.totalPoints || 0,
+          level: user.level || 1,
+          currentStreak: user.currentStreak || 0,
+          longestStreak: user.longestStreak || 0,
+        },
+        badges,
+        leaderboardPosition
+      });
+    } catch (error: any) {
+      console.error("Error fetching user gamification data:", error);
+      res.status(500).json({ message: "Failed to fetch gamification data" });
+    }
+  });
 }

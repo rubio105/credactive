@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,6 +34,7 @@ interface Question {
     explanation?: string;
   }>;
   correctAnswer: string;
+  correctAnswers?: string[]; // Array of correct answers for multiple-choice questions
   explanation?: string;
   explanationAudioUrl?: string;
   category?: string;
@@ -69,12 +71,12 @@ export default function QuizPage() {
   const maxQuestions = requestedQuestions ? parseInt(requestedQuestions) : null;
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [quizStartTime, setQuizStartTime] = useState<Date | null>(null);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [results, setResults] = useState<QuizResults | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [selectedAnswer, setSelectedAnswer] = useState<string | string[]>("");
   const [showExplanation, setShowExplanation] = useState(false);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [quizLanguage, setQuizLanguage] = useState<'it' | 'en' | 'es'>('it'); // Language selector
@@ -350,17 +352,41 @@ export default function QuizPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestionIndex, currentQuestionId, isInsightDiscovery]);
 
+  // Helper function to check if a question has multiple correct answers
+  const isMultipleChoice = (question: Question) => {
+    return question.correctAnswers && Array.isArray(question.correctAnswers) && question.correctAnswers.length > 1;
+  };
+
   const handleAnswerChange = (answer: string) => {
     if (limitedQuestions.length === 0) return;
     
-    const questionId = limitedQuestions[currentQuestionIndex].id;
-    setSelectedAnswer(answer);
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: answer
-    }));
-    // Don't show explanation for personality tests - just record the answer
-    setShowExplanation(!isInsightDiscovery && Boolean(answer));
+    const currentQ = limitedQuestions[currentQuestionIndex];
+    const questionId = currentQ.id;
+    
+    if (isMultipleChoice(currentQ)) {
+      // Handle multiple choice - toggle the selection
+      const currentAnswers = Array.isArray(selectedAnswer) ? selectedAnswer : [];
+      const newAnswers = currentAnswers.includes(answer)
+        ? currentAnswers.filter(a => a !== answer)
+        : [...currentAnswers, answer];
+      
+      setSelectedAnswer(newAnswers);
+      setAnswers(prev => ({
+        ...prev,
+        [questionId]: newAnswers
+      }));
+      // Show explanation only if at least one answer is selected
+      setShowExplanation(!isInsightDiscovery && newAnswers.length > 0);
+    } else {
+      // Handle single choice
+      setSelectedAnswer(answer);
+      setAnswers(prev => ({
+        ...prev,
+        [questionId]: answer
+      }));
+      // Don't show explanation for personality tests - just record the answer
+      setShowExplanation(!isInsightDiscovery && Boolean(answer));
+    }
   };
 
   const handleNextQuestion = () => {
@@ -369,6 +395,10 @@ export default function QuizPage() {
     setShowExplanation(false); // Hide explanation when moving to next question
     if (currentQuestionIndex < limitedQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      // Reset selectedAnswer based on the next question's type
+      const nextQuestion = limitedQuestions[currentQuestionIndex + 1];
+      const savedAnswer = answers[nextQuestion.id];
+      setSelectedAnswer(savedAnswer || (isMultipleChoice(nextQuestion) ? [] : ""));
     } else {
       handleSubmitQuiz();
     }
@@ -378,6 +408,10 @@ export default function QuizPage() {
     if (currentQuestionIndex > 0) {
       setShowExplanation(false);
       setCurrentQuestionIndex(currentQuestionIndex - 1);
+      // Reset selectedAnswer based on the previous question's type
+      const prevQuestion = limitedQuestions[currentQuestionIndex - 1];
+      const savedAnswer = answers[prevQuestion.id];
+      setSelectedAnswer(savedAnswer || (isMultipleChoice(prevQuestion) ? [] : ""));
     }
   };
 
@@ -411,7 +445,18 @@ export default function QuizPage() {
     
     const answersArray = limitedQuestions.map(question => {
       const userAnswer = answers[question.id] || "";
-      const isCorrect = userAnswer === question.correctAnswer;
+      let isCorrect = false;
+      
+      // Check if it's a multiple choice question
+      if (isMultipleChoice(question) && question.correctAnswers) {
+        // For multiple choice, compare arrays
+        const userAnswers = Array.isArray(userAnswer) ? userAnswer.sort() : [];
+        const correctAnswers = question.correctAnswers.sort();
+        isCorrect = JSON.stringify(userAnswers) === JSON.stringify(correctAnswers);
+      } else {
+        // For single choice, compare strings
+        isCorrect = userAnswer === question.correctAnswer;
+      }
       
       if (isCorrect) correctCount++;
       
@@ -895,56 +940,120 @@ export default function QuizPage() {
             </div>
 
             {/* Answer Options */}
-            <RadioGroup value={selectedAnswer} onValueChange={handleAnswerChange} disabled={!isInsightDiscovery && showExplanation}>
-              <div className="space-y-4">
-                {currentQuestion.options.map((option) => {
-                  const isSelected = selectedAnswer === option.label;
-                  const isCorrect = option.label === currentQuestion.correctAnswer;
-                  // Don't show right/wrong status for personality tests
-                  const showStatus = !isInsightDiscovery && showExplanation && isSelected;
-                  const isDisabled = !isInsightDiscovery && showExplanation;
-                  
-                  return (
-                    <div 
-                      key={option.label} 
-                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-colors ${
-                        showStatus
-                          ? isCorrect 
-                            ? 'border-green-500 bg-green-50 dark:bg-green-950'
-                            : 'border-red-500 bg-red-50 dark:bg-red-950'
-                          : isSelected && isInsightDiscovery
-                            ? 'border-primary bg-primary/5'
-                            : isDisabled 
-                              ? 'border-border bg-muted/30 cursor-not-allowed opacity-60'
-                              : 'border-border hover:border-primary hover:bg-primary/5'
-                      }`}
-                    >
-                      <RadioGroupItem 
-                        value={option.label} 
-                        id={option.label}
-                        className="mt-1"
-                        data-testid={`option-${option.label}`}
-                        disabled={isDisabled}
-                      />
-                      <Label htmlFor={option.label} className={`flex-1 ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                        <div className="font-medium mb-1">
-                          {option.label}) {option.text}
-                        </div>
-                      </Label>
-                      {showStatus && (
-                        <div className="mt-1">
-                          {isCorrect ? (
-                            <span className="text-green-600 dark:text-green-400 font-semibold text-sm">✓ {t('Corretto', 'Correct', 'Correcto')}</span>
-                          ) : (
-                            <span className="text-red-600 dark:text-red-400 font-semibold text-sm">✗ {t('Sbagliato', 'Wrong', 'Incorrecto')}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+            {isMultipleChoice(currentQuestion) ? (
+              // Multiple Choice - Use Checkboxes
+              <div>
+                {currentQuestion.correctAnswers && currentQuestion.correctAnswers.length > 0 && (
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {t('Seleziona tutte le risposte corrette', 'Select all correct answers', 'Selecciona todas las respuestas correctas')} ({currentQuestion.correctAnswers.length} {t('risposte', 'answers', 'respuestas')})
+                  </p>
+                )}
+                <div className="space-y-4">
+                  {currentQuestion.options.map((option) => {
+                    const userAnswers = Array.isArray(selectedAnswer) ? selectedAnswer : [];
+                    const isSelected = userAnswers.includes(option.label);
+                    const correctAnswers = currentQuestion.correctAnswers || [];
+                    const isCorrect = correctAnswers.includes(option.label);
+                    const showStatus = !isInsightDiscovery && showExplanation;
+                    const isDisabled = !isInsightDiscovery && showExplanation;
+                    
+                    return (
+                      <div 
+                        key={option.label} 
+                        className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-colors ${
+                          showStatus && isSelected
+                            ? isCorrect 
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950'
+                              : 'border-red-500 bg-red-50 dark:bg-red-950'
+                            : showStatus && isCorrect
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950'
+                              : isSelected
+                                ? 'border-primary bg-primary/5'
+                                : isDisabled 
+                                  ? 'border-border bg-muted/30 cursor-not-allowed opacity-60'
+                                  : 'border-border hover:border-primary hover:bg-primary/5'
+                        }`}
+                      >
+                        <Checkbox 
+                          id={option.label}
+                          checked={isSelected}
+                          onCheckedChange={() => handleAnswerChange(option.label)}
+                          className="mt-1"
+                          data-testid={`option-${option.label}`}
+                          disabled={isDisabled}
+                        />
+                        <Label htmlFor={option.label} className={`flex-1 ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                          <div className="font-medium mb-1">
+                            {option.label}) {option.text}
+                          </div>
+                        </Label>
+                        {showStatus && (
+                          <div className="mt-1">
+                            {isCorrect ? (
+                              <span className="text-green-600 dark:text-green-400 font-semibold text-sm">✓ {t('Corretto', 'Correct', 'Correcto')}</span>
+                            ) : isSelected ? (
+                              <span className="text-red-600 dark:text-red-400 font-semibold text-sm">✗ {t('Sbagliato', 'Wrong', 'Incorrecto')}</span>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </RadioGroup>
+            ) : (
+              // Single Choice - Use Radio Buttons
+              <RadioGroup value={typeof selectedAnswer === 'string' ? selectedAnswer : ''} onValueChange={handleAnswerChange} disabled={!isInsightDiscovery && showExplanation}>
+                <div className="space-y-4">
+                  {currentQuestion.options.map((option) => {
+                    const isSelected = selectedAnswer === option.label;
+                    const isCorrect = option.label === currentQuestion.correctAnswer;
+                    // Don't show right/wrong status for personality tests
+                    const showStatus = !isInsightDiscovery && showExplanation && isSelected;
+                    const isDisabled = !isInsightDiscovery && showExplanation;
+                    
+                    return (
+                      <div 
+                        key={option.label} 
+                        className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-colors ${
+                          showStatus
+                            ? isCorrect 
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950'
+                              : 'border-red-500 bg-red-50 dark:bg-red-950'
+                            : isSelected && isInsightDiscovery
+                              ? 'border-primary bg-primary/5'
+                              : isDisabled 
+                                ? 'border-border bg-muted/30 cursor-not-allowed opacity-60'
+                                : 'border-border hover:border-primary hover:bg-primary/5'
+                        }`}
+                      >
+                        <RadioGroupItem 
+                          value={option.label} 
+                          id={option.label}
+                          className="mt-1"
+                          data-testid={`option-${option.label}`}
+                          disabled={isDisabled}
+                        />
+                        <Label htmlFor={option.label} className={`flex-1 ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                          <div className="font-medium mb-1">
+                            {option.label}) {option.text}
+                          </div>
+                        </Label>
+                        {showStatus && (
+                          <div className="mt-1">
+                            {isCorrect ? (
+                              <span className="text-green-600 dark:text-green-400 font-semibold text-sm">✓ {t('Corretto', 'Correct', 'Correcto')}</span>
+                            ) : (
+                              <span className="text-red-600 dark:text-red-400 font-semibold text-sm">✗ {t('Sbagliato', 'Wrong', 'Incorrecto')}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </RadioGroup>
+            )}
           </CardContent>
         </Card>
 
@@ -1043,7 +1152,7 @@ export default function QuizPage() {
             </Button>
             <Button
               onClick={handleNextQuestion}
-              disabled={!selectedAnswer}
+              disabled={Array.isArray(selectedAnswer) ? selectedAnswer.length === 0 : !selectedAnswer}
               data-testid="button-next"
             >
               {currentQuestionIndex === limitedQuestions.length - 1 

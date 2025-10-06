@@ -31,6 +31,7 @@ export async function setupAuth(app: Express) {
       conObject: {
         connectionString: process.env.DATABASE_URL,
       },
+      tableName: 'sessions',
       createTableIfMissing: false,
     });
   } else {

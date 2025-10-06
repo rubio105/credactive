@@ -13,7 +13,7 @@ import Navigation from "@/components/navigation";
 import Timer from "@/components/ui/timer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages, Volume2, Mic } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages, Volume2, Mic, Coins } from "lucide-react";
 
 interface Quiz {
   id: string;
@@ -50,6 +50,8 @@ interface QuizResults {
   correctAnswers: number;
   totalQuestions: number;
   timeSpent: number;
+  creditsEarned?: number;
+  pointsEarned?: number;
   categoryScores: Array<{
     category: string;
     score: number;
@@ -133,10 +135,21 @@ export default function QuizPage() {
         }, 500);
       } else {
         console.log('[Quiz Submit] Showing standard quiz completion toast');
+        // Show credits earned if available
+        const creditsMsg = data.creditsEarned ? t(
+          ` Hai guadagnato ${data.creditsEarned} crediti!`,
+          ` You earned ${data.creditsEarned} credits!`,
+          ` ¡Ganaste ${data.creditsEarned} créditos!`
+        ) : '';
         toast({
           title: t("Quiz Completato!", "Quiz Completed!", "¡Cuestionario Completado!"),
-          description: t(`Hai ottenuto ${data.score}% di risposte corrette.`, `You got ${data.score}% correct answers.`, `Obtuviste ${data.score}% de respuestas correctas.`),
+          description: t(`Hai ottenuto ${data.score}% di risposte corrette.`, `You got ${data.score}% correct answers.`, `Obtuviste ${data.score}% de respuestas correctas.`) + creditsMsg,
         });
+        
+        // Update local results with credits info
+        if (results) {
+          setResults({ ...results, creditsEarned: data.creditsEarned, pointsEarned: data.pointsEarned });
+        }
       }
     },
     onError: (error) => {
@@ -646,6 +659,35 @@ export default function QuizPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Rewards Card - Credits and Points */}
+          {(results.creditsEarned !== undefined || results.pointsEarned !== undefined) && (
+            <Card className="shadow-lg mb-8 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-200 dark:border-yellow-800">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold mb-4 text-center">Ricompense Guadagnate</h3>
+                <div className="grid md:grid-cols-2 gap-6 text-center">
+                  {results.creditsEarned !== undefined && (
+                    <div>
+                      <div className="text-4xl font-bold text-yellow-600 dark:text-yellow-400 mb-2 flex items-center justify-center" data-testid="credits-earned">
+                        <Coins className="w-10 h-10 mr-2" />
+                        {results.creditsEarned}
+                      </div>
+                      <p className="text-muted-foreground font-medium">Crediti Guadagnati</p>
+                    </div>
+                  )}
+                  {results.pointsEarned !== undefined && (
+                    <div>
+                      <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2 flex items-center justify-center" data-testid="points-earned">
+                        <Trophy className="w-10 h-10 mr-2" />
+                        {results.pointsEarned}
+                      </div>
+                      <p className="text-muted-foreground font-medium">Punti Esperienza</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Performance Analysis */}
           <Card className="mb-8">

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins } from "lucide-react";
 import logoImage from "@assets/image_1759658677025.png";
 
 interface User {
@@ -22,6 +22,7 @@ interface User {
   profileImageUrl?: string;
   isPremium: boolean;
   isAdmin: boolean;
+  credits?: number;
 }
 
 interface ContentPage {
@@ -142,6 +143,12 @@ export default function Navigation() {
             ) : (
               /* Authenticated State */
               <div className="flex items-center space-x-4">
+                {/* Credits Badge */}
+                <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800" data-testid="badge-credits">
+                  <Coins className="w-3 h-3 mr-1" />
+                  {typedUser?.credits || 0}
+                </Badge>
+                
                 {/* Premium Badge */}
                 {typedUser?.isPremium && (
                   <Badge className="bg-accent/10 text-accent border-accent/20" data-testid="badge-premium">
@@ -177,12 +184,18 @@ export default function Navigation() {
                     <div className="px-2 py-1.5">
                       <p className="text-sm font-medium">{getUserName()}</p>
                       <p className="text-xs text-muted-foreground">{typedUser?.email}</p>
-                      {typedUser?.isPremium && (
-                        <Badge className="mt-1 bg-accent/10 text-accent border-accent/20 text-xs py-0.5">
-                          <Crown className="w-3 h-3 mr-1" />
-                          Premium
+                      <div className="flex items-center gap-1 mt-2">
+                        <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 text-xs py-0.5">
+                          <Coins className="w-3 h-3 mr-1" />
+                          {typedUser?.credits || 0} Crediti
                         </Badge>
-                      )}
+                        {typedUser?.isPremium && (
+                          <Badge className="bg-accent/10 text-accent border-accent/20 text-xs py-0.5">
+                            <Crown className="w-3 h-3 mr-1" />
+                            Premium
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <DropdownMenuSeparator />
                     <Link href="/dashboard">

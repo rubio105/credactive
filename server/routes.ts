@@ -543,13 +543,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Process gamification rewards (points, badges, achievements)
         console.log('[Quiz Submission] Processing gamification rewards...');
         try {
-          const gamificationResults = await processQuizCompletion(userId, attempt, quiz);
+          const gamificationResults = await processQuizCompletion(
+            userId, 
+            attempt, 
+            quiz.duration, 
+            quiz.difficulty
+          );
           console.log('[Quiz Submission] Gamification results:', {
             pointsEarned: gamificationResults.pointsEarned,
+            creditsEarned: gamificationResults.creditsEarned,
             newLevel: gamificationResults.newLevel,
             newBadges: gamificationResults.newBadges.length,
             newAchievements: gamificationResults.newAchievements.length,
-            streakInfo: gamificationResults.streakInfo,
+            streakData: gamificationResults.streakData,
+          });
+          
+          // Include credits and points in response
+          console.log('[Quiz Submission] Sending response to client');
+          return res.json({ 
+            ...attempt, 
+            creditsEarned: gamificationResults.creditsEarned, 
+            pointsEarned: gamificationResults.pointsEarned 
           });
         } catch (gamificationError) {
           console.error('[Quiz Submission] Error processing gamification:', gamificationError);

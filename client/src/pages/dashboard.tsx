@@ -14,6 +14,7 @@ import { Trophy, ChartLine, Clock, Flame, ShieldCheck, BookOpen, Award, Star, Do
 import { LevelProgress } from "@/components/gamification/LevelProgress";
 import { StreakTracker } from "@/components/gamification/StreakTracker";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
+import { DailyChallenge } from "@/components/gamification/DailyChallenge";
 
 interface DashboardData {
   stats: {
@@ -286,7 +287,7 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid lg:grid-cols-3 gap-6 mb-6">
               <LevelProgress 
                 level={gamificationData.profile.level} 
                 totalPoints={gamificationData.profile.totalPoints} 
@@ -295,6 +296,7 @@ export default function Dashboard() {
                 currentStreak={gamificationData.profile.currentStreak} 
                 longestStreak={gamificationData.profile.longestStreak} 
               />
+              <DailyChallenge />
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">

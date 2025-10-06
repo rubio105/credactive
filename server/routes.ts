@@ -927,6 +927,51 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Admin - Send marketing email to newsletter subscribers
+  app.post('/api/admin/send-marketing-email', isAdmin, async (req, res) => {
+    try {
+      const { subject, htmlContent, textContent } = req.body;
+
+      if (!subject || !htmlContent) {
+        return res.status(400).json({ message: "Subject e contenuto HTML sono obbligatori" });
+      }
+
+      // Get all users with newsletter consent
+      const users = await storage.getAllUsers();
+      const subscribedUsers = users.filter(user => user.newsletterConsent);
+
+      if (subscribedUsers.length === 0) {
+        return res.json({ 
+          message: "Nessun utente ha acconsentito alla newsletter", 
+          sent: 0, 
+          failed: 0 
+        });
+      }
+
+      const recipients = subscribedUsers.map(user => ({
+        email: user.email,
+        firstName: user.firstName || undefined
+      }));
+
+      const { sendBulkMarketingEmail } = await import("./email");
+      const result = await sendBulkMarketingEmail(
+        recipients,
+        subject,
+        htmlContent,
+        textContent
+      );
+
+      res.json({
+        message: `Email marketing inviata a ${result.sent} utenti`,
+        ...result,
+        totalSubscribers: subscribedUsers.length
+      });
+    } catch (error) {
+      console.error("Error sending marketing email:", error);
+      res.status(500).json({ message: "Errore durante l'invio delle email" });
+    }
+  });
+
   // Admin - Create category
   app.post('/api/admin/categories', isAdmin, async (req, res) => {
     try {

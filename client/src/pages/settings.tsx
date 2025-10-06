@@ -508,6 +508,16 @@ export default function Settings() {
                     </p>
                   </div>
                 </div>
+                {user?.companyName && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Azienda</label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-lg" data-testid="text-user-company">{user.companyName}</p>
+                      <Badge variant="secondary" className="ml-2">Accesso Corporate</Badge>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

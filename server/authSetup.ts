@@ -1,7 +1,7 @@
 import passport from "passport";
 import type { Express, RequestHandler } from "express";
 import { setupAuth as setupPassportAuth } from "./auth";
-import { setupAuth as setupSocialAuth, getSession } from "./replitAuth";
+import { setupSocialAuthStrategies, getSession } from "./replitAuth";
 import { storage } from "./storage";
 import { db } from "./db";
 import { users } from "@shared/schema";
@@ -16,14 +16,25 @@ export async function setupAuth(app: Express) {
   // Setup local email/password authentication
   setupPassportAuth();
   
-  // Setup social authentication (Google, Apple)
-  await setupSocialAuth(app);
+  // Setup social authentication strategies (Google, Apple)
+  await setupSocialAuthStrategies(app);
 
   // Unified serialization - works with both local and social auth
   passport.serializeUser((user: any, done) => {
-    // For social auth, user has claims.sub; for local auth, user.id
-    const userId = user.claims?.sub || user.id;
-    done(null, { userId, isSocial: !!user.claims });
+    if (user.claims) {
+      // Social auth - store all session data including tokens
+      done(null, {
+        userId: user.claims.sub,
+        isSocial: true,
+        access_token: user.access_token,
+        refresh_token: user.refresh_token,
+        expires_at: user.expires_at,
+        claims: user.claims
+      });
+    } else {
+      // Local auth - store only user ID
+      done(null, { userId: user.id, isSocial: false });
+    }
   });
 
   passport.deserializeUser(async (sessionData: any, done) => {
@@ -31,15 +42,18 @@ export async function setupAuth(app: Express) {
       const { userId, isSocial } = sessionData;
       
       if (isSocial) {
-        // For social auth, reconstruct the user object with claims
+        // For social auth, merge database user with session tokens
         const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
         if (!dbUser) {
           return done(null, false);
         }
-        // Reconstruct social auth user format
+        // Merge database user with social auth session data
         const user = {
-          claims: { sub: userId },
-          // We'll refresh tokens on next request if needed
+          ...dbUser,
+          claims: sessionData.claims,
+          access_token: sessionData.access_token,
+          refresh_token: sessionData.refresh_token,
+          expires_at: sessionData.expires_at
         };
         done(null, user);
       } else {

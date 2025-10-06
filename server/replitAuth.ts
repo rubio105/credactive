@@ -44,15 +44,6 @@ export function getSession() {
   });
 }
 
-function updateUserSession(
-  user: any,
-  tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
-) {
-  user.claims = tokens.claims();
-  user.access_token = tokens.access_token;
-  user.refresh_token = tokens.refresh_token;
-  user.expires_at = user.claims?.exp;
-}
 
 async function upsertUser(
   claims: any,
@@ -75,21 +66,36 @@ async function upsertUser(
   });
 }
 
-export async function setupAuth(app: Express) {
-  app.set("trust proxy", 1);
-  app.use(getSession());
-  app.use(passport.initialize());
-  app.use(passport.session());
-
+export async function setupSocialAuthStrategies(app: Express) {
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
+    const claims = tokens.claims();
+    if (!claims) {
+      return verified(new Error("No claims in token"));
+    }
+    
+    // Upsert the user in database
+    await upsertUser(claims);
+    
+    // Fetch the complete user from database
+    const dbUser = await storage.getUser(claims["sub"]);
+    if (!dbUser) {
+      return verified(new Error("Failed to create user"));
+    }
+    
+    // Build complete user object with DB data and tokens
+    const user = {
+      ...dbUser,
+      claims,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: claims.exp
+    };
+    
     verified(null, user);
   };
 
@@ -107,9 +113,7 @@ export async function setupAuth(app: Express) {
     passport.use(strategy);
   }
 
-  // Note: serializeUser and deserializeUser are set up in authSetup.ts
-  // to work with both local and social auth
-
+  // Social auth routes
   app.get("/api/auth/social/login", (req, res, next) => {
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
@@ -136,75 +140,24 @@ export async function setupAuth(app: Express) {
   });
 }
 
-export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
-
-  if (!req.isAuthenticated() || !user.expires_at) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
-    return next();
-  }
-
-  const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+// Token refresh helper for social auth
+export async function refreshSocialToken(user: any): Promise<boolean> {
+  if (!user.refresh_token) {
+    return false;
   }
 
   try {
     const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
-    return next();
+    const tokenResponse = await client.refreshTokenGrant(config, user.refresh_token);
+    
+    // Update user object with new tokens
+    user.claims = tokenResponse.claims();
+    user.access_token = tokenResponse.access_token;
+    user.refresh_token = tokenResponse.refresh_token;
+    user.expires_at = tokenResponse.claims()?.exp;
+    
+    return true;
   } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+    return false;
   }
-};
-
-export const isAdmin: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
-
-  if (!req.isAuthenticated() || !user.expires_at) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
-    const userId = user.claims.sub;
-    const dbUser = await storage.getUser(userId);
-    
-    if (!dbUser?.isAdmin) {
-      return res.status(403).json({ message: "Forbidden: Admin access required" });
-    }
-    
-    return next();
-  }
-
-  const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
-
-  try {
-    const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
-    
-    const userId = user.claims.sub;
-    const dbUser = await storage.getUser(userId);
-    
-    if (!dbUser?.isAdmin) {
-      return res.status(403).json({ message: "Forbidden: Admin access required" });
-    }
-    
-    return next();
-  } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
-};
+}

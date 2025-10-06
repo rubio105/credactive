@@ -251,6 +251,7 @@ export interface IStorage {
   deleteCorporateAgreement(id: string): Promise<void>;
   incrementCorporateAgreementUsers(id: string): Promise<boolean>;
   decrementCorporateAgreementUsers(id: string): Promise<void>;
+  getUsersByCorporateAgreement(agreementId: string): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1440,6 +1441,14 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(corporateAgreements.id, id));
+  }
+  
+  async getUsersByCorporateAgreement(agreementId: string): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.corporateAgreementId, agreementId))
+      .orderBy(desc(users.createdAt));
   }
 }
 

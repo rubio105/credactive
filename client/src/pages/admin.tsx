@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Image, DollarSign, Calendar, FileText, Video } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Image, DollarSign, Calendar, FileText, Video, Building2 } from "lucide-react";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminCategories } from "@/components/admin/AdminCategories";
 import { AdminQuizzes } from "@/components/admin/AdminQuizzes";
@@ -11,6 +11,7 @@ import { AdminSettings } from "@/components/admin/AdminSettings";
 import { AdminLiveCourses } from "@/components/admin/AdminLiveCourses";
 import { AdminContentPages } from "@/components/admin/AdminContentPages";
 import { AdminOnDemandCourses } from "@/components/admin/AdminOnDemandCourses";
+import { AdminCorporateAgreements } from "@/components/admin/AdminCorporateAgreements";
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
@@ -53,7 +54,7 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-8 mb-8">
+          <TabsList className="grid w-full grid-cols-9 mb-8">
             <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Utenti</span>
@@ -81,6 +82,10 @@ export default function AdminPage() {
             <TabsTrigger value="pages" className="flex items-center gap-2" data-testid="tab-pages">
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Pagine</span>
+            </TabsTrigger>
+            <TabsTrigger value="corporate" className="flex items-center gap-2" data-testid="tab-corporate">
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Aziende</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2" data-testid="tab-settings">
               <Settings className="w-4 h-4" />
@@ -114,6 +119,10 @@ export default function AdminPage() {
 
           <TabsContent value="pages">
             <AdminContentPages />
+          </TabsContent>
+
+          <TabsContent value="corporate">
+            <AdminCorporateAgreements />
           </TabsContent>
 
           <TabsContent value="settings">

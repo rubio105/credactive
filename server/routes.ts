@@ -19,7 +19,8 @@ import {
   updateOnDemandCourseSchema,
   updateCourseVideoSchema,
   updateVideoQuestionSchema,
-  updateCourseQuestionSchema
+  updateCourseQuestionSchema,
+  insertCorporateAgreementSchema
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -2459,6 +2460,64 @@ ${JSON.stringify(questionsToTranslate)}`;
     } catch (error) {
       console.error("Error deleting content page:", error);
       res.status(500).json({ message: "Failed to delete content page" });
+    }
+  });
+
+  // Corporate agreements management
+  app.get('/api/admin/corporate-agreements', isAdmin, async (req, res) => {
+    try {
+      const agreements = await storage.getAllCorporateAgreements();
+      res.json(agreements);
+    } catch (error) {
+      console.error("Error fetching corporate agreements:", error);
+      res.status(500).json({ message: "Failed to fetch corporate agreements" });
+    }
+  });
+
+  app.post('/api/admin/corporate-agreements', isAdmin, async (req, res) => {
+    try {
+      const validated = insertCorporateAgreementSchema.parse(req.body);
+      const agreement = await storage.createCorporateAgreement(validated);
+      res.json(agreement);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating corporate agreement:", error);
+      res.status(500).json({ message: "Failed to create corporate agreement" });
+    }
+  });
+
+  app.patch('/api/admin/corporate-agreements/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const agreement = await storage.updateCorporateAgreement(id, req.body);
+      res.json(agreement);
+    } catch (error) {
+      console.error("Error updating corporate agreement:", error);
+      res.status(500).json({ message: "Failed to update corporate agreement" });
+    }
+  });
+
+  app.delete('/api/admin/corporate-agreements/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCorporateAgreement(id);
+      res.json({ message: "Corporate agreement deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting corporate agreement:", error);
+      res.status(500).json({ message: "Failed to delete corporate agreement" });
+    }
+  });
+
+  app.get('/api/admin/corporate-agreements/:id/users', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const users = await storage.getUsersByCorporateAgreement(id);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching corporate agreement users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
     }
   });
 

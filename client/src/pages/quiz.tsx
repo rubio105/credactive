@@ -162,6 +162,49 @@ export default function QuizPage() {
     }
   }, [user]);
 
+  // Anti-copy protection - prevent users from copying quiz questions
+  useEffect(() => {
+    if (!quizCompleted) {
+      // Disable right-click context menu
+      const handleContextMenu = (e: MouseEvent) => {
+        e.preventDefault();
+        return false;
+      };
+
+      // Disable copy, cut, and developer tools shortcuts
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Disable Ctrl+C, Ctrl+X, Ctrl+U (view source)
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'x' || e.key === 'u')) {
+          e.preventDefault();
+          return false;
+        }
+        // Disable F12 (DevTools), Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console)
+        if (e.key === 'F12' || 
+            ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
+          e.preventDefault();
+          return false;
+        }
+      };
+
+      // Disable text selection on the page
+      const handleSelectStart = (e: Event) => {
+        e.preventDefault();
+        return false;
+      };
+
+      document.addEventListener('contextmenu', handleContextMenu);
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('selectstart', handleSelectStart);
+
+      // Cleanup event listeners when component unmounts or quiz completes
+      return () => {
+        document.removeEventListener('contextmenu', handleContextMenu);
+        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('selectstart', handleSelectStart);
+      };
+    }
+  }, [quizCompleted]);
+
   // Limit questions based on URL parameter
   useEffect(() => {
     if (quizData && quizData.questions.length > 0) {
@@ -739,7 +782,7 @@ export default function QuizPage() {
   const progress = ((currentQuestionIndex + 1) / limitedQuestions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background select-none">
       <Navigation />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

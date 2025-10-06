@@ -49,10 +49,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Authentication & Authorization
 
--   **Strategy**: Traditional email/password authentication using Passport.js Local Strategy with bcrypt for secure password hashing (10 rounds).
--   **Session Management**: Persistent sessions via `express-session` with PostgreSQL store (1-week TTL, httpOnly, secure cookies).
+-   **Strategy**: Dual authentication system - traditional email/password via Passport.js Local Strategy with bcrypt hashing (10 rounds), plus direct Google OAuth 2.0 integration via passport-google-oauth20.
+-   **Social Login**: Direct Google OAuth integration (no intermediate Replit Auth screen) using dynamic callback URLs that work across all deployment domains. Apple login removed per user preference.
+-   **Session Management**: Persistent sessions via `express-session` with PostgreSQL store when available, falling back to in-memory store (1-week TTL, httpOnly, secure cookies).
 -   **User Flow**: Unauthenticated users see landing page with access to login/register pages; authenticated users access home page; `isAuthenticated` middleware protects API routes.
--   **Password Recovery**: Secure token-based password reset via Brevo email service (1-hour token expiration).
+-   **Password Recovery**: Secure token-based password reset via Brevo email service (1-hour token expiration) for email/password accounts.
 -   **Welcome Emails**: Automated welcome emails sent via Brevo upon successful registration.
 
 ## Key Features

@@ -13,7 +13,6 @@ import logoImage from "@assets/image_1759658677025.png";
 import { Link } from "wouter";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { FaApple } from "react-icons/fa";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -164,28 +163,16 @@ export default function Register() {
         </CardHeader>
         <CardContent>
           <div className="mb-6">
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => window.location.href = "/api/auth/social/login"}
-                data-testid="button-google-register"
-                className="w-full"
-              >
-                <FcGoogle className="mr-2 h-5 w-5" />
-                Google
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => window.location.href = "/api/auth/social/login"}
-                data-testid="button-apple-register"
-                className="w-full"
-              >
-                <FaApple className="mr-2 h-5 w-5" />
-                Apple
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => window.location.href = "/api/auth/google"}
+              data-testid="button-google-register"
+              className="w-full mb-4"
+            >
+              <FcGoogle className="mr-2 h-5 w-5" />
+              Registrati con Google
+            </Button>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

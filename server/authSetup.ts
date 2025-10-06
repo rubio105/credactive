@@ -1,66 +1,63 @@
 import passport from "passport";
 import type { Express, RequestHandler } from "express";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import { setupAuth as setupPassportAuth } from "./auth";
-import { setupSocialAuthStrategies, getSession } from "./replitAuth";
+import { setupGoogleAuth } from "./googleAuth";
 import { storage } from "./storage";
 import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
+const pgSession = connectPgSimple(session);
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
-  app.use(getSession());
+  
+  const sessionConfig: session.SessionOptions = {
+    secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    },
+  };
+
+  if (process.env.DATABASE_URL) {
+    sessionConfig.store = new pgSession({
+      conObject: {
+        connectionString: process.env.DATABASE_URL,
+      },
+      createTableIfMissing: true,
+    });
+  } else {
+    console.warn("DATABASE_URL not found, using in-memory session store (not suitable for production)");
+  }
+  
+  app.use(session(sessionConfig));
+  
   app.use(passport.initialize());
   app.use(passport.session());
 
   // Setup local email/password authentication
   setupPassportAuth();
   
-  // Setup social authentication strategies (Google, Apple)
-  await setupSocialAuthStrategies(app);
+  // Setup Google OAuth authentication
+  setupGoogleAuth(app);
 
-  // Unified serialization - works with both local and social auth
+  // Unified serialization - store only user ID
   passport.serializeUser((user: any, done) => {
-    if (user.claims) {
-      // Social auth - store all session data including tokens
-      done(null, {
-        userId: user.claims.sub,
-        isSocial: true,
-        access_token: user.access_token,
-        refresh_token: user.refresh_token,
-        expires_at: user.expires_at,
-        claims: user.claims
-      });
-    } else {
-      // Local auth - store only user ID
-      done(null, { userId: user.id, isSocial: false });
-    }
+    done(null, user.id);
   });
 
-  passport.deserializeUser(async (sessionData: any, done) => {
+  // Unified deserialization - retrieve user from database
+  passport.deserializeUser(async (userId: string, done) => {
     try {
-      const { userId, isSocial } = sessionData;
-      
-      if (isSocial) {
-        // For social auth, merge database user with session tokens
-        const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
-        if (!dbUser) {
-          return done(null, false);
-        }
-        // Merge database user with social auth session data
-        const user = {
-          ...dbUser,
-          claims: sessionData.claims,
-          access_token: sessionData.access_token,
-          refresh_token: sessionData.refresh_token,
-          expires_at: sessionData.expires_at
-        };
-        done(null, user);
-      } else {
-        // For local auth, get user from database
-        const [user] = await db.select().from(users).where(eq(users.id, userId));
-        done(null, user || null);
-      }
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      done(null, user || null);
     } catch (error) {
       done(error);
     }

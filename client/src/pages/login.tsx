@@ -10,7 +10,6 @@ import { apiRequest } from "@/lib/queryClient";
 import logoImage from "@assets/image_1759658677025.png";
 import { Link } from "wouter";
 import { FcGoogle } from "react-icons/fc";
-import { FaApple } from "react-icons/fa";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -141,28 +140,16 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => window.location.href = "/api/auth/social/login"}
-              data-testid="button-google-login"
-              className="w-full"
-            >
-              <FcGoogle className="mr-2 h-5 w-5" />
-              Google
-            </Button>
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => window.location.href = "/api/auth/social/login"}
-              data-testid="button-apple-login"
-              className="w-full"
-            >
-              <FaApple className="mr-2 h-5 w-5" />
-              Apple
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => window.location.href = "/api/auth/google"}
+            data-testid="button-google-login"
+            className="w-full"
+          >
+            <FcGoogle className="mr-2 h-5 w-5" />
+            Continua con Google
+          </Button>
 
           <div className="mt-6 text-center text-sm">
             Non hai un account?{" "}

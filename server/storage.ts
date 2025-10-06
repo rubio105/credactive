@@ -16,6 +16,15 @@ import {
   videoQuestions,
   courseQuestions,
   userVideoProgress,
+  badges,
+  userBadges,
+  achievements,
+  userAchievements,
+  dailyChallenges,
+  userDailyChallenges,
+  userCertificates,
+  leaderboard,
+  activityLog,
   type User,
   type UpsertUser,
   type Category,
@@ -34,6 +43,15 @@ import {
   type VideoQuestion,
   type CourseQuestion,
   type UserVideoProgress,
+  type Badge,
+  type UserBadge,
+  type Achievement,
+  type UserAchievement,
+  type DailyChallenge,
+  type UserDailyChallenge,
+  type UserCertificate,
+  type Leaderboard,
+  type ActivityLog,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
   type InsertQuizReport,
@@ -47,10 +65,19 @@ import {
   type InsertVideoQuestion,
   type InsertCourseQuestion,
   type InsertUserVideoProgress,
+  type InsertBadge,
+  type InsertUserBadge,
+  type InsertAchievement,
+  type InsertUserAchievement,
+  type InsertDailyChallenge,
+  type InsertUserDailyChallenge,
+  type InsertUserCertificate,
+  type InsertLeaderboard,
+  type InsertActivityLog,
   type QuizWithCount,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, gte } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -171,6 +198,45 @@ export interface IStorage {
   createContentPage(page: InsertContentPage): Promise<ContentPage>;
   updateContentPage(id: string, updates: Partial<ContentPage>): Promise<ContentPage>;
   deleteContentPage(id: string): Promise<void>;
+  
+  // Gamification - Badge operations
+  getAllBadges(): Promise<Badge[]>;
+  getBadgeById(id: string): Promise<Badge | undefined>;
+  createBadge(badge: InsertBadge): Promise<Badge>;
+  updateBadge(id: string, updates: Partial<Badge>): Promise<Badge>;
+  deleteBadge(id: string): Promise<void>;
+  getUserBadges(userId: string): Promise<(UserBadge & { badge: Badge })[]>;
+  awardBadge(userId: string, badgeId: string): Promise<UserBadge>;
+  
+  // Gamification - Achievement operations
+  getAllAchievements(): Promise<Achievement[]>;
+  getAchievementById(id: string): Promise<Achievement | undefined>;
+  createAchievement(achievement: InsertAchievement): Promise<Achievement>;
+  updateAchievement(id: string, updates: Partial<Achievement>): Promise<Achievement>;
+  deleteAchievement(id: string): Promise<void>;
+  getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]>;
+  
+  // Gamification - Daily challenge operations
+  getTodayDailyChallenge(): Promise<DailyChallenge | undefined>;
+  createDailyChallenge(challenge: InsertDailyChallenge): Promise<DailyChallenge>;
+  getUserDailyChallengeStatus(userId: string, challengeId: string): Promise<UserDailyChallenge | undefined>;
+  completeDailyChallenge(userChallenge: InsertUserDailyChallenge): Promise<UserDailyChallenge>;
+  
+  // Gamification - Certificate operations
+  getUserCertificates(userId: string): Promise<UserCertificate[]>;
+  getCertificateById(id: string): Promise<UserCertificate | undefined>;
+  getCertificateByVerificationCode(code: string): Promise<UserCertificate | undefined>;
+  createCertificate(certificate: InsertUserCertificate): Promise<UserCertificate>;
+  updateCertificate(id: string, updates: Partial<UserCertificate>): Promise<UserCertificate>;
+  
+  // Gamification - Leaderboard operations
+  getGlobalLeaderboard(limit?: number, period?: string): Promise<(Leaderboard & { user: User })[]>;
+  getCategoryLeaderboard(categoryId: string, limit?: number, period?: string): Promise<(Leaderboard & { user: User })[]>;
+  getUserLeaderboardPosition(userId: string, categoryId?: string, period?: string): Promise<Leaderboard | undefined>;
+  
+  // Gamification - Activity log operations
+  getUserActivityLog(userId: string, limit?: number): Promise<ActivityLog[]>;
+  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -574,6 +640,7 @@ export class DatabaseStorage implements IStorage {
         correctAnswers: userQuizAttempts.correctAnswers,
         totalQuestions: userQuizAttempts.totalQuestions,
         timeSpent: userQuizAttempts.timeSpent,
+        pointsEarned: userQuizAttempts.pointsEarned,
         completedAt: userQuizAttempts.completedAt,
         quizTitle: quizzes.title,
       })
@@ -1000,6 +1067,287 @@ export class DatabaseStorage implements IStorage {
   
   async deleteContentPage(id: string): Promise<void> {
     await db.delete(contentPages).where(eq(contentPages.id, id));
+  }
+  
+  // Gamification - Badge operations
+  async getAllBadges(): Promise<Badge[]> {
+    return await db.select().from(badges).orderBy(badges.sortOrder, badges.name);
+  }
+  
+  async getBadgeById(id: string): Promise<Badge | undefined> {
+    const [badge] = await db.select().from(badges).where(eq(badges.id, id));
+    return badge;
+  }
+  
+  async createBadge(badge: InsertBadge): Promise<Badge> {
+    const [created] = await db.insert(badges).values(badge).returning();
+    return created;
+  }
+  
+  async updateBadge(id: string, updates: Partial<Badge>): Promise<Badge> {
+    const [updated] = await db
+      .update(badges)
+      .set(updates)
+      .where(eq(badges.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteBadge(id: string): Promise<void> {
+    await db.delete(badges).where(eq(badges.id, id));
+  }
+  
+  async getUserBadges(userId: string): Promise<(UserBadge & { badge: Badge })[]> {
+    const results = await db
+      .select({
+        id: userBadges.id,
+        userId: userBadges.userId,
+        badgeId: userBadges.badgeId,
+        earnedAt: userBadges.earnedAt,
+        badge: badges,
+      })
+      .from(userBadges)
+      .leftJoin(badges, eq(userBadges.badgeId, badges.id))
+      .where(eq(userBadges.userId, userId))
+      .orderBy(desc(userBadges.earnedAt));
+    
+    return results.filter(r => r.badge !== null) as (UserBadge & { badge: Badge })[];
+  }
+  
+  async awardBadge(userId: string, badgeId: string): Promise<UserBadge> {
+    const [created] = await db
+      .insert(userBadges)
+      .values({ userId, badgeId })
+      .returning();
+    return created;
+  }
+  
+  // Gamification - Achievement operations
+  async getAllAchievements(): Promise<Achievement[]> {
+    return await db.select().from(achievements).orderBy(achievements.sortOrder, achievements.name);
+  }
+  
+  async getAchievementById(id: string): Promise<Achievement | undefined> {
+    const [achievement] = await db.select().from(achievements).where(eq(achievements.id, id));
+    return achievement;
+  }
+  
+  async createAchievement(achievement: InsertAchievement): Promise<Achievement> {
+    const [created] = await db.insert(achievements).values(achievement).returning();
+    return created;
+  }
+  
+  async updateAchievement(id: string, updates: Partial<Achievement>): Promise<Achievement> {
+    const [updated] = await db
+      .update(achievements)
+      .set(updates)
+      .where(eq(achievements.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteAchievement(id: string): Promise<void> {
+    await db.delete(achievements).where(eq(achievements.id, id));
+  }
+  
+  async getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]> {
+    const results = await db
+      .select({
+        id: userAchievements.id,
+        userId: userAchievements.userId,
+        achievementId: userAchievements.achievementId,
+        progress: userAchievements.progress,
+        isUnlocked: userAchievements.isUnlocked,
+        unlockedAt: userAchievements.unlockedAt,
+        createdAt: userAchievements.createdAt,
+        updatedAt: userAchievements.updatedAt,
+        achievement: achievements,
+      })
+      .from(userAchievements)
+      .leftJoin(achievements, eq(userAchievements.achievementId, achievements.id))
+      .where(eq(userAchievements.userId, userId))
+      .orderBy(desc(userAchievements.unlockedAt), userAchievements.progress);
+    
+    return results.filter(r => r.achievement !== null) as (UserAchievement & { achievement: Achievement })[];
+  }
+  
+  // Gamification - Daily challenge operations
+  async getTodayDailyChallenge(): Promise<DailyChallenge | undefined> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const [challenge] = await db
+      .select()
+      .from(dailyChallenges)
+      .where(
+        and(
+          eq(dailyChallenges.isActive, true),
+          gte(dailyChallenges.date, today)
+        )
+      )
+      .orderBy(dailyChallenges.date)
+      .limit(1);
+    
+    return challenge;
+  }
+  
+  async createDailyChallenge(challenge: InsertDailyChallenge): Promise<DailyChallenge> {
+    const [created] = await db
+      .insert(dailyChallenges)
+      .values(challenge)
+      .returning();
+    return created;
+  }
+  
+  async getUserDailyChallengeStatus(userId: string, challengeId: string): Promise<UserDailyChallenge | undefined> {
+    const [status] = await db
+      .select()
+      .from(userDailyChallenges)
+      .where(
+        and(
+          eq(userDailyChallenges.userId, userId),
+          eq(userDailyChallenges.challengeId, challengeId)
+        )
+      );
+    
+    return status;
+  }
+  
+  async completeDailyChallenge(userChallenge: InsertUserDailyChallenge): Promise<UserDailyChallenge> {
+    const [created] = await db
+      .insert(userDailyChallenges)
+      .values(userChallenge)
+      .returning();
+    return created;
+  }
+  
+  // Gamification - Certificate operations
+  async getUserCertificates(userId: string): Promise<UserCertificate[]> {
+    return await db
+      .select()
+      .from(userCertificates)
+      .where(eq(userCertificates.userId, userId))
+      .orderBy(desc(userCertificates.issuedAt));
+  }
+  
+  async getCertificateById(id: string): Promise<UserCertificate | undefined> {
+    const [certificate] = await db
+      .select()
+      .from(userCertificates)
+      .where(eq(userCertificates.id, id));
+    return certificate;
+  }
+  
+  async getCertificateByVerificationCode(code: string): Promise<UserCertificate | undefined> {
+    const [certificate] = await db
+      .select()
+      .from(userCertificates)
+      .where(eq(userCertificates.verificationCode, code));
+    return certificate;
+  }
+  
+  async createCertificate(certificate: InsertUserCertificate): Promise<UserCertificate> {
+    const [created] = await db
+      .insert(userCertificates)
+      .values(certificate)
+      .returning();
+    return created;
+  }
+  
+  async updateCertificate(id: string, updates: Partial<UserCertificate>): Promise<UserCertificate> {
+    const [updated] = await db
+      .update(userCertificates)
+      .set(updates)
+      .where(eq(userCertificates.id, id))
+      .returning();
+    return updated;
+  }
+  
+  // Gamification - Leaderboard operations
+  async getGlobalLeaderboard(limit = 50, period = 'all_time'): Promise<(Leaderboard & { user: User })[]> {
+    const results = await db
+      .select({
+        id: leaderboard.id,
+        userId: leaderboard.userId,
+        categoryId: leaderboard.categoryId,
+        rank: leaderboard.rank,
+        points: leaderboard.points,
+        quizzesCompleted: leaderboard.quizzesCompleted,
+        averageScore: leaderboard.averageScore,
+        period: leaderboard.period,
+        updatedAt: leaderboard.updatedAt,
+        user: users,
+      })
+      .from(leaderboard)
+      .leftJoin(users, eq(leaderboard.userId, users.id))
+      .where(
+        and(
+          sql`${leaderboard.categoryId} IS NULL`,
+          eq(leaderboard.period, period)
+        )
+      )
+      .orderBy(leaderboard.rank)
+      .limit(limit);
+    
+    return results.filter(r => r.user !== null) as (Leaderboard & { user: User })[];
+  }
+  
+  async getCategoryLeaderboard(categoryId: string, limit = 50, period = 'all_time'): Promise<(Leaderboard & { user: User })[]> {
+    const results = await db
+      .select({
+        id: leaderboard.id,
+        userId: leaderboard.userId,
+        categoryId: leaderboard.categoryId,
+        rank: leaderboard.rank,
+        points: leaderboard.points,
+        quizzesCompleted: leaderboard.quizzesCompleted,
+        averageScore: leaderboard.averageScore,
+        period: leaderboard.period,
+        updatedAt: leaderboard.updatedAt,
+        user: users,
+      })
+      .from(leaderboard)
+      .leftJoin(users, eq(leaderboard.userId, users.id))
+      .where(
+        and(
+          eq(leaderboard.categoryId, categoryId),
+          eq(leaderboard.period, period)
+        )
+      )
+      .orderBy(leaderboard.rank)
+      .limit(limit);
+    
+    return results.filter(r => r.user !== null) as (Leaderboard & { user: User })[];
+  }
+  
+  async getUserLeaderboardPosition(userId: string, categoryId?: string, period = 'all_time'): Promise<Leaderboard | undefined> {
+    const [position] = await db
+      .select()
+      .from(leaderboard)
+      .where(
+        and(
+          eq(leaderboard.userId, userId),
+          categoryId ? eq(leaderboard.categoryId, categoryId) : sql`${leaderboard.categoryId} IS NULL`,
+          eq(leaderboard.period, period)
+        )
+      );
+    
+    return position;
+  }
+  
+  // Gamification - Activity log operations
+  async getUserActivityLog(userId: string, limit = 50): Promise<ActivityLog[]> {
+    return await db
+      .select()
+      .from(activityLog)
+      .where(eq(activityLog.userId, userId))
+      .orderBy(desc(activityLog.createdAt))
+      .limit(limit);
+  }
+  
+  async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
+    const [created] = await db.insert(activityLog).values(log).returning();
+    return created;
   }
 }
 

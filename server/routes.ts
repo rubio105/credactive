@@ -34,6 +34,7 @@ import {
   passwordResetLimiter, 
   aiGenerationLimiter 
 } from "./rateLimits";
+import { registerGamificationRoutes } from "./gamificationRoutes";
 
 // Dynamic import for pdf-parse (CommonJS module)
 // Note: pdf-parse doesn't have a .default export in ESM context
@@ -2611,6 +2612,9 @@ Explicación de audio:`
       });
     }
   });
+
+  // Register gamification routes
+  registerGamificationRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

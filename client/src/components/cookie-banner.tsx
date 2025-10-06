@@ -36,17 +36,18 @@ export default function CookieBanner() {
             </div>
             <div className="flex-1 space-y-3">
               <h3 className="font-bold text-lg">Utilizzo dei Cookie</h3>
-              <p className="text-sm text-muted-foreground">
-                Utilizziamo cookie essenziali per garantire il corretto funzionamento della piattaforma 
-                (autenticazione, sessioni, preferenze). Non utilizziamo cookie di profilazione o pubblicità. 
-                I dati raccolti sono utilizzati esclusivamente per migliorare la tua esperienza di apprendimento.
-                {' '}
+              <div className="text-sm text-muted-foreground">
+                <p className="mb-2">
+                  Utilizziamo cookie essenziali per garantire il corretto funzionamento della piattaforma 
+                  (autenticazione, sessioni, preferenze). Non utilizziamo cookie di profilazione o pubblicità. 
+                  I dati raccolti sono utilizzati esclusivamente per migliorare la tua esperienza di apprendimento.
+                </p>
                 <Link href="/page/privacy-policy">
-                  <a className="text-primary hover:underline" data-testid="link-privacy-policy">
-                    Leggi l'informativa sulla privacy
+                  <a className="text-primary hover:underline font-medium" data-testid="link-privacy-policy">
+                    Leggi l'informativa sulla privacy →
                   </a>
                 </Link>
-              </p>
+              </div>
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button 
                   onClick={acceptAll}

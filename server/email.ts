@@ -15,6 +15,20 @@ interface SendEmailOptions {
   senderEmail?: string;
 }
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function sanitizeUserInput(input: string | undefined): string {
+  if (!input) return '';
+  return escapeHtml(input.trim());
+}
+
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
   const sendSmtpEmail = new brevo.SendSmtpEmail();
 
@@ -43,7 +57,8 @@ export async function sendRegistrationConfirmationEmail(
   email: string,
   firstName?: string
 ): Promise<void> {
-  const name = firstName || email.split('@')[0];
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -81,7 +96,7 @@ export async function sendRegistrationConfirmationEmail(
   const textContent = `
 CREDACTIVE - Registrazione Confermata!
 
-Ciao ${name},
+Ciao ${rawName},
 
 Grazie per esserti registrato su CREDACTIVE!
 
@@ -111,7 +126,8 @@ export async function sendWelcomeEmail(
                     : 'http://localhost:5000');
   const loginUrl = `${baseUrl}/login`;
   
-  const name = firstName || email.split('@')[0];
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -158,7 +174,7 @@ export async function sendWelcomeEmail(
   const textContent = `
 CREDACTIVE - Benvenuto!
 
-Ciao ${name},
+Ciao ${rawName},
 
 Benvenuto nella piattaforma professionale per la preparazione alle certificazioni!
 
@@ -287,14 +303,16 @@ export async function sendBulkMarketingEmail(
 
   for (const recipient of recipients) {
     try {
-      const name = recipient.firstName || recipient.email.split('@')[0];
+      const rawName = recipient.firstName || recipient.email.split('@')[0];
+      const sanitizedName = sanitizeUserInput(rawName);
+      const sanitizedEmail = sanitizeUserInput(recipient.email);
       
       const htmlContent = htmlTemplate
-        .replace(/{{firstName}}/g, name)
-        .replace(/{{email}}/g, recipient.email);
+        .replace(/{{firstName}}/g, sanitizedName)
+        .replace(/{{email}}/g, sanitizedEmail);
       
       const textContent = textTemplate
-        ?.replace(/{{firstName}}/g, name)
+        ?.replace(/{{firstName}}/g, rawName)
         .replace(/{{email}}/g, recipient.email);
 
       await sendMarketingEmail(

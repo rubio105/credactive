@@ -40,6 +40,12 @@ export default function CookieBanner() {
                 Utilizziamo cookie essenziali per garantire il corretto funzionamento della piattaforma 
                 (autenticazione, sessioni, preferenze). Non utilizziamo cookie di profilazione o pubblicità. 
                 I dati raccolti sono utilizzati esclusivamente per migliorare la tua esperienza di apprendimento.
+                {' '}
+                <Link href="/page/privacy-policy">
+                  <a className="text-primary hover:underline" data-testid="link-privacy-policy">
+                    Leggi l'informativa sulla privacy
+                  </a>
+                </Link>
               </p>
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button 
@@ -56,14 +62,6 @@ export default function CookieBanner() {
                   data-testid="button-accept-necessary"
                 >
                   Solo necessari
-                </Button>
-                <Button 
-                  variant="ghost"
-                  className="text-sm"
-                  onClick={() => window.location.href = '/privacy-policy'}
-                  data-testid="link-cookie-policy"
-                >
-                  Informativa Cookie
                 </Button>
               </div>
             </div>

@@ -196,28 +196,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email già registrata" });
       }
 
+      // Check for corporate agreement based on email domain
+      const emailDomain = '@' + email.toLowerCase().split('@')[1];
+      const corporateAgreement = await storage.getCorporateAgreementByEmailDomain(emailDomain);
+      
+      let subscriptionTier = 'free';
+      let isPremium = false;
+      let companyName = company || null;
+      let corporateAgreementId = null;
+      let agreementReserved = false;
+
+      // If corporate agreement exists and is active, try to reserve a slot atomically
+      if (corporateAgreement && corporateAgreement.isActive) {
+        const reserved = await storage.incrementCorporateAgreementUsers(corporateAgreement.id);
+        
+        if (reserved) {
+          // Successfully reserved a slot - assign premium access
+          subscriptionTier = corporateAgreement.tier;
+          isPremium = true;
+          companyName = corporateAgreement.companyName;
+          corporateAgreementId = corporateAgreement.id;
+          agreementReserved = true;
+        }
+        // If reservation failed (maxUsers reached), user will be created as free tier
+      }
+
       const hashedPassword = await bcrypt.hash(password, 10);
       
-      const user = await storage.createUser({
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        firstName,
-        lastName,
-        dateOfBirth: new Date(dateOfBirth),
-        gender,
-        phone: phone || null,
-        profession,
-        education,
-        company: company || null,
-        addressStreet,
-        addressCity,
-        addressPostalCode,
-        addressProvince,
-        addressCountry,
-        language: language || 'it',
-        newsletterConsent: newsletterConsent || false,
-        emailVerified: true,
-      });
+      let user;
+      try {
+        user = await storage.createUser({
+          email: email.toLowerCase(),
+          password: hashedPassword,
+          firstName,
+          lastName,
+          dateOfBirth: new Date(dateOfBirth),
+          gender,
+          phone: phone || null,
+          profession,
+          education,
+          company: company || null,
+          addressStreet,
+          addressCity,
+          addressPostalCode,
+          addressProvince,
+          addressCountry,
+          language: language || 'it',
+          newsletterConsent: newsletterConsent || false,
+          emailVerified: true,
+          subscriptionTier,
+          isPremium,
+          companyName,
+          corporateAgreementId,
+        });
+      } catch (error) {
+        // If user creation failed but we reserved a slot, release it
+        if (agreementReserved && corporateAgreementId) {
+          await storage.decrementCorporateAgreementUsers(corporateAgreementId);
+        }
+        throw error;
+      }
 
       // Send registration confirmation email (async, don't block response)
       sendRegistrationConfirmationEmail(user.email, user.firstName || undefined).catch(err => 

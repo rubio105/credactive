@@ -25,6 +25,7 @@ import {
   userCertificates,
   leaderboard,
   activityLog,
+  corporateAgreements,
   type User,
   type UpsertUser,
   type Category,
@@ -52,6 +53,7 @@ import {
   type UserCertificate,
   type Leaderboard,
   type ActivityLog,
+  type CorporateAgreement,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
   type InsertQuizReport,
@@ -74,6 +76,7 @@ import {
   type InsertUserCertificate,
   type InsertLeaderboard,
   type InsertActivityLog,
+  type InsertCorporateAgreement,
   type QuizWithCount,
 } from "@shared/schema";
 import { db } from "./db";
@@ -237,6 +240,17 @@ export interface IStorage {
   // Gamification - Activity log operations
   getUserActivityLog(userId: string, limit?: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  
+  // Corporate agreement operations
+  getCorporateAgreementByEmailDomain(emailDomain: string): Promise<CorporateAgreement | undefined>;
+  getCorporateAgreementByPromoCode(promoCode: string): Promise<CorporateAgreement | undefined>;
+  getCorporateAgreementById(id: string): Promise<CorporateAgreement | undefined>;
+  getAllCorporateAgreements(): Promise<CorporateAgreement[]>;
+  createCorporateAgreement(agreement: InsertCorporateAgreement): Promise<CorporateAgreement>;
+  updateCorporateAgreement(id: string, updates: Partial<CorporateAgreement>): Promise<CorporateAgreement>;
+  deleteCorporateAgreement(id: string): Promise<void>;
+  incrementCorporateAgreementUsers(id: string): Promise<boolean>;
+  decrementCorporateAgreementUsers(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1348,6 +1362,84 @@ export class DatabaseStorage implements IStorage {
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
     const [created] = await db.insert(activityLog).values(log).returning();
     return created;
+  }
+  
+  // Corporate agreement operations
+  async getCorporateAgreementByEmailDomain(emailDomain: string): Promise<CorporateAgreement | undefined> {
+    const [agreement] = await db
+      .select()
+      .from(corporateAgreements)
+      .where(eq(corporateAgreements.emailDomain, emailDomain));
+    return agreement;
+  }
+  
+  async getCorporateAgreementByPromoCode(promoCode: string): Promise<CorporateAgreement | undefined> {
+    const [agreement] = await db
+      .select()
+      .from(corporateAgreements)
+      .where(eq(corporateAgreements.promoCode, promoCode));
+    return agreement;
+  }
+  
+  async getCorporateAgreementById(id: string): Promise<CorporateAgreement | undefined> {
+    const [agreement] = await db
+      .select()
+      .from(corporateAgreements)
+      .where(eq(corporateAgreements.id, id));
+    return agreement;
+  }
+  
+  async getAllCorporateAgreements(): Promise<CorporateAgreement[]> {
+    return await db.select().from(corporateAgreements).orderBy(desc(corporateAgreements.createdAt));
+  }
+  
+  async createCorporateAgreement(agreement: InsertCorporateAgreement): Promise<CorporateAgreement> {
+    const [created] = await db.insert(corporateAgreements).values(agreement).returning();
+    return created;
+  }
+  
+  async updateCorporateAgreement(id: string, updates: Partial<CorporateAgreement>): Promise<CorporateAgreement> {
+    const [updated] = await db
+      .update(corporateAgreements)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(corporateAgreements.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteCorporateAgreement(id: string): Promise<void> {
+    await db.delete(corporateAgreements).where(eq(corporateAgreements.id, id));
+  }
+  
+  async incrementCorporateAgreementUsers(id: string): Promise<boolean> {
+    // Atomic increment with maxUsers enforcement
+    const result = await db
+      .update(corporateAgreements)
+      .set({ 
+        currentUsers: sql`${corporateAgreements.currentUsers} + 1`,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(corporateAgreements.id, id),
+          // Only increment if below max (or no max set)
+          sql`(${corporateAgreements.maxUsers} IS NULL OR ${corporateAgreements.currentUsers} < ${corporateAgreements.maxUsers})`
+        )
+      )
+      .returning();
+    
+    // Return true if update succeeded (row was updated)
+    return result.length > 0;
+  }
+  
+  async decrementCorporateAgreementUsers(id: string): Promise<void> {
+    await db
+      .update(corporateAgreements)
+      .set({ 
+        currentUsers: sql`GREATEST(0, ${corporateAgreements.currentUsers} - 1)`,
+        updatedAt: new Date()
+      })
+      .where(eq(corporateAgreements.id, id));
   }
 }
 

@@ -329,6 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/forgot-password', passwordResetLimiter, async (req, res) => {
     try {
       const { email } = req.body;
+      console.log('[FORGOT-PASSWORD] Request received for email:', email);
 
       if (!email) {
         return res.status(400).json({ message: "Email obbligatoria" });
@@ -337,19 +338,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByEmail(email.toLowerCase());
       
       if (!user) {
+        console.log('[FORGOT-PASSWORD] User not found for email:', email);
         return res.json({ message: "Se l'email esiste, riceverai le istruzioni per il reset" });
       }
 
+      console.log('[FORGOT-PASSWORD] User found, generating reset token...');
       const resetToken = crypto.randomBytes(32).toString('hex');
       const resetExpires = new Date(Date.now() + 3600000); // 1 hour
 
       await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
+      console.log('[FORGOT-PASSWORD] Reset token saved to database');
 
+      console.log('[FORGOT-PASSWORD] Sending password reset email to:', user.email);
       await sendPasswordResetEmail(user.email, resetToken);
+      console.log('[FORGOT-PASSWORD] Password reset email sent successfully!');
 
       res.json({ message: "Se l'email esiste, riceverai le istruzioni per il reset" });
     } catch (error) {
-      console.error("Error during forgot password:", error);
+      console.error("[FORGOT-PASSWORD] Error during forgot password:", error);
       res.status(500).json({ message: "Errore durante il reset della password" });
     }
   });

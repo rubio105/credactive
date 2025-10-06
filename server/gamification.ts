@@ -46,6 +46,29 @@ const POINTS_CONFIG = {
   POINTS_PER_LEVEL: 500, // Points needed per level
 };
 
+// Credits configuration (virtual wallet)
+const CREDITS_CONFIG = {
+  // Quiz completion credits
+  BASE_QUIZ_CREDITS: 10,
+  PERFECT_SCORE_BONUS: 5, // Bonus for 100% score
+  HIGH_SCORE_BONUS: 3, // Bonus for 80%+ score
+  
+  // Difficulty multipliers
+  DIFFICULTY_MULTIPLIERS: {
+    beginner: 1,
+    intermediate: 1.5,
+    advanced: 2,
+    expert: 2.5,
+  },
+  
+  // Other activities
+  DAILY_LOGIN_CREDITS: 2,
+  STREAK_BONUS_CREDITS: 5, // Per streak milestone (7, 14, 30 days)
+  BADGE_EARNED_CREDITS: 3,
+  ACHIEVEMENT_UNLOCKED_CREDITS: 5,
+  LEVEL_UP_CREDITS: 10,
+};
+
 // Badge categories
 export const BADGE_CATEGORIES = {
   QUIZ: 'quiz',
@@ -94,6 +117,34 @@ export function calculateQuizPoints(
   points = Math.round(points * (score / 100));
   
   return Math.max(0, points);
+}
+
+/**
+ * Calculate credits earned for a quiz attempt
+ */
+export function calculateQuizCredits(
+  score: number,
+  totalQuestions: number,
+  difficulty: string
+): number {
+  const difficultyMultiplier = CREDITS_CONFIG.DIFFICULTY_MULTIPLIERS[difficulty as keyof typeof CREDITS_CONFIG.DIFFICULTY_MULTIPLIERS] || 1;
+  
+  // Base credits
+  let credits = CREDITS_CONFIG.BASE_QUIZ_CREDITS * difficultyMultiplier;
+  
+  // Perfect score bonus
+  if (score === 100) {
+    credits += CREDITS_CONFIG.PERFECT_SCORE_BONUS;
+  }
+  // High score bonus (80%+)
+  else if (score >= 80) {
+    credits += CREDITS_CONFIG.HIGH_SCORE_BONUS;
+  }
+  
+  // Scale by score percentage (minimum 20% if completed)
+  credits = Math.round(credits * Math.max(0.2, score / 100));
+  
+  return Math.max(0, Math.round(credits));
 }
 
 /**
@@ -213,6 +264,43 @@ export async function awardPoints(
   });
   
   return { newPoints, newLevel, leveledUp };
+}
+
+/**
+ * Award credits to user (virtual wallet)
+ */
+export async function awardCredits(
+  userId: string,
+  credits: number,
+  activityType: string,
+  metadata?: Record<string, any>
+): Promise<{ newCredits: number }> {
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  
+  if (!user) {
+    throw new Error('User not found');
+  }
+  
+  const oldCredits = user.credits || 0;
+  const newCredits = oldCredits + credits;
+  
+  // Update user credits
+  await db.update(users)
+    .set({
+      credits: newCredits,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
+  
+  // Log activity
+  await db.insert(activityLog).values({
+    userId,
+    activityType: `${activityType}_credits`,
+    points: credits, // Reuse points field for credits in activity log
+    metadata: { ...metadata, creditsEarned: credits },
+  });
+  
+  return { newCredits };
 }
 
 /**
@@ -473,6 +561,7 @@ export async function processQuizCompletion(
   difficulty: string
 ): Promise<{
   pointsEarned: number;
+  creditsEarned: number;
   newLevel: number;
   leveledUp: boolean;
   newBadges: Badge[];
@@ -488,6 +577,13 @@ export async function processQuizCompletion(
     difficulty
   );
   
+  // Calculate credits
+  const creditsEarned = calculateQuizCredits(
+    attempt.score,
+    attempt.totalQuestions,
+    difficulty
+  );
+  
   // Update quiz attempt with points
   await db
     .update(userQuizAttempts)
@@ -498,6 +594,18 @@ export async function processQuizCompletion(
   const { newLevel, leveledUp } = await awardPoints(
     userId,
     pointsEarned,
+    'quiz_completed',
+    {
+      quizId: attempt.quizId,
+      score: attempt.score,
+      difficulty,
+    }
+  );
+  
+  // Award credits
+  await awardCredits(
+    userId,
+    creditsEarned,
     'quiz_completed',
     {
       quizId: attempt.quizId,
@@ -535,7 +643,7 @@ export async function processQuizCompletion(
     if (leveledUp) {
       sendLevelUpEmail(
         user.email,
-        user.firstName,
+        user.firstName || 'User',
         newLevel,
         user.totalPoints || 0
       ).catch(err => console.error('Failed to send level up email:', err));
@@ -545,7 +653,7 @@ export async function processQuizCompletion(
     for (const badge of newBadges) {
       sendBadgeEarnedEmail(
         user.email,
-        user.firstName,
+        user.firstName || 'User',
         badge.name,
         badge.description
       ).catch(err => console.error('Failed to send badge earned email:', err));
@@ -554,6 +662,7 @@ export async function processQuizCompletion(
   
   return {
     pointsEarned,
+    creditsEarned,
     newLevel,
     leveledUp,
     newBadges,

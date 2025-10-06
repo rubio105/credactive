@@ -54,6 +54,12 @@ export const users = pgTable("users", {
   subscriptionTier: varchar("subscription_tier", { length: 20 }).default("free"), // free, premium, premium_plus
   isAdmin: boolean("is_admin").default(false),
   language: varchar("language", { length: 2 }), // it, en, es, fr
+  // Gamification fields
+  totalPoints: integer("total_points").default(0),
+  level: integer("level").default(1),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  lastActivityDate: timestamp("last_activity_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -128,6 +134,7 @@ export const userQuizAttempts = pgTable("user_quiz_attempts", {
   totalQuestions: integer("total_questions").notNull(),
   timeSpent: integer("time_spent").notNull(), // in seconds
   answers: jsonb("answers").notNull(), // Array of {questionId, answer, isCorrect}
+  pointsEarned: integer("points_earned").default(0), // Points earned in this attempt
   completedAt: timestamp("completed_at").defaultNow(),
 });
 
@@ -282,10 +289,133 @@ export const userVideoProgress = pgTable("user_video_progress", {
   completedAt: timestamp("completed_at"),
 });
 
+// Badges - Available badges in the system
+export const badges = pgTable("badges", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  icon: varchar("icon", { length: 50 }), // Icon name or emoji
+  color: varchar("color", { length: 20 }), // Badge color
+  category: varchar("category", { length: 50 }), // quiz, streak, achievement, special
+  requirement: text("requirement"), // Description of how to earn it
+  points: integer("points").default(0), // Points awarded when earned
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User badges - Badges earned by users
+export const userBadges = pgTable("user_badges", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  badgeId: uuid("badge_id").notNull().references(() => badges.id),
+  earnedAt: timestamp("earned_at").defaultNow(),
+});
+
+// Achievements - Available achievements in the system
+export const achievements = pgTable("achievements", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  icon: varchar("icon", { length: 50 }), // Icon name or emoji
+  category: varchar("category", { length: 50 }), // completion, mastery, dedication, social
+  tier: varchar("tier", { length: 20 }).default("bronze"), // bronze, silver, gold, platinum
+  requirement: jsonb("requirement"), // {type, target, progress} e.g., {type: "quizzes_completed", target: 10}
+  points: integer("points").default(0), // Points awarded when unlocked
+  badgeId: uuid("badge_id").references(() => badges.id), // Optional linked badge
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User achievements - Achievements earned by users
+export const userAchievements = pgTable("user_achievements", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  achievementId: uuid("achievement_id").notNull().references(() => achievements.id),
+  progress: integer("progress").default(0), // Current progress towards achievement
+  isUnlocked: boolean("is_unlocked").default(false),
+  unlockedAt: timestamp("unlocked_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Daily challenges
+export const dailyChallenges = pgTable("daily_challenges", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull(), // The date this challenge is for
+  quizId: uuid("quiz_id").notNull().references(() => quizzes.id),
+  categoryId: uuid("category_id").notNull().references(() => categories.id),
+  questionCount: integer("question_count").default(5), // Number of questions in daily challenge
+  points: integer("points").default(50), // Bonus points for completing
+  expiresAt: timestamp("expires_at").notNull(), // When this challenge expires
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User daily challenge completions
+export const userDailyChallenges = pgTable("user_daily_challenges", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  challengeId: uuid("challenge_id").notNull().references(() => dailyChallenges.id),
+  attemptId: uuid("attempt_id").references(() => userQuizAttempts.id), // Link to quiz attempt
+  score: integer("score").notNull(), // Percentage score
+  pointsEarned: integer("points_earned").default(0),
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User certificates
+export const userCertificates = pgTable("user_certificates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  categoryId: uuid("category_id").references(() => categories.id),
+  quizId: uuid("quiz_id").references(() => quizzes.id),
+  certificateType: varchar("certificate_type", { length: 50 }).notNull(), // quiz_completion, category_mastery, course_completion
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  score: integer("score"), // If applicable (e.g., quiz score)
+  pdfUrl: text("pdf_url"), // URL to generated PDF certificate
+  verificationCode: varchar("verification_code", { length: 50 }).unique(), // Unique code for verification
+  isPublic: boolean("is_public").default(false), // If user wants to share publicly
+  metadata: jsonb("metadata"), // Additional data (quiz details, stats, etc.)
+  issuedAt: timestamp("issued_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Leaderboard entries (materialized view / cache table for performance)
+export const leaderboard = pgTable("leaderboard", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  categoryId: uuid("category_id").references(() => categories.id), // null = global leaderboard
+  rank: integer("rank").notNull(),
+  points: integer("points").notNull(),
+  quizzesCompleted: integer("quizzes_completed").default(0),
+  averageScore: integer("average_score").default(0),
+  period: varchar("period", { length: 20 }).default("all_time"), // all_time, monthly, weekly
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Activity log for tracking user actions and awarding points
+export const activityLog = pgTable("activity_log", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  activityType: varchar("activity_type", { length: 50 }).notNull(), // quiz_completed, streak_maintained, badge_earned, etc.
+  points: integer("points").default(0),
+  metadata: jsonb("metadata"), // Additional context about the activity
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   quizAttempts: many(userQuizAttempts),
   progress: many(userProgress),
+  badges: many(userBadges),
+  achievements: many(userAchievements),
+  certificates: many(userCertificates),
+  dailyChallenges: many(userDailyChallenges),
+  activityLog: many(activityLog),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -425,6 +555,101 @@ export const userVideoProgressRelations = relations(userVideoProgress, ({ one })
   }),
 }));
 
+export const badgesRelations = relations(badges, ({ many }) => ({
+  userBadges: many(userBadges),
+  achievements: many(achievements),
+}));
+
+export const userBadgesRelations = relations(userBadges, ({ one }) => ({
+  user: one(users, {
+    fields: [userBadges.userId],
+    references: [users.id],
+  }),
+  badge: one(badges, {
+    fields: [userBadges.badgeId],
+    references: [badges.id],
+  }),
+}));
+
+export const achievementsRelations = relations(achievements, ({ one, many }) => ({
+  badge: one(badges, {
+    fields: [achievements.badgeId],
+    references: [badges.id],
+  }),
+  userAchievements: many(userAchievements),
+}));
+
+export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+  user: one(users, {
+    fields: [userAchievements.userId],
+    references: [users.id],
+  }),
+  achievement: one(achievements, {
+    fields: [userAchievements.achievementId],
+    references: [achievements.id],
+  }),
+}));
+
+export const dailyChallengesRelations = relations(dailyChallenges, ({ one, many }) => ({
+  quiz: one(quizzes, {
+    fields: [dailyChallenges.quizId],
+    references: [quizzes.id],
+  }),
+  category: one(categories, {
+    fields: [dailyChallenges.categoryId],
+    references: [categories.id],
+  }),
+  completions: many(userDailyChallenges),
+}));
+
+export const userDailyChallengesRelations = relations(userDailyChallenges, ({ one }) => ({
+  user: one(users, {
+    fields: [userDailyChallenges.userId],
+    references: [users.id],
+  }),
+  challenge: one(dailyChallenges, {
+    fields: [userDailyChallenges.challengeId],
+    references: [dailyChallenges.id],
+  }),
+  attempt: one(userQuizAttempts, {
+    fields: [userDailyChallenges.attemptId],
+    references: [userQuizAttempts.id],
+  }),
+}));
+
+export const userCertificatesRelations = relations(userCertificates, ({ one }) => ({
+  user: one(users, {
+    fields: [userCertificates.userId],
+    references: [users.id],
+  }),
+  category: one(categories, {
+    fields: [userCertificates.categoryId],
+    references: [categories.id],
+  }),
+  quiz: one(quizzes, {
+    fields: [userCertificates.quizId],
+    references: [quizzes.id],
+  }),
+}));
+
+export const leaderboardRelations = relations(leaderboard, ({ one }) => ({
+  user: one(users, {
+    fields: [leaderboard.userId],
+    references: [users.id],
+  }),
+  category: one(categories, {
+    fields: [leaderboard.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const activityLogRelations = relations(activityLog, ({ one }) => ({
+  user: one(users, {
+    fields: [activityLog.userId],
+    references: [users.id],
+  }),
+}));
+
 // Types
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
@@ -444,6 +669,15 @@ export type CourseVideo = typeof courseVideos.$inferSelect;
 export type VideoQuestion = typeof videoQuestions.$inferSelect;
 export type CourseQuestion = typeof courseQuestions.$inferSelect;
 export type UserVideoProgress = typeof userVideoProgress.$inferSelect;
+export type Badge = typeof badges.$inferSelect;
+export type UserBadge = typeof userBadges.$inferSelect;
+export type Achievement = typeof achievements.$inferSelect;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type DailyChallenge = typeof dailyChallenges.$inferSelect;
+export type UserDailyChallenge = typeof userDailyChallenges.$inferSelect;
+export type UserCertificate = typeof userCertificates.$inferSelect;
+export type Leaderboard = typeof leaderboard.$inferSelect;
+export type ActivityLog = typeof activityLog.$inferSelect;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -471,6 +705,15 @@ export const updateOnDemandCourseSchema = insertOnDemandCourseSchema.partial();
 export const updateCourseVideoSchema = insertCourseVideoSchema.partial();
 export const updateVideoQuestionSchema = insertVideoQuestionSchema.partial();
 export const updateCourseQuestionSchema = insertCourseQuestionSchema.partial();
+export const insertBadgeSchema = createInsertSchema(badges).omit({ id: true, createdAt: true });
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, earnedAt: true });
+export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true, createdAt: true });
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDailyChallengeSchema = createInsertSchema(dailyChallenges).omit({ id: true, createdAt: true });
+export const insertUserDailyChallengeSchema = createInsertSchema(userDailyChallenges).omit({ id: true, createdAt: true, completedAt: true });
+export const insertUserCertificateSchema = createInsertSchema(userCertificates).omit({ id: true, createdAt: true, issuedAt: true });
+export const insertLeaderboardSchema = createInsertSchema(leaderboard).omit({ id: true, updatedAt: true });
+export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id: true, createdAt: true });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
@@ -489,6 +732,15 @@ export type InsertCourseVideo = z.infer<typeof insertCourseVideoSchema>;
 export type InsertVideoQuestion = z.infer<typeof insertVideoQuestionSchema>;
 export type InsertCourseQuestion = z.infer<typeof insertCourseQuestionSchema>;
 export type InsertUserVideoProgress = z.infer<typeof insertUserVideoProgressSchema>;
+export type InsertBadge = z.infer<typeof insertBadgeSchema>;
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+export type InsertDailyChallenge = z.infer<typeof insertDailyChallengeSchema>;
+export type InsertUserDailyChallenge = z.infer<typeof insertUserDailyChallengeSchema>;
+export type InsertUserCertificate = z.infer<typeof insertUserCertificateSchema>;
+export type InsertLeaderboard = z.infer<typeof insertLeaderboardSchema>;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

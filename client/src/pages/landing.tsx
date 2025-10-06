@@ -83,10 +83,14 @@ export default function Landing() {
                   Scopri di più
                 </Button>
               </div>
-              <div className="flex items-center space-x-8 pt-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-success" />
                   <span className="text-sm">1.000.000+ Domande</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Trophy className="w-5 h-5 text-warning" />
+                  <span className="text-sm">🏆 Sfide & Badge</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Video className="w-5 h-5 text-success" />

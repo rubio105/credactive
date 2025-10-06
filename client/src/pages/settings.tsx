@@ -1,18 +1,95 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Sparkles, CheckCircle, Video, Calendar, Headphones, Users, Settings as SettingsIcon, User, Globe } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Crown, Sparkles, CheckCircle, Video, Calendar, Headphones, Users, Settings as SettingsIcon, User, Globe, Camera, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function Settings() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'subscription' | 'profile'>('subscription');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  const uploadProfileImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/user/upload-profile-image', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      toast({
+        title: "Foto caricata",
+        description: "La tua foto profilo è stata aggiornata con successo",
+      });
+      setIsUploading(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante il caricamento della foto",
+        variant: "destructive",
+      });
+      setIsUploading(false);
+    },
+  });
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "File non valido",
+        description: "Per favore seleziona un file immagine",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File troppo grande",
+        description: "La dimensione massima è 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    uploadProfileImageMutation.mutate(file);
+  };
+
+  const getUserInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'U';
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -281,6 +358,55 @@ export default function Settings() {
 
         {activeTab === 'profile' && (
           <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Foto Profilo</CardTitle>
+                <CardDescription>Personalizza la tua immagine profilo che apparirà nella classifica</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-6">
+                  <div className="relative">
+                    <Avatar className="w-32 h-32 border-4 border-primary/20">
+                      <AvatarImage 
+                        src={user?.profileImageUrl || undefined} 
+                        alt="Profile"
+                      />
+                      <AvatarFallback className="bg-primary/10 text-primary text-3xl font-semibold">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                        <div className="animate-spin w-8 h-8 border-4 border-white border-t-transparent rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-2">Cambia foto profilo</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Carica un'immagine JPG, PNG o GIF. Dimensione massima 5MB.
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      data-testid="input-profile-image"
+                    />
+                    <Button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      data-testid="button-upload-profile-image"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {isUploading ? 'Caricamento...' : 'Carica foto'}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Informazioni Profilo</CardTitle>

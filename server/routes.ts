@@ -1222,20 +1222,21 @@ ${JSON.stringify(questionsToTranslate)}`;
   });
 
   // User - Upload profile image
-  app.post('/api/user/upload-profile-image', isAuthenticated, uploadProfileImage.single('image'), async (req, res) => {
+  app.post('/api/user/upload-profile-image', isAuthenticated, uploadProfileImage.single('image'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      if (!req.user?.id) {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
       const imageUrl = `/profile-images/${req.file.filename}`;
       
       // Update user's profile image URL
-      await storage.updateUser(req.user.id, {
+      await storage.updateUser(userId, {
         profileImageUrl: imageUrl
       });
 

@@ -314,7 +314,7 @@ export function AdminCorporateAgreements() {
               <Input
                 id="promoCode"
                 value={newAgreement.promoCode}
-                onChange={(e) => setNewAgreement({ ...newAgreement, promoCode: e.target.value })}
+                onChange={(e) => setNewAgreement({ ...newAgreement, promoCode: e.target.value.toUpperCase() })}
                 placeholder="es. ACME2024"
                 data-testid="input-promo-code"
               />
@@ -405,7 +405,7 @@ export function AdminCorporateAgreements() {
                 <Input
                   id="edit-promoCode"
                   value={editingAgreement.promoCode || ''}
-                  onChange={(e) => setEditingAgreement({ ...editingAgreement, promoCode: e.target.value || null })}
+                  onChange={(e) => setEditingAgreement({ ...editingAgreement, promoCode: e.target.value.toUpperCase() || null })}
                   data-testid="input-edit-promo-code"
                 />
               </div>

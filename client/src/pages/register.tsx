@@ -35,6 +35,7 @@ export default function Register() {
     addressProvince: "",
     addressCountry: "",
     language: "it",
+    promoCode: "",
     newsletterConsent: false,
   });
 
@@ -143,6 +144,7 @@ export default function Register() {
       addressProvince: formData.addressProvince,
       addressCountry: formData.addressCountry,
       language: formData.language,
+      promoCode: formData.promoCode || null,
       newsletterConsent: formData.newsletterConsent,
     };
 
@@ -443,6 +445,19 @@ export default function Register() {
                     <SelectItem value="fr">Français</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="promoCode">Codice Promozionale (facoltativo)</Label>
+                <Input
+                  id="promoCode"
+                  placeholder="Inserisci il codice promo aziendale"
+                  value={formData.promoCode}
+                  onChange={(e) => setFormData({ ...formData, promoCode: e.target.value.toUpperCase() })}
+                  data-testid="input-promo-code"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Se la tua azienda ha un accordo corporate, inserisci il codice promozionale per accedere ai benefici
+                </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

@@ -182,6 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         addressProvince,
         addressCountry,
         language,
+        promoCode,
         newsletterConsent
       } = req.body;
 
@@ -199,7 +200,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for corporate agreement based on email domain
       const emailDomain = '@' + email.toLowerCase().split('@')[1];
-      const corporateAgreement = await storage.getCorporateAgreementByEmailDomain(emailDomain);
+      let corporateAgreement = await storage.getCorporateAgreementByEmailDomain(emailDomain);
+      
+      // If no email domain match and promo code provided, check promo code
+      if (!corporateAgreement && promoCode) {
+        corporateAgreement = await storage.getCorporateAgreementByPromoCode(promoCode.toUpperCase());
+      }
       
       let subscriptionTier = 'free';
       let isPremium = false;

@@ -62,6 +62,9 @@ export const users = pgTable("users", {
   lastActivityDate: timestamp("last_activity_date"),
   // Virtual wallet
   credits: integer("credits").default(0),
+  // Corporate agreement fields
+  companyName: varchar("company_name", { length: 200 }),
+  corporateAgreementId: uuid("corporate_agreement_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -409,8 +412,23 @@ export const activityLog = pgTable("activity_log", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Corporate agreements for company-wide premium access
+export const corporateAgreements = pgTable("corporate_agreements", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyName: varchar("company_name", { length: 200 }).notNull(),
+  emailDomain: varchar("email_domain", { length: 100 }), // e.g., "@company.com" (nullable for promo code only)
+  promoCode: varchar("promo_code", { length: 50 }).unique(), // Alternative to email domain
+  tier: varchar("tier", { length: 20 }).notNull().default("premium_plus"), // premium_plus
+  isActive: boolean("is_active").default(true),
+  maxUsers: integer("max_users"), // Optional limit on number of users
+  currentUsers: integer("current_users").default(0), // Current number of users using this agreement
+  notes: text("notes"), // Internal notes about the agreement
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   quizAttempts: many(userQuizAttempts),
   progress: many(userProgress),
   badges: many(userBadges),
@@ -418,6 +436,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   certificates: many(userCertificates),
   dailyChallenges: many(userDailyChallenges),
   activityLog: many(activityLog),
+  corporateAgreement: one(corporateAgreements, {
+    fields: [users.corporateAgreementId],
+    references: [corporateAgreements.id],
+  }),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -652,6 +674,10 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
   }),
 }));
 
+export const corporateAgreementsRelations = relations(corporateAgreements, ({ many }) => ({
+  users: many(users),
+}));
+
 // Types
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
@@ -680,6 +706,7 @@ export type UserDailyChallenge = typeof userDailyChallenges.$inferSelect;
 export type UserCertificate = typeof userCertificates.$inferSelect;
 export type Leaderboard = typeof leaderboard.$inferSelect;
 export type ActivityLog = typeof activityLog.$inferSelect;
+export type CorporateAgreement = typeof corporateAgreements.$inferSelect;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -716,6 +743,7 @@ export const insertUserDailyChallengeSchema = createInsertSchema(userDailyChalle
 export const insertUserCertificateSchema = createInsertSchema(userCertificates).omit({ id: true, createdAt: true, issuedAt: true });
 export const insertLeaderboardSchema = createInsertSchema(leaderboard).omit({ id: true, updatedAt: true });
 export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id: true, createdAt: true });
+export const insertCorporateAgreementSchema = createInsertSchema(corporateAgreements).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
@@ -743,6 +771,7 @@ export type InsertUserDailyChallenge = z.infer<typeof insertUserDailyChallengeSc
 export type InsertUserCertificate = z.infer<typeof insertUserCertificateSchema>;
 export type InsertLeaderboard = z.infer<typeof insertLeaderboardSchema>;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type InsertCorporateAgreement = z.infer<typeof insertCorporateAgreementSchema>;
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

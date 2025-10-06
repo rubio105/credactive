@@ -10,7 +10,10 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState, useRef } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Trophy, ChartLine, Clock, Flame, ShieldCheck, BookOpen, Award, Star, Download } from "lucide-react";
+import { Trophy, ChartLine, Clock, Flame, ShieldCheck, BookOpen, Award, Star, Download, Zap } from "lucide-react";
+import { LevelProgress } from "@/components/gamification/LevelProgress";
+import { StreakTracker } from "@/components/gamification/StreakTracker";
+import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 
 interface DashboardData {
   stats: {
@@ -34,6 +37,26 @@ interface DashboardData {
     averageScore: number;
     totalTimeSpent: number;
   }>;
+}
+
+interface GamificationData {
+  profile: {
+    totalPoints: number;
+    level: number;
+    currentStreak: number;
+    longestStreak: number;
+  };
+  badges: Array<{
+    id: string;
+    name: string;
+    description: string;
+    iconUrl?: string;
+    earnedAt?: string;
+  }>;
+  leaderboardPosition: {
+    rank: number;
+    totalPoints: number;
+  };
 }
 
 interface User {
@@ -112,6 +135,12 @@ export default function Dashboard() {
 
   const { data: dashboardData, isLoading: isDashboardLoading, error } = useQuery<DashboardData>({
     queryKey: ["/api/user/dashboard"],
+    retry: false,
+  });
+
+  const { data: gamificationData, isLoading: isGamificationLoading } = useQuery<GamificationData>({
+    queryKey: ["/api/user/gamification"],
+    enabled: isAuthenticated,
     retry: false,
   });
 
@@ -240,6 +269,62 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Gamification Section */}
+        {gamificationData && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold">Gamification</h3>
+                <p className="text-muted-foreground">I tuoi progressi e riconoscimenti</p>
+              </div>
+              <Link href="/leaderboard">
+                <Button variant="outline" data-testid="button-view-leaderboard">
+                  <Trophy className="w-4 h-4 mr-2" />
+                  Vedi Classifica
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6 mb-6">
+              <LevelProgress 
+                level={gamificationData.profile.level} 
+                totalPoints={gamificationData.profile.totalPoints} 
+              />
+              <StreakTracker 
+                currentStreak={gamificationData.profile.currentStreak} 
+                longestStreak={gamificationData.profile.longestStreak} 
+              />
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <BadgeGrid badges={gamificationData.badges} />
+              </div>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                      <Trophy className="w-8 h-8 text-primary" />
+                    </div>
+                    <h4 className="text-lg font-bold mb-2">Posizione Globale</h4>
+                    <p className="text-4xl font-bold text-primary mb-2" data-testid="leaderboard-rank">
+                      #{gamificationData.leaderboardPosition.rank}
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {gamificationData.leaderboardPosition.totalPoints.toLocaleString()} punti totali
+                    </p>
+                    <Link href="/leaderboard">
+                      <Button size="sm" className="w-full">
+                        Vedi Classifica Completa
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
 
         {/* Recent Activity & Progress */}
         <div className="grid lg:grid-cols-3 gap-8">

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award } from "lucide-react";
 import logoImage from "@assets/image_1759658677025.png";
 
 interface User {
@@ -92,6 +92,18 @@ export default function Navigation() {
                   <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-quizzes">
                     <BookOpen className="w-4 h-4 mr-2" />
                     I miei Quiz
+                  </Button>
+                </Link>
+                <Link href="/leaderboard">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-leaderboard">
+                    <Trophy className="w-4 h-4 mr-2" />
+                    Classifica
+                  </Button>
+                </Link>
+                <Link href="/certificates">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-certificates">
+                    <Award className="w-4 h-4 mr-2" />
+                    Certificati
                   </Button>
                 </Link>
               </>
@@ -183,6 +195,18 @@ export default function Navigation() {
                       <DropdownMenuItem data-testid="menu-quizzes">
                         <BookOpen className="w-4 h-4 mr-2" />
                         Quiz
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/leaderboard">
+                      <DropdownMenuItem data-testid="menu-leaderboard">
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Classifica
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/certificates">
+                      <DropdownMenuItem data-testid="menu-certificates">
+                        <Award className="w-4 h-4 mr-2" />
+                        Certificati
                       </DropdownMenuItem>
                     </Link>
                     {typedUser?.isAdmin && (

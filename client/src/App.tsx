@@ -24,6 +24,8 @@ import NotFound from "@/pages/not-found";
 import CorsiOnDemand from "@/pages/corsi-on-demand";
 import CorsoOnDemand from "@/pages/corso-on-demand";
 import Settings from "@/pages/settings";
+import Leaderboard from "@/pages/leaderboard";
+import Certificates from "@/pages/certificates";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -50,6 +52,8 @@ function Router() {
           <Route path="/corsi-on-demand" component={CorsiOnDemand} />
           <Route path="/corsi-on-demand/:courseId" component={CorsoOnDemand} />
           <Route path="/settings" component={Settings} />
+          <Route path="/leaderboard" component={Leaderboard} />
+          <Route path="/certificates" component={Certificates} />
         </>
       )}
       <Route path="/page/:slug" component={DynamicContentPage} />

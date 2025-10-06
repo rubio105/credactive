@@ -483,3 +483,301 @@ export async function sendBulkMarketingEmail(
 
   return { sent, failed, errors };
 }
+
+// Gamification Email Notifications
+
+export async function sendBadgeEarnedEmail(
+  email: string,
+  firstName: string | undefined,
+  badgeName: string,
+  badgeDescription: string
+): Promise<void> {
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
+  const safeBadgeName = sanitizeUserInput(badgeName);
+  const safeBadgeDescription = sanitizeUserInput(badgeDescription);
+  const baseUrl = process.env.BASE_URL || 
+    (process.env.REPLIT_DOMAINS?.split(',')[0] 
+      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+      : 'http://localhost:5000');
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+        .logo { width: 200px; height: 60px; margin-bottom: 20px; }
+        .content { background: white; padding: 40px 30px; text-align: center; }
+        .badge-icon { font-size: 80px; margin: 20px 0; }
+        .badge-card { background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%); color: white; padding: 30px; border-radius: 15px; margin: 20px 0; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+        .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+        .footer-links a { color: #667eea; text-decoration: none; margin: 0 10px; }
+        h1 { margin: 0; font-size: 28px; font-weight: 600; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
+            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          </svg>
+          <h1>🏆 Nuovo Badge Sbloccato!</h1>
+        </div>
+        <div class="content">
+          <div class="badge-icon">🎖️</div>
+          <p style="font-size: 18px;">Congratulazioni <strong>${name}</strong>!</p>
+          <div class="badge-card">
+            <h2 style="margin: 0 0 15px 0; font-size: 24px;">${safeBadgeName}</h2>
+            <p style="margin: 0; font-size: 16px; opacity: 0.95;">${safeBadgeDescription}</p>
+          </div>
+          <p>Hai guadagnato un nuovo badge per i tuoi eccezionali risultati nella piattaforma!</p>
+          <p>Continua così per sbloccare altri badge e riconoscimenti.</p>
+          <a href="${baseUrl}/dashboard" class="cta-button">Vedi i Tuoi Badge</a>
+          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+        </div>
+        <div class="footer">
+          <div class="footer-links">
+            <a href="mailto:support@credactive.com">Supporto</a> |
+            <a href="${baseUrl}/dashboard">Dashboard</a> |
+            <a href="${baseUrl}/certificates">Certificati</a>
+          </div>
+          <p style="color: #999; font-size: 12px; margin: 15px 0;">
+            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+CREDACTIVE - Nuovo Badge Sbloccato!
+
+Congratulazioni ${rawName}!
+
+Hai guadagnato il badge: ${badgeName}
+${badgeDescription}
+
+Continua così per sbloccare altri badge e riconoscimenti.
+
+Vedi i tuoi badge su: ${baseUrl}/dashboard
+
+A presto,
+Il Team CREDACTIVE
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `🏆 Nuovo Badge Sbloccato: ${badgeName}`,
+    htmlContent,
+    textContent,
+  });
+}
+
+export async function sendLevelUpEmail(
+  email: string,
+  firstName: string | undefined,
+  newLevel: number,
+  totalPoints: number
+): Promise<void> {
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
+  const baseUrl = process.env.BASE_URL || 
+    (process.env.REPLIT_DOMAINS?.split(',')[0] 
+      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+      : 'http://localhost:5000');
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 40px 30px; text-align: center; }
+        .logo { width: 200px; height: 60px; margin-bottom: 20px; }
+        .content { background: white; padding: 40px 30px; text-align: center; }
+        .level-display { font-size: 120px; font-weight: bold; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 20px 0; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }
+        .stat-card { background: #f9f9f9; padding: 20px; border-radius: 10px; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+        .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+        .footer-links a { color: #f5576c; text-decoration: none; margin: 0 10px; }
+        h1 { margin: 0; font-size: 28px; font-weight: 600; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
+            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          </svg>
+          <h1>⭐ Complimenti! Sei Salito di Livello!</h1>
+        </div>
+        <div class="content">
+          <p style="font-size: 18px;">Fantastico <strong>${name}</strong>!</p>
+          <div class="level-display">${newLevel}</div>
+          <p style="font-size: 24px; font-weight: bold; margin: 0;">LIVELLO ${newLevel}</p>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <p style="margin: 0; font-size: 32px; font-weight: bold; color: #f5576c;">${totalPoints.toLocaleString()}</p>
+              <p style="margin: 5px 0 0 0; color: #666;">Punti Totali</p>
+            </div>
+            <div class="stat-card">
+              <p style="margin: 0; font-size: 32px; font-weight: bold; color: #f5576c;">${newLevel}</p>
+              <p style="margin: 5px 0 0 0; color: #666;">Livello Attuale</p>
+            </div>
+          </div>
+          <p>Il tuo impegno e la tua dedizione stanno dando i loro frutti! Continua così per raggiungere nuovi traguardi.</p>
+          <a href="${baseUrl}/leaderboard" class="cta-button">Vedi Classifica</a>
+          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+        </div>
+        <div class="footer">
+          <div class="footer-links">
+            <a href="mailto:support@credactive.com">Supporto</a> |
+            <a href="${baseUrl}/dashboard">Dashboard</a> |
+            <a href="${baseUrl}/leaderboard">Classifica</a>
+          </div>
+          <p style="color: #999; font-size: 12px; margin: 15px 0;">
+            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+CREDACTIVE - Sei Salito di Livello!
+
+Fantastico ${rawName}!
+
+Hai raggiunto il LIVELLO ${newLevel}!
+
+Punti Totali: ${totalPoints.toLocaleString()}
+Livello Attuale: ${newLevel}
+
+Il tuo impegno sta dando i suoi frutti! Continua così per raggiungere nuovi traguardi.
+
+Vedi la classifica: ${baseUrl}/leaderboard
+
+A presto,
+Il Team CREDACTIVE
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `⭐ Complimenti! Sei Salito al Livello ${newLevel}!`,
+    htmlContent,
+    textContent,
+  });
+}
+
+export async function sendCertificateEarnedEmail(
+  email: string,
+  firstName: string | undefined,
+  quizTitle: string,
+  score: number,
+  certificateId: string
+): Promise<void> {
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
+  const safeQuizTitle = sanitizeUserInput(quizTitle);
+  const baseUrl = process.env.BASE_URL || 
+    (process.env.REPLIT_DOMAINS?.split(',')[0] 
+      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+      : 'http://localhost:5000');
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 40px 30px; text-align: center; }
+        .logo { width: 200px; height: 60px; margin-bottom: 20px; }
+        .content { background: white; padding: 40px 30px; text-align: center; }
+        .certificate-icon { font-size: 80px; margin: 20px 0; }
+        .certificate-preview { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 30px; border-radius: 15px; margin: 20px 0; border: 3px solid #38f9d7; }
+        .score-display { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px; }
+        .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+        .footer-links a { color: #43e97b; text-decoration: none; margin: 0 10px; }
+        h1 { margin: 0; font-size: 28px; font-weight: 600; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
+            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          </svg>
+          <h1>📜 Certificato Ottenuto!</h1>
+        </div>
+        <div class="content">
+          <div class="certificate-icon">🎓</div>
+          <p style="font-size: 18px;">Eccellente lavoro <strong>${name}</strong>!</p>
+          <div class="certificate-preview">
+            <h2 style="margin: 0 0 15px 0; font-size: 24px;">${safeQuizTitle}</h2>
+            <div class="score-display">${score}%</div>
+            <p style="margin: 15px 0 0 0; font-size: 16px; opacity: 0.95;">Certificato di Completamento</p>
+          </div>
+          <p>Hai superato con successo il quiz e ottenuto il tuo certificato digitale!</p>
+          <p>Scaricalo in PDF e condividilo con la tua rete professionale.</p>
+          <a href="${baseUrl}/certificates" class="cta-button">Vedi Certificati</a>
+          <a href="${baseUrl}/api/certificates/download/${certificateId}" class="cta-button" style="background: #667eea;">Scarica PDF</a>
+          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+        </div>
+        <div class="footer">
+          <div class="footer-links">
+            <a href="mailto:support@credactive.com">Supporto</a> |
+            <a href="${baseUrl}/certificates">Certificati</a> |
+            <a href="${baseUrl}/dashboard">Dashboard</a>
+          </div>
+          <p style="color: #999; font-size: 12px; margin: 15px 0;">
+            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+CREDACTIVE - Certificato Ottenuto!
+
+Eccellente lavoro ${rawName}!
+
+Hai superato il quiz: ${quizTitle}
+Punteggio: ${score}%
+
+Il tuo certificato digitale è pronto!
+
+Scarica il PDF: ${baseUrl}/api/certificates/download/${certificateId}
+Vedi tutti i certificati: ${baseUrl}/certificates
+
+A presto,
+Il Team CREDACTIVE
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `📜 Certificato Ottenuto: ${quizTitle}`,
+    htmlContent,
+    textContent,
+  });
+}

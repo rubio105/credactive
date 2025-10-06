@@ -9,6 +9,7 @@ import {
 } from "@shared/schema";
 import { generateCertificateBuffer } from "./certificateGenerator";
 import crypto from "crypto";
+import { sendCertificateEarnedEmail } from "./email";
 
 export function registerGamificationRoutes(app: Express): void {
   // ===============================================
@@ -311,6 +312,15 @@ export function registerGamificationRoutes(app: Express): void {
         verificationCode,
         isPublic: true,
       });
+      
+      // Send certificate earned email (fire and forget)
+      sendCertificateEarnedEmail(
+        user.email,
+        user.firstName,
+        quiz.title,
+        attempt.score,
+        certificate.id
+      ).catch(err => console.error('Failed to send certificate earned email:', err));
       
       res.status(201).json(certificate);
     } catch (error: any) {

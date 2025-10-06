@@ -19,6 +19,7 @@ import {
   type InsertUserAchievement,
 } from "@shared/schema";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
+import { sendBadgeEarnedEmail, sendLevelUpEmail } from "./email";
 
 // Points configuration
 const POINTS_CONFIG = {
@@ -526,6 +527,30 @@ export async function processQuizCompletion(
   
   // Update leaderboard
   await updateLeaderboard(userId);
+  
+  // Send email notifications (fire and forget - don't block the response)
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  if (user) {
+    // Send level up email
+    if (leveledUp) {
+      sendLevelUpEmail(
+        user.email,
+        user.firstName,
+        newLevel,
+        user.totalPoints || 0
+      ).catch(err => console.error('Failed to send level up email:', err));
+    }
+    
+    // Send badge earned emails
+    for (const badge of newBadges) {
+      sendBadgeEarnedEmail(
+        user.email,
+        user.firstName,
+        badge.name,
+        badge.description
+      ).catch(err => console.error('Failed to send badge earned email:', err));
+    }
+  }
   
   return {
     pointsEarned,

@@ -24,7 +24,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendRegistrationConfirmationEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
@@ -184,6 +184,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newsletterConsent: newsletterConsent || false,
         emailVerified: true,
       });
+
+      // Send registration confirmation email (async, don't block response)
+      sendRegistrationConfirmationEmail(user.email, user.firstName || undefined).catch(err => 
+        console.error("Failed to send registration confirmation email:", err)
+      );
 
       // Send welcome email (async, don't block response)
       sendWelcomeEmail(user.email, user.firstName || undefined).catch(err => 

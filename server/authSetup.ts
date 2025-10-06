@@ -31,7 +31,7 @@ export async function setupAuth(app: Express) {
       conObject: {
         connectionString: process.env.DATABASE_URL,
       },
-      createTableIfMissing: true,
+      createTableIfMissing: false,
     });
   } else {
     console.warn("DATABASE_URL not found, using in-memory session store (not suitable for production)");

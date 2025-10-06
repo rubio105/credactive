@@ -154,6 +154,9 @@ export default function Home() {
             <p className="text-muted-foreground">
               {t.subtitle}
             </p>
+            <p className="text-sm text-primary font-medium mt-2">
+              🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
+            </p>
           </div>
           <Link href="/dashboard">
             <Button variant="outline" data-testid="button-view-dashboard">
@@ -230,8 +233,11 @@ export default function Home() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold mb-2">{t.noPremium.title}</h3>
-                  <p className="text-white/90">
+                  <p className="text-white/90 mb-2">
                     {t.noPremium.description}
+                  </p>
+                  <p className="text-white/80 text-sm">
+                    Accedi a sfide quotidiane, classifica globale e sistema di punti gamificato
                   </p>
                 </div>
                 <Link href="/subscribe">

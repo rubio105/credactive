@@ -122,6 +122,7 @@ export default function Settings() {
   const userTier = user?.subscriptionTier || 'free';
   const isPremium = userTier === 'premium';
   const isPremiumPlus = userTier === 'premium_plus';
+  const isFull = userTier === 'full';
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,13 +176,17 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className={`inline-block p-3 rounded-lg ${
-                      isPremiumPlus 
-                        ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
-                        : isPremium 
-                          ? 'bg-primary/10' 
-                          : 'bg-muted'
+                      isFull
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-500'
+                        : isPremiumPlus 
+                          ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
+                          : isPremium 
+                            ? 'bg-primary/10' 
+                            : 'bg-muted'
                     }`}>
-                      {isPremiumPlus ? (
+                      {isFull ? (
+                        <Users className="w-8 h-8 text-white" />
+                      ) : isPremiumPlus ? (
                         <Sparkles className="w-8 h-8 text-white" />
                       ) : isPremium ? (
                         <Crown className="w-8 h-8 text-primary" />
@@ -191,18 +196,20 @@ export default function Settings() {
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold">
-                        {isPremiumPlus ? 'Premium Plus' : isPremium ? 'Premium' : 'Free'}
+                        {isFull ? 'Full' : isPremiumPlus ? 'Premium Plus' : isPremium ? 'Premium' : 'Free'}
                       </h3>
                       <p className="text-muted-foreground">
-                        {isPremiumPlus 
-                          ? '€149/anno - Rinnovo automatico' 
-                          : isPremium 
-                            ? '€99/anno - Rinnovo automatico' 
-                            : 'Piano gratuito con accesso limitato'}
+                        {isFull
+                          ? 'Piano aziendale - Contattaci per dettagli'
+                          : isPremiumPlus 
+                            ? '€149/anno - Rinnovo automatico' 
+                            : isPremium 
+                              ? '€99/anno - Rinnovo automatico' 
+                              : 'Piano gratuito con accesso limitato'}
                       </p>
                     </div>
                   </div>
-                  {!isPremiumPlus && (
+                  {!isFull && !isPremiumPlus && (
                     <Button
                       onClick={() => window.location.href = '/subscribe'}
                       className={isPremium ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' : ''}
@@ -222,7 +229,7 @@ export default function Settings() {
                 Scegli il piano più adatto alle tue esigenze di formazione
               </p>
 
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid md:grid-cols-3 gap-8">
                 {/* Premium Plan */}
                 <Card className={`relative border-2 ${isPremium ? 'border-primary' : 'hover:border-primary'} transition-all`}>
                   {isPremium && (
@@ -351,6 +358,66 @@ export default function Settings() {
                         data-testid="button-select-premium-plus-settings"
                       >
                         Scegli Premium Plus
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Full Plan */}
+                <Card className={`relative border-2 ${isFull ? 'border-primary' : 'border-amber-500 hover:border-amber-600'} shadow-xl`}>
+                  {isFull && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <Badge className="px-4 py-1 bg-primary text-primary-foreground">
+                        PIANO ATTUALE
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  <CardContent className="p-8">
+                    <div className="mb-6">
+                      <div className="inline-block p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg mb-4">
+                        <Users className="w-8 h-8 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2">Full</h3>
+                      <div className="mb-4">
+                        <span className="text-2xl font-bold text-amber-600">Gratuito</span>
+                        <p className="text-sm text-muted-foreground mt-1">fino a 100 dipendenti</p>
+                      </div>
+                      <p className="text-muted-foreground">
+                        Tutto in Premium Plus, più formazione per il tuo team
+                      </p>
+                    </div>
+
+                    <div className="space-y-4 mb-8">
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <span className="font-semibold">Tutto incluso in Premium Plus</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <Calendar className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <span><strong>2 Sessioni Annuali</strong> - Corsi live per i dipendenti</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <Users className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <span><strong>Accesso Team</strong> - Fino a 100 dipendenti</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <span><strong>Dashboard Aziendale</strong> - Monitoraggio team</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <Headphones className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <span><strong>Account Manager</strong> - Supporto dedicato</span>
+                      </div>
+                    </div>
+
+                    {!isFull && (
+                      <Button 
+                        onClick={() => window.location.href = 'mailto:info@credactive.it?subject=Richiesta Piano Full'}
+                        className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+                        data-testid="button-contact-full"
+                      >
+                        Contattaci
                       </Button>
                     )}
                   </CardContent>

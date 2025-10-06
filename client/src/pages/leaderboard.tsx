@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/navigation";
@@ -10,10 +11,16 @@ import { useAuth } from "@/hooks/useAuth";
 
 interface LeaderboardEntry {
   userId: string;
-  userName: string;
-  totalPoints: number;
-  level: number;
   rank: number;
+  points: number;
+  user: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    profileImageUrl?: string;
+    level?: number;
+  };
 }
 
 interface UserPosition {
@@ -52,6 +59,26 @@ export default function Leaderboard() {
     if (rank === 1) return "default";
     if (rank === 2 || rank === 3) return "secondary";
     return "outline";
+  };
+
+  const getUserInitials = (entry: LeaderboardEntry) => {
+    if (entry.user.firstName && entry.user.lastName) {
+      return `${entry.user.firstName[0]}${entry.user.lastName[0]}`.toUpperCase();
+    }
+    if (entry.user.email) {
+      return entry.user.email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getUserDisplayName = (entry: LeaderboardEntry) => {
+    if (entry.user.firstName && entry.user.lastName) {
+      return `${entry.user.firstName} ${entry.user.lastName}`;
+    }
+    if (entry.user.firstName) {
+      return entry.user.firstName;
+    }
+    return entry.user.email.split('@')[0];
   };
 
   return (
@@ -138,23 +165,32 @@ export default function Leaderboard() {
                       <div className="flex items-center justify-center w-12 h-12">
                         {getRankIcon(entry.rank)}
                       </div>
+                      <Avatar className="w-12 h-12 border-2 border-primary/20">
+                        <AvatarImage 
+                          src={entry.user.profileImageUrl || undefined} 
+                          alt={getUserDisplayName(entry)}
+                        />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {getUserInitials(entry)}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold" data-testid={`entry-name-${index}`}>
-                            {entry.userName}
+                            {getUserDisplayName(entry)}
                           </p>
                           {user && entry.userId === user.id && (
                             <Badge variant="secondary" className="text-xs">Tu</Badge>
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Livello {entry.level}
+                          Livello {entry.user.level || 1} • #{entry.rank}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-xl font-bold text-primary" data-testid={`entry-points-${index}`}>
-                        {entry.totalPoints.toLocaleString()}
+                        {entry.points.toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground">punti</p>
                     </div>

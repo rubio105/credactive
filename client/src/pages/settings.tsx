@@ -258,6 +258,14 @@ export default function Settings() {
                       </div>
                       <div className="flex items-start space-x-3">
                         <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <span>🏆 Sfide quotidiane e sistema gamificato</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <span>📊 Classifica globale e badge</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                         <span>Certificati di completamento</span>
                       </div>
                       <div className="flex items-start space-x-3">

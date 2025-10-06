@@ -60,6 +60,8 @@ export const users = pgTable("users", {
   currentStreak: integer("current_streak").default(0),
   longestStreak: integer("longest_streak").default(0),
   lastActivityDate: timestamp("last_activity_date"),
+  // Virtual wallet
+  credits: integer("credits").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

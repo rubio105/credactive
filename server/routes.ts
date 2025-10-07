@@ -28,7 +28,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendRegistrationConfirmationEmail, sendVerificationCodeEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";

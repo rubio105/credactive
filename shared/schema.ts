@@ -33,6 +33,8 @@ export const users = pgTable("users", {
   passwordResetToken: varchar("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires"),
   emailVerified: boolean("email_verified").default(false),
+  verificationCode: varchar("verification_code", { length: 6 }),
+  verificationCodeExpires: timestamp("verification_code_expires"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   dateOfBirth: timestamp("date_of_birth"),

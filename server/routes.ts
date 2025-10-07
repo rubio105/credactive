@@ -2533,6 +2533,40 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Settings management (API Keys and configuration)
+  app.get('/api/admin/settings', isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.put('/api/admin/settings/:key', isAdmin, async (req, res) => {
+    try {
+      const { key } = req.params;
+      const { value, description, category } = req.body;
+      const setting = await storage.upsertSetting(key, value, description, category);
+      res.json(setting);
+    } catch (error) {
+      console.error("Error upserting setting:", error);
+      res.status(500).json({ message: "Failed to save setting" });
+    }
+  });
+
+  app.delete('/api/admin/settings/:key', isAdmin, async (req, res) => {
+    try {
+      const { key } = req.params;
+      await storage.deleteSetting(key);
+      res.json({ message: "Setting deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting setting:", error);
+      res.status(500).json({ message: "Failed to delete setting" });
+    }
+  });
+
   // Generate TTS audio for question explanation
   app.post('/api/admin/questions/:id/generate-audio', isAdmin, aiGenerationLimiter, async (req, res) => {
     try {

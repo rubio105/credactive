@@ -78,6 +78,9 @@ import {
   type InsertActivityLog,
   type InsertCorporateAgreement,
   type QuizWithCount,
+  type Setting,
+  type InsertSetting,
+  settings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
@@ -252,6 +255,12 @@ export interface IStorage {
   incrementCorporateAgreementUsers(id: string): Promise<boolean>;
   decrementCorporateAgreementUsers(id: string): Promise<void>;
   getUsersByCorporateAgreement(agreementId: string): Promise<User[]>;
+  
+  // Settings operations
+  getSetting(key: string): Promise<Setting | undefined>;
+  getAllSettings(): Promise<Setting[]>;
+  upsertSetting(key: string, value: string, description?: string, category?: string): Promise<Setting>;
+  deleteSetting(key: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1449,6 +1458,45 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.corporateAgreementId, agreementId))
       .orderBy(desc(users.createdAt));
+  }
+  
+  // Settings operations
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const [setting] = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.key, key));
+    return setting;
+  }
+  
+  async getAllSettings(): Promise<Setting[]> {
+    return await db.select().from(settings).orderBy(settings.category, settings.key);
+  }
+  
+  async upsertSetting(key: string, value: string, description?: string, category?: string): Promise<Setting> {
+    const [setting] = await db
+      .insert(settings)
+      .values({
+        key,
+        value,
+        description,
+        category,
+      })
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: {
+          value,
+          description,
+          category,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return setting;
+  }
+  
+  async deleteSetting(key: string): Promise<void> {
+    await db.delete(settings).where(eq(settings.key, key));
   }
 }
 

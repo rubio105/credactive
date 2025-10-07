@@ -427,6 +427,18 @@ export const corporateAgreements = pgTable("corporate_agreements", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Application settings for API keys and configuration
+export const settings = pgTable("settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: varchar("key", { length: 100 }).unique().notNull(), // e.g., "OPENAI_API_KEY", "STRIPE_SECRET_KEY"
+  value: text("value"), // The API key or configuration value
+  description: text("description"), // Human-readable description
+  category: varchar("category", { length: 50 }).default("api_keys"), // api_keys, general, etc.
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   quizAttempts: many(userQuizAttempts),
@@ -707,6 +719,7 @@ export type UserCertificate = typeof userCertificates.$inferSelect;
 export type Leaderboard = typeof leaderboard.$inferSelect;
 export type ActivityLog = typeof activityLog.$inferSelect;
 export type CorporateAgreement = typeof corporateAgreements.$inferSelect;
+export type Setting = typeof settings.$inferSelect;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -744,6 +757,8 @@ export const insertUserCertificateSchema = createInsertSchema(userCertificates).
 export const insertLeaderboardSchema = createInsertSchema(leaderboard).omit({ id: true, updatedAt: true });
 export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id: true, createdAt: true });
 export const insertCorporateAgreementSchema = createInsertSchema(corporateAgreements).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateSettingSchema = insertSettingSchema.partial();
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
@@ -772,6 +787,8 @@ export type InsertUserCertificate = z.infer<typeof insertUserCertificateSchema>;
 export type InsertLeaderboard = z.infer<typeof insertLeaderboardSchema>;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type InsertCorporateAgreement = z.infer<typeof insertCorporateAgreementSchema>;
+export type InsertSetting = z.infer<typeof insertSettingSchema>;
+export type UpdateSetting = z.infer<typeof updateSettingSchema>;
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

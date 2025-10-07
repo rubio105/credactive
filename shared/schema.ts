@@ -792,5 +792,28 @@ export type InsertCorporateAgreement = z.infer<typeof insertCorporateAgreementSc
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type UpdateSetting = z.infer<typeof updateSettingSchema>;
 
+// Email Templates
+export const emailTemplates = pgTable("email_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).unique().notNull(), // welcome, verification, password_reset, etc.
+  name: varchar("name", { length: 100 }).notNull(),
+  subject: varchar("subject", { length: 200 }).notNull(),
+  htmlContent: text("html_content").notNull(),
+  textContent: text("text_content"),
+  variables: text("variables").array(), // Available variables like {{firstName}}, {{verificationCode}}, etc.
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

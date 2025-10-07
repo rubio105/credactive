@@ -130,8 +130,12 @@ export function AdminSettings() {
     mutationFn: (description: string) => 
       apiRequest("/api/admin/subscription-plans/format-description", "POST", { description }),
     onSuccess: (data: any) => {
-      setPlanFeatures(data.features);
-      toast({ title: "Descrizione formattata con successo" });
+      if (data && Array.isArray(data.features)) {
+        setPlanFeatures(data.features);
+        toast({ title: "Descrizione formattata con successo" });
+      } else {
+        toast({ title: "Formato risposta non valido", variant: "destructive" });
+      }
     },
     onError: () => {
       toast({ title: "Errore durante la formattazione", variant: "destructive" });
@@ -433,26 +437,27 @@ export function AdminSettings() {
                       </Button>
                     </div>
                     <div className="space-y-2">
-                      {planFeatures.map((feature, index) => (
-                        <div key={index} className="flex gap-2">
-                          <Input
-                            value={feature}
-                            onChange={(e) => handleUpdateFeature(index, e.target.value)}
-                            placeholder="Descrivi una funzionalità..."
-                            data-testid={`input-feature-${index}`}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveFeature(index)}
-                            data-testid={`button-remove-feature-${index}`}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      {planFeatures.length === 0 && (
+                      {planFeatures && planFeatures.length > 0 ? (
+                        planFeatures.map((feature, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={feature}
+                              onChange={(e) => handleUpdateFeature(index, e.target.value)}
+                              placeholder="Descrivi una funzionalità..."
+                              data-testid={`input-feature-${index}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveFeature(index)}
+                              data-testid={`button-remove-feature-${index}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
                         <p className="text-sm text-muted-foreground">
                           Nessuna funzionalità aggiunta. Usa "Formatta con AI" per generarle automaticamente dalla descrizione.
                         </p>

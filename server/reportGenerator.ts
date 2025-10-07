@@ -375,11 +375,20 @@ interface InsightProfile {
   dominantColor: ColorScore;
   secondaryColor: ColorScore;
   colorScores: ColorScore[];
+  profileType: string; // e.g. "121 Riformatore Direttore Creativo"
   strengths: string[];
   developmentAreas: string[];
   workingStyle: string;
   communicationStyle: string;
   recommendations: string;
+  methodologicalIntroduction: string;
+  oppositeType: {
+    description: string;
+    differences: string[];
+    workingTogether: string[];
+  };
+  teamValue: string[];
+  communicationObstacles: string[];
   detailedAnalysis: {
     profileDescription: string;
     behavioralPatterns: string[];
@@ -401,6 +410,255 @@ const colorNames: Record<string, string> = {
   green: 'Verde Terra',
   blue: 'Blu Freddo',
 };
+
+// Methodological introduction about Insights Discovery color theory
+function generateMethodologicalIntroduction(): string {
+  return `Le origini della teoria dei tipi umani risalgono al V° secolo a.C., quando Ippocrate individuò quattro distinte "energie", manifestate da individui diversi. Il Sistema Insights Discovery si basa su un modello inizialmente messo a punto dallo psicologo svizzero Carl Gustav Jung. Questo modello fu pubblicato per la prima volta nella sua opera del 1921 intitolata "Psychological Types" (Tipi Psicologici) e sviluppato in scritti successivi.
+
+Il lavoro di Jung sui Tipi e sulle preferenze è stato da allora adottato come fondamento per la comprensione delle persone ed è stato oggetto di studio per migliaia di ricercatori, fino ai giorni nostri. Rifacendosi alle tipologie descritte da Jung, il Sistema Insights Discovery offre un quadro di riferimento per la comprensione e lo sviluppo di sé.
+
+**I Quattro Colori dell'Energia**
+
+Il sistema identifica quattro energie fondamentali, rappresentate dai colori:
+
+• **Rosso Fuoco** - Energia dell'azione, della determinazione e del focus sui risultati. Chi esprime principalmente energia rossa è orientato agli obiettivi, competitivo e diretto nelle relazioni.
+
+• **Giallo Sole** - Energia della socialità, dell'entusiasmo e della creatività. Chi esprime principalmente energia gialla è comunicativo, ottimista e orientato alle relazioni.
+
+• **Verde Terra** - Energia della stabilità, dell'empatia e del supporto. Chi esprime principalmente energia verde è paziente, leale e orientato all'armonia.
+
+• **Blu Freddo** - Energia dell'analisi, della precisione e della qualità. Chi esprime principalmente energia blu è metodico, riflessivo e orientato all'eccellenza.
+
+Varie ricerche mostrano che una buona conoscenza di sé, dei propri punti di forza e dei propri lati deboli mette le persone in grado di sviluppare efficaci strategie di interazione e le aiuta nel rispondere alle richieste del loro ambiente professionale e personale.`;
+}
+
+// Generate opposite type description
+function generateOppositeType(dominantColor: ColorScore): { description: string; differences: string[]; workingTogether: string[] } {
+  const opposites: Record<string, { color: string; name: string; desc: string; diffs: string[]; working: string[] }> = {
+    red: {
+      color: 'green',
+      name: 'Verde Terra',
+      desc: 'Il tuo tipo opposto è caratterizzato da energia Verde Terra. Mentre tu sei orientato all\'azione e ai risultati rapidi, il tipo opposto privilegia la riflessione, la stabilità e l\'armonia nelle relazioni.',
+      diffs: [
+        'Approccio decisionale: Tu decidi rapidamente, il tipo opposto preferisce ponderare a lungo',
+        'Ritmo di lavoro: Tu cerchi velocità ed efficienza, il tipo opposto valorizza la costanza e la pazienza',
+        'Focus relazionale: Tu punti ai risultati, il tipo opposto si concentra sul benessere delle persone',
+        'Gestione del cambiamento: Tu abbracci il cambiamento, il tipo opposto lo affronta con cautela'
+      ],
+      working: [
+        'Riconosci che la pazienza del tipo Verde può bilanciare la tua impulsività',
+        'Valuta la loro capacità di creare armonia quando tu spingi troppo verso i risultati',
+        'Coinvolgili nelle decisioni che impattano le persone, non solo sui processi',
+        'Rallenta il ritmo quando lavori con loro per permettere una riflessione adeguata'
+      ]
+    },
+    yellow: {
+      color: 'blue',
+      name: 'Blu Freddo',
+      desc: 'Il tuo tipo opposto è caratterizzato da energia Blu Freddo. Mentre tu sei spontaneo, entusiasta e orientato alle relazioni, il tipo opposto privilegia l\'analisi, la precisione e la qualità metodica.',
+      diffs: [
+        'Stile comunicativo: Tu sei espressivo e narrativo, il tipo opposto è conciso e preciso',
+        'Approccio ai progetti: Tu generi idee creative, il tipo opposto le perfeziona nei dettagli',
+        'Relazioni sociali: Tu sei estroverso e socievole, il tipo opposto è riservato e selettivo',
+        'Focus operativo: Tu vedi il quadro generale, il tipo opposto si concentra sui dettagli'
+      ],
+      working: [
+        'Apprezza la loro capacità di portare rigore e qualità alle tue idee creative',
+        'Fornisci loro tempo per analizzare prima di prendere decisioni',
+        'Riconosci che la loro riservatezza non significa disinteresse',
+        'Bilancia il tuo entusiasmo con la loro attenzione ai dettagli per risultati ottimali'
+      ]
+    },
+    green: {
+      color: 'red',
+      name: 'Rosso Fuoco',
+      desc: 'Il tuo tipo opposto è caratterizzato da energia Rosso Fuoco. Mentre tu sei paziente, riflessivo e orientato all\'armonia, il tipo opposto privilegia l\'azione rapida, la competizione e i risultati immediati.',
+      diffs: [
+        'Velocità decisionale: Tu rifletti a lungo, il tipo opposto decide rapidamente',
+        'Approccio ai conflitti: Tu cerchi mediazione, il tipo opposto affronta direttamente',
+        'Priorità: Tu valorizzi le relazioni, il tipo opposto si concentra sui risultati',
+        'Cambiamento: Tu preferisci stabilità, il tipo opposto cerca costantemente sfide nuove'
+      ],
+      working: [
+        'Riconosci che la loro spinta all\'azione può bilanciare la tua tendenza a riflettere troppo',
+        'Esprimi le tue necessità di processo quando loro vogliono accelerare',
+        'Apprezza la loro capacità di prendere decisioni difficili che tu potresti evitare',
+        'Porta la tua prospettiva sulle persone per bilanciare il loro focus sui risultati'
+      ]
+    },
+    blue: {
+      color: 'yellow',
+      name: 'Giallo Sole',
+      desc: 'Il tuo tipo opposto è caratterizzato da energia Giallo Sole. Mentre tu sei analitico, preciso e orientato alla qualità, il tipo opposto privilegia la creatività, l\'entusiasmo e le relazioni spontanee.',
+      diffs: [
+        'Stile lavorativo: Tu sei metodico e strutturato, il tipo opposto è spontaneo e flessibile',
+        'Comunicazione: Tu sei conciso e preciso, il tipo opposto è espressivo e narrativo',
+        'Decision making: Tu basi decisioni sui dati, il tipo opposto si affida all\'intuizione',
+        'Socialità: Tu sei selettivo nelle relazioni, il tipo opposto è naturalmente socievole'
+      ],
+      working: [
+        'Apprezza la loro capacità di portare energia e creatività ai progetti complessi',
+        'Bilancia la tua analisi con il loro pensiero laterale per soluzioni innovative',
+        'Riconosci che la loro spontaneità può accelerare processi che tu potresti rallentare',
+        'Condividi i tuoi standard di qualità per dare struttura alle loro idee creative'
+      ]
+    }
+  };
+
+  const opposite = opposites[dominantColor.color] || opposites.red;
+  return {
+    description: opposite.desc,
+    differences: opposite.diffs,
+    workingTogether: opposite.working
+  };
+}
+
+// Generate team value contributions
+function generateTeamValue(dominantColor: ColorScore, secondaryColor: ColorScore): string[] {
+  const teamValues: Record<string, string[]> = {
+    red: [
+      'Porta energia e determinazione per superare ostacoli e raggiungere obiettivi ambiziosi',
+      'Prende decisioni rapide nei momenti critici, guidando il team verso l\'azione',
+      'Stabilisce obiettivi chiari e mantiene il focus sui risultati misurabili',
+      'Sfida lo status quo e spinge il team fuori dalla zona di comfort',
+      'Assume la leadership naturalmente nelle situazioni di crisi o cambiamento'
+    ],
+    yellow: [
+      'Crea un\'atmosfera positiva e motivante che aumenta il morale del team',
+      'Facilita la comunicazione e costruisce ponti tra persone e reparti diversi',
+      'Genera idee creative e innovative per risolvere problemi complessi',
+      'Promuove la collaborazione e il coinvolgimento di tutti i membri',
+      'Porta entusiasmo contagioso che ispira gli altri a dare il meglio'
+    ],
+    green: [
+      'Fornisce supporto costante e affidabile ai colleghi, creando un ambiente di fiducia',
+      'Media i conflitti e promuove l\'armonia nelle relazioni di team',
+      'Ascolta attivamente le preoccupazioni di tutti, garantendo che ogni voce sia sentita',
+      'Mantiene la stabilità durante i periodi di cambiamento e incertezza',
+      'Costruisce relazioni durature basate su lealtà e reciproco rispetto'
+    ],
+    blue: [
+      'Garantisce qualità e precisione attraverso analisi approfondite e attenzione ai dettagli',
+      'Porta rigore metodologico e struttura ai processi del team',
+      'Identifica potenziali problemi prima che si manifestino grazie all\'analisi preventiva',
+      'Stabilisce standard elevati che spingono il team verso l\'eccellenza',
+      'Fornisce dati e fatti concreti per supportare decisioni informate'
+    ]
+  };
+
+  const primary = teamValues[dominantColor.color] || teamValues.red;
+  const secondary = teamValues[secondaryColor.color] || teamValues.yellow;
+  
+  // Combine unique values from both colors
+  const combined = [...primary.slice(0, 3), ...secondary.slice(0, 2)];
+  return combined;
+}
+
+// Generate communication obstacles
+function generateCommunicationObstacles(dominantColor: ColorScore): string[] {
+  const obstacles: Record<string, string[]> = {
+    red: [
+      'Potresti apparire troppo diretto o brusco, ferendo involontariamente i sentimenti altrui',
+      'La tua impazienza può essere percepita come mancanza di interesse per le opinioni degli altri',
+      'Potresti interrompere le persone prima che finiscano di parlare, nella fretta di passare all\'azione',
+      'Il tuo focus esclusivo sui risultati può far sentire gli altri come mezzi piuttosto che persone',
+      'Potresti non dedicare tempo sufficiente all\'ascolto attivo e all\'empatia',
+      'La tua tendenza a dominare le conversazioni può intimidire colleghi più riservati'
+    ],
+    yellow: [
+      'Potresti parlare troppo e non lasciare spazio sufficiente agli altri per esprimersi',
+      'La tua tendenza a divagare può far perdere il focus della discussione',
+      'Potresti sembrare superficiale quando passi rapidamente da un argomento all\'altro',
+      'Il tuo ottimismo eccessivo può minimizzare preoccupazioni legittime degli altri',
+      'Potresti promettere più di quanto puoi mantenere nell\'entusiasmo del momento',
+      'La tua avversione ai dettagli può frustrare chi necessita di precisione'
+    ],
+    green: [
+      'Potresti evitare i conflitti necessari, lasciando problemi irrisolti',
+      'La tua riluttanza a dire "no" può portare a impegni eccessivi',
+      'Potresti non esprimere le tue vere opinioni per paura di disturbare l\'armonia',
+      'La tua lentezza nel processo decisionale può frustrare chi vuole azione rapida',
+      'Potresti sembrare passivo o poco assertivo in situazioni che richiedono fermezza',
+      'La tua sensibilità alle critiche può essere percepita come difensività'
+    ],
+    blue: [
+      'Potresti apparire freddo o distaccato, mancando di calore umano nelle interazioni',
+      'La tua insistenza sui dettagli può rallentare eccessivamente le conversazioni',
+      'Potresti essere percepito come eccessivamente critico o perfezionista',
+      'La tua preferenza per comunicazioni scritte può limitare le interazioni personali',
+      'Potresti analizzare eccessivamente invece di rispondere emotivamente quando appropriato',
+      'La tua riservatezza può essere interpretata come mancanza di interesse o coinvolgimento'
+    ]
+  };
+
+  return obstacles[dominantColor.color] || obstacles.red;
+}
+
+// Generate 72-type profile name based on color combination and percentages
+function generateProfileType(dominant: ColorScore, secondary: ColorScore, third: ColorScore): string {
+  // Calculate position in the 72-type wheel (0-71)
+  // Each quadrant has 18 subtypes based on intensity and blend
+  const colorToQuadrant: Record<string, number> = {
+    red: 0,    // 0-17
+    yellow: 18, // 18-35
+    green: 36,  // 36-53
+    blue: 54    // 54-71
+  };
+  
+  const basePosition = colorToQuadrant[dominant.color] || 0;
+  
+  // Calculate subtype within quadrant (0-17) based on secondary color influence
+  let subPosition = 0;
+  if (dominant.percentage > 50) {
+    // Pure dominant color - position 8-9 (center of quadrant)
+    subPosition = 9;
+  } else if (secondary.percentage > 20) {
+    // Blend with secondary color
+    const secondaryQuadrant = colorToQuadrant[secondary.color] || 0;
+    const direction = (secondaryQuadrant - basePosition + 72) % 72;
+    if (direction < 36) {
+      // Blend towards next color (clockwise)
+      subPosition = Math.floor((secondary.percentage / dominant.percentage) * 9);
+    } else {
+      // Blend towards previous color (counter-clockwise)
+      subPosition = 17 - Math.floor((secondary.percentage / dominant.percentage) * 9);
+    }
+  }
+  
+  const typeNumber = basePosition + subPosition + 1; // 1-72
+  
+  // Generate descriptive name based on dominant and secondary colors
+  const profileNames: Record<string, Record<string, string>> = {
+    red: {
+      red: 'Leader Visionario',
+      yellow: 'Innovatore Dinamico',
+      green: 'Direttore Empatico',
+      blue: 'Stratega Decisionale'
+    },
+    yellow: {
+      red: 'Comunicatore Energico',
+      yellow: 'Creativo Entusiasta',
+      green: 'Facilitatore Sociale',
+      blue: 'Innovatore Analitico'
+    },
+    green: {
+      red: 'Collaboratore Proattivo',
+      yellow: 'Mediatore Ottimista',
+      green: 'Custode dell\'Armonia',
+      blue: 'Supporto Metodico'
+    },
+    blue: {
+      red: 'Analista Orientato ai Risultati',
+      yellow: 'Ricercatore Creativo',
+      green: 'Esperto Paziente',
+      blue: 'Perfezionista Sistematico'
+    }
+  };
+  
+  const profileName = profileNames[dominant.color]?.[secondary.color] || 'Profilo Equilibrato';
+  
+  return `${typeNumber} ${profileName}`;
+}
 
 const colorTraits: Record<string, {
   strengths: string[];
@@ -773,18 +1031,29 @@ export function generateInsightDiscoveryReport(
 
   // Generate detailed analysis
   const profileDescription = generateProfileDescription(dominantColor, secondaryColor, thirdColor, lowestColor);
-  
   const actionPlan = generateActionPlan(dominantColor, secondaryColor, lowestColor, traits);
+  
+  // Generate new sections
+  const methodologicalIntroduction = generateMethodologicalIntroduction();
+  const oppositeType = generateOppositeType(dominantColor);
+  const teamValue = generateTeamValue(dominantColor, secondaryColor);
+  const communicationObstacles = generateCommunicationObstacles(dominantColor);
+  const profileType = generateProfileType(dominantColor, secondaryColor, thirdColor);
 
   return {
     dominantColor,
     secondaryColor,
     colorScores,
+    profileType,
     strengths: traits.strengths,
     developmentAreas: traits.developmentAreas,
     workingStyle: traits.workingStyle,
     communicationStyle: traits.communicationStyle,
     recommendations,
+    methodologicalIntroduction,
+    oppositeType,
+    teamValue,
+    communicationObstacles,
     detailedAnalysis: {
       profileDescription,
       behavioralPatterns: traits.behavioralPatterns,

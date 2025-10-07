@@ -6,9 +6,15 @@ CREDACTIVE ACADEMY is a professional online platform designed for quiz-based cer
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes (October 2025)
+
+-   **Email Verification System**: Implemented complete email verification system with 6-digit codes (15-minute expiry), secure endpoints with rate limiting and Zod validation, and auto-login after verification.
+-   **Dashboard Bug Fix**: Fixed critical null-safety issue where dashboard would crash when leaderboardPosition was undefined. Added proper checks and fallbacks for new users without gamification data.
+
 # Known Issues
 
 -   **In-Quiz Language Selector**: The language selector (IT/EN/ES) translates UI elements but does not currently translate questions and answers during quiz execution due to a React state synchronization issue. The translation API backend works correctly - this is a frontend rendering issue that requires further investigation.
+-   **Brevo Email Delivery**: BREVO_API_KEY is configured but returns 401 errors. Email verification codes are generated correctly and stored in the database, but external email delivery may fail. Users can still verify accounts by retrieving codes from server logs or database during testing.
 
 # Admin Access
 
@@ -29,7 +35,7 @@ Preferred communication style: Simple, everyday language.
 -   **Framework**: Express.js with Node.js and TypeScript.
 -   **API Design**: RESTful, organized by feature.
 -   **Authentication**: Email/password authentication via Passport.js Local Strategy with bcrypt for password hashing; `express-session` with PostgreSQL store (httpOnly, secure cookies, 1-week TTL).
--   **Email Service**: Brevo for transactional emails (welcome emails, password reset with secure tokens).
+-   **Email Service**: Brevo for transactional emails (welcome emails, password reset with secure tokens, email verification with 6-digit codes).
 -   **Database Access**: Drizzle ORM for type-safe queries, shared schema between frontend and backend.
 -   **Security Measures**: 
     -   Rate limiting on critical endpoints (5 login attempts/15min, 3 registration/hour, 3 password resets/hour, 20 AI requests/hour)
@@ -43,7 +49,7 @@ Preferred communication style: Simple, everyday language.
 
 -   **Database**: PostgreSQL (Neon's serverless driver).
 -   **ORM**: Drizzle ORM with schema-first design (`shared/schema.ts`).
--   **Schema Design**: Tables for Users (email, hashed password, password reset tokens, Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs (tracks AI generation status and progress), User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, and **Settings** (for API keys and configuration). Supports category images and audio explanations.
+-   **Schema Design**: Tables for Users (email, hashed password, email verification codes and expiry, password reset tokens, Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs (tracks AI generation status and progress), User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, and **Settings** (for API keys and configuration). Supports category images and audio explanations.
 -   **Migrations**: Managed by drizzle-kit.
 -   **Type Safety**: End-to-end type safety via Drizzle and shared schema.
 
@@ -61,8 +67,9 @@ Preferred communication style: Simple, everyday language.
 -   **Social Login**: Direct Google OAuth integration (no intermediate Replit Auth screen) using dynamic callback URLs that work across all deployment domains. Apple login removed per user preference.
 -   **Session Management**: Persistent sessions via `express-session` with PostgreSQL store when available, falling back to in-memory store (1-week TTL, httpOnly, secure cookies).
 -   **User Flow**: Unauthenticated users see landing page with access to login/register pages; authenticated users access home page; `isAuthenticated` middleware protects API routes.
+-   **Email Verification**: New user registrations require email verification via 6-digit code (15-minute expiry). Users receive verification code via Brevo email, must enter code at `/verify-email` page before account activation. Endpoints protected with rate limiting and Zod validation to prevent brute force attacks. Auto-login after successful verification.
 -   **Password Recovery**: Secure token-based password reset via Brevo email service (1-hour token expiration) for email/password accounts.
--   **Welcome Emails**: Automated welcome emails sent via Brevo upon successful registration.
+-   **Welcome Emails**: Automated welcome emails sent via Brevo upon successful email verification.
 
 ## Key Features
 

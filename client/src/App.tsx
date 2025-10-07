@@ -17,6 +17,7 @@ import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import VerifyEmail from "@/pages/verify-email";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import Logout from "@/pages/logout";
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/contatti" component={Contatti} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/logout" component={Logout} />

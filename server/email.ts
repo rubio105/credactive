@@ -337,6 +337,103 @@ Il Team CREDACTIVE
   });
 }
 
+export async function sendVerificationCodeEmail(
+  email: string,
+  verificationCode: string,
+  firstName?: string
+): Promise<void> {
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+        .logo { width: 200px; height: 60px; margin-bottom: 20px; }
+        .content { background: white; padding: 40px 30px; text-align: center; }
+        .code-box { background: #f8f9ff; border: 2px dashed #667eea; border-radius: 12px; padding: 30px; margin: 30px 0; }
+        .code { font-size: 48px; font-weight: bold; letter-spacing: 8px; color: #667eea; font-family: 'Courier New', monospace; }
+        .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+        .footer-links { margin: 15px 0; }
+        .footer-links a { color: #667eea; text-decoration: none; margin: 0 10px; }
+        .warning { background: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; font-size: 14px; text-align: left; }
+        h1 { margin: 0; font-size: 28px; font-weight: 700; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
+            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          </svg>
+          <h1>🔐 Verifica il tuo Account</h1>
+        </div>
+        <div class="content">
+          <p style="font-size: 18px;">Ciao <strong>${name}</strong>,</p>
+          <p>Benvenuto su CREDACTIVE! Per completare la registrazione e attivare il tuo account, inserisci questo codice di verifica:</p>
+          
+          <div class="code-box">
+            <p style="margin: 0; font-size: 14px; color: #666; margin-bottom: 15px;">Il tuo codice di verifica è:</p>
+            <div class="code">${verificationCode}</div>
+          </div>
+          
+          <p style="font-size: 16px; margin: 30px 0;">Inserisci questo codice nella pagina di verifica per attivare il tuo account.</p>
+          
+          <div class="warning">
+            <p style="margin: 0;"><strong>⏰ Attenzione:</strong> Questo codice è valido per 15 minuti. Se non lo utilizzi entro questo tempo, dovrai richiederne uno nuovo.</p>
+          </div>
+          
+          <p style="font-size: 14px; color: #666; margin-top: 30px;">Se non hai richiesto questa registrazione, ignora questa email.</p>
+        </div>
+        <div class="footer">
+          <div class="footer-links">
+            <a href="mailto:support@credactive.com">Supporto</a> |
+            <a href="https://credactive.com/faq">FAQ</a> |
+            <a href="https://credactive.com/privacy">Privacy</a>
+          </div>
+          <p style="color: #999; font-size: 12px; margin: 15px 0;">
+            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+          </p>
+          <p style="color: #999; font-size: 11px;">
+            Questa email è stata inviata a ${sanitizeUserInput(email)}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+CREDACTIVE - Verifica il tuo Account
+
+Ciao ${rawName},
+
+Benvenuto su CREDACTIVE! Per completare la registrazione, utilizza questo codice di verifica:
+
+CODICE: ${verificationCode}
+
+Questo codice è valido per 15 minuti.
+
+Se non hai richiesto questa registrazione, ignora questa email.
+
+Il Team CREDACTIVE
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: "🔐 Verifica il tuo Account - CREDACTIVE",
+    htmlContent,
+    textContent,
+  });
+}
+
 export async function sendPasswordResetEmail(
   email: string,
   resetToken: string

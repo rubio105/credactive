@@ -28,7 +28,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendRegistrationConfirmationEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendRegistrationConfirmationEmail, sendVerificationCodeEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
@@ -293,6 +293,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const hashedPassword = await bcrypt.hash(password, 10);
       
+      // Generate 6-digit verification code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+      
       let user;
       try {
         user = await storage.createUser({
@@ -313,7 +317,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           addressCountry,
           language: language || 'it',
           newsletterConsent: newsletterConsent || false,
-          emailVerified: true,
+          emailVerified: false,
+          verificationCode,
+          verificationCodeExpires,
           subscriptionTier,
           isPremium,
           companyName,
@@ -327,25 +333,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw error;
       }
 
-      // Send registration confirmation email (async, don't block response)
-      sendRegistrationConfirmationEmail(user.email, user.firstName || undefined).catch(err => 
-        console.error("Failed to send registration confirmation email:", err)
+      // Send verification code email (async, don't block response)
+      sendVerificationCodeEmail(user.email, verificationCode, user.firstName || undefined).catch(err => 
+        console.error("Failed to send verification code email:", err)
       );
 
-      // Send welcome email (async, don't block response)
-      sendWelcomeEmail(user.email, user.firstName || undefined).catch(err => 
-        console.error("Failed to send welcome email:", err)
-      );
-
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Errore durante il login" });
-        }
-        res.json(user);
+      // Return success response without auto-login (user must verify email first)
+      res.json({ 
+        success: true,
+        message: "Registrazione completata! Controlla la tua email per il codice di verifica.",
+        email: user.email,
+        requiresVerification: true
       });
     } catch (error) {
       console.error("Error during registration:", error);
       res.status(500).json({ message: "Errore durante la registrazione" });
+    }
+  });
+
+  // Verify email with code
+  app.post('/api/auth/verify-email', authLimiter, async (req, res) => {
+    try {
+      // Validate request body
+      const verifySchema = z.object({
+        email: z.string().email("Email non valida"),
+        code: z.string().length(6, "Il codice deve essere di 6 cifre").regex(/^\d+$/, "Il codice deve contenere solo numeri"),
+      });
+
+      const validation = verifySchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: validation.error.errors[0].message });
+      }
+
+      const { email, code } = validation.data;
+      const user = await storage.getUserByEmail(email.toLowerCase());
+      if (!user) {
+        return res.status(404).json({ message: "Utente non trovato" });
+      }
+
+      if (user.emailVerified) {
+        return res.status(400).json({ message: "Email già verificata" });
+      }
+
+      if (!user.verificationCode || !user.verificationCodeExpires) {
+        return res.status(400).json({ message: "Nessun codice di verifica trovato. Richiedi un nuovo codice." });
+      }
+
+      // Check if code is expired
+      if (new Date() > user.verificationCodeExpires) {
+        return res.status(400).json({ message: "Il codice di verifica è scaduto. Richiedi un nuovo codice." });
+      }
+
+      // Check if code matches
+      if (user.verificationCode !== code) {
+        return res.status(400).json({ message: "Codice di verifica non valido" });
+      }
+
+      // Verify email and clear verification code
+      await storage.updateUser(user.id, {
+        emailVerified: true,
+        verificationCode: null,
+        verificationCodeExpires: null,
+      });
+
+      // Send welcome email after successful verification
+      sendWelcomeEmail(user.email, user.firstName || undefined).catch(err => 
+        console.error("Failed to send welcome email:", err)
+      );
+
+      // Auto-login user after verification
+      const verifiedUser = await storage.getUser(user.id);
+      req.login(verifiedUser!, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Verifica completata ma errore durante il login" });
+        }
+        res.json({ 
+          success: true, 
+          message: "Email verificata con successo!",
+          user: verifiedUser
+        });
+      });
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ message: "Errore durante la verifica dell'email" });
+    }
+  });
+
+  // Resend verification code
+  app.post('/api/auth/resend-verification', authLimiter, async (req, res) => {
+    try {
+      // Validate request body
+      const resendSchema = z.object({
+        email: z.string().email("Email non valida"),
+      });
+
+      const validation = resendSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: validation.error.errors[0].message });
+      }
+
+      const { email } = validation.data;
+      const user = await storage.getUserByEmail(email.toLowerCase());
+      if (!user) {
+        return res.status(404).json({ message: "Utente non trovato" });
+      }
+
+      if (user.emailVerified) {
+        return res.status(400).json({ message: "Email già verificata" });
+      }
+
+      // Generate new verification code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+
+      // Update user with new code
+      await storage.updateUser(user.id, {
+        verificationCode,
+        verificationCodeExpires,
+      });
+
+      // Send new verification code email
+      sendVerificationCodeEmail(user.email, verificationCode, user.firstName || undefined).catch(err => 
+        console.error("Failed to send verification code email:", err)
+      );
+
+      res.json({ 
+        success: true, 
+        message: "Nuovo codice di verifica inviato! Controlla la tua email." 
+      });
+    } catch (error) {
+      console.error("Error resending verification code:", error);
+      res.status(500).json({ message: "Errore durante l'invio del codice" });
     }
   });
 

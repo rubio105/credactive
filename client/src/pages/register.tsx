@@ -72,12 +72,20 @@ export default function Register() {
         throw new Error(errorMessage);
       }
     },
-    onSuccess: () => {
-      toast({
-        title: "Registrazione completata",
-        description: "Benvenuto su CREDACTIVE!",
-      });
-      window.location.href = "/";
+    onSuccess: (data) => {
+      if (data.requiresVerification) {
+        toast({
+          title: "Registrazione completata!",
+          description: "Controlla la tua email per il codice di verifica.",
+        });
+        setLocation(`/verify-email?email=${encodeURIComponent(data.email)}`);
+      } else {
+        toast({
+          title: "Registrazione completata",
+          description: "Benvenuto su CREDACTIVE!",
+        });
+        window.location.href = "/";
+      }
     },
     onError: (error: any) => {
       toast({

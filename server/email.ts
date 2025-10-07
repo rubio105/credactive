@@ -558,9 +558,14 @@ export async function sendMarketingEmail(
 }
 
 export async function sendBulkMarketingEmail(
-  recipients: Array<{ email: string; firstName?: string }>,
+  recipients: Array<{ 
+    email: string; 
+    firstName?: string;
+    htmlContent?: string;
+    textContent?: string;
+  }>,
   subject: string,
-  htmlTemplate: string,
+  htmlTemplate?: string,
   textTemplate?: string
 ): Promise<{ sent: number; failed: number; errors: string[] }> {
   let sent = 0;
@@ -569,17 +574,27 @@ export async function sendBulkMarketingEmail(
 
   for (const recipient of recipients) {
     try {
-      const rawName = recipient.firstName || recipient.email.split('@')[0];
-      const sanitizedName = sanitizeUserInput(rawName);
-      const sanitizedEmail = sanitizeUserInput(recipient.email);
+      // Use personalized content if provided, otherwise use template
+      let htmlContent = recipient.htmlContent;
+      let textContent = recipient.textContent;
       
-      const htmlContent = htmlTemplate
-        .replace(/{{firstName}}/g, sanitizedName)
-        .replace(/{{email}}/g, sanitizedEmail);
-      
-      const textContent = textTemplate
-        ?.replace(/{{firstName}}/g, rawName)
-        .replace(/{{email}}/g, recipient.email);
+      if (!htmlContent && htmlTemplate) {
+        const rawName = recipient.firstName || recipient.email.split('@')[0];
+        const sanitizedName = sanitizeUserInput(rawName);
+        const sanitizedEmail = sanitizeUserInput(recipient.email);
+        
+        htmlContent = htmlTemplate
+          .replace(/{{firstName}}/g, sanitizedName)
+          .replace(/{{email}}/g, sanitizedEmail);
+        
+        textContent = textTemplate
+          ?.replace(/{{firstName}}/g, rawName)
+          .replace(/{{email}}/g, recipient.email);
+      }
+
+      if (!htmlContent) {
+        throw new Error("No HTML content provided");
+      }
 
       await sendMarketingEmail(
         recipient.email,

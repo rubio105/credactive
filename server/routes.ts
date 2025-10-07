@@ -1617,7 +1617,7 @@ ${JSON.stringify(questionsToTranslate)}`;
   // Admin - Send marketing email to newsletter subscribers
   app.post('/api/admin/send-marketing-email', isAdmin, async (req, res) => {
     try {
-      const { subject, htmlContent, textContent } = req.body;
+      const { subject, htmlContent, textContent, targetFilters } = req.body;
 
       if (!subject || !htmlContent) {
         return res.status(400).json({ message: "Subject e contenuto HTML sono obbligatori" });
@@ -1625,31 +1625,75 @@ ${JSON.stringify(questionsToTranslate)}`;
 
       // Get all users with newsletter consent
       const users = await storage.getAllUsers();
-      const subscribedUsers = users.filter(user => user.newsletterConsent);
+      let filtered = users.filter(user => user.newsletterConsent);
 
-      if (subscribedUsers.length === 0) {
+      // Apply target filters if provided
+      if (targetFilters) {
+        // Filter by profession
+        if (targetFilters.profession && targetFilters.profession.length > 0) {
+          filtered = filtered.filter(u => 
+            targetFilters.profession.includes(u.profession)
+          );
+        }
+        
+        // Filter by subscription tier
+        if (targetFilters.subscriptionTier && targetFilters.subscriptionTier.length > 0) {
+          filtered = filtered.filter(u => 
+            targetFilters.subscriptionTier.includes(u.subscriptionTier)
+          );
+        }
+        
+        // Filter by language
+        if (targetFilters.language && targetFilters.language.length > 0) {
+          filtered = filtered.filter(u => 
+            targetFilters.language.includes(u.language)
+          );
+        }
+        
+        // Filter by premium status
+        if (targetFilters.isPremium !== undefined) {
+          filtered = filtered.filter(u => u.isPremium === targetFilters.isPremium);
+        }
+      }
+
+      if (filtered.length === 0) {
         return res.json({ 
-          message: "Nessun utente ha acconsentito alla newsletter", 
+          message: "Nessun utente trovato con i filtri specificati", 
           sent: 0, 
           failed: 0 
         });
       }
 
-      const recipients = subscribedUsers.map(user => ({
-        email: user.email,
-        firstName: user.firstName || undefined
-      }));
+      // Personalize content for each user
+      const recipients = filtered.map(user => {
+        let personalizedHtml = htmlContent;
+        let personalizedText = textContent || '';
+        
+        // Replace placeholders with user data
+        personalizedHtml = personalizedHtml.replace(/\{\{firstName\}\}/g, user.firstName || 'Cliente');
+        personalizedHtml = personalizedHtml.replace(/\{\{lastName\}\}/g, user.lastName || '');
+        personalizedHtml = personalizedHtml.replace(/\{\{profession\}\}/g, user.profession || '');
+        
+        personalizedText = personalizedText.replace(/\{\{firstName\}\}/g, user.firstName || 'Cliente');
+        personalizedText = personalizedText.replace(/\{\{lastName\}\}/g, user.lastName || '');
+        personalizedText = personalizedText.replace(/\{\{profession\}\}/g, user.profession || '');
+        
+        return {
+          email: user.email,
+          firstName: user.firstName || undefined,
+          htmlContent: personalizedHtml,
+          textContent: personalizedText
+        };
+      });
 
       const { sendBulkMarketingEmail } = await import("./email");
       const result = await sendBulkMarketingEmail(
         recipients,
-        subject,
-        htmlContent,
-        textContent
+        subject
       );
 
       res.json({
-        message: `Email marketing inviata a ${result.sent} utenti`,
+        message: `Email marketing inviata a ${result.sent} utenti (target: ${filtered.length})`,
         ...result,
         totalSubscribers: subscribedUsers.length
       });

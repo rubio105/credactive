@@ -229,6 +229,22 @@ export async function sendWelcomeEmail(
   const rawName = firstName || email.split('@')[0];
   const name = sanitizeUserInput(rawName);
 
+  // Try to use database template first
+  try {
+    await sendTemplateEmail('welcome', email, {
+      firstName: rawName,
+      email,
+      loginUrl,
+    });
+    return;
+  } catch (error: any) {
+    // Only use fallback if template doesn't exist - propagate other errors (inactive, send failures, etc)
+    if (!error.message?.includes('not found')) {
+      throw error;
+    }
+    console.log('Template not found, using fallback welcome email');
+  }
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -388,6 +404,22 @@ export async function sendVerificationCodeEmail(
   const rawName = firstName || email.split('@')[0];
   const name = sanitizeUserInput(rawName);
 
+  // Try to use database template first
+  try {
+    await sendTemplateEmail('verification', email, {
+      firstName: rawName,
+      email,
+      verificationCode,
+    });
+    return;
+  } catch (error: any) {
+    // Only use fallback if template doesn't exist - propagate other errors (inactive, send failures, etc)
+    if (!error.message?.includes('not found')) {
+      throw error;
+    }
+    console.log('Template not found, using fallback verification email');
+  }
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -486,6 +518,21 @@ export async function sendPasswordResetEmail(
                     ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
                     : 'http://localhost:5000');
   const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+  // Try to use database template first
+  try {
+    await sendTemplateEmail('password-reset', email, {
+      email,
+      resetUrl,
+    });
+    return;
+  } catch (error: any) {
+    // Only use fallback if template doesn't exist - propagate other errors (inactive, send failures, etc)
+    if (!error.message?.includes('not found')) {
+      throw error;
+    }
+    console.log('Template not found, using fallback password reset email');
+  }
 
   const htmlContent = `
     <!DOCTYPE html>

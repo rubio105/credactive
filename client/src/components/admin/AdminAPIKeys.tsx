@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Save } from "lucide-react";
+import { Eye, EyeOff, Save, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 
 interface Setting {
   id: string;
@@ -122,6 +123,13 @@ export function AdminAPIKeys() {
 
   return (
     <div className="space-y-6">
+      <Button variant="ghost" asChild className="mb-4">
+        <Link href="/" data-testid="button-back-home">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Torna alla Home
+        </Link>
+      </Button>
+
       <div>
         <h2 className="text-2xl font-bold">Configurazione API</h2>
         <p className="text-muted-foreground mt-1">

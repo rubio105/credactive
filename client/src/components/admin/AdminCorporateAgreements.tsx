@@ -28,10 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Trash2, Plus, Users } from "lucide-react";
+import { Pencil, Trash2, Plus, Users, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "wouter";
 
 interface CorporateAgreement {
   id: string;
@@ -201,6 +202,13 @@ export function AdminCorporateAgreements() {
 
   return (
     <div className="space-y-6">
+      <Button variant="ghost" asChild className="mb-4">
+        <Link href="/" data-testid="button-back-home">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Torna alla Home
+        </Link>
+      </Button>
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Accordi Aziendali</h2>

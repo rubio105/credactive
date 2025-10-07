@@ -1793,7 +1793,10 @@ ${JSON.stringify(courseContext, null, 2)}
 ISTRUZIONI:
 1. Scrivi un'email HTML accattivante e professionale
 2. Suggerisci i corsi/certificazioni più rilevanti per ${profession || 'il target'}
-3. Personalizza il messaggio con {{firstName}} dove appropriato
+3. IMPORTANTE: Usa questi placeholder per personalizzazione (saranno sostituiti con dati reali):
+   - {{firstName}} per il nome
+   - {{lastName}} per il cognome  
+   - {{profession}} per la professione dell'utente
 4. Includi un chiaro call-to-action
 5. Mantieni un tono ${tone || 'professionale'}
 6. Evidenzia i benefici specifici per la loro professione
@@ -1802,17 +1805,20 @@ ISTRUZIONI:
 STRUTTURA RICHIESTA:
 - Oggetto email (max 60 caratteri)
 - Corpo email in HTML con sezioni: 
-  * Saluto personalizzato
-  * Introduzione value proposition
+  * Saluto personalizzato con {{firstName}}
+  * Introduzione value proposition menzionando {{profession}} se rilevante
   * Corsi raccomandati con descrizione e benefici
   * Call to action chiaro
   * Firma
 
+ESEMPIO USO PLACEHOLDER:
+"Ciao {{firstName}}, come {{profession}} sappiamo quanto sia importante..."
+
 Restituisci SOLO un JSON con:
 {
   "subject": "Oggetto email",
-  "htmlContent": "HTML dell'email",
-  "textContent": "Versione testo",
+  "htmlContent": "HTML dell'email con placeholder {{firstName}}, {{lastName}}, {{profession}}",
+  "textContent": "Versione testo con placeholder",
   "recommendedCourses": ["Nome corso 1", "Nome corso 2"]
 }`;
 

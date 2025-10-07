@@ -26,6 +26,11 @@ export function AdminMarketing() {
   const [generatedEmail, setGeneratedEmail] = useState<any>(null);
   const [targetFilters, setTargetFilters] = useState<any>({});
   const [audiencePreview, setAudiencePreview] = useState<any>(null);
+  
+  // Send filters
+  const [sendToProfession, setSendToProfession] = useState("");
+  const [sendToSubscriptionTier, setSendToSubscriptionTier] = useState("all");
+  const [sendToLanguage, setSendToLanguage] = useState("all");
 
   // AI Generate Email
   const generateMutation = useMutation({
@@ -68,14 +73,20 @@ export function AdminMarketing() {
 
   // Send Email
   const sendMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/admin/send-marketing-email', 'POST', data),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('/api/admin/send-marketing-email', 'POST', data);
+      return await response.json();
+    },
     onSuccess: (result: any) => {
       toast({ 
         title: "Email inviate con successo!", 
-        description: `Inviate: ${result.sent}, Fallite: ${result.failed}`
+        description: `Inviate: ${result.sent} su ${result.totalSubscribers} iscritti newsletter`
       });
       setGeneratedEmail(null);
       setAudiencePreview(null);
+      setSendToProfession("");
+      setSendToSubscriptionTier("all");
+      setSendToLanguage("all");
     },
     onError: (error: any) => {
       toast({ 
@@ -114,13 +125,46 @@ export function AdminMarketing() {
     previewAudienceMutation.mutate({ targetFilters: filters });
   };
 
+  const handlePreviewSendAudience = () => {
+    const filters: any = {};
+    
+    if (sendToProfession) {
+      filters.profession = [sendToProfession];
+    }
+    
+    if (sendToSubscriptionTier !== "all") {
+      filters.subscriptionTier = [sendToSubscriptionTier];
+    }
+    
+    if (sendToLanguage !== "all") {
+      filters.language = [sendToLanguage];
+    }
+    
+    previewAudienceMutation.mutate({ targetFilters: filters });
+  };
+
   const handleSend = () => {
     if (!generatedEmail) return;
+    
+    const filters: any = {};
+    
+    if (sendToProfession) {
+      filters.profession = [sendToProfession];
+    }
+    
+    if (sendToSubscriptionTier !== "all") {
+      filters.subscriptionTier = [sendToSubscriptionTier];
+    }
+    
+    if (sendToLanguage !== "all") {
+      filters.language = [sendToLanguage];
+    }
     
     sendMutation.mutate({
       subject: generatedEmail.subject,
       htmlContent: generatedEmail.htmlContent,
-      textContent: generatedEmail.textContent
+      textContent: generatedEmail.textContent,
+      targetFilters: filters
     });
   };
 
@@ -289,6 +333,81 @@ export function AdminMarketing() {
                   />
                 </div>
 
+                <Separator />
+
+                {/* Send Filters */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-muted-foreground" />
+                    <Label className="font-semibold">Filtri di Invio</Label>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="send-profession" className="text-xs">Professione</Label>
+                      <Input
+                        id="send-profession"
+                        placeholder="es: CISO, Developer..."
+                        value={sendToProfession}
+                        onChange={(e) => setSendToProfession(e.target.value)}
+                        data-testid="input-send-profession"
+                        className="text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="send-tier" className="text-xs">Subscription Tier</Label>
+                      <Select value={sendToSubscriptionTier} onValueChange={setSendToSubscriptionTier}>
+                        <SelectTrigger id="send-tier" data-testid="select-send-tier" className="text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tutti</SelectItem>
+                          <SelectItem value="free">Free</SelectItem>
+                          <SelectItem value="premium">Premium</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="send-language" className="text-xs">Lingua</Label>
+                      <Select value={sendToLanguage} onValueChange={setSendToLanguage}>
+                        <SelectTrigger id="send-language" data-testid="select-send-language" className="text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tutte</SelectItem>
+                          <SelectItem value="it">Italiano</SelectItem>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="es">Español</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={handlePreviewSendAudience}
+                    disabled={previewAudienceMutation.isPending}
+                    className="w-full text-sm"
+                    data-testid="button-preview-send-audience"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    {previewAudienceMutation.isPending ? "Caricamento..." : "Anteprima Destinatari"}
+                  </Button>
+                  
+                  {audiencePreview && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800" data-testid="send-audience-preview">
+                      <p className="font-semibold text-sm text-blue-900 dark:text-blue-100">
+                        📧 {audiencePreview.count} destinatari
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        L'email sarà personalizzata con nome, cognome e professione di ogni utente
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <Button 
                   onClick={handleSend}
                   disabled={sendMutation.isPending}
@@ -297,7 +416,7 @@ export function AdminMarketing() {
                   data-testid="button-send-email"
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  {sendMutation.isPending ? "Invio in corso..." : "Invia a Iscritti Newsletter"}
+                  {sendMutation.isPending ? "Invio in corso..." : "Invia Email Personalizzate"}
                 </Button>
               </div>
             )}

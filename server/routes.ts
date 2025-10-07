@@ -166,6 +166,55 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+// Calculate readiness score for certification (0-100)
+function calculateReadinessScore(
+  analytics: {
+    totalAttempts: number;
+    averageScore: number;
+    bestScore: number;
+    recentScores: number[];
+  },
+  benchmark: {
+    averageScore: number;
+    totalAttempts: number;
+  }
+): number {
+  // Factors that contribute to readiness:
+  // 1. Performance (50%): average score
+  // 2. Consistency (25%): standard deviation of recent scores
+  // 3. Volume (15%): number of attempts
+  // 4. Trend (10%): improvement over time
+
+  // Performance score (0-50)
+  const performanceScore = (analytics.averageScore / 100) * 50;
+
+  // Consistency score (0-25): Lower std dev = higher score
+  const stdDev = analytics.recentScores.length > 1
+    ? Math.sqrt(
+        analytics.recentScores.reduce((sum, score) => 
+          sum + Math.pow(score - analytics.averageScore, 2), 0
+        ) / analytics.recentScores.length
+      )
+    : 0;
+  const consistencyScore = Math.max(0, 25 - (stdDev / 4));
+
+  // Volume score (0-15): More practice = better readiness
+  const volumeScore = Math.min(15, (analytics.totalAttempts / 20) * 15);
+
+  // Trend score (0-10): Recent scores better than average = positive trend
+  const recentAvg = analytics.recentScores.slice(0, 5).reduce((a, b) => a + b, 0) / Math.min(5, analytics.recentScores.length);
+  const trendScore = recentAvg > analytics.averageScore ? 10 : 5;
+
+  const totalScore = performanceScore + consistencyScore + volumeScore + trendScore;
+
+  // Bonus: If performing above benchmark, add up to 10 points
+  const benchmarkBonus = analytics.averageScore > benchmark.averageScore
+    ? Math.min(10, ((analytics.averageScore - benchmark.averageScore) / 10))
+    : 0;
+
+  return Math.min(100, Math.round(totalScore + benchmarkBonus));
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -748,6 +797,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user language:", error);
       res.status(500).json({ message: "Failed to update language" });
+    }
+  });
+
+  // Analytics endpoints
+  app.get('/api/analytics/category/:categoryId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { categoryId } = req.params;
+
+      const analytics = await storage.getUserAnalyticsByCategory(userId, categoryId);
+      
+      // Get benchmark data (always retrieve, even when no attempts)
+      const benchmark = await storage.getCategoryBenchmark(categoryId);
+
+      if (!analytics) {
+        // Return default values with benchmark and 0 readiness score
+        return res.json({
+          totalAttempts: 0,
+          averageScore: 0,
+          bestScore: 0,
+          recentScores: [],
+          timeSpent: 0,
+          weakTopics: [],
+          strongTopics: [],
+          readinessScore: 0,
+          benchmark,
+        });
+      }
+
+      // Calculate readiness score (0-100)
+      const readinessScore = calculateReadinessScore(analytics, benchmark);
+
+      res.json({
+        ...analytics,
+        readinessScore,
+        benchmark,
+      });
+    } catch (error) {
+      console.error("Error fetching category analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get('/api/analytics/performance-trend', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const days = parseInt(req.query.days as string) || 30;
+
+      const trend = await storage.getUserPerformanceTrend(userId, days);
+      res.json(trend);
+    } catch (error) {
+      console.error("Error fetching performance trend:", error);
+      res.status(500).json({ message: "Failed to fetch performance trend" });
+    }
+  });
+
+  app.get('/api/analytics/overall', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+
+      // Get all categories
+      const categories = await storage.getCategories();
+
+      // Get analytics for each category
+      const categoryAnalytics = await Promise.all(
+        categories.map(async (category) => {
+          const analytics = await storage.getUserAnalyticsByCategory(userId, category.id);
+          const benchmark = await storage.getCategoryBenchmark(category.id);
+          
+          return {
+            categoryId: category.id,
+            categoryName: category.name,
+            analytics,
+            readinessScore: analytics ? calculateReadinessScore(analytics, benchmark) : 0,
+          };
+        })
+      );
+
+      res.json(categoryAnalytics);
+    } catch (error) {
+      console.error("Error fetching overall analytics:", error);
+      res.status(500).json({ message: "Failed to fetch overall analytics" });
     }
   });
 

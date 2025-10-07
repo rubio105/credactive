@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3 } from "lucide-react";
 import logoImage from "@assets/image_1759658677025.png";
 
 interface User {
@@ -105,6 +105,12 @@ export default function Navigation() {
                   <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-certificates">
                     <Award className="w-4 h-4 mr-2" />
                     Certificati
+                  </Button>
+                </Link>
+                <Link href="/analytics">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-analytics">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Analytics
                   </Button>
                 </Link>
               </>
@@ -220,6 +226,12 @@ export default function Navigation() {
                       <DropdownMenuItem data-testid="menu-certificates">
                         <Award className="w-4 h-4 mr-2" />
                         Certificati
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/analytics">
+                      <DropdownMenuItem data-testid="menu-analytics">
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Analytics
                       </DropdownMenuItem>
                     </Link>
                     {typedUser?.isAdmin && (

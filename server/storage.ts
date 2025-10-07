@@ -1498,6 +1498,155 @@ export class DatabaseStorage implements IStorage {
   async deleteSetting(key: string): Promise<void> {
     await db.delete(settings).where(eq(settings.key, key));
   }
+
+  // Analytics operations
+  async getUserAnalyticsByCategory(userId: string, categoryId: string): Promise<{
+    totalAttempts: number;
+    averageScore: number;
+    bestScore: number;
+    recentScores: number[];
+    timeSpent: number;
+    weakTopics: string[];
+    strongTopics: string[];
+  } | null> {
+    // Get all attempts for quizzes in this category
+    const attempts = await db
+      .select({
+        score: userQuizAttempts.score,
+        timeSpent: userQuizAttempts.timeSpent,
+        completedAt: userQuizAttempts.completedAt,
+      })
+      .from(userQuizAttempts)
+      .leftJoin(quizzes, eq(userQuizAttempts.quizId, quizzes.id))
+      .where(and(
+        eq(userQuizAttempts.userId, userId),
+        eq(quizzes.categoryId, categoryId)
+      ))
+      .orderBy(desc(userQuizAttempts.completedAt))
+      .limit(20);
+
+    if (attempts.length === 0) {
+      return null;
+    }
+
+    // Get reports for weak/strong topics
+    const reports = await db
+      .select({
+        weakAreas: quizReports.weakAreas,
+        strengths: quizReports.strengths,
+      })
+      .from(quizReports)
+      .leftJoin(userQuizAttempts, eq(quizReports.attemptId, userQuizAttempts.id))
+      .leftJoin(quizzes, eq(userQuizAttempts.quizId, quizzes.id))
+      .where(and(
+        eq(quizReports.userId, userId),
+        eq(quizzes.categoryId, categoryId)
+      ))
+      .orderBy(desc(quizReports.createdAt))
+      .limit(5);
+
+    const scores = attempts.map(a => a.score);
+    const totalTimeSpent = attempts.reduce((sum, a) => sum + a.timeSpent, 0);
+
+    // Aggregate weak and strong topics
+    const weakTopicsMap = new Map<string, number>();
+    const strongTopicsSet = new Set<string>();
+
+    reports.forEach(r => {
+      const weak = r.weakAreas as any[];
+      const strong = r.strengths as string[];
+      
+      if (weak) {
+        weak.forEach(w => {
+          const count = weakTopicsMap.get(w.category) || 0;
+          weakTopicsMap.set(w.category, count + 1);
+        });
+      }
+      
+      if (strong) {
+        strong.forEach(s => strongTopicsSet.add(s));
+      }
+    });
+
+    const weakTopics = Array.from(weakTopicsMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([topic]) => topic);
+
+    const strongTopics = Array.from(strongTopicsSet).slice(0, 5);
+
+    return {
+      totalAttempts: attempts.length,
+      averageScore: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      bestScore: Math.max(...scores),
+      recentScores: scores.slice(0, 10),
+      timeSpent: totalTimeSpent,
+      weakTopics,
+      strongTopics,
+    };
+  }
+
+  async getCategoryBenchmark(categoryId: string): Promise<{
+    averageScore: number;
+    totalAttempts: number;
+    topPerformers: number;
+  }> {
+    // Get aggregate stats for all users in this category
+    const stats = await db
+      .select({
+        avgScore: sql<number>`AVG(${userQuizAttempts.score})::int`,
+        totalAttempts: sql<number>`COUNT(*)::int`,
+        topPerformers: sql<number>`COUNT(DISTINCT CASE WHEN ${userQuizAttempts.score} >= 90 THEN ${userQuizAttempts.userId} END)::int`,
+      })
+      .from(userQuizAttempts)
+      .leftJoin(quizzes, eq(userQuizAttempts.quizId, quizzes.id))
+      .where(eq(quizzes.categoryId, categoryId));
+
+    return {
+      averageScore: stats[0]?.avgScore || 0,
+      totalAttempts: stats[0]?.totalAttempts || 0,
+      topPerformers: stats[0]?.topPerformers || 0,
+    };
+  }
+
+  async getUserPerformanceTrend(userId: string, days: number = 30): Promise<Array<{
+    date: string;
+    averageScore: number;
+    attemptsCount: number;
+  }>> {
+    const dateThreshold = new Date();
+    dateThreshold.setDate(dateThreshold.getDate() - days);
+
+    const attempts = await db
+      .select({
+        completedAt: userQuizAttempts.completedAt,
+        score: userQuizAttempts.score,
+      })
+      .from(userQuizAttempts)
+      .where(and(
+        eq(userQuizAttempts.userId, userId),
+        sql`${userQuizAttempts.completedAt} >= ${dateThreshold}`
+      ))
+      .orderBy(userQuizAttempts.completedAt);
+
+    // Group by date
+    const grouped = new Map<string, { scores: number[]; count: number }>();
+    
+    attempts.forEach(a => {
+      if (!a.completedAt) return;
+      const date = a.completedAt.toISOString().split('T')[0];
+      const existing = grouped.get(date) || { scores: [], count: 0 };
+      existing.scores.push(a.score);
+      existing.count++;
+      grouped.set(date, existing);
+    });
+
+    return Array.from(grouped.entries()).map(([date, data]) => ({
+      date,
+      averageScore: Math.round(data.scores.reduce((a, b) => a + b, 0) / data.count),
+      attemptsCount: data.count,
+    }));
+  }
 }
 
 export const storage = new DatabaseStorage();

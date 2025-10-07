@@ -78,6 +78,7 @@ export default function QuizPage() {
   const [results, setResults] = useState<QuizResults | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | string[]>("");
   const [showExplanation, setShowExplanation] = useState(false);
+  const [confirmedQuestions, setConfirmedQuestions] = useState<Set<string>>(new Set());
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [quizLanguage, setQuizLanguage] = useState<'it' | 'en' | 'es'>('it'); // Language selector
   const [isInsightDiscovery, setIsInsightDiscovery] = useState(false); // Personality test flag
@@ -350,7 +351,10 @@ export default function QuizPage() {
       // Don't show explanation for personality tests
       // For arrays, check length; for strings, check truthiness
       const hasAnswer = Array.isArray(savedAnswer) ? savedAnswer.length > 0 : !!savedAnswer;
-      setShowExplanation(!isInsightDiscovery && hasAnswer);
+      // For multiple choice questions, only show explanation if question was confirmed
+      const isMultiple = isMultipleChoice(currentQ);
+      const isConfirmed = confirmedQuestions.has(currentQuestionId);
+      setShowExplanation(!isInsightDiscovery && hasAnswer && (!isMultiple || isConfirmed));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestionIndex, currentQuestionId, isInsightDiscovery]);
@@ -378,8 +382,8 @@ export default function QuizPage() {
         ...prev,
         [questionId]: newAnswers
       }));
-      // Show explanation only if at least one answer is selected
-      setShowExplanation(!isInsightDiscovery && newAnswers.length > 0);
+      // For multiple choice, don't show explanation until user confirms by clicking Next
+      // This allows them to select multiple answers without seeing which are correct
     } else {
       // Handle single choice
       setSelectedAnswer(answer);
@@ -407,6 +411,9 @@ export default function QuizPage() {
       [currentQ.id]: normalizedAnswer
     };
     setAnswers(updatedAnswers);
+    
+    // Mark current question as confirmed (user has submitted their answer)
+    setConfirmedQuestions(prev => new Set(prev).add(currentQ.id));
 
     setShowExplanation(false); // Hide explanation when moving to next question
     if (currentQuestionIndex < limitedQuestions.length - 1) {
@@ -572,6 +579,7 @@ export default function QuizPage() {
     setCurrentQuestionIndex(0);
     setAnswers({});
     setSelectedAnswer("");
+    setConfirmedQuestions(new Set()); // Clear confirmed questions for fresh attempt
     setQuizCompleted(false);
     setResults(null);
     setQuizStartTime(new Date());
@@ -1015,8 +1023,10 @@ export default function QuizPage() {
                     const isSelected = userAnswers.includes(option.label);
                     const correctAnswers = currentQuestion.correctAnswers || [];
                     const isCorrect = correctAnswers.includes(option.label);
-                    const showStatus = !isInsightDiscovery && showExplanation;
-                    const isDisabled = !isInsightDiscovery && showExplanation;
+                    // For multiple choice, show status only if question was confirmed (user clicked Next)
+                    const isQuestionConfirmed = confirmedQuestions.has(currentQuestion.id);
+                    const showStatus = !isInsightDiscovery && isQuestionConfirmed;
+                    const isDisabled = !isInsightDiscovery && isQuestionConfirmed;
                     
                     return (
                       <div 

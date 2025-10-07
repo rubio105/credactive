@@ -36,7 +36,14 @@ Preferred communication style: Simple, everyday language.
 ## Key Features
 
 -   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Supports shuffled questions, admin-controlled question rotation (10-100 questions or all), timed quizzes, server-side result generation with detailed reports.
--   **Insight Discovery Personality Reports**: Comprehensive assessment with color wheel visualization (Rosso Fuoco, Giallo Sole, Verde Terra, Blu Freddo), showing personality energy distribution and providing detailed analysis (strengths, communication styles, leadership, etc.) in Italian.
+-   **Insight Discovery Personality Reports**: Professional 72-type personality assessment system with enhanced features:
+    - **Methodological Foundation**: Detailed introduction explaining Jung/Hippocrates color theory origins (5th century BC temperaments)
+    - **72-Type Granular Classification**: Precise profiling system (vs. basic 4-color) with descriptive type names (e.g., "9 Leader Visionario", "23 Comunicatore Energico")
+    - **Advanced Color Wheel Visualization**: 72-segment SVG wheel with 5° granularity, opacity-based percentage representation
+    - **Team Value Analysis**: 5 key contributions the individual brings to team dynamics
+    - **Communication Obstacles**: 6 potential barriers to effective communication based on color profile
+    - **Opposite Type Analysis**: Describes complementary opposite personality with differences and collaboration strategies
+    - **Comprehensive Sections**: Strengths, development areas, working style, communication patterns, leadership analysis, stress management, decision-making, all in formal Italian suitable for professional/consulting contexts
 -   **Premium Features**: Most content requires an active Stripe subscription.
 -   **AI Question Generation with Job Tracking**: Admin panel feature using OpenAI GPT-4o for bulk, context-aware question generation (1-1000 questions, configurable difficulty). Includes real-time generation tracking, and document-based exclusive generation via PDF upload (questions generated only from document content).
 -   **Document Upload**: Quizzes can have optional PDF documents for AI question generation.

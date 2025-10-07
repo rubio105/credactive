@@ -2815,6 +2815,25 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  app.post('/api/admin/settings', isAdmin, async (req, res) => {
+    try {
+      const { subscriptionPrice, currency } = req.body;
+      
+      // Save both settings
+      await storage.upsertSetting('subscriptionPrice', subscriptionPrice.toString(), 'Annual subscription price', 'billing');
+      await storage.upsertSetting('currency', currency, 'Subscription currency', 'billing');
+      
+      res.json({ 
+        success: true,
+        subscriptionPrice,
+        currency
+      });
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      res.status(500).json({ message: "Failed to save settings" });
+    }
+  });
+
   app.put('/api/admin/settings/:key', isAdmin, async (req, res) => {
     try {
       const { key } = req.params;

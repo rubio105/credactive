@@ -9,6 +9,13 @@ import { useState, useEffect } from "react";
 import { DollarSign, Save, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
+interface Setting {
+  key: string;
+  value: string;
+  description?: string;
+  category?: string;
+}
+
 interface Settings {
   subscriptionPrice: number;
   currency: string;
@@ -19,9 +26,15 @@ export function AdminSettings() {
   const [price, setPrice] = useState('90');
   const [currency, setCurrency] = useState('EUR');
 
-  const { data: settings } = useQuery<Settings>({
+  const { data: settingsArray } = useQuery<Setting[]>({
     queryKey: ["/api/admin/settings"],
   });
+
+  // Transform array of settings into an object
+  const settings: Settings | undefined = settingsArray ? {
+    subscriptionPrice: parseFloat(settingsArray.find(s => s.key === 'subscriptionPrice')?.value || '90'),
+    currency: settingsArray.find(s => s.key === 'currency')?.value || 'EUR',
+  } : undefined;
 
   useEffect(() => {
     if (settings) {

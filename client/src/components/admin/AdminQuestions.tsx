@@ -39,7 +39,9 @@ interface Question {
   quizId: string;
   question: string;
   imageUrl?: string;
-  options: { text: string; isCorrect: boolean }[];
+  options: { text: string; isCorrect: boolean; label?: string; explanation?: string }[];
+  correctAnswer?: string; // Legacy: single correct answer
+  correctAnswers?: string[]; // Array of correct answer labels
   explanation: string;
   explanationAudioUrl?: string;
   difficulty: string;
@@ -157,7 +159,18 @@ export function AdminQuestions() {
   });
 
   const handleEdit = (question: Question) => {
-    setEditingQuestion(question);
+    // Transform options from database format {label, text} to edit format {text, isCorrect}
+    const correctAnswersSet = new Set(question.correctAnswers || [question.correctAnswer].filter(Boolean));
+    const transformedOptions = question.options.map(opt => ({
+      text: opt.text,
+      isCorrect: correctAnswersSet.has(opt.label),
+      explanation: opt.explanation
+    }));
+    
+    setEditingQuestion({
+      ...question,
+      options: transformedOptions
+    });
     setIsCreating(false);
     setIsDialogOpen(true);
   };
@@ -182,12 +195,35 @@ export function AdminQuestions() {
   const handleSave = () => {
     if (!editingQuestion) return;
     
+    // Transform options to the format expected by the quiz
+    const labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const transformedOptions = editingQuestion.options?.map((opt, index) => ({
+      label: labels[index],
+      text: opt.text,
+      explanation: opt.explanation || ''
+    })) || [];
+    
+    // Extract correct answers
+    const correctAnswers = editingQuestion.options
+      ?.map((opt, index) => opt.isCorrect ? labels[index] : null)
+      .filter(Boolean) as string[] || [];
+    
+    // For backward compatibility, set correctAnswer to the first correct answer
+    const correctAnswer = correctAnswers[0] || '';
+    
+    const questionData = {
+      ...editingQuestion,
+      options: transformedOptions,
+      correctAnswers: correctAnswers.length > 0 ? correctAnswers : undefined,
+      correctAnswer: correctAnswer
+    };
+    
     if (isCreating) {
-      createMutation.mutate(editingQuestion);
+      createMutation.mutate(questionData as any);
     } else if (editingQuestion.id) {
       updateMutation.mutate({
         id: editingQuestion.id,
-        updates: editingQuestion,
+        updates: questionData as any,
       });
     }
   };
@@ -586,7 +622,12 @@ export function AdminQuestions() {
               </div>
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <Label>Opzioni di Risposta</Label>
+                  <div>
+                    <Label>Opzioni di Risposta</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Seleziona una o più risposte corrette. Se selezioni più risposte, l'utente dovrà selezionarle tutte per ottenere il punto.
+                    </p>
+                  </div>
                   <Button
                     type="button"
                     variant="outline"

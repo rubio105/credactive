@@ -35,15 +35,77 @@ const colorMap: Record<string, { bg: string; text: string; border: string }> = {
 
 export function InsightColorWheel({ colorScores, dominantColor }: InsightColorWheelProps) {
   // Calculate positions for the color segments in a circular layout
-  const radius = 120;
-  const centerX = 150;
-  const centerY = 150;
+  const radius = 130;
+  const centerX = 165;
+  const centerY = 165;
+
+  // Generate 72-type wheel with fine-grained segments
+  const generate72Types = () => {
+    const segments = [];
+    const colors: Record<string, string> = {
+      red: '#ef4444',
+      yellow: '#eab308',
+      green: '#22c55e',
+      blue: '#3b82f6',
+    };
+    
+    // Each of the 4 colors gets 18 segments (72 total)
+    const colorOrder = ['red', 'yellow', 'green', 'blue'];
+    
+    for (let i = 0; i < 72; i++) {
+      const colorIndex = Math.floor(i / 18);
+      const currentColor = colorOrder[colorIndex];
+      const segmentInQuadrant = i % 18;
+      
+      const startAngle = (i * 5) - 90; // 5 degrees per segment, start from top
+      const endAngle = startAngle + 5;
+      
+      const startRad = (startAngle * Math.PI) / 180;
+      const endRad = (endAngle * Math.PI) / 180;
+      
+      const x1 = centerX + radius * Math.cos(startRad);
+      const y1 = centerY + radius * Math.sin(startRad);
+      const x2 = centerX + radius * Math.cos(endRad);
+      const y2 = centerY + radius * Math.sin(endRad);
+      
+      // Find the color score for this color
+      const colorScore = colorScores.find(s => s.color === currentColor);
+      const percentage = colorScore?.percentage || 0;
+      
+      // Calculate opacity based on position within quadrant (center is more intense)
+      const distanceFromCenter = Math.abs(segmentInQuadrant - 9); // 0-9
+      const positionOpacity = 1 - (distanceFromCenter / 18);
+      const percentageOpacity = percentage / 100;
+      const finalOpacity = 0.2 + (positionOpacity * percentageOpacity * 0.8);
+      
+      const pathData = `
+        M ${centerX} ${centerY}
+        L ${x1} ${y1}
+        A ${radius} ${radius} 0 0 1 ${x2} ${y2}
+        Z
+      `;
+      
+      segments.push(
+        <path
+          key={i}
+          d={pathData}
+          fill={colors[currentColor]}
+          opacity={finalOpacity}
+          stroke={colors[currentColor]}
+          strokeWidth="0.5"
+          data-testid={`type-segment-${i + 1}`}
+        />
+      );
+    }
+    
+    return segments;
+  };
 
   return (
     <div className="flex flex-col items-center" data-testid="insight-color-wheel">
-      {/* SVG Color Wheel */}
+      {/* SVG Color Wheel with 72 Types */}
       <div className="relative mb-8">
-        <svg width="300" height="300" viewBox="0 0 300 300">
+        <svg width="330" height="330" viewBox="0 0 330 330">
           {/* Background circle */}
           <circle
             cx={centerX}
@@ -55,50 +117,8 @@ export function InsightColorWheel({ colorScores, dominantColor }: InsightColorWh
             className="text-gray-300 dark:text-gray-600"
           />
           
-          {/* Color segments */}
-          {colorScores.map((score, index) => {
-            const startAngle = (index * 90) - 90; // Start from top
-            const endAngle = startAngle + 90;
-            
-            const startRad = (startAngle * Math.PI) / 180;
-            const endRad = (endAngle * Math.PI) / 180;
-            
-            const x1 = centerX + radius * Math.cos(startRad);
-            const y1 = centerY + radius * Math.sin(startRad);
-            const x2 = centerX + radius * Math.cos(endRad);
-            const y2 = centerY + radius * Math.sin(endRad);
-            
-            // Calculate arc radius based on percentage
-            const arcRadius = (radius * score.percentage) / 100;
-            
-            const largeArcFlag = 0;
-            
-            const pathData = `
-              M ${centerX} ${centerY}
-              L ${x1} ${y1}
-              A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}
-              Z
-            `;
-            
-            const colors: Record<string, string> = {
-              red: '#ef4444',
-              yellow: '#eab308',
-              green: '#22c55e',
-              blue: '#3b82f6',
-            };
-            
-            return (
-              <path
-                key={score.color}
-                d={pathData}
-                fill={colors[score.color]}
-                opacity={0.3 + (score.percentage / 100) * 0.7}
-                stroke={colors[score.color]}
-                strokeWidth="1"
-                data-testid={`color-segment-${score.color}`}
-              />
-            );
-          })}
+          {/* 72-type segments */}
+          {generate72Types()}
           
           {/* Center circle with dominant color */}
           <circle

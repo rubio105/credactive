@@ -64,11 +64,20 @@ interface InsightProfile {
   dominantColor: ColorScore;
   secondaryColor: ColorScore;
   colorScores: ColorScore[];
+  profileType: string;
   strengths: string[];
   developmentAreas: string[];
   workingStyle: string;
   communicationStyle: string;
   recommendations: string;
+  methodologicalIntroduction: string;
+  oppositeType: {
+    description: string;
+    differences: string[];
+    workingTogether: string[];
+  };
+  teamValue: string[];
+  communicationObstacles: string[];
   detailedAnalysis?: {
     profileDescription: string;
     behavioralPatterns: string[];
@@ -169,7 +178,7 @@ export default function ReportPage() {
             </Button>
             <h1 className="text-3xl font-bold">Il Tuo Profilo Insight Discovery</h1>
             <p className="text-muted-foreground mt-1">
-              Analisi completa della tua personalità
+              {data.profileType}
             </p>
           </div>
           <Button variant="outline" onClick={handleDownload} data-testid="button-download-report">
@@ -178,13 +187,32 @@ export default function ReportPage() {
           </Button>
         </div>
 
-        {/* Color Wheel */}
+        {/* Methodological Introduction */}
+        <Card className="mb-6 bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-950 dark:to-gray-950 border-slate-200 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="flex items-center text-slate-900 dark:text-slate-100">
+              <BookOpen className="w-5 h-5 mr-2" />
+              Fondamenti Teorici
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-800 dark:text-slate-200 whitespace-pre-line text-sm leading-relaxed" data-testid="text-methodological-intro">
+              {data.methodologicalIntroduction}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Color Wheel - 72 Types */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Palette className="w-5 h-5 mr-2" />
-              La Tua Ruota dei Colori
+              La Tua Ruota Insights Discovery a 72 Tipi
             </CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              La ruota mostra la tua posizione unica tra i 72 tipi Insights Discovery. Ogni segmento rappresenta una sfumatura della personalità, 
+              con intensità che riflette la tua distribuzione energetica tra i quattro colori fondamentali.
+            </p>
           </CardHeader>
           <CardContent className="flex justify-center py-8">
             <InsightColorWheel 
@@ -279,6 +307,85 @@ export default function ReportPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Team Value */}
+        <Card className="mb-6 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950 dark:to-blue-950 border-cyan-200 dark:border-cyan-800">
+          <CardHeader>
+            <CardTitle className="flex items-center text-cyan-900 dark:text-cyan-100">
+              <Users className="w-5 h-5 mr-2" />
+              Valore per il Team
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {data.teamValue.map((value, index) => (
+                <div key={index} className="flex items-start" data-testid={`team-value-${index}`}>
+                  <CheckCircle2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400 mr-2 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-cyan-800 dark:text-cyan-200">{value}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Communication Obstacles */}
+        <Card className="mb-6 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-950 border-amber-200 dark:border-amber-800">
+          <CardHeader>
+            <CardTitle className="flex items-center text-amber-900 dark:text-amber-100">
+              <Shield className="w-5 h-5 mr-2" />
+              Ostacoli alla Comunicazione Efficace
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {data.communicationObstacles.map((obstacle, index) => (
+                <div key={index} className="flex items-start" data-testid={`communication-obstacle-${index}`}>
+                  <span className="text-amber-600 dark:text-amber-400 mr-2 flex-shrink-0">⚠️</span>
+                  <span className="text-sm text-amber-800 dark:text-amber-200">{obstacle}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Opposite Type */}
+        <Card className="mb-6 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950 border-violet-200 dark:border-violet-800">
+          <CardHeader>
+            <CardTitle className="flex items-center text-violet-900 dark:text-violet-100">
+              <UserPlus className="w-5 h-5 mr-2" />
+              Il Tuo Tipo Opposto
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-violet-800 dark:text-violet-200 text-sm" data-testid="text-opposite-description">
+              {data.oppositeType.description}
+            </p>
+            
+            <div>
+              <h4 className="font-semibold text-violet-900 dark:text-violet-100 mb-2">Differenze Principali:</h4>
+              <div className="space-y-2">
+                {data.oppositeType.differences.map((diff, index) => (
+                  <div key={index} className="flex items-start" data-testid={`opposite-difference-${index}`}>
+                    <span className="text-violet-600 dark:text-violet-400 mr-2">•</span>
+                    <span className="text-sm text-violet-800 dark:text-violet-200">{diff}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-violet-900 dark:text-violet-100 mb-2">Come Lavorare Insieme:</h4>
+              <div className="space-y-2">
+                {data.oppositeType.workingTogether.map((tip, index) => (
+                  <div key={index} className="flex items-start" data-testid={`opposite-working-${index}`}>
+                    <CheckCircle2 className="w-4 h-4 text-violet-600 dark:text-violet-400 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-violet-800 dark:text-violet-200">{tip}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Detailed Analysis Sections */}
         {data.detailedAnalysis && (

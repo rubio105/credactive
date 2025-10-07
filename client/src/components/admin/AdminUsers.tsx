@@ -28,8 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Trash2, ArrowLeft, Plus } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Trash2, ArrowLeft, Plus, Download, Upload } from "lucide-react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
@@ -69,9 +69,11 @@ interface NewUser {
 
 export function AdminUsers() {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [newUser, setNewUser] = useState<NewUser>({
     email: '',
     password: '',
@@ -162,6 +164,65 @@ export function AdminUsers() {
     });
   };
 
+  const handleExport = async () => {
+    try {
+      const response = await fetch('/api/admin/users/export/csv');
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({ title: "Export completato con successo" });
+    } catch (error) {
+      toast({ title: "Errore durante l'export", variant: "destructive" });
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const csvData = await file.text();
+      const response = await fetch('/api/admin/users/import/csv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csvData }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+        toast({ 
+          title: "Import completato", 
+          description: `Importati ${result.imported} utenti. Errori: ${result.errors}` 
+        });
+      } else {
+        toast({ title: "Errore durante l'import", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Errore durante l'import", variant: "destructive" });
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   if (isLoading) {
     return <div>Caricamento...</div>;
   }
@@ -179,10 +240,37 @@ export function AdminUsers() {
           <h2 className="text-2xl font-bold">Gestione Utenti</h2>
           <p className="text-muted-foreground">Gestisci gli utenti della piattaforma</p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-user">
-          <Plus className="w-4 h-4 mr-2" />
-          Aggiungi Utente
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExport} 
+            data-testid="button-export-users"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleImportClick} 
+            disabled={isImporting}
+            data-testid="button-import-users"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            {isImporting ? 'Importazione...' : 'Import CSV'}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleFileChange}
+            className="hidden"
+            data-testid="input-import-file"
+          />
+          <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-user">
+            <Plus className="w-4 h-4 mr-2" />
+            Aggiungi Utente
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg">

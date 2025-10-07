@@ -54,7 +54,7 @@ interface GamificationData {
     iconUrl?: string;
     earnedAt?: string;
   }>;
-  leaderboardPosition: {
+  leaderboardPosition?: {
     rank: number;
     totalPoints: number;
   };
@@ -310,12 +310,25 @@ export default function Dashboard() {
                       <Trophy className="w-8 h-8 text-primary" />
                     </div>
                     <h4 className="text-lg font-bold mb-2">Posizione Globale</h4>
-                    <p className="text-4xl font-bold text-primary mb-2" data-testid="leaderboard-rank">
-                      #{gamificationData.leaderboardPosition.rank}
-                    </p>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {gamificationData.leaderboardPosition.totalPoints.toLocaleString()} punti totali
-                    </p>
+                    {gamificationData.leaderboardPosition ? (
+                      <>
+                        <p className="text-4xl font-bold text-primary mb-2" data-testid="leaderboard-rank">
+                          #{gamificationData.leaderboardPosition.rank}
+                        </p>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {gamificationData.leaderboardPosition.totalPoints.toLocaleString()} punti totali
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-4xl font-bold text-muted-foreground mb-2" data-testid="leaderboard-rank">
+                          N/A
+                        </p>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Completa quiz per entrare in classifica
+                        </p>
+                      </>
+                    )}
                     <Link href="/leaderboard">
                       <Button size="sm" className="w-full">
                         Vedi Classifica Completa

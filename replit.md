@@ -8,6 +8,7 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 2025)
 
+-   **Email Template Management System**: Implemented comprehensive database-backed email template management system allowing admins to customize all transactional emails (welcome, verification, password reset) through the Admin Panel. Features include dynamic variable substitution using {{variableName}} syntax, template activation/deactivation controls, HTML/text content editing with preview mode, and intelligent fallback to hardcoded templates when database templates don't exist. All core email sending functions now prioritize database templates while respecting admin-controlled activation states.
 -   **Email Verification System**: Implemented complete email verification system with 6-digit codes (15-minute expiry), secure endpoints with rate limiting and Zod validation, and auto-login after verification.
 -   **Dashboard Bug Fix**: Fixed critical null-safety issue where dashboard would crash when leaderboardPosition was undefined. Added proper checks and fallbacks for new users without gamification data.
 
@@ -49,9 +50,27 @@ Preferred communication style: Simple, everyday language.
 
 -   **Database**: PostgreSQL (Neon's serverless driver).
 -   **ORM**: Drizzle ORM with schema-first design (`shared/schema.ts`).
--   **Schema Design**: Tables for Users (email, hashed password, email verification codes and expiry, password reset tokens, Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs (tracks AI generation status and progress), User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, and **Settings** (for API keys and configuration). Supports category images and audio explanations.
+-   **Schema Design**: Tables for Users (email, hashed password, email verification codes and expiry, password reset tokens, Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs (tracks AI generation status and progress), User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, **Email Templates** (for customizable transactional emails), and **Settings** (for API keys and configuration). Supports category images and audio explanations.
 -   **Migrations**: Managed by drizzle-kit.
 -   **Type Safety**: End-to-end type safety via Drizzle and shared schema.
+
+## Email Template Management
+
+-   **Database-Backed Templates**: All transactional emails (welcome, verification, password reset) are managed through the `email_templates` table, allowing admins to customize email content without code changes.
+-   **Template Structure**: Each template includes code (unique identifier), name, subject, HTML content, optional text content, variable list, description, and activation state.
+-   **Dynamic Variables**: Templates support variable substitution using `{{variableName}}` syntax. Variables are sanitized and replaced at send-time with user-specific data (firstName, email, verificationCode, resetUrl, loginUrl).
+-   **Admin Interface**: Comprehensive UI in Admin Panel "Email" tab for template CRUD operations, including:
+    -   Template initialization with default content
+    -   HTML/text content editing with live preview mode
+    -   Template activation/deactivation controls
+    -   Variable badge display showing available placeholders
+    -   Test email functionality with custom variable values
+-   **Intelligent Fallback**: Email sending functions prioritize database templates but fall back to hardcoded templates only when templates don't exist (not when inactive or sending fails).
+-   **Template Activation Control**: Inactive templates prevent email sending (error is propagated), ensuring admins have full control over email delivery.
+-   **Supported Templates**:
+    -   `welcome`: Welcome email sent after email verification (variables: firstName, email, loginUrl)
+    -   `verification`: Email verification code (variables: firstName, email, verificationCode)
+    -   `password-reset`: Password reset link (variables: email, resetUrl)
 
 ## Configuration Management
 

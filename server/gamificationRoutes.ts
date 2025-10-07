@@ -283,7 +283,10 @@ export function registerGamificationRoutes(app: Express): void {
       
       // Check if certificate already exists
       const existingCertificates = await storage.getUserCertificates(userId);
-      const existingCertificate = existingCertificates.find(c => c.quizAttemptId === attemptId);
+      const existingCertificate = existingCertificates.find(c => {
+        const metadata = c.metadata as any;
+        return metadata?.quizAttemptId === attemptId;
+      });
       
       if (existingCertificate) {
         return res.json(existingCertificate);
@@ -306,17 +309,18 @@ export function registerGamificationRoutes(app: Express): void {
       const certificate = await storage.createCertificate({
         userId,
         quizId: quiz.id,
-        quizAttemptId: attemptId,
-        quizTitle: quiz.title,
+        certificateType: 'quiz_completion',
+        title: quiz.title,
         score: attempt.score,
         verificationCode,
         isPublic: true,
+        metadata: { quizAttemptId: attemptId },
       });
       
       // Send certificate earned email (fire and forget)
       sendCertificateEarnedEmail(
         user.email,
-        user.firstName,
+        user.firstName || undefined,
         quiz.title,
         attempt.score,
         certificate.id
@@ -350,15 +354,40 @@ export function registerGamificationRoutes(app: Express): void {
         return res.status(403).json({ message: "Forbidden" });
       }
       
+      // Extract quizAttemptId from metadata
+      const metadata = certificate.metadata as any;
+      const quizAttemptId = metadata?.quizAttemptId;
+      
       // Get related data
-      const [user, quiz, attempt] = await Promise.all([
+      const [user, quiz] = await Promise.all([
         storage.getUser(userId),
-        storage.getQuizById(certificate.quizId),
-        storage.getQuizAttemptById(certificate.quizAttemptId),
+        certificate.quizId ? storage.getQuizById(certificate.quizId) : Promise.resolve(null),
       ]);
       
-      if (!user || !quiz || !attempt) {
-        return res.status(404).json({ message: "Related data not found" });
+      if (!user || !quiz) {
+        return res.status(404).json({ message: "User or quiz not found" });
+      }
+      
+      // Try to get quiz attempt (fallback for legacy certificates without metadata)
+      let attempt = null;
+      if (quizAttemptId) {
+        attempt = await storage.getQuizAttemptById(quizAttemptId);
+      }
+      
+      // If no attempt found, create mock attempt for legacy certificates
+      if (!attempt) {
+        attempt = {
+          id: certificate.id,
+          userId: certificate.userId,
+          quizId: certificate.quizId || '',
+          answers: [],
+          score: certificate.score || 0,
+          correctAnswers: 0,
+          totalQuestions: 0,
+          timeSpent: 0,
+          pointsEarned: 0,
+          completedAt: certificate.issuedAt || new Date(),
+        };
       }
       
       // Generate PDF
@@ -366,8 +395,8 @@ export function registerGamificationRoutes(app: Express): void {
         user,
         quiz,
         attempt,
-        verificationCode: certificate.verificationCode,
-        issueDate: certificate.issuedAt,
+        verificationCode: certificate.verificationCode || '',
+        issueDate: certificate.issuedAt || new Date(),
       });
       
       // Set response headers for PDF download

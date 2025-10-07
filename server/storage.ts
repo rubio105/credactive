@@ -140,6 +140,7 @@ export interface IStorage {
   
   // User progress operations
   createQuizAttempt(attempt: InsertUserQuizAttempt): Promise<UserQuizAttempt>;
+  getQuizAttemptById(attemptId: string): Promise<UserQuizAttempt | undefined>;
   getUserQuizAttempts(userId: string, limit?: number): Promise<UserQuizAttempt[]>;
   getUserProgress(userId: string): Promise<UserProgress[]>;
   updateUserProgress(userId: string, categoryId: string, attempt: UserQuizAttempt): Promise<void>;
@@ -662,6 +663,14 @@ export class DatabaseStorage implements IStorage {
       .values(attempt)
       .returning();
     return created;
+  }
+
+  async getQuizAttemptById(attemptId: string): Promise<UserQuizAttempt | undefined> {
+    const [attempt] = await db
+      .select()
+      .from(userQuizAttempts)
+      .where(eq(userQuizAttempts.id, attemptId));
+    return attempt;
   }
 
   async getUserQuizAttempts(userId: string, limit = 10): Promise<(UserQuizAttempt & { quizTitle: string })[]> {

@@ -2893,6 +2893,100 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Subscription plans management routes
+  app.get('/api/admin/subscription-plans', isAdmin, async (req, res) => {
+    try {
+      const includeInactive = req.query.includeInactive === 'true';
+      const plans = await storage.getAllSubscriptionPlans(includeInactive);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ message: "Failed to fetch subscription plans" });
+    }
+  });
+
+  app.post('/api/admin/subscription-plans', isAdmin, async (req, res) => {
+    try {
+      const plan = await storage.createSubscriptionPlan(req.body);
+      res.json(plan);
+    } catch (error) {
+      console.error("Error creating subscription plan:", error);
+      res.status(500).json({ message: "Failed to create subscription plan" });
+    }
+  });
+
+  app.post('/api/admin/subscription-plans/format-description', isAdmin, async (req, res) => {
+    try {
+      const { description } = req.body;
+      
+      if (!description || !description.trim()) {
+        return res.status(400).json({ message: "Description is required" });
+      }
+
+      const openai = await getOpenAIInstance();
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "Sei un assistente che formatta descrizioni di piani di abbonamento. Ricevi una descrizione testuale di servizi inclusi in un piano abbonamento e la trasformi in una lista ordinata di punti chiari e concisi. Ogni punto deve essere una frase breve che descrive una singola funzionalità o servizio."
+          },
+          {
+            role: "user",
+            content: `Formatta questa descrizione in una lista di punti (array di stringhe). Ogni punto deve essere chiaro e conciso:\n\n${description}`
+          }
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "formatted_features",
+            schema: {
+              type: "object",
+              properties: {
+                features: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Lista di funzionalità formattate"
+                }
+              },
+              required: ["features"],
+              additionalProperties: false
+            },
+            strict: true
+          }
+        }
+      });
+
+      const result = JSON.parse(completion.choices[0].message.content || '{"features": []}');
+      res.json({ features: result.features });
+    } catch (error) {
+      console.error("Error formatting description:", error);
+      res.status(500).json({ message: "Failed to format description" });
+    }
+  });
+
+  app.patch('/api/admin/subscription-plans/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const plan = await storage.updateSubscriptionPlan(id, req.body);
+      res.json(plan);
+    } catch (error) {
+      console.error("Error updating subscription plan:", error);
+      res.status(500).json({ message: "Failed to update subscription plan" });
+    }
+  });
+
+  app.delete('/api/admin/subscription-plans/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteSubscriptionPlan(id);
+      res.json({ message: "Subscription plan deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting subscription plan:", error);
+      res.status(500).json({ message: "Failed to delete subscription plan" });
+    }
+  });
+
   // Email template management routes
   app.get('/api/admin/email-templates', isAdmin, async (req, res) => {
     try {

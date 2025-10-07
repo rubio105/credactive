@@ -27,6 +27,7 @@ import {
   activityLog,
   corporateAgreements,
   emailTemplates,
+  subscriptionPlans,
   type User,
   type UpsertUser,
   type Category,
@@ -80,6 +81,8 @@ import {
   type InsertActivityLog,
   type InsertCorporateAgreement,
   type InsertEmailTemplate,
+  type SubscriptionPlan,
+  type InsertSubscriptionPlan,
   type QuizWithCount,
   type Setting,
   type InsertSetting,
@@ -273,6 +276,13 @@ export interface IStorage {
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
   updateEmailTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate>;
   deleteEmailTemplate(id: string): Promise<void>;
+
+  // Subscription plan operations
+  getAllSubscriptionPlans(includeInactive?: boolean): Promise<SubscriptionPlan[]>;
+  getSubscriptionPlanById(id: string): Promise<SubscriptionPlan | undefined>;
+  createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
+  updateSubscriptionPlan(id: string, updates: Partial<SubscriptionPlan>): Promise<SubscriptionPlan>;
+  deleteSubscriptionPlan(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1708,6 +1718,47 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmailTemplate(id: string): Promise<void> {
     await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
+  }
+
+  // Subscription plan operations
+  async getAllSubscriptionPlans(includeInactive: boolean = false): Promise<SubscriptionPlan[]> {
+    if (includeInactive) {
+      return await db.select().from(subscriptionPlans).orderBy(subscriptionPlans.sortOrder);
+    }
+    return await db
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.isActive, true))
+      .orderBy(subscriptionPlans.sortOrder);
+  }
+
+  async getSubscriptionPlanById(id: string): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.id, id));
+    return plan;
+  }
+
+  async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const [newPlan] = await db
+      .insert(subscriptionPlans)
+      .values(plan)
+      .returning();
+    return newPlan;
+  }
+
+  async updateSubscriptionPlan(id: string, updates: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> {
+    const [updated] = await db
+      .update(subscriptionPlans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSubscriptionPlan(id: string): Promise<void> {
+    await db.delete(subscriptionPlans).where(eq(subscriptionPlans.id, id));
   }
 }
 

@@ -816,5 +816,30 @@ export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit
 });
 export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
 
+// Subscription Plans
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull(), // e.g., "Premium", "Premium Plus"
+  description: text("description"), // AI-formatted bullet points of features
+  price: integer("price").notNull(), // Price in cents (e.g., 9000 for €90)
+  currency: varchar("currency", { length: 3 }).default("EUR"), // EUR, USD, etc.
+  interval: varchar("interval", { length: 20 }).default("year"), // month, year
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0), // For display ordering
+  features: text("features").array(), // Array of feature strings for display
+  stripeProductId: varchar("stripe_product_id"), // Stripe Product ID (optional)
+  stripePriceId: varchar("stripe_price_id"), // Stripe Price ID (optional)
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

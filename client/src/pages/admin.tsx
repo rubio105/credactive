@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Image, DollarSign, Calendar, FileText, Video, Building2, Key } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Image, DollarSign, Calendar, FileText, Video, Building2, Key, Mail } from "lucide-react";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminCategories } from "@/components/admin/AdminCategories";
 import { AdminQuizzes } from "@/components/admin/AdminQuizzes";
@@ -13,6 +13,7 @@ import { AdminLiveCourses } from "@/components/admin/AdminLiveCourses";
 import { AdminContentPages } from "@/components/admin/AdminContentPages";
 import { AdminOnDemandCourses } from "@/components/admin/AdminOnDemandCourses";
 import { AdminCorporateAgreements } from "@/components/admin/AdminCorporateAgreements";
+import { AdminEmailTemplates } from "@/components/admin/AdminEmailTemplates";
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
@@ -55,7 +56,7 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-10 mb-8">
+          <TabsList className="grid w-full grid-cols-11 mb-8">
             <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Utenti</span>
@@ -87,6 +88,10 @@ export default function AdminPage() {
             <TabsTrigger value="corporate" className="flex items-center gap-2" data-testid="tab-corporate">
               <Building2 className="w-4 h-4" />
               <span className="hidden sm:inline">Aziende</span>
+            </TabsTrigger>
+            <TabsTrigger value="email" className="flex items-center gap-2" data-testid="tab-email">
+              <Mail className="w-4 h-4" />
+              <span className="hidden sm:inline">Email</span>
             </TabsTrigger>
             <TabsTrigger value="api" className="flex items-center gap-2" data-testid="tab-api">
               <Key className="w-4 h-4" />
@@ -128,6 +133,10 @@ export default function AdminPage() {
 
           <TabsContent value="corporate">
             <AdminCorporateAgreements />
+          </TabsContent>
+
+          <TabsContent value="email">
+            <AdminEmailTemplates />
           </TabsContent>
 
           <TabsContent value="api">

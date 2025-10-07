@@ -2952,6 +2952,173 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Initialize default email templates
+  app.post('/api/admin/email-templates/init-defaults', isAdmin, async (req, res) => {
+    try {
+      const defaultTemplates = [
+        {
+          code: 'welcome',
+          name: 'Email di Benvenuto',
+          subject: '🎉 Benvenuto su CREDACTIVE Academy!',
+          description: 'Email inviata dopo la verifica dell\'account',
+          variables: ['firstName', 'email'],
+          htmlContent: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background: white; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+    .content { background: white; padding: 40px 30px; }
+    .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+    .highlight { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>✅ Email Verificata!</h1>
+    </div>
+    <div class="content">
+      <div style="font-size: 18px;">🎉 Ciao <strong>{{firstName}}</strong>,</div>
+      <p>Benvenuto su <span class="highlight">CREDACTIVE ACADEMY</span>!</p>
+      <p>La tua email è stata verificata con successo. Ora puoi accedere alla nostra piattaforma e iniziare il tuo percorso di eccellenza professionale.</p>
+      <div style="background: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0;"><strong>💡 Prossimi Passi:</strong></p>
+        <ul style="margin: 10px 0;">
+          <li>Esplora le nostre categorie di quiz</li>
+          <li>Completa il tuo primo quiz di valutazione</li>
+          <li>Scopri i corsi disponibili</li>
+        </ul>
+      </div>
+      <p>Se hai domande, il nostro team è sempre disponibile.</p>
+      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+    </div>
+    <div class="footer">
+      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.</p>
+      <p style="color: #999; font-size: 11px;">Email inviata a {{email}}</p>
+    </div>
+  </div>
+</body>
+</html>`,
+          textContent: `Benvenuto su CREDACTIVE Academy!\n\nCiao {{firstName}},\n\nLa tua email è stata verificata con successo. Ora puoi accedere alla piattaforma e iniziare il tuo percorso di preparazione professionale.\n\nA presto,\nIl Team CREDACTIVE`,
+          isActive: true,
+        },
+        {
+          code: 'verification',
+          name: 'Codice di Verifica Email',
+          subject: '🔐 Il tuo codice di verifica CREDACTIVE',
+          description: 'Email con codice di verifica a 6 cifre',
+          variables: ['firstName', 'verificationCode'],
+          htmlContent: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background: white; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+    .content { background: white; padding: 40px 30px; }
+    .code-box { background: #f0f7ff; border: 2px dashed #667eea; border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center; }
+    .code { font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #667eea; font-family: monospace; }
+    .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔐 Verifica la tua Email</h1>
+    </div>
+    <div class="content">
+      <p style="font-size: 18px;">Ciao <strong>{{firstName}}</strong>,</p>
+      <p>Grazie per esserti registrato su CREDACTIVE Academy!</p>
+      <p>Utilizza il codice qui sotto per verificare il tuo account:</p>
+      <div class="code-box">
+        <div class="code">{{verificationCode}}</div>
+      </div>
+      <p>⏰ <strong>Importante:</strong> Questo codice è valido per 15 minuti.</p>
+      <p>Se non hai richiesto questa verifica, ignora questa email.</p>
+      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+    </div>
+    <div class="footer">
+      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CREDACTIVE ACADEMY.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+          textContent: `Verifica la tua email CREDACTIVE\n\nCiao {{firstName}},\n\nIl tuo codice di verifica è: {{verificationCode}}\n\nQuesto codice è valido per 15 minuti.\n\nIl Team CREDACTIVE`,
+          isActive: true,
+        },
+        {
+          code: 'password_reset',
+          name: 'Reset Password',
+          subject: '🔑 Reset della tua password CREDACTIVE',
+          description: 'Email per il reset della password',
+          variables: ['firstName', 'resetLink'],
+          htmlContent: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background: white; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+    .content { background: white; padding: 40px 30px; }
+    .button { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+    .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔑 Reset Password</h1>
+    </div>
+    <div class="content">
+      <p style="font-size: 18px;">Ciao <strong>{{firstName}}</strong>,</p>
+      <p>Hai richiesto il reset della tua password per CREDACTIVE Academy.</p>
+      <p>Clicca sul pulsante qui sotto per reimpostare la tua password:</p>
+      <div style="text-align: center;">
+        <a href="{{resetLink}}" class="button">Reimposta Password</a>
+      </div>
+      <p>⏰ <strong>Importante:</strong> Questo link è valido per 1 ora.</p>
+      <p>Se non hai richiesto questo reset, ignora questa email e la tua password rimarrà invariata.</p>
+      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+    </div>
+    <div class="footer">
+      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CREDACTIVE ACADEMY.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+          textContent: `Reset Password CREDACTIVE\n\nCiao {{firstName}},\n\nHai richiesto il reset della password.\n\nClicca su questo link per reimpostare la password:\n{{resetLink}}\n\nQuesto link è valido per 1 ora.\n\nIl Team CREDACTIVE`,
+          isActive: true,
+        },
+      ];
+
+      const created = [];
+      for (const template of defaultTemplates) {
+        // Check if template already exists
+        const existing = await storage.getEmailTemplateByCode(template.code);
+        if (!existing) {
+          const newTemplate = await storage.createEmailTemplate(template);
+          created.push(newTemplate);
+        }
+      }
+
+      res.json({ 
+        message: `${created.length} template(s) initialized successfully`,
+        templates: created
+      });
+    } catch (error) {
+      console.error("Error initializing default templates:", error);
+      res.status(500).json({ message: "Failed to initialize default templates" });
+    }
+  });
+
   // Generate TTS audio for question explanation
   app.post('/api/admin/questions/:id/generate-audio', isAdmin, aiGenerationLimiter, async (req, res) => {
     try {

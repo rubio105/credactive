@@ -1,10 +1,32 @@
 import * as brevo from "@getbrevo/brevo";
+import { getApiKey } from "./config";
 
-const apiInstance = new brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(
-  brevo.TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY || ""
-);
+// Brevo API instance - initialized lazily to support database-stored keys
+let apiInstance: brevo.TransactionalEmailsApi | null = null;
+
+async function getBrevoApi(): Promise<brevo.TransactionalEmailsApi> {
+  if (apiInstance) {
+    return apiInstance;
+  }
+
+  const apiKey = await getApiKey('BREVO_API_KEY');
+  if (!apiKey) {
+    throw new Error('Brevo API key not configured. Please add BREVO_API_KEY in the Admin API panel or environment variables.');
+  }
+
+  apiInstance = new brevo.TransactionalEmailsApi();
+  apiInstance.setApiKey(
+    brevo.TransactionalEmailsApiApiKeys.apiKey,
+    apiKey
+  );
+  
+  return apiInstance;
+}
+
+// Export function to clear Brevo instance when API key is updated
+export function clearBrevoInstance() {
+  apiInstance = null;
+}
 
 interface SendEmailOptions {
   to: string;
@@ -32,9 +54,11 @@ function sanitizeUserInput(input: string | undefined): string {
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
   const sendSmtpEmail = new brevo.SendSmtpEmail();
 
+  const senderEmail = options.senderEmail || await getApiKey('BREVO_SENDER_EMAIL') || "noreply@credactive.academy";
+  
   sendSmtpEmail.sender = {
     name: options.senderName || "CREDACTIVE",
-    email: options.senderEmail || process.env.BREVO_SENDER_EMAIL || "noreply@credactive.com",
+    email: senderEmail,
   };
 
   sendSmtpEmail.to = [{ email: options.to }];
@@ -45,7 +69,8 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
   }
 
   try {
-    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    const api = await getBrevoApi();
+    await api.sendTransacEmail(sendSmtpEmail);
     console.log(`Email sent successfully to ${options.to}`);
   } catch (error) {
     console.error("Error sending email via Brevo:", error);

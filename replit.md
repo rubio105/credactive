@@ -43,9 +43,17 @@ Preferred communication style: Simple, everyday language.
 
 -   **Database**: PostgreSQL (Neon's serverless driver).
 -   **ORM**: Drizzle ORM with schema-first design (`shared/schema.ts`).
--   **Schema Design**: Tables for Users (email, hashed password, password reset tokens, Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs (tracks AI generation status and progress), User progress, Reports (JSONB), Sessions, Live Courses, and Static Content Pages. Supports category images and audio explanations.
+-   **Schema Design**: Tables for Users (email, hashed password, password reset tokens, Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs (tracks AI generation status and progress), User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, and **Settings** (for API keys and configuration). Supports category images and audio explanations.
 -   **Migrations**: Managed by drizzle-kit.
 -   **Type Safety**: End-to-end type safety via Drizzle and shared schema.
+
+## Configuration Management
+
+-   **API Keys Storage**: Secure database-backed API key management system allowing admins to store and manage all service credentials (OpenAI, Stripe, Brevo, Gemini, Anthropic) via the Admin Panel "API" tab.
+-   **Dynamic Key Loading**: All services (Stripe, OpenAI, Brevo) use lazy initialization with `getApiKey()` helper that loads credentials from database first, then falls back to environment variables.
+-   **Cache Layer**: 5-minute TTL cache (`server/config.ts`) minimizes database queries while supporting immediate key rotation via `clearApiKeyCache()`.
+-   **Instance Management**: Service instances (Stripe, OpenAI, Brevo) are automatically reset when API keys are updated through admin panel, ensuring new credentials take effect immediately without server restart.
+-   **Zero-Downtime Deployment**: Application starts successfully without requiring any API keys in environment variables - keys can be configured post-deployment via admin interface.
 
 ## Authentication & Authorization
 

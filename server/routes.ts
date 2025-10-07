@@ -7,7 +7,10 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
+import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
+import { clearOpenAIInstance } from "./aiQuestionGenerator";
+import { clearBrevoInstance } from "./email";
 import { 
   insertUserQuizAttemptSchema, 
   insertContentPageSchema, 
@@ -41,11 +44,22 @@ import { processQuizCompletion } from "./gamification";
 // Dynamic import for pdf-parse (CommonJS module)
 // Note: pdf-parse doesn't have a .default export in ESM context
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY. Please set this environment variable.');
-}
+// Stripe instance - initialized lazily to support database-stored keys
+let stripeInstance: Stripe | null = null;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+async function getStripe(): Promise<Stripe> {
+  if (stripeInstance) {
+    return stripeInstance;
+  }
+
+  const stripeKey = await getApiKey('STRIPE_SECRET_KEY');
+  if (!stripeKey) {
+    throw new Error('Stripe secret key not configured. Please add STRIPE_SECRET_KEY in the Admin API panel or environment variables.');
+  }
+
+  stripeInstance = new Stripe(stripeKey);
+  return stripeInstance;
+}
 
 // Configure multer for image uploads
 const uploadDir = path.join(process.cwd(), 'public', 'question-images');
@@ -860,7 +874,7 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
 
     if (user.stripeSubscriptionId) {
-      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+      const subscription = await (await getStripe()).subscriptions.retrieve(user.stripeSubscriptionId);
       
       if (subscription.status === 'active') {
         return res.json({
@@ -879,7 +893,7 @@ ${JSON.stringify(questionsToTranslate)}`;
       let customerId = user.stripeCustomerId;
       
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await (await getStripe()).customers.create({
           email: user.email,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         });
@@ -891,7 +905,7 @@ ${JSON.stringify(questionsToTranslate)}`;
       const amount = selectedTier === 'premium_plus' ? 14900 : 9900; // €149 or €99 in cents
 
       // Create a one-time payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await (await getStripe()).paymentIntents.create({
         amount,
         currency: 'eur',
         customer: customerId,
@@ -923,7 +937,7 @@ ${JSON.stringify(questionsToTranslate)}`;
       const userId = req.user?.claims?.sub || req.user?.id;
 
       // Verify payment with Stripe
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const paymentIntent = await (await getStripe()).paymentIntents.retrieve(paymentIntentId);
       
       if (paymentIntent.status === 'succeeded' && paymentIntent.metadata.userId === userId) {
         // Update user to the appropriate tier
@@ -1461,7 +1475,7 @@ ${JSON.stringify(questionsToTranslate)}`;
         let customerId = user.stripeCustomerId;
         
         if (!customerId) {
-          const customer = await stripe.customers.create({
+          const customer = await (await getStripe()).customers.create({
             email: user.email || undefined,
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
           });
@@ -1470,7 +1484,7 @@ ${JSON.stringify(questionsToTranslate)}`;
         }
 
         // Create payment intent for live course
-        const paymentIntent = await stripe.paymentIntents.create({
+        const paymentIntent = await (await getStripe()).paymentIntents.create({
           amount: course.price,
           currency: 'eur',
           customer: customerId,
@@ -1501,7 +1515,7 @@ ${JSON.stringify(questionsToTranslate)}`;
       const userId = req.user?.claims?.sub || req.user?.id;
 
       // Verify payment with Stripe
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const paymentIntent = await (await getStripe()).paymentIntents.retrieve(paymentIntentId);
       
       if (paymentIntent.status === 'succeeded' && 
           paymentIntent.metadata.userId === userId &&
@@ -2549,6 +2563,24 @@ ${JSON.stringify(questionsToTranslate)}`;
       const { key } = req.params;
       const { value, description, category } = req.body;
       const setting = await storage.upsertSetting(key, value, description, category);
+      
+      // Clear cache for this key and reset service instances
+      clearApiKeyCache(key);
+      
+      // Reset service instances to use new credentials
+      if (key === 'STRIPE_SECRET_KEY') {
+        stripeInstance = null;
+        console.log('[Config] Stripe instance reset after key update');
+      }
+      if (key === 'OPENAI_API_KEY') {
+        clearOpenAIInstance();
+        console.log('[Config] OpenAI instance reset after key update');
+      }
+      if (key === 'BREVO_API_KEY' || key === 'BREVO_SENDER_EMAIL') {
+        clearBrevoInstance();
+        console.log('[Config] Brevo instance reset after key update');
+      }
+      
       res.json(setting);
     } catch (error) {
       console.error("Error upserting setting:", error);
@@ -2560,6 +2592,24 @@ ${JSON.stringify(questionsToTranslate)}`;
     try {
       const { key } = req.params;
       await storage.deleteSetting(key);
+      
+      // Clear cache for this key and reset service instances
+      clearApiKeyCache(key);
+      
+      // Reset service instances when keys are deleted
+      if (key === 'STRIPE_SECRET_KEY') {
+        stripeInstance = null;
+        console.log('[Config] Stripe instance reset after key deletion');
+      }
+      if (key === 'OPENAI_API_KEY') {
+        clearOpenAIInstance();
+        console.log('[Config] OpenAI instance reset after key deletion');
+      }
+      if (key === 'BREVO_API_KEY' || key === 'BREVO_SENDER_EMAIL') {
+        clearBrevoInstance();
+        console.log('[Config] Brevo instance reset after key deletion');
+      }
+      
       res.json({ message: "Setting deleted successfully" });
     } catch (error) {
       console.error("Error deleting setting:", error);

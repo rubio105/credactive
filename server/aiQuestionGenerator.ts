@@ -1,7 +1,28 @@
 import OpenAI from "openai";
+import { getApiKey } from "./config";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// OpenAI instance - initialized lazily to support database-stored keys
+let openaiInstance: OpenAI | null = null;
+
+async function getOpenAI(): Promise<OpenAI> {
+  if (openaiInstance) {
+    return openaiInstance;
+  }
+
+  const apiKey = await getApiKey('OPENAI_API_KEY');
+  if (!apiKey) {
+    throw new Error('OpenAI API key not configured. Please add OPENAI_API_KEY in the Admin API panel or environment variables.');
+  }
+
+  // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+  openaiInstance = new OpenAI({ apiKey });
+  return openaiInstance;
+}
+
+// Export function to clear OpenAI instance when API key is updated
+export function clearOpenAIInstance() {
+  openaiInstance = null;
+}
 
 interface QuestionOption {
   text: string;
@@ -107,10 +128,7 @@ Return a JSON object with a "questions" array containing exactly ${count} questi
 }`;
 
   try {
-    // Check if OpenAI API key is configured
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not configured. Please add it to your environment secrets.');
-    }
+    // API key is checked in getOpenAI() function
 
     console.log(`Requesting ${count} questions for "${quizTitle}" (category: ${category}, difficulty: ${difficulty}, language: ${language})`);
     
@@ -120,7 +138,7 @@ Return a JSON object with a "questions" array containing exactly ${count} questi
     
     console.log(`Using max_tokens: ${maxTokens} for ${count} questions`);
     
-    const response = await openai.chat.completions.create({
+    const response = await (await getOpenAI()).chat.completions.create({
       model: "gpt-4o", // Using gpt-4o as it's more reliable for structured output
       messages: [
         { role: "system", content: systemPrompt },

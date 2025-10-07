@@ -40,22 +40,22 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/logout" component={Logout} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/subscribe" component={Subscribe} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/leaderboard" component={Leaderboard} />
+      <Route path="/certificates" component={Certificates} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/admin" component={Admin} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
         <>
           <Route path="/" component={Home} />
           <Route path="/quiz/:quizId" component={Quiz} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/subscribe" component={Subscribe} />
           <Route path="/report/:attemptId" component={Report} />
-          <Route path="/admin" component={Admin} />
           <Route path="/corsi-on-demand" component={CorsiOnDemand} />
           <Route path="/corsi-on-demand/:courseId" component={CorsoOnDemand} />
-          <Route path="/settings" component={Settings} />
-          <Route path="/leaderboard" component={Leaderboard} />
-          <Route path="/certificates" component={Certificates} />
-          <Route path="/analytics" component={Analytics} />
         </>
       )}
       <Route path="/page/:slug" component={DynamicContentPage} />

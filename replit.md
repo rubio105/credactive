@@ -63,7 +63,16 @@ Preferred communication style: Simple, everyday language.
     - **Engagement Metrics**: Active users, average points, activity rates, gamification statistics
     - **Newsletter Analytics**: Subscriber counts, subscription rates
     - **Authentication Methods**: Provider breakdown (local, Google OAuth)
--   **Admin Panel**: Comprehensive user management, quiz rotation control, and tab-based interface for managing content, settings, and analytics. 12-tab navigation system with dedicated Analytics tab for business metrics overview.
+-   **AI Email Marketing System**: Intelligent email campaign management with AI-powered content generation:
+    - **AI Email Generator**: Uses OpenAI GPT-4o to analyze available courses and generate personalized email content based on target profession
+    - **Smart Course Recommendations**: AI automatically recommends 2-3 most relevant courses/certifications for the specified profession (e.g., CISM, CISSP for Cybersecurity Professionals)
+    - **Professional Content Creation**: Generates compelling HTML emails in Italian with customizable purpose (course promotion, special offers, newsletters) and tone (professional, formal, friendly, urgent, educational)
+    - **Audience Segmentation**: Preview and target users by profession, subscription tier, language, newsletter consent, and engagement level
+    - **Campaign Preview System**: Real-time HTML preview with editable subject and content before sending
+    - **Brevo Integration**: Bulk email sending to newsletter subscribers with success/failure tracking
+    - **Database Schema**: marketingCampaigns table for future campaign tracking and analytics expansion
+    - **90-second Timeout**: Optimized client configuration to handle long-running AI generation requests
+-   **Admin Panel**: Comprehensive user management, quiz rotation control, and tab-based interface for managing content, settings, and analytics. 13-tab navigation system with dedicated Analytics and Marketing tabs for business intelligence and email campaigns.
 
 # External Dependencies
 

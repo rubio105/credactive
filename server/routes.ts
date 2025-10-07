@@ -2923,7 +2923,7 @@ ${JSON.stringify(questionsToTranslate)}`;
         return res.status(400).json({ message: "Description is required" });
       }
 
-      const openai = await getOpenAIInstance();
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [

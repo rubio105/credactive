@@ -42,10 +42,12 @@ export default function CookieBanner() {
                   (autenticazione, sessioni, preferenze). Non utilizziamo cookie di profilazione o pubblicità. 
                   I dati raccolti sono utilizzati esclusivamente per migliorare la tua esperienza di apprendimento.
                 </p>
-                <Link href="/page/privacy-policy">
-                  <a className="text-primary hover:underline font-medium" data-testid="link-privacy-policy">
-                    Leggi l'informativa sulla privacy →
-                  </a>
+                <Link 
+                  href="/page/privacy-policy"
+                  className="text-primary hover:underline font-medium" 
+                  data-testid="link-privacy-policy"
+                >
+                  Leggi l'informativa sulla privacy →
                 </Link>
               </div>
               <div className="flex flex-wrap gap-3 pt-2">

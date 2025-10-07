@@ -844,5 +844,85 @@ export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans
 });
 export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
 
+// Marketing Campaigns
+export const marketingCampaigns = pgTable("marketing_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 200 }).notNull(),
+  subject: varchar("subject", { length: 200 }).notNull(),
+  htmlContent: text("html_content").notNull(),
+  textContent: text("text_content"),
+  
+  // Segmentation filters (JSON)
+  targetFilters: jsonb("target_filters"), // {subscriptionTier: ["free"], profession: ["developer"], etc.}
+  
+  // Campaign metadata
+  status: varchar("status", { length: 20 }).default("draft"), // draft, scheduled, sending, sent, failed
+  scheduledAt: timestamp("scheduled_at"),
+  sentAt: timestamp("sent_at"),
+  
+  // Statistics
+  recipientsCount: integer("recipients_count").default(0),
+  sentCount: integer("sent_count").default(0),
+  failedCount: integer("failed_count").default(0),
+  openedCount: integer("opened_count").default(0),
+  clickedCount: integer("clicked_count").default(0),
+  
+  createdBy: varchar("created_by"), // Admin user ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
+export const insertMarketingCampaignSchema = createInsertSchema(marketingCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMarketingCampaign = z.infer<typeof insertMarketingCampaignSchema>;
+
+// Marketing Templates (reusable email templates)
+export const marketingTemplates = pgTable("marketing_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }), // promotion, course_recommendation, newsletter, etc.
+  
+  subject: varchar("subject", { length: 200 }).notNull(),
+  htmlContent: text("html_content").notNull(),
+  textContent: text("text_content"),
+  
+  // Variables available in template
+  variables: text("variables").array(), // ["{{firstName}}", "{{courseName}}", etc.]
+  
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type MarketingTemplate = typeof marketingTemplates.$inferSelect;
+export const insertMarketingTemplateSchema = createInsertSchema(marketingTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMarketingTemplate = z.infer<typeof insertMarketingTemplateSchema>;
+
+// Campaign Recipients (track who received what)
+export const campaignRecipients = pgTable("campaign_recipients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => marketingCampaigns.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  status: varchar("status", { length: 20 }).default("pending"), // pending, sent, failed, opened, clicked
+  sentAt: timestamp("sent_at"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

@@ -1659,6 +1659,136 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+
+  // Get target audience preview (apply filters)
+  app.post('/api/admin/marketing/preview-audience', isAdmin, async (req, res) => {
+    try {
+      const { targetFilters } = req.body;
+      
+      const users = await storage.getAllUsers();
+      let filtered = users.filter(u => u.newsletterConsent);
+      
+      if (targetFilters) {
+        // Apply subscription tier filter
+        if (targetFilters.subscriptionTier && targetFilters.subscriptionTier.length > 0) {
+          filtered = filtered.filter(u => targetFilters.subscriptionTier.includes(u.subscriptionTier));
+        }
+        
+        // Apply profession filter
+        if (targetFilters.profession && targetFilters.profession.length > 0) {
+          filtered = filtered.filter(u => u.profession && targetFilters.profession.includes(u.profession));
+        }
+        
+        // Apply language filter
+        if (targetFilters.language && targetFilters.language.length > 0) {
+          filtered = filtered.filter(u => u.language && targetFilters.language.includes(u.language));
+        }
+        
+        // Apply coupon filter
+        if (targetFilters.couponCode && targetFilters.couponCode.length > 0) {
+          filtered = filtered.filter(u => u.couponCode && targetFilters.couponCode.includes(u.couponCode));
+        }
+        
+        // Apply premium filter
+        if (targetFilters.isPremium !== undefined) {
+          filtered = filtered.filter(u => u.isPremium === targetFilters.isPremium);
+        }
+      }
+      
+      res.json({
+        count: filtered.length,
+        users: filtered.slice(0, 50).map(u => ({
+          email: u.email,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          profession: u.profession,
+          subscriptionTier: u.subscriptionTier
+        }))
+      });
+    } catch (error) {
+      console.error("Error previewing audience:", error);
+      res.status(500).json({ message: "Failed to preview audience" });
+    }
+  });
+
+  // AI Email Generator - Generate email with course recommendations
+  app.post('/api/admin/marketing/ai-generate', isAdmin, async (req, res) => {
+    try {
+      const { profession, purpose, tone } = req.body;
+      
+      // Get relevant courses/categories
+      const categories = await storage.getCategories();
+      const quizzes = await storage.getAllQuizzes();
+      
+      // Build course context for AI
+      const courseContext = {
+        categories: categories.map((c: any) => ({ name: c.name, description: c.description })),
+        quizzes: quizzes.map((q: any) => ({ 
+          title: q.title, 
+          description: q.description,
+          difficulty: q.difficulty
+        }))
+      };
+      
+      // Get OpenAI instance
+      const apiKey = await getApiKey('OPENAI_API_KEY');
+      if (!apiKey) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      const openai = new OpenAI({ apiKey });
+      
+      const prompt = `Crea un'email marketing professionale in italiano per CREDACTIVE ACADEMY.
+
+TARGET: ${profession || 'Tutti i professionisti'}
+SCOPO: ${purpose || 'Promozione corsi'}
+TONO: ${tone || 'Professionale e coinvolgente'}
+
+CORSI DISPONIBILI:
+${JSON.stringify(courseContext, null, 2)}
+
+ISTRUZIONI:
+1. Scrivi un'email HTML accattivante e professionale
+2. Suggerisci i corsi/certificazioni più rilevanti per ${profession || 'il target'}
+3. Personalizza il messaggio con {{firstName}} dove appropriato
+4. Includi un chiaro call-to-action
+5. Mantieni un tono ${tone || 'professionale'}
+6. Evidenzia i benefici specifici per la loro professione
+7. Formato HTML con stile inline (no CSS esterni)
+
+STRUTTURA RICHIESTA:
+- Oggetto email (max 60 caratteri)
+- Corpo email in HTML con sezioni: 
+  * Saluto personalizzato
+  * Introduzione value proposition
+  * Corsi raccomandati con descrizione e benefici
+  * Call to action chiaro
+  * Firma
+
+Restituisci SOLO un JSON con:
+{
+  "subject": "Oggetto email",
+  "htmlContent": "HTML dell'email",
+  "textContent": "Versione testo",
+  "recommendedCourses": ["Nome corso 1", "Nome corso 2"]
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "Sei un esperto email marketer per piattaforme di formazione professionale. Crei email coinvolgenti, personalizzate e ad alto tasso di conversione." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+      });
+      
+      const result = JSON.parse(completion.choices[0].message.content || "{}");
+      res.json(result);
+    } catch (error) {
+      console.error("Error generating AI email:", error);
+      res.status(500).json({ message: "Failed to generate email" });
+    }
+  });
+
   // Admin - Create category
   app.post('/api/admin/categories', isAdmin, async (req, res) => {
     try {

@@ -15,10 +15,11 @@ import { AdminOnDemandCourses } from "@/components/admin/AdminOnDemandCourses";
 import { AdminCorporateAgreements } from "@/components/admin/AdminCorporateAgreements";
 import { AdminEmailTemplates } from "@/components/admin/AdminEmailTemplates";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
+import { AdminMarketing } from "@/components/admin/AdminMarketing";
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("analytics");
 
   if (isLoading) {
     return (
@@ -57,13 +58,17 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-12 mb-8">
-            <TabsTrigger value="analytics" className="flex items-center gap-2" data-testid="tab-analytics">
-              <BarChart3 className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-12 mb-8 text-xs">
+            <TabsTrigger value="analytics" className="flex items-center gap-1 px-2" data-testid="tab-analytics">
+              <BarChart3 className="w-3 h-3" />
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
-              <Users className="w-4 h-4" />
+            <TabsTrigger value="marketing" className="flex items-center gap-1 px-2" data-testid="tab-marketing">
+              <Mail className="w-3 h-3" />
+              <span className="hidden sm:inline">Marketing</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-1 px-2" data-testid="tab-users">
+              <Users className="w-3 h-3" />
               <span className="hidden sm:inline">Utenti</span>
             </TabsTrigger>
             <TabsTrigger value="categories" className="flex items-center gap-2" data-testid="tab-categories">
@@ -110,6 +115,10 @@ export default function AdminPage() {
 
           <TabsContent value="analytics">
             <AdminAnalytics />
+          </TabsContent>
+
+          <TabsContent value="marketing">
+            <AdminMarketing />
           </TabsContent>
 
           <TabsContent value="users">

@@ -1,5 +1,6 @@
 import * as brevo from "@getbrevo/brevo";
 import { getApiKey } from "./config";
+import { storage } from "./storage";
 
 // Brevo API instance - initialized lazily to support database-stored keys
 let apiInstance: brevo.TransactionalEmailsApi | null = null;
@@ -49,6 +50,48 @@ function escapeHtml(unsafe: string): string {
 function sanitizeUserInput(input: string | undefined): string {
   if (!input) return '';
   return escapeHtml(input.trim());
+}
+
+// Process template with variables
+export function processTemplate(template: string, variables: Record<string, string>): string {
+  let processed = template;
+  for (const [key, value] of Object.entries(variables)) {
+    const sanitized = sanitizeUserInput(value);
+    // Replace both {{key}} and {{KEY}} (case insensitive)
+    const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi');
+    processed = processed.replace(regex, sanitized);
+  }
+  return processed;
+}
+
+// Send email using template from database
+export async function sendTemplateEmail(
+  templateCode: string,
+  to: string,
+  variables: Record<string, string>
+): Promise<void> {
+  const template = await storage.getEmailTemplateByCode(templateCode);
+  
+  if (!template) {
+    console.error(`Template not found: ${templateCode}`);
+    throw new Error(`Email template '${templateCode}' not found`);
+  }
+
+  if (!template.isActive) {
+    console.error(`Template is inactive: ${templateCode}`);
+    throw new Error(`Email template '${templateCode}' is not active`);
+  }
+
+  const htmlContent = processTemplate(template.htmlContent, variables);
+  const textContent = template.textContent ? processTemplate(template.textContent, variables) : undefined;
+  const subject = processTemplate(template.subject, variables);
+
+  await sendEmail({
+    to,
+    subject,
+    htmlContent,
+    textContent,
+  });
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<void> {

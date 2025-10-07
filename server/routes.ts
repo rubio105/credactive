@@ -2874,6 +2874,84 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Email template management routes
+  app.get('/api/admin/email-templates', isAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getAllEmailTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching email templates:", error);
+      res.status(500).json({ message: "Failed to fetch email templates" });
+    }
+  });
+
+  app.get('/api/admin/email-templates/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const template = await storage.getEmailTemplateById(id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching email template:", error);
+      res.status(500).json({ message: "Failed to fetch email template" });
+    }
+  });
+
+  app.post('/api/admin/email-templates', isAdmin, async (req, res) => {
+    try {
+      const template = await storage.createEmailTemplate(req.body);
+      res.json(template);
+    } catch (error) {
+      console.error("Error creating email template:", error);
+      res.status(500).json({ message: "Failed to create email template" });
+    }
+  });
+
+  app.patch('/api/admin/email-templates/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const template = await storage.updateEmailTemplate(id, req.body);
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating email template:", error);
+      res.status(500).json({ message: "Failed to update email template" });
+    }
+  });
+
+  app.delete('/api/admin/email-templates/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteEmailTemplate(id);
+      res.json({ message: "Template deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting email template:", error);
+      res.status(500).json({ message: "Failed to delete email template" });
+    }
+  });
+
+  // Test send email template
+  app.post('/api/admin/email-templates/:id/test', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { testEmail, variables } = req.body;
+      
+      const template = await storage.getEmailTemplateById(id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      const { sendTemplateEmail } = await import("./email");
+      await sendTemplateEmail(template.code, testEmail, variables || {});
+      
+      res.json({ message: "Test email sent successfully" });
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ message: "Failed to send test email" });
+    }
+  });
+
   // Generate TTS audio for question explanation
   app.post('/api/admin/questions/:id/generate-audio', isAdmin, aiGenerationLimiter, async (req, res) => {
     try {

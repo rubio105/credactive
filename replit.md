@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 
 -   **Database**: PostgreSQL (Neon's serverless driver).
 -   **ORM**: Drizzle ORM with schema-first design.
--   **Schema Design**: Tables for Users (including Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs, User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, Email Templates, and Settings. Supports category images and audio explanations.
+-   **Schema Design**: Tables for Users (including Stripe data and couponCode for promotional tracking), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs, User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, Email Templates, and Settings. Supports category images and audio explanations.
 -   **Type Safety**: End-to-end type safety via Drizzle and shared schema.
 
 ## Key Features
@@ -54,7 +54,16 @@ Preferred communication style: Simple, everyday language.
 -   **Email Template Management**: Database-backed system for admin customization of transactional emails (welcome, verification, password reset) with dynamic variable substitution, preview mode, and intelligent fallback to hardcoded templates.
 -   **Configuration Management**: Secure database-backed API key management for services (OpenAI, Stripe, Brevo) with dynamic loading, 5-minute TTL cache, and automatic instance reset on key updates for zero-downtime deployment.
 -   **Subscription Plans Management**: Admin panel for creating and managing subscription plans with AI-powered description formatting. Each plan includes name, price, currency, interval (year/month), features list, active status, and Stripe payment toggle. Plans display in responsive grid (max 3 per row) with visual status indicators.
--   **Admin Panel**: Comprehensive user management, quiz rotation control, and tab-based interface for managing content and settings.
+-   **User Data Management**: CSV export/import functionality for bulk user operations with complete registration field support. Export downloads all user data (excluding sensitive fields like passwords) in CSV format; import accepts CSV files for bulk user creation with validation and error reporting.
+-   **Analytics Dashboard**: Comprehensive business intelligence dashboard displaying key metrics including:
+    - **Onboarding Metrics**: Total users, new registrations (7/30 days, monthly), growth percentage tracking
+    - **Revenue Analytics**: Estimated annual/monthly revenue, premium vs free user breakdown, conversion rates, subscription tier distribution
+    - **Coupon Tracking**: Usage rates, coupon code breakdown, promotional campaign effectiveness via couponCode field
+    - **User Verification**: Email verification rates, verified vs unverified user statistics
+    - **Engagement Metrics**: Active users, average points, activity rates, gamification statistics
+    - **Newsletter Analytics**: Subscriber counts, subscription rates
+    - **Authentication Methods**: Provider breakdown (local, Google OAuth)
+-   **Admin Panel**: Comprehensive user management, quiz rotation control, and tab-based interface for managing content, settings, and analytics. 12-tab navigation system with dedicated Analytics tab for business metrics overview.
 
 # External Dependencies
 

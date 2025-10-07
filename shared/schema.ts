@@ -827,6 +827,7 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   isActive: boolean("is_active").default(true),
   sortOrder: integer("sort_order").default(0), // For display ordering
   features: text("features").array(), // Array of feature strings for display
+  stripeEnabled: boolean("stripe_enabled").default(false), // Show Stripe payment button
   stripeProductId: varchar("stripe_product_id"), // Stripe Product ID (optional)
   stripePriceId: varchar("stripe_price_id"), // Stripe Price ID (optional)
   createdAt: timestamp("created_at").defaultNow(),

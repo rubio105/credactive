@@ -29,10 +29,11 @@ interface SubscriptionPlan {
   name: string;
   price: number;
   currency: string;
-  duration: string;
+  interval: string;
   description?: string;
   features: string[];
   isActive: boolean;
+  stripeEnabled: boolean;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
@@ -49,10 +50,11 @@ export function AdminSettings() {
   const [planName, setPlanName] = useState('');
   const [planPrice, setPlanPrice] = useState('');
   const [planCurrency, setPlanCurrency] = useState('EUR');
-  const [planDuration, setPlanDuration] = useState('annual');
+  const [planInterval, setPlanInterval] = useState('year');
   const [planDescription, setPlanDescription] = useState('');
   const [planFeatures, setPlanFeatures] = useState<string[]>([]);
   const [planActive, setPlanActive] = useState(true);
+  const [planStripeEnabled, setPlanStripeEnabled] = useState(false);
   const [planSortOrder, setPlanSortOrder] = useState(0);
   const [isFormattingDescription, setIsFormattingDescription] = useState(false);
 
@@ -154,10 +156,11 @@ export function AdminSettings() {
     setPlanName('');
     setPlanPrice('');
     setPlanCurrency('EUR');
-    setPlanDuration('annual');
+    setPlanInterval('year');
     setPlanDescription('');
     setPlanFeatures([]);
     setPlanActive(true);
+    setPlanStripeEnabled(false);
     setPlanSortOrder(0);
   };
 
@@ -166,10 +169,11 @@ export function AdminSettings() {
     setPlanName(plan.name);
     setPlanPrice(plan.price.toString());
     setPlanCurrency(plan.currency);
-    setPlanDuration(plan.duration);
+    setPlanInterval(plan.interval);
     setPlanDescription(plan.description || '');
     setPlanFeatures(plan.features);
     setPlanActive(plan.isActive);
+    setPlanStripeEnabled(plan.stripeEnabled);
     setPlanSortOrder(plan.sortOrder);
     setIsDialogOpen(true);
   };
@@ -196,10 +200,11 @@ export function AdminSettings() {
       name: planName,
       price: parseFloat(planPrice),
       currency: planCurrency,
-      duration: planDuration,
+      interval: planInterval,
       description: planDescription,
       features: planFeatures,
       isActive: planActive,
+      stripeEnabled: planStripeEnabled,
       sortOrder: planSortOrder,
     };
 
@@ -367,13 +372,13 @@ export function AdminSettings() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="plan-duration">Durata</Label>
+                      <Label htmlFor="plan-interval">Durata</Label>
                       <Input
-                        id="plan-duration"
-                        value={planDuration}
-                        onChange={(e) => setPlanDuration(e.target.value)}
-                        placeholder="annual, monthly"
-                        data-testid="input-plan-duration"
+                        id="plan-interval"
+                        value={planInterval}
+                        onChange={(e) => setPlanInterval(e.target.value)}
+                        placeholder="year, month"
+                        data-testid="input-plan-interval"
                       />
                     </div>
                     <div>
@@ -388,14 +393,25 @@ export function AdminSettings() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="plan-active"
-                      checked={planActive}
-                      onCheckedChange={setPlanActive}
-                      data-testid="switch-plan-active"
-                    />
-                    <Label htmlFor="plan-active">Piano Attivo</Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="plan-active"
+                        checked={planActive}
+                        onCheckedChange={setPlanActive}
+                        data-testid="switch-plan-active"
+                      />
+                      <Label htmlFor="plan-active">Piano Attivo</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="plan-stripe"
+                        checked={planStripeEnabled}
+                        onCheckedChange={setPlanStripeEnabled}
+                        data-testid="switch-plan-stripe"
+                      />
+                      <Label htmlFor="plan-stripe">Abilita Pagamento Stripe</Label>
+                    </div>
                   </div>
 
                   <div>
@@ -501,7 +517,7 @@ export function AdminSettings() {
                       <div>
                         <CardTitle>{plan.name}</CardTitle>
                         <CardDescription>
-                          {plan.currency} {plan.price}/{plan.duration === 'annual' ? 'anno' : 'mese'}
+                          {plan.currency} {plan.price}/{plan.interval === 'year' ? 'anno' : 'mese'}
                         </CardDescription>
                       </div>
                       <div className="flex gap-1">
@@ -536,9 +552,17 @@ export function AdminSettings() {
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-3 pt-3 border-t text-xs text-muted-foreground flex justify-between">
-                      <span>Ordine: {plan.sortOrder}</span>
-                      <span>{plan.isActive ? 'Attivo' : 'Inattivo'}</span>
+                    <div className="mt-3 pt-3 border-t text-xs text-muted-foreground space-y-1">
+                      <div className="flex justify-between">
+                        <span>Ordine: {plan.sortOrder}</span>
+                        <span>{plan.isActive ? 'Attivo' : 'Inattivo'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Stripe:</span>
+                        <span className={plan.stripeEnabled ? 'text-green-600' : 'text-gray-400'}>
+                          {plan.stripeEnabled ? 'Abilitato' : 'Disabilitato'}
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

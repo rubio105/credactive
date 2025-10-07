@@ -68,6 +68,8 @@ export const users = pgTable("users", {
   // Corporate agreement fields
   companyName: varchar("company_name", { length: 200 }),
   corporateAgreementId: uuid("corporate_agreement_id"),
+  // Coupon tracking
+  couponCode: varchar("coupon_code", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

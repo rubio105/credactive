@@ -1313,6 +1313,279 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Admin - Export users to CSV
+  app.get('/api/admin/users/export/csv', isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // Define CSV headers (all user fields from registration)
+      const headers = [
+        'ID', 'Email', 'First Name', 'Last Name', 'Date of Birth', 'Gender', 
+        'Phone', 'Profession', 'Education', 'Company',
+        'Address Street', 'Address City', 'Address Postal Code', 'Address Province', 'Address Country',
+        'Newsletter Consent', 'Auth Provider', 'Email Verified', 'Is Premium', 'Subscription Tier',
+        'Is Admin', 'Language', 'Total Points', 'Level', 'Current Streak', 'Longest Streak',
+        'Credits', 'Company Name', 'Coupon Code', 'Stripe Customer ID', 'Stripe Subscription ID',
+        'Created At', 'Updated At'
+      ];
+      
+      // Convert users to CSV rows
+      const csvRows = users.map(user => [
+        user.id,
+        user.email,
+        user.firstName || '',
+        user.lastName || '',
+        user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '',
+        user.gender || '',
+        user.phone || '',
+        user.profession || '',
+        user.education || '',
+        user.company || '',
+        user.addressStreet || '',
+        user.addressCity || '',
+        user.addressPostalCode || '',
+        user.addressProvince || '',
+        user.addressCountry || '',
+        user.newsletterConsent ? 'Yes' : 'No',
+        user.authProvider || 'local',
+        user.emailVerified ? 'Yes' : 'No',
+        user.isPremium ? 'Yes' : 'No',
+        user.subscriptionTier || 'free',
+        user.isAdmin ? 'Yes' : 'No',
+        user.language || '',
+        user.totalPoints || 0,
+        user.level || 1,
+        user.currentStreak || 0,
+        user.longestStreak || 0,
+        user.credits || 0,
+        user.companyName || '',
+        user.couponCode || '',
+        user.stripeCustomerId || '',
+        user.stripeSubscriptionId || '',
+        user.createdAt ? new Date(user.createdAt).toISOString() : '',
+        user.updatedAt ? new Date(user.updatedAt).toISOString() : ''
+      ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(','));
+      
+      // Combine headers and rows
+      const csv = [headers.join(','), ...csvRows].join('\n');
+      
+      // Set headers for file download
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="users_export_${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send('\uFEFF' + csv); // UTF-8 BOM for Excel compatibility
+    } catch (error) {
+      console.error("Error exporting users:", error);
+      res.status(500).json({ message: "Failed to export users" });
+    }
+  });
+
+  // Admin - Import users from CSV
+  app.post('/api/admin/users/import/csv', isAdmin, async (req, res) => {
+    try {
+      const { csvData } = req.body;
+      
+      if (!csvData || !csvData.trim()) {
+        return res.status(400).json({ message: "CSV data is required" });
+      }
+      
+      // Parse CSV
+      const lines = csvData.trim().split('\n');
+      if (lines.length < 2) {
+        return res.status(400).json({ message: "CSV must contain headers and at least one data row" });
+      }
+      
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      const imported = [];
+      const errors = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        try {
+          const values = lines[i].match(/("([^"]|"")*"|[^,]+)/g)?.map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"')) || [];
+          
+          if (values.length === 0) continue; // Skip empty lines
+          
+          const row: any = {};
+          headers.forEach((header, index) => {
+            row[header] = values[index] || '';
+          });
+          
+          // Check if user already exists
+          const existingUser = await storage.getUserByEmail(row.Email?.toLowerCase());
+          if (existingUser) {
+            errors.push({ row: i + 1, email: row.Email, error: 'User already exists' });
+            continue;
+          }
+          
+          // Create user with default password (should be changed on first login)
+          const hashedPassword = await bcrypt.hash('ChangeMe123!', 10);
+          
+          const newUser = await storage.createUser({
+            email: row.Email?.toLowerCase(),
+            password: hashedPassword,
+            firstName: row['First Name'],
+            lastName: row['Last Name'],
+            dateOfBirth: row['Date of Birth'] ? new Date(row['Date of Birth']) : undefined,
+            gender: row.Gender,
+            phone: row.Phone,
+            profession: row.Profession,
+            education: row.Education,
+            company: row.Company,
+            addressStreet: row['Address Street'],
+            addressCity: row['Address City'],
+            addressPostalCode: row['Address Postal Code'],
+            addressProvince: row['Address Province'],
+            addressCountry: row['Address Country'],
+            newsletterConsent: row['Newsletter Consent']?.toLowerCase() === 'yes',
+            emailVerified: row['Email Verified']?.toLowerCase() === 'yes',
+            isPremium: row['Is Premium']?.toLowerCase() === 'yes',
+            subscriptionTier: row['Subscription Tier'] || 'free',
+            isAdmin: row['Is Admin']?.toLowerCase() === 'yes',
+            language: row.Language,
+            companyName: row['Company Name'],
+            couponCode: row['Coupon Code'],
+            authProvider: 'local',
+          });
+          
+          imported.push(newUser.email);
+        } catch (rowError: any) {
+          errors.push({ row: i + 1, error: rowError.message });
+        }
+      }
+      
+      res.json({
+        success: true,
+        imported: imported.length,
+        errors: errors.length,
+        importedUsers: imported,
+        errorDetails: errors
+      });
+    } catch (error) {
+      console.error("Error importing users:", error);
+      res.status(500).json({ message: "Failed to import users" });
+    }
+  });
+
+  // Admin - Get analytics/metrics
+  app.get('/api/admin/analytics', isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const now = new Date();
+      
+      // Calculate date ranges
+      const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      
+      // Onboarding metrics
+      const totalUsers = users.length;
+      const newUsersLast7Days = users.filter(u => new Date(u.createdAt) >= last7Days).length;
+      const newUsersLast30Days = users.filter(u => new Date(u.createdAt) >= last30Days).length;
+      const newUsersThisMonth = users.filter(u => new Date(u.createdAt) >= thisMonth).length;
+      const newUsersLastMonth = users.filter(u => {
+        const created = new Date(u.createdAt);
+        return created >= lastMonth && created <= lastMonthEnd;
+      }).length;
+      
+      // Premium/subscription metrics
+      const premiumUsers = users.filter(u => u.isPremium).length;
+      const freeUsers = totalUsers - premiumUsers;
+      const conversionRate = totalUsers > 0 ? ((premiumUsers / totalUsers) * 100).toFixed(2) : '0.00';
+      
+      // Subscription tier breakdown
+      const tierBreakdown = users.reduce((acc: any, user) => {
+        const tier = user.subscriptionTier || 'free';
+        acc[tier] = (acc[tier] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Coupon usage
+      const usersWithCoupon = users.filter(u => u.couponCode && u.couponCode.trim() !== '').length;
+      const couponBreakdown = users.reduce((acc: any, user) => {
+        if (user.couponCode && user.couponCode.trim() !== '') {
+          acc[user.couponCode] = (acc[user.couponCode] || 0) + 1;
+        }
+        return acc;
+      }, {});
+      
+      // Revenue estimation (based on subscription tiers)
+      // Assuming premium = €90/year, premium_plus = €149/year
+      const estimatedAnnualRevenue = users.reduce((total, user) => {
+        if (user.subscriptionTier === 'premium') return total + 90;
+        if (user.subscriptionTier === 'premium_plus') return total + 149;
+        return total;
+      }, 0);
+      
+      const estimatedMonthlyRevenue = (estimatedAnnualRevenue / 12).toFixed(2);
+      
+      // Email verification status
+      const verifiedUsers = users.filter(u => u.emailVerified).length;
+      const unverifiedUsers = totalUsers - verifiedUsers;
+      
+      // Auth provider breakdown
+      const authProviderBreakdown = users.reduce((acc: any, user) => {
+        const provider = user.authProvider || 'local';
+        acc[provider] = (acc[provider] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Gamification stats
+      const totalPoints = users.reduce((sum, u) => sum + (u.totalPoints || 0), 0);
+      const avgPoints = totalUsers > 0 ? (totalPoints / totalUsers).toFixed(0) : '0';
+      const activeUsers = users.filter(u => (u.totalPoints || 0) > 0).length;
+      
+      // Newsletter subscribers
+      const newsletterSubscribers = users.filter(u => u.newsletterConsent).length;
+      
+      res.json({
+        onboarding: {
+          totalUsers,
+          newUsersLast7Days,
+          newUsersLast30Days,
+          newUsersThisMonth,
+          newUsersLastMonth,
+          growth: newUsersLastMonth > 0 
+            ? (((newUsersThisMonth - newUsersLastMonth) / newUsersLastMonth) * 100).toFixed(1) + '%'
+            : 'N/A'
+        },
+        revenue: {
+          estimatedAnnualRevenue,
+          estimatedMonthlyRevenue,
+          premiumUsers,
+          freeUsers,
+          conversionRate: conversionRate + '%',
+          tierBreakdown
+        },
+        coupons: {
+          usersWithCoupon,
+          totalUsers,
+          couponUsageRate: totalUsers > 0 ? ((usersWithCoupon / totalUsers) * 100).toFixed(2) + '%' : '0%',
+          couponBreakdown
+        },
+        verification: {
+          verifiedUsers,
+          unverifiedUsers,
+          verificationRate: totalUsers > 0 ? ((verifiedUsers / totalUsers) * 100).toFixed(2) + '%' : '0%'
+        },
+        authProviders: authProviderBreakdown,
+        engagement: {
+          totalPoints,
+          avgPoints,
+          activeUsers,
+          activityRate: totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(2) + '%' : '0%'
+        },
+        newsletter: {
+          subscribers: newsletterSubscribers,
+          subscriptionRate: totalUsers > 0 ? ((newsletterSubscribers / totalUsers) * 100).toFixed(2) + '%' : '0%'
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
   // Admin - Send marketing email to newsletter subscribers
   app.post('/api/admin/send-marketing-email', isAdmin, async (req, res) => {
     try {

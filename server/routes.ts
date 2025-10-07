@@ -506,6 +506,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Test-only authentication endpoint (only available in development)
+  if (process.env.NODE_ENV === 'development') {
+    app.post('/api/auth/test-login', async (req, res) => {
+      try {
+        const { email } = req.body;
+        if (!email) {
+          return res.status(400).json({ message: "Email is required" });
+        }
+
+        const user = await storage.getUserByEmail(email.toLowerCase());
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Log the user in by setting up the session
+        req.login(user, (err) => {
+          if (err) {
+            return res.status(500).json({ message: "Login failed" });
+          }
+          const { password, passwordResetToken, verificationCode, ...safeUser } = user;
+          res.json({ user: safeUser });
+        });
+      } catch (error) {
+        console.error("Test login error:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
+  }
 
   app.post('/api/auth/forgot-password', passwordResetLimiter, async (req, res) => {
     try {

@@ -29,12 +29,20 @@ export function AdminMarketing() {
 
   // AI Generate Email
   const generateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/admin/marketing/ai-generate', 'POST', data),
+    mutationFn: async (data: any) => {
+      console.log('[AdminMarketing] Starting AI email generation with data:', data);
+      const response = await apiRequest('/api/admin/marketing/ai-generate', 'POST', data, 90000); // 90s timeout
+      const result = await response.json();
+      console.log('[AdminMarketing] AI email generation successful:', result);
+      return result;
+    },
     onSuccess: (result) => {
+      console.log('[AdminMarketing] onSuccess called with result:', result);
       setGeneratedEmail(result);
       toast({ title: "Email generata con successo!" });
     },
     onError: (error: any) => {
+      console.error('[AdminMarketing] Generation error:', error);
       toast({ 
         title: "Errore durante la generazione", 
         description: error.message,

@@ -16,12 +16,29 @@ export function setupGoogleAuth(app: Express) {
     return;
   }
 
+  // Build dynamic callback URL based on environment
+  const getCallbackURL = () => {
+    // In Replit, use REPLIT_DOMAINS or construct from request
+    const replitDomains = process.env.REPLIT_DOMAINS;
+    if (replitDomains) {
+      const domains = replitDomains.split(',');
+      const primaryDomain = domains[0];
+      const callbackURL = `https://${primaryDomain}/api/auth/google/callback`;
+      console.log(`[Google OAuth] Using callback URL: ${callbackURL}`);
+      console.log(`[Google OAuth] Make sure this URL is configured in Google Cloud Console:`)
+      console.log(`[Google OAuth] https://console.cloud.google.com/apis/credentials`);
+      return callbackURL;
+    }
+    // Fallback to relative URL for local development
+    return "/api/auth/google/callback";
+  };
+
   passport.use(
     new GoogleStrategy(
       {
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: "/api/auth/google/callback",
+        callbackURL: getCallbackURL(),
         scope: ["profile", "email"],
         passReqToCallback: false,
       },

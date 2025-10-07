@@ -356,6 +356,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ message: "Se l'email esiste, riceverai le istruzioni per il reset" });
       }
 
+      // Check if user registered with Google OAuth
+      if (user.authProvider === 'google') {
+        console.log('[FORGOT-PASSWORD] User registered with Google, cannot reset password');
+        return res.status(400).json({ 
+          message: "Questo account è stato creato con Google. Accedi usando il pulsante 'Continua con Google'." 
+        });
+      }
+
       console.log('[FORGOT-PASSWORD] User found, generating reset token...');
       const resetToken = crypto.randomBytes(32).toString('hex');
       const resetExpires = new Date(Date.now() + 3600000); // 1 hour

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Image, DollarSign, Calendar, FileText, Video, Building2, Key, Mail, BarChart3 } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home } from "lucide-react";
+import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminCategories } from "@/components/admin/AdminCategories";
 import { AdminQuizzes } from "@/components/admin/AdminQuizzes";
@@ -16,6 +17,22 @@ import { AdminCorporateAgreements } from "@/components/admin/AdminCorporateAgree
 import { AdminEmailTemplates } from "@/components/admin/AdminEmailTemplates";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
+
+const menuItems = [
+  { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
+  { id: "marketing", icon: Mail, label: "Marketing", testId: "tab-marketing" },
+  { id: "users", icon: Users, label: "Utenti", testId: "tab-users" },
+  { id: "categories", icon: BookOpen, label: "Categorie", testId: "tab-categories" },
+  { id: "quizzes", icon: BookOpen, label: "Quiz", testId: "tab-quizzes" },
+  { id: "questions", icon: HelpCircle, label: "Domande", testId: "tab-questions" },
+  { id: "live-courses", icon: Calendar, label: "Corsi Live", testId: "tab-live-courses" },
+  { id: "on-demand-courses", icon: Video, label: "Corsi On-Demand", testId: "tab-on-demand-courses" },
+  { id: "pages", icon: FileText, label: "Pagine", testId: "tab-pages" },
+  { id: "corporate", icon: Building2, label: "Aziende", testId: "tab-corporate" },
+  { id: "email", icon: Mail, label: "Email", testId: "tab-email" },
+  { id: "api", icon: Key, label: "API Keys", testId: "tab-api" },
+  { id: "settings", icon: Settings, label: "Impostazioni", testId: "tab-settings" },
+];
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
@@ -48,124 +65,70 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold">Pannello Amministrativo</h1>
-          <p className="text-muted-foreground mt-1">Gestione completa della piattaforma CREDACTIVE ACADEMY</p>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar Verticale */}
+      <aside className="w-64 border-r bg-muted/30 flex flex-col">
+        <div className="p-6 border-b">
+          <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Home className="w-4 h-4" />
+            Torna alla Home
+          </Link>
+          <h2 className="text-xl font-bold mt-4">Admin Panel</h2>
+          <p className="text-sm text-muted-foreground mt-1">CREDACTIVE ACADEMY</p>
         </div>
-      </div>
+        
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <div className="space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  data-testid={item.testId}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                    activeTab === item.id
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      </aside>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-12 mb-8 text-xs">
-            <TabsTrigger value="analytics" className="flex items-center gap-1 px-2" data-testid="tab-analytics">
-              <BarChart3 className="w-3 h-3" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="marketing" className="flex items-center gap-1 px-2" data-testid="tab-marketing">
-              <Mail className="w-3 h-3" />
-              <span className="hidden sm:inline">Marketing</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-1 px-2" data-testid="tab-users">
-              <Users className="w-3 h-3" />
-              <span className="hidden sm:inline">Utenti</span>
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="flex items-center gap-2" data-testid="tab-categories">
-              <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Categorie</span>
-            </TabsTrigger>
-            <TabsTrigger value="quizzes" className="flex items-center gap-2" data-testid="tab-quizzes">
-              <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Quiz</span>
-            </TabsTrigger>
-            <TabsTrigger value="questions" className="flex items-center gap-2" data-testid="tab-questions">
-              <HelpCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Domande</span>
-            </TabsTrigger>
-            <TabsTrigger value="live-courses" className="flex items-center gap-2" data-testid="tab-live-courses">
-              <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Corsi Live</span>
-            </TabsTrigger>
-            <TabsTrigger value="on-demand-courses" className="flex items-center gap-2" data-testid="tab-on-demand-courses">
-              <Video className="w-4 h-4" />
-              <span className="hidden sm:inline">Corsi On-Demand</span>
-            </TabsTrigger>
-            <TabsTrigger value="pages" className="flex items-center gap-2" data-testid="tab-pages">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Pagine</span>
-            </TabsTrigger>
-            <TabsTrigger value="corporate" className="flex items-center gap-2" data-testid="tab-corporate">
-              <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Aziende</span>
-            </TabsTrigger>
-            <TabsTrigger value="email" className="flex items-center gap-2" data-testid="tab-email">
-              <Mail className="w-4 h-4" />
-              <span className="hidden sm:inline">Email</span>
-            </TabsTrigger>
-            <TabsTrigger value="api" className="flex items-center gap-2" data-testid="tab-api">
-              <Key className="w-4 h-4" />
-              <span className="hidden sm:inline">API</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2" data-testid="tab-settings">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Impostazioni</span>
-            </TabsTrigger>
-          </TabsList>
+      {/* Contenuto Principale */}
+      <main className="flex-1 overflow-auto">
+        <div className="border-b bg-background sticky top-0 z-10">
+          <div className="px-8 py-6">
+            <h1 className="text-3xl font-bold">
+              {menuItems.find(item => item.id === activeTab)?.label || "Pannello Amministrativo"}
+            </h1>
+            <p className="text-muted-foreground mt-1">Gestione completa della piattaforma</p>
+          </div>
+        </div>
 
-          <TabsContent value="analytics">
-            <AdminAnalytics />
-          </TabsContent>
-
-          <TabsContent value="marketing">
-            <AdminMarketing />
-          </TabsContent>
-
-          <TabsContent value="users">
-            <AdminUsers />
-          </TabsContent>
-
-          <TabsContent value="categories">
-            <AdminCategories />
-          </TabsContent>
-
-          <TabsContent value="quizzes">
-            <AdminQuizzes />
-          </TabsContent>
-
-          <TabsContent value="questions">
-            <AdminQuestions />
-          </TabsContent>
-
-          <TabsContent value="live-courses">
-            <AdminLiveCourses />
-          </TabsContent>
-
-          <TabsContent value="on-demand-courses">
-            <AdminOnDemandCourses />
-          </TabsContent>
-
-          <TabsContent value="pages">
-            <AdminContentPages />
-          </TabsContent>
-
-          <TabsContent value="corporate">
-            <AdminCorporateAgreements />
-          </TabsContent>
-
-          <TabsContent value="email">
-            <AdminEmailTemplates />
-          </TabsContent>
-
-          <TabsContent value="api">
-            <AdminAPIKeys />
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <AdminSettings />
-          </TabsContent>
-        </Tabs>
-      </div>
+        <div className="p-8">
+          {activeTab === "analytics" && <AdminAnalytics />}
+          {activeTab === "marketing" && <AdminMarketing />}
+          {activeTab === "users" && <AdminUsers />}
+          {activeTab === "categories" && <AdminCategories />}
+          {activeTab === "quizzes" && <AdminQuizzes />}
+          {activeTab === "questions" && <AdminQuestions />}
+          {activeTab === "live-courses" && <AdminLiveCourses />}
+          {activeTab === "on-demand-courses" && <AdminOnDemandCourses />}
+          {activeTab === "pages" && <AdminContentPages />}
+          {activeTab === "corporate" && <AdminCorporateAgreements />}
+          {activeTab === "email" && <AdminEmailTemplates />}
+          {activeTab === "api" && <AdminAPIKeys />}
+          {activeTab === "settings" && <AdminSettings />}
+        </div>
+      </main>
     </div>
   );
 }

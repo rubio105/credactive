@@ -1818,15 +1818,23 @@ ISTRUZIONI:
 5. Mantieni un tono ${tone || 'professionale'}
 6. Evidenzia i benefici specifici per la loro professione
 7. Formato HTML con stile inline (no CSS esterni)
+8. OBBLIGATORIO: Includi sempre un header/logo all'inizio dell'email con il testo "CREDACTIVE ACADEMY" in stile professionale e visibile (es. con testo grande, grassetto, colori brand come blu scuro/arancione)
 
 STRUTTURA RICHIESTA:
 - Oggetto email (max 60 caratteri)
 - Corpo email in HTML con sezioni: 
+  * HEADER con logo/branding "CREDACTIVE ACADEMY" (testo stilizzato professionale con background o bordo elegante)
   * Saluto personalizzato con {{firstName}}
   * Introduzione value proposition menzionando {{profession}} se rilevante
   * Corsi raccomandati con descrizione e benefici
   * Call to action chiaro
   * Firma
+
+ESEMPIO HEADER HTML:
+<div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; text-align: center; margin-bottom: 30px;">
+  <h1 style="color: white; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 1px;">CREDACTIVE ACADEMY</h1>
+  <p style="color: #e0e7ff; margin: 8px 0 0 0; font-size: 14px;">Formazione Professionale per l'Eccellenza</p>
+</div>
 
 ESEMPIO USO PLACEHOLDER:
 "Ciao {{firstName}}, come {{profession}} sappiamo quanto sia importante..."
@@ -1834,7 +1842,7 @@ ESEMPIO USO PLACEHOLDER:
 Restituisci SOLO un JSON con:
 {
   "subject": "Oggetto email",
-  "htmlContent": "HTML dell'email con placeholder {{firstName}}, {{lastName}}, {{profession}}",
+  "htmlContent": "HTML dell'email con HEADER LOGO obbligatorio + placeholder {{firstName}}, {{lastName}}, {{profession}}",
   "textContent": "Versione testo con placeholder",
   "recommendedCourses": ["Nome corso 1", "Nome corso 2"]
 }`;

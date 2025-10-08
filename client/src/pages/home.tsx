@@ -13,7 +13,7 @@ import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen, Play, Video, Calendar } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 
 interface User {
@@ -50,6 +50,8 @@ export default function Home() {
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [selectedLiveCourseQuiz, setSelectedLiveCourseQuiz] = useState<{ id: string; title: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [categoryPage, setCategoryPage] = useState(0);
+  const CATEGORIES_PER_PAGE = 12;
   
   const userLanguage = (user as UserType)?.language;
   const t = getTranslation(userLanguage).home;
@@ -62,8 +64,6 @@ export default function Home() {
     queryKey: ["/api/categories-with-quizzes"],
   });
 
-  const quizCategories = mapCategoriesToQuizCards(categoriesWithQuizzes);
-
   // Check if user needs to select a language
   useEffect(() => {
     const userWithLanguage = user as UserType;
@@ -72,6 +72,24 @@ export default function Home() {
     }
   }, [user]);
 
+  // Sort categories: pinned first, then by sortOrder
+  const sortedCategories = [...categoriesWithQuizzes].sort((a, b) => {
+    // Pinned categories always come first
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    // Then sort by sortOrder
+    return (a.sortOrder || 0) - (b.sortOrder || 0);
+  });
+
+  // Paginate categories (12 per page)
+  const totalPages = Math.ceil(sortedCategories.length / CATEGORIES_PER_PAGE);
+  const paginatedCategories = sortedCategories.slice(
+    categoryPage * CATEGORIES_PER_PAGE,
+    (categoryPage + 1) * CATEGORIES_PER_PAGE
+  );
+
+  const quizCategories = mapCategoriesToQuizCards(paginatedCategories);
+  
   // Filter featured categories (those marked as "In Evidenza")
   const featuredCategories = categoriesWithQuizzes.filter(cat => cat.isFeatured);
   const featuredQuizzes = mapCategoriesToQuizCards(featuredCategories);
@@ -305,15 +323,40 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Featured Categories */}
-        {availableFeaturedQuizzes.length > 0 && (
+        {/* Categories Carousel (12 per page, with pinned priority) */}
+        {quizCategories.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">{t.categories.featured}</h2>
+              <h2 className="text-2xl font-bold">Categorie Quiz</h2>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCategoryPage(prev => Math.max(0, prev - 1))}
+                    disabled={categoryPage === 0}
+                    data-testid="button-prev-categories"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm text-muted-foreground px-2">
+                    {categoryPage + 1} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCategoryPage(prev => Math.min(totalPages - 1, prev + 1))}
+                    disabled={categoryPage === totalPages - 1}
+                    data-testid="button-next-categories"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availableFeaturedQuizzes.map((quiz) => (
+              {quizCategories.map((quiz) => (
                 <QuizCard
                   key={quiz.id}
                   quiz={quiz}

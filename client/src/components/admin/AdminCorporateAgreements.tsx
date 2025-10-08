@@ -41,8 +41,8 @@ interface CorporateAgreement {
   promoCode: string | null;
   tier: string;
   isActive: boolean;
-  maxUsers: number | null;
-  currentUsers: number;
+  licensesOwned: number;
+  licensesUsed: number;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -62,7 +62,7 @@ interface NewAgreement {
   promoCode: string;
   tier: string;
   isActive: boolean;
-  maxUsers: string;
+  licensesOwned: string;
   notes: string;
 }
 
@@ -78,9 +78,9 @@ export function AdminCorporateAgreements() {
     companyName: '',
     emailDomain: '',
     promoCode: '',
-    tier: 'premium_plus',
+    tier: 'starter',
     isActive: true,
-    maxUsers: '',
+    licensesOwned: '5',
     notes: '',
   });
 
@@ -109,9 +109,9 @@ export function AdminCorporateAgreements() {
         companyName: '',
         emailDomain: '',
         promoCode: '',
-        tier: 'premium_plus',
+        tier: 'starter',
         isActive: true,
-        maxUsers: '',
+        licensesOwned: '5',
         notes: '',
       });
     },
@@ -172,7 +172,7 @@ export function AdminCorporateAgreements() {
       promoCode: newAgreement.promoCode || null,
       tier: newAgreement.tier,
       isActive: newAgreement.isActive,
-      maxUsers: newAgreement.maxUsers ? parseInt(newAgreement.maxUsers) : null,
+      licensesOwned: newAgreement.licensesOwned ? parseInt(newAgreement.licensesOwned) : 5,
       notes: newAgreement.notes || null,
     };
 
@@ -190,7 +190,7 @@ export function AdminCorporateAgreements() {
         promoCode: editingAgreement.promoCode,
         tier: editingAgreement.tier,
         isActive: editingAgreement.isActive,
-        maxUsers: editingAgreement.maxUsers,
+        licensesOwned: editingAgreement.licensesOwned,
         notes: editingAgreement.notes,
       },
     });
@@ -229,7 +229,7 @@ export function AdminCorporateAgreements() {
                 <TableHead>Dominio Email</TableHead>
                 <TableHead>Codice Promo</TableHead>
                 <TableHead>Piano</TableHead>
-                <TableHead>Utenti</TableHead>
+                <TableHead>Licenze</TableHead>
                 <TableHead>Stato</TableHead>
                 <TableHead>Azioni</TableHead>
               </TableRow>
@@ -251,8 +251,7 @@ export function AdminCorporateAgreements() {
                       data-testid={`button-view-users-${agreement.id}`}
                     >
                       <Users className="w-4 h-4 mr-1" />
-                      {agreement.currentUsers}
-                      {agreement.maxUsers ? `/${agreement.maxUsers}` : ''}
+                      {agreement.licensesUsed}/{agreement.licensesOwned}
                     </Button>
                   </TableCell>
                   <TableCell>
@@ -331,27 +330,45 @@ export function AdminCorporateAgreements() {
               <Label htmlFor="tier">Piano</Label>
               <Select
                 value={newAgreement.tier}
-                onValueChange={(value) => setNewAgreement({ ...newAgreement, tier: value })}
+                onValueChange={(value) => {
+                  const tierLicenses: Record<string, string> = {
+                    starter: '5',
+                    premium: '25',
+                    premium_plus: '100',
+                    enterprise: '500'
+                  };
+                  setNewAgreement({ 
+                    ...newAgreement, 
+                    tier: value,
+                    licensesOwned: tierLicenses[value] || '5'
+                  });
+                }}
               >
                 <SelectTrigger data-testid="select-tier">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="premium_plus">Premium Full</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="starter">Starter (5 licenze)</SelectItem>
+                  <SelectItem value="premium">Premium (25 licenze)</SelectItem>
+                  <SelectItem value="premium_plus">Premium Plus (100 licenze)</SelectItem>
+                  <SelectItem value="enterprise">Enterprise (500 licenze)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="maxUsers">Limite Utenti (opzionale)</Label>
+              <Label htmlFor="licensesOwned">Numero Licenze *</Label>
               <Input
-                id="maxUsers"
+                id="licensesOwned"
                 type="number"
-                value={newAgreement.maxUsers}
-                onChange={(e) => setNewAgreement({ ...newAgreement, maxUsers: e.target.value })}
-                placeholder="Lascia vuoto per illimitato"
-                data-testid="input-max-users"
+                value={newAgreement.licensesOwned}
+                onChange={(e) => setNewAgreement({ ...newAgreement, licensesOwned: e.target.value })}
+                placeholder="Numero di licenze acquistate"
+                min="1"
+                data-testid="input-licenses-owned"
               />
+              <p className="text-sm text-muted-foreground">
+                Numero totale di licenze che l'azienda può assegnare ai dipendenti
+              </p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="notes">Note</Label>
@@ -421,26 +438,44 @@ export function AdminCorporateAgreements() {
                 <Label htmlFor="edit-tier">Piano</Label>
                 <Select
                   value={editingAgreement.tier}
-                  onValueChange={(value) => setEditingAgreement({ ...editingAgreement, tier: value })}
+                  onValueChange={(value) => {
+                    const tierLicenses: Record<string, number> = {
+                      starter: 5,
+                      premium: 25,
+                      premium_plus: 100,
+                      enterprise: 500
+                    };
+                    setEditingAgreement({ 
+                      ...editingAgreement, 
+                      tier: value,
+                      licensesOwned: tierLicenses[value] || 5
+                    });
+                  }}
                 >
                   <SelectTrigger data-testid="select-edit-tier">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="premium_plus">Premium Full</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="starter">Starter (5 licenze)</SelectItem>
+                    <SelectItem value="premium">Premium (25 licenze)</SelectItem>
+                    <SelectItem value="premium_plus">Premium Plus (100 licenze)</SelectItem>
+                    <SelectItem value="enterprise">Enterprise (500 licenze)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-maxUsers">Limite Utenti</Label>
+                <Label htmlFor="edit-licensesOwned">Numero Licenze</Label>
                 <Input
-                  id="edit-maxUsers"
+                  id="edit-licensesOwned"
                   type="number"
-                  value={editingAgreement.maxUsers || ''}
-                  onChange={(e) => setEditingAgreement({ ...editingAgreement, maxUsers: e.target.value ? parseInt(e.target.value) : null })}
-                  data-testid="input-edit-max-users"
+                  value={editingAgreement.licensesOwned}
+                  onChange={(e) => setEditingAgreement({ ...editingAgreement, licensesOwned: parseInt(e.target.value) || 5 })}
+                  min="1"
+                  data-testid="input-edit-licenses-owned"
                 />
+                <p className="text-sm text-muted-foreground">
+                  Licenze usate: {editingAgreement.licensesUsed}/{editingAgreement.licensesOwned}
+                </p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-notes">Note</Label>

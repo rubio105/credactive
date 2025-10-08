@@ -86,6 +86,7 @@ export const categories = pgTable("categories", {
   color: varchar("color", { length: 20 }),
   isPremium: boolean("is_premium").default(true),
   isFeatured: boolean("is_featured").default(false),
+  isPinned: boolean("is_pinned").default(false), // Pinned categories always appear in first 12 on home
   sortOrder: integer("sort_order").default(0),
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow(),

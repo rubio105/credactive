@@ -36,6 +36,7 @@ interface Category {
   color: string;
   isPremium: boolean;
   isFeatured: boolean;
+  isPinned: boolean;
   sortOrder: number;
   imageUrl?: string;
 }
@@ -105,6 +106,7 @@ export function AdminCategories() {
       color: '',
       isPremium: true,
       isFeatured: false,
+      isPinned: false,
       sortOrder: 0,
     });
     setIsCreating(true);
@@ -345,6 +347,20 @@ export function AdminCategories() {
                   checked={editingCategory.isFeatured}
                   onCheckedChange={(checked) => setEditingCategory({ ...editingCategory, isFeatured: checked })}
                   data-testid="switch-isFeatured"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="isPinned">Fissato nei Primi 12</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Le categorie fissate appariranno sempre nei primi 12 slot visibili della home
+                  </p>
+                </div>
+                <Switch
+                  id="isPinned"
+                  checked={editingCategory.isPinned}
+                  onCheckedChange={(checked) => setEditingCategory({ ...editingCategory, isPinned: checked })}
+                  data-testid="switch-isPinned"
                 />
               </div>
             </div>

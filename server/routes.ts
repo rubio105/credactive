@@ -4743,6 +4743,218 @@ Explicación de audio:`
   
   const clients = new Map<WebSocket, ClientConnection>();
   
+  // Broadcast helper function
+  const broadcastToSession = (sessionId: string, message: any) => {
+    clients.forEach((client, ws) => {
+      if (client.sessionId === sessionId && ws.readyState === 1) {
+        ws.send(JSON.stringify(message));
+      }
+    });
+  };
+  
+  // Live streaming session endpoints (defined after broadcastToSession)
+  
+  // Validation schemas
+  const startStreamingSessionSchema = z.object({
+    sessionId: z.string().uuid(),
+    streamUrl: z.string().url(),
+    title: z.string().min(1)
+  });
+  
+  const createPollSchema = z.object({
+    question: z.string().min(1),
+    options: z.array(z.object({ label: z.string(), text: z.string() })).min(2),
+    correctAnswer: z.string().optional().nullable(),
+    showResults: z.boolean().optional()
+  });
+  
+  // Admin - Start a live streaming session
+  app.post('/api/admin/live-streaming/start', isAdmin, async (req, res) => {
+    try {
+      const validated = startStreamingSessionSchema.parse(req.body);
+      
+      // Check if there's already an active session for this sessionId
+      const existing = await storage.getActiveStreamingSession(validated.sessionId);
+      if (existing) {
+        return res.status(400).json({ message: 'An active streaming session already exists for this Live Course session' });
+      }
+      
+      const streamingSession = await storage.createLiveStreamingSession({
+        sessionId: validated.sessionId,
+        streamUrl: validated.streamUrl,
+        title: validated.title,
+        isActive: true
+      });
+      
+      // Broadcast session start to all connected clients for this session
+      broadcastToSession(validated.sessionId, {
+        type: 'session_started',
+        session: streamingSession
+      });
+      
+      res.json(streamingSession);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
+      }
+      console.error('Start streaming session error:', error);
+      res.status(500).json({ message: 'Failed to start streaming session' });
+    }
+  });
+  
+  // Admin - End a live streaming session
+  app.post('/api/admin/live-streaming/:id/end', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const session = await storage.getLiveStreamingSessionBySessionId(id);
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+      
+      await storage.endLiveStreamingSession(session.id);
+      
+      // Broadcast session end to all connected clients
+      broadcastToSession(session.sessionId, {
+        type: 'session_ended',
+        sessionId: session.sessionId
+      });
+      
+      res.json({ message: 'Streaming session ended successfully' });
+    } catch (error: any) {
+      console.error('End streaming session error:', error);
+      res.status(500).json({ message: 'Failed to end streaming session' });
+    }
+  });
+  
+  // Admin - Create a poll during live session
+  app.post('/api/admin/live-streaming/:id/poll', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validated = createPollSchema.parse(req.body);
+      
+      const session = await storage.getLiveStreamingSessionBySessionId(id);
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+      
+      // Close any active poll first
+      const activePoll = await storage.getActivePoll(session.id);
+      if (activePoll) {
+        await storage.updateLiveStreamingPoll(activePoll.id, { isActive: false });
+      }
+      
+      const poll = await storage.createLiveStreamingPoll({
+        streamingSessionId: session.id,
+        question: validated.question,
+        options: validated.options,
+        correctAnswer: validated.correctAnswer || null,
+        showResults: validated.showResults || false,
+        isActive: true
+      });
+      
+      // Broadcast new poll to all clients
+      broadcastToSession(session.sessionId, {
+        type: 'poll',
+        poll,
+        stats: []
+      });
+      
+      res.json(poll);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
+      }
+      console.error('Create poll error:', error);
+      res.status(500).json({ message: 'Failed to create poll' });
+    }
+  });
+  
+  // Admin - Close a poll
+  app.put('/api/admin/live-streaming/poll/:id/close', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { showResults } = req.body;
+      
+      // Get poll to find session
+      const polls = await storage.getStreamingPolls(id);
+      const poll = polls.find(p => p.id === id);
+      if (!poll) {
+        return res.status(404).json({ message: 'Poll not found' });
+      }
+      
+      const updatedPoll = await storage.updateLiveStreamingPoll(id, {
+        isActive: false,
+        showResults: showResults !== undefined ? showResults : true
+      });
+      
+      // Broadcast poll close with results
+      const pollStats = await storage.getPollStats(id);
+      const session = await storage.getLiveStreamingSessionBySessionId(poll.streamingSessionId);
+      
+      if (session) {
+        broadcastToSession(session.sessionId, {
+          type: 'poll_closed',
+          poll: updatedPoll,
+          stats: pollStats
+        });
+      }
+      
+      res.json(updatedPoll);
+    } catch (error: any) {
+      console.error('Close poll error:', error);
+      res.status(500).json({ message: 'Failed to close poll' });
+    }
+  });
+  
+  // Get live streaming session info (authenticated users with enrollment check)
+  app.get('/api/live-streaming/:sessionId', isAuthenticated, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      const streamingSession = await storage.getActiveStreamingSession(sessionId);
+      if (!streamingSession) {
+        return res.status(404).json({ message: 'No active streaming session found' });
+      }
+      
+      // Verify user enrollment in the live course session
+      const liveCourseSession = await storage.getSessionById(sessionId);
+      if (!liveCourseSession) {
+        return res.status(404).json({ message: 'Live course session not found' });
+      }
+      
+      // Check if user is enrolled in the live course
+      const enrollment = await storage.getLiveCourseEnrollment(liveCourseSession.liveCourseId, req.user!.id);
+      if (!enrollment && !req.user!.isAdmin) {
+        return res.status(403).json({ message: 'You must be enrolled in this course to access the live session' });
+      }
+      
+      // Get active poll if any
+      const activePoll = await storage.getActivePoll(streamingSession.id);
+      let pollWithStats = null;
+      
+      if (activePoll) {
+        const pollStats = await storage.getPollStats(activePoll.id);
+        const userResponse = await storage.getUserPollResponse(activePoll.id, req.user!.id);
+        
+        pollWithStats = {
+          ...activePoll,
+          stats: pollStats,
+          userVoted: !!userResponse,
+          userResponse: userResponse?.selectedOption
+        };
+      }
+      
+      res.json({
+        ...streamingSession,
+        activePoll: pollWithStats
+      });
+    } catch (error: any) {
+      console.error('Get streaming session error:', error);
+      res.status(500).json({ message: 'Failed to load streaming session' });
+    }
+  });
+  
   wss.on('connection', (ws: WebSocket) => {
     console.log('New WebSocket connection');
     clients.set(ws, { ws });
@@ -4754,33 +4966,55 @@ Explicación de audio:`
         
         switch (message.type) {
           case 'auth':
-            // Authenticate and join session
-            if (client) {
+            // Authenticate and join session with enrollment verification
+            if (client && message.userId && message.sessionId) {
+              // Verify user enrollment
+              const liveCourseSession = await storage.getSessionById(message.sessionId);
+              if (!liveCourseSession) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: 'Live course session not found'
+                }));
+                ws.close();
+                return;
+              }
+              
+              const enrollment = await storage.getLiveCourseEnrollment(liveCourseSession.liveCourseId, message.userId);
+              const user = await storage.getUser(message.userId);
+              
+              if (!enrollment && !user?.isAdmin) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: 'You must be enrolled in this course to access the live session'
+                }));
+                ws.close();
+                return;
+              }
+              
+              // User is authorized - set connection metadata
               client.userId = message.userId;
               client.sessionId = message.sessionId;
               client.userName = message.userName;
               clients.set(ws, client);
               
               // Send recent messages
-              if (message.sessionId) {
-                const streamingSession = await storage.getActiveStreamingSession(message.sessionId);
-                if (streamingSession) {
-                  const recentMessages = await storage.getStreamingMessages(streamingSession.id, 50);
+              const streamingSession = await storage.getActiveStreamingSession(message.sessionId);
+              if (streamingSession) {
+                const recentMessages = await storage.getStreamingMessages(streamingSession.id, 50);
+                ws.send(JSON.stringify({
+                  type: 'history',
+                  messages: recentMessages.reverse()
+                }));
+                
+                // Send active poll if any
+                const activePoll = await storage.getActivePoll(streamingSession.id);
+                if (activePoll) {
+                  const pollStats = await storage.getPollStats(activePoll.id);
                   ws.send(JSON.stringify({
-                    type: 'history',
-                    messages: recentMessages.reverse()
+                    type: 'poll',
+                    poll: activePoll,
+                    stats: pollStats
                   }));
-                  
-                  // Send active poll if any
-                  const activePoll = await storage.getActivePoll(streamingSession.id);
-                  if (activePoll) {
-                    const pollStats = await storage.getPollStats(activePoll.id);
-                    ws.send(JSON.stringify({
-                      type: 'poll',
-                      poll: activePoll,
-                      stats: pollStats
-                    }));
-                  }
                 }
               }
             }

@@ -248,6 +248,7 @@ export const liveStreamingSessions = pgTable("live_streaming_sessions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: uuid("session_id").notNull().references(() => liveCourseSessions.id),
   streamUrl: text("stream_url").notNull(), // YouTube Live, Zoom, Google Meet, etc.
+  title: text("title").notNull(), // Session title
   isActive: boolean("is_active").default(false),
   startedAt: timestamp("started_at"),
   endedAt: timestamp("ended_at"),
@@ -273,6 +274,7 @@ export const liveStreamingPolls = pgTable("live_streaming_polls", {
   options: jsonb("options").notNull(), // Array of {label: string, text: string}
   correctAnswer: varchar("correct_answer", { length: 10 }), // null for polls, set for quiz questions
   pollType: varchar("poll_type", { length: 20 }).default("poll"), // poll, quiz
+  showResults: boolean("show_results").default(false), // Show results to participants
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

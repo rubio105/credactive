@@ -196,6 +196,7 @@ export interface IStorage {
   createLiveCourseEnrollment(enrollment: InsertLiveCourseEnrollment): Promise<LiveCourseEnrollment>;
   updateLiveCourseEnrollment(id: string, updates: Partial<LiveCourseEnrollment>): Promise<LiveCourseEnrollment>;
   getUserEnrollments(userId: string): Promise<LiveCourseEnrollment[]>;
+  getLiveCourseEnrollment(liveCourseId: string, userId: string): Promise<LiveCourseEnrollment | undefined>;
   
   // Live streaming session operations
   createLiveStreamingSession(session: InsertLiveStreamingSession): Promise<LiveStreamingSession>;
@@ -1071,6 +1072,18 @@ export class DatabaseStorage implements IStorage {
       .from(liveCourseEnrollments)
       .where(eq(liveCourseEnrollments.userId, userId))
       .orderBy(desc(liveCourseEnrollments.enrolledAt));
+  }
+
+  async getLiveCourseEnrollment(liveCourseId: string, userId: string): Promise<LiveCourseEnrollment | undefined> {
+    const [enrollment] = await db
+      .select()
+      .from(liveCourseEnrollments)
+      .where(and(
+        eq(liveCourseEnrollments.liveCourseId, liveCourseId),
+        eq(liveCourseEnrollments.userId, userId)
+      ))
+      .limit(1);
+    return enrollment;
   }
 
   // Live streaming session operations

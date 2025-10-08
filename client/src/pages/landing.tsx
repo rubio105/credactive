@@ -133,77 +133,52 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Featured Categories with Images */}
+      {/* About CREDACTIVE ACADEMY */}
       <section className="py-16 bg-gradient-to-b from-background to-secondary/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Categorie in Evidenza</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Scopri le nostre categorie principali di formazione professionale
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Certifications */}
-            <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
-              <div className="h-48 overflow-hidden">
+          <Card className="overflow-hidden shadow-2xl">
+            <div className="grid md:grid-cols-2 gap-0">
+              <div className="p-8 md:p-12 flex flex-col justify-center">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">
+                  CREDACTIVE ACADEMY
+                </h2>
+                <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+                  Un <span className="font-bold text-foreground">metodo innovativo di apprendimento continuo</span> che 
+                  unisce teoria e pratica attraverso <span className="font-semibold text-primary">quiz interattivi</span>, 
+                  <span className="font-semibold text-primary"> corsi live</span> e <span className="font-semibold text-primary">contenuti on-demand</span>.
+                </p>
+                <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+                  Guidati da <span className="font-bold text-foreground">esperti riconosciuti a livello nazionale e internazionale</span>, 
+                  offriamo una <span className="font-semibold text-foreground">piattaforma interattiva</span> dedicata ad 
+                  <span className="font-bold text-primary"> aziende e professionisti</span> che vogliono eccellere nelle certificazioni di 
+                  Cybersecurity, Compliance, AI Security e Leadership.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Button 
+                    size="lg"
+                    className="shadow-lg"
+                    onClick={() => window.location.href = '/register'}
+                  >
+                    Inizia Ora
+                  </Button>
+                  <Button 
+                    size="lg"
+                    variant="outline"
+                    onClick={() => window.location.href = '#quiz-catalog'}
+                  >
+                    Scopri di Più
+                  </Button>
+                </div>
+              </div>
+              <div className="relative h-64 md:h-auto min-h-[400px]">
                 <img 
-                  src={certificationsImage} 
-                  alt="Certificazioni Professionali" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  src={new URL('@assets/stock_images/business_training_pr_80793444.jpg', import.meta.url).href}
+                  alt="CREDACTIVE ACADEMY - Formazione Professionale per Aziende e Professionisti"
+                  className="w-full h-full object-cover"
                 />
               </div>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-3">
-                  <Trophy className="w-6 h-6 text-primary mr-2" />
-                  <h3 className="text-xl font-bold">Certificazioni</h3>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  Preparati per CISSP, CISM e altre certificazioni riconosciute a livello internazionale
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Compliance */}
-            <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src={featuredImages.compliance} 
-                  alt="Compliance e Standard" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-3">
-                  <CheckCircle className="w-6 h-6 text-primary mr-2" />
-                  <h3 className="text-xl font-bold">Compliance</h3>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  Padroneggia ISO 27001, GDPR e standard di conformità normativa essenziali
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* AI Security */}
-            <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src={featuredImages.ai} 
-                  alt="AI Security" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-3">
-                  <ChartLine className="w-6 h-6 text-primary mr-2" />
-                  <h3 className="text-xl font-bold">AI Security</h3>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  Esplora la sicurezza nell'intelligenza artificiale e le tecnologie emergenti
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+            </div>
+          </Card>
         </div>
       </section>
 

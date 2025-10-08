@@ -323,33 +323,6 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* About CREDACTIVE Section */}
-        <Card className="mb-8 overflow-hidden">
-          <div className="grid md:grid-cols-2 gap-0">
-            <div className="p-8 flex flex-col justify-center">
-              <h2 className="text-3xl font-bold mb-4 gradient-text">
-                CREDACTIVE ACADEMY
-              </h2>
-              <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
-                Un metodo <span className="font-semibold text-foreground">innovativo di apprendimento continuo</span> che unisce 
-                teoria e pratica attraverso quiz interattivi, corsi live e contenuti on-demand.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Guidati da <span className="font-semibold text-foreground">esperti riconosciuti a livello nazionale e internazionale</span>, 
-                offriamo una piattaforma interattiva dedicata ad <span className="font-semibold text-foreground">aziende e professionisti</span> che 
-                vogliono eccellere nelle certificazioni di Cybersecurity, Compliance, AI Security e Leadership.
-              </p>
-            </div>
-            <div className="relative h-64 md:h-auto">
-              <img 
-                src={new URL('@assets/image_1759888710727.png', import.meta.url).href}
-                alt="CREDACTIVE ACADEMY - Formazione Professionale"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </Card>
-
         {/* Categories Carousel (12 per page, with pinned priority) */}
         {quizCategories.length > 0 && (
           <div className="mb-8">

@@ -100,6 +100,14 @@ Preferred communication style: Simple, everyday language.
     - **Display Name Logic**: Flexible displayName = nickname || firstName + lastName || 'Utente' fallback
     - **Settings Integration**: Nickname editor in user profile with client and server-side validation
     - **Corporate Integration**: Team leaderboard button in corporate portal, automatic team filtering
+-   **Corporate Content Visibility System**: Granular access control for enterprise-exclusive content:
+    - **Visibility Types**: Each quiz, live course, and on-demand course has a visibilityType field ('public' | 'corporate_exclusive')
+    - **Mapping Tables**: Three dedicated tables (quizCorporateAccess, liveCoursesCorporateAccess, onDemandCoursesCorporateAccess) with composite unique constraints on (contentId, corporateAgreementId) to enforce one-to-one relationships
+    - **Admin UI Controls**: Integrated visibility management in quiz/course creation/edit forms with visibilityType selector and corporate agreements multi-select checklist
+    - **Content Filtering**: Backend automatically filters content based on user type - public users see only public content, corporate users see public + accessible content, admins see all content via isAdminOverride parameter
+    - **API Endpoints**: Dedicated endpoints for granting/revoking corporate access (POST/DELETE /api/admin/corporate-agreements/:id/{quiz,live-course,on-demand-course}-access)
+    - **Access Synchronization**: Corporate access changes execute before dialog cleanup to ensure reliable persistence with proper async flow control
+    - **Security**: Cascading deletes on corporate agreement removal, atomic access grants with duplicate prevention, admin-only access management
 
 # External Dependencies
 

@@ -428,8 +428,48 @@ export const corporateAgreements = pgTable("corporate_agreements", {
   maxUsers: integer("max_users"), // Optional limit on number of users
   currentUsers: integer("current_users").default(0), // Current number of users using this agreement
   notes: text("notes"), // Internal notes about the agreement
+  // B2B fields
+  adminUserId: varchar("admin_user_id").references(() => users.id), // Corporate admin user
+  companyEmail: varchar("company_email", { length: 200 }),
+  companyPhone: varchar("company_phone", { length: 50 }),
+  vatNumber: varchar("vat_number", { length: 100 }), // Partita IVA
+  billingAddress: text("billing_address"),
+  contractStartDate: timestamp("contract_start_date"),
+  contractEndDate: timestamp("contract_end_date"),
+  licensesOwned: integer("licenses_owned").default(0), // Total licenses purchased
+  licensesUsed: integer("licenses_used").default(0), // Licenses currently in use
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Corporate invites for onboarding employees
+export const corporateInvites = pgTable("corporate_invites", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull().references(() => corporateAgreements.id),
+  email: varchar("email", { length: 200 }).notNull(),
+  invitedBy: varchar("invited_by").notNull().references(() => users.id), // Admin who sent invite
+  status: varchar("status", { length: 20 }).default("pending"), // pending, accepted, expired
+  token: varchar("token", { length: 100 }).unique().notNull(), // Unique invite token
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Corporate license packages purchased by companies
+export const corporateLicenses = pgTable("corporate_licenses", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull().references(() => corporateAgreements.id),
+  packageType: varchar("package_type", { length: 50 }).notNull(), // small_10, medium_50, large_100, enterprise_500
+  licenseCount: integer("license_count").notNull(), // Number of licenses in package
+  pricePerLicense: integer("price_per_license").notNull(), // Price in cents
+  totalPrice: integer("total_price").notNull(), // Total price in cents
+  currency: varchar("currency", { length: 3 }).default("EUR"),
+  billingInterval: varchar("billing_interval", { length: 20 }).default("year"), // month, year
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  stripeInvoiceId: varchar("stripe_invoice_id"),
+  status: varchar("status", { length: 20 }).default("active"), // active, expired, cancelled
+  purchasedAt: timestamp("purchased_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
 });
 
 // Application settings for API keys and configuration
@@ -691,8 +731,32 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
   }),
 }));
 
-export const corporateAgreementsRelations = relations(corporateAgreements, ({ many }) => ({
+export const corporateAgreementsRelations = relations(corporateAgreements, ({ one, many }) => ({
   users: many(users),
+  admin: one(users, {
+    fields: [corporateAgreements.adminUserId],
+    references: [users.id],
+  }),
+  invites: many(corporateInvites),
+  licenses: many(corporateLicenses),
+}));
+
+export const corporateInvitesRelations = relations(corporateInvites, ({ one }) => ({
+  corporateAgreement: one(corporateAgreements, {
+    fields: [corporateInvites.corporateAgreementId],
+    references: [corporateAgreements.id],
+  }),
+  inviter: one(users, {
+    fields: [corporateInvites.invitedBy],
+    references: [users.id],
+  }),
+}));
+
+export const corporateLicensesRelations = relations(corporateLicenses, ({ one }) => ({
+  corporateAgreement: one(corporateAgreements, {
+    fields: [corporateLicenses.corporateAgreementId],
+    references: [corporateAgreements.id],
+  }),
 }));
 
 // Types
@@ -724,6 +788,8 @@ export type UserCertificate = typeof userCertificates.$inferSelect;
 export type Leaderboard = typeof leaderboard.$inferSelect;
 export type ActivityLog = typeof activityLog.$inferSelect;
 export type CorporateAgreement = typeof corporateAgreements.$inferSelect;
+export type CorporateInvite = typeof corporateInvites.$inferSelect;
+export type CorporateLicense = typeof corporateLicenses.$inferSelect;
 export type Setting = typeof settings.$inferSelect;
 
 // Insert schemas
@@ -762,6 +828,8 @@ export const insertUserCertificateSchema = createInsertSchema(userCertificates).
 export const insertLeaderboardSchema = createInsertSchema(leaderboard).omit({ id: true, updatedAt: true });
 export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id: true, createdAt: true });
 export const insertCorporateAgreementSchema = createInsertSchema(corporateAgreements).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCorporateInviteSchema = createInsertSchema(corporateInvites).omit({ id: true, createdAt: true });
+export const insertCorporateLicenseSchema = createInsertSchema(corporateLicenses).omit({ id: true });
 export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, createdAt: true, updatedAt: true });
 export const updateSettingSchema = insertSettingSchema.partial();
 
@@ -792,6 +860,8 @@ export type InsertUserCertificate = z.infer<typeof insertUserCertificateSchema>;
 export type InsertLeaderboard = z.infer<typeof insertLeaderboardSchema>;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type InsertCorporateAgreement = z.infer<typeof insertCorporateAgreementSchema>;
+export type InsertCorporateInvite = z.infer<typeof insertCorporateInviteSchema>;
+export type InsertCorporateLicense = z.infer<typeof insertCorporateLicenseSchema>;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type UpdateSetting = z.infer<typeof updateSettingSchema>;
 

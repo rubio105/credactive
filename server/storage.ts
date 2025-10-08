@@ -26,6 +26,8 @@ import {
   leaderboard,
   activityLog,
   corporateAgreements,
+  corporateInvites,
+  corporateLicenses,
   emailTemplates,
   subscriptionPlans,
   type User,
@@ -56,6 +58,8 @@ import {
   type Leaderboard,
   type ActivityLog,
   type CorporateAgreement,
+  type CorporateInvite,
+  type CorporateLicense,
   type EmailTemplate,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
@@ -80,6 +84,8 @@ import {
   type InsertLeaderboard,
   type InsertActivityLog,
   type InsertCorporateAgreement,
+  type InsertCorporateInvite,
+  type InsertCorporateLicense,
   type InsertEmailTemplate,
   type SubscriptionPlan,
   type InsertSubscriptionPlan,
@@ -262,6 +268,19 @@ export interface IStorage {
   incrementCorporateAgreementUsers(id: string): Promise<boolean>;
   decrementCorporateAgreementUsers(id: string): Promise<void>;
   getUsersByCorporateAgreement(agreementId: string): Promise<User[]>;
+  getCorporateAgreementByAdminUserId(userId: string): Promise<CorporateAgreement | undefined>;
+  
+  // Corporate invite operations
+  createCorporateInvite(invite: any): Promise<any>;
+  getCorporateInviteByToken(token: string): Promise<any>;
+  getCorporateInvitesByAgreement(agreementId: string): Promise<any[]>;
+  updateCorporateInviteStatus(id: string, status: string, acceptedAt?: Date): Promise<any>;
+  deleteCorporateInvite(id: string): Promise<void>;
+  
+  // Corporate license operations
+  createCorporateLicense(license: any): Promise<any>;
+  getCorporateLicensesByAgreement(agreementId: string): Promise<any[]>;
+  updateCorporateLicense(id: string, updates: any): Promise<any>;
   
   // Settings operations
   getSetting(key: string): Promise<Setting | undefined>;

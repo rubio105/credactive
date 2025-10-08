@@ -133,52 +133,22 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* About CREDACTIVE ACADEMY */}
+      {/* About Section */}
       <section className="py-16 bg-gradient-to-b from-background to-secondary/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="overflow-hidden shadow-2xl">
-            <div className="grid md:grid-cols-2 gap-0">
-              <div className="p-8 md:p-12 flex flex-col justify-center">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">
-                  CREDACTIVE ACADEMY
-                </h2>
-                <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                  Un <span className="font-bold text-foreground">metodo innovativo di apprendimento continuo</span> che 
-                  unisce teoria e pratica attraverso <span className="font-semibold text-primary">quiz interattivi</span>, 
-                  <span className="font-semibold text-primary"> corsi live</span> e <span className="font-semibold text-primary">contenuti on-demand</span>.
-                </p>
-                <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                  Guidati da <span className="font-bold text-foreground">esperti riconosciuti a livello nazionale e internazionale</span>, 
-                  offriamo una <span className="font-semibold text-foreground">piattaforma interattiva</span> dedicata ad 
-                  <span className="font-bold text-primary"> aziende e professionisti</span> che vogliono eccellere nelle certificazioni di 
-                  Cybersecurity, Compliance, AI Security e Leadership.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Button 
-                    size="lg"
-                    className="shadow-lg"
-                    onClick={() => window.location.href = '/register'}
-                  >
-                    Inizia Ora
-                  </Button>
-                  <Button 
-                    size="lg"
-                    variant="outline"
-                    onClick={() => window.location.href = '#quiz-catalog'}
-                  >
-                    Scopri di Più
-                  </Button>
-                </div>
-              </div>
-              <div className="relative h-64 md:h-auto min-h-[400px]">
-                <img 
-                  src={new URL('@assets/stock_images/business_training_pr_80793444.jpg', import.meta.url).href}
-                  alt="CREDACTIVE ACADEMY - Formazione Professionale per Aziende e Professionisti"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          </Card>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+              Un <span className="font-bold text-foreground">metodo innovativo di apprendimento continuo</span> che 
+              unisce teoria e pratica attraverso <span className="font-semibold text-primary">quiz interattivi</span>, 
+              <span className="font-semibold text-primary"> corsi live</span> e <span className="font-semibold text-primary">contenuti on-demand</span>.
+            </p>
+            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              Guidati da <span className="font-bold text-foreground">esperti riconosciuti a livello nazionale e internazionale</span>, 
+              offriamo una <span className="font-semibold text-foreground">piattaforma interattiva</span> dedicata ad 
+              <span className="font-bold text-primary"> aziende e professionisti</span> che vogliono eccellere nelle certificazioni di 
+              Cybersecurity, Compliance, AI Security e Leadership.
+            </p>
+          </div>
         </div>
       </section>
 

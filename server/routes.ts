@@ -32,7 +32,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
@@ -5030,6 +5030,54 @@ Explicación de audio:`
         type: 'session_started',
         session: streamingSession
       });
+
+      // Send email notifications to enrolled users (async, don't block response)
+      (async () => {
+        try {
+          const session = await storage.getSessionById(validated.sessionId);
+          if (!session) return;
+
+          const course = await storage.getLiveCourseById(session.courseId);
+          if (!course) return;
+
+          const enrollments = await storage.getLiveCourseEnrollmentsByCourseId(session.courseId);
+          
+          const baseUrl = process.env.BASE_URL || 
+            (process.env.REPLIT_DOMAINS?.split(',')[0] 
+              ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+              : 'http://localhost:5000');
+          const sessionUrl = `${baseUrl}/live-session/${session.id}`;
+          const startDate = new Date(session.startDate).toLocaleString('it-IT', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          for (const enrollment of enrollments) {
+            const user = await storage.getUser(enrollment.userId);
+            if (!user?.email) continue;
+
+            try {
+              await sendTemplateEmail('live_session_started', user.email, {
+                firstName: user.firstName || 'Studente',
+                courseTitle: course.title,
+                sessionTitle: validated.title,
+                instructor: course.instructor || 'Docente',
+                startDate,
+                sessionUrl
+              });
+            } catch (emailError) {
+              console.error(`Failed to send notification email to ${user.email}:`, emailError);
+            }
+          }
+          
+          console.log(`Sent ${enrollments.length} live session notification emails`);
+        } catch (notificationError) {
+          console.error('Error sending live session notifications:', notificationError);
+        }
+      })();
       
       res.json(streamingSession);
     } catch (error: any) {

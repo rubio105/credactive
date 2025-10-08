@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navigation from "@/components/navigation";
 import Timer from "@/components/ui/timer";
+import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages, Volume2, Mic, Coins } from "lucide-react";
@@ -937,8 +938,16 @@ export default function QuizPage() {
   const currentQuestion = getCurrentQuestion();
   const progress = ((currentQuestionIndex + 1) / limitedQuestions.length) * 100;
 
+  const quizTitle = translatedQuizTitle || quizData.quiz.title;
+  const quizDescription = quizData.quiz.description || '';
+  
   return (
     <div className="min-h-screen bg-background select-none">
+      <SEO 
+        title={`${quizTitle} - Quiz Online Certificazione`}
+        description={`${quizDescription.substring(0, 150)}. Testa le tue conoscenze con questo quiz professionale. Domande aggiornate, spiegazioni dettagliate e report completi.`}
+        keywords={`${quizTitle} quiz, ${quizTitle} certificazione, ${quizTitle} online, quiz cybersecurity, preparazione certificazione`}
+      />
       <Navigation />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

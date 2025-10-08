@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
+import { SEO } from "@/components/SEO";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount } from "@shared/schema";
 import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Calendar, Users, Video, Sparkles, Headphones } from "lucide-react";
@@ -37,6 +38,12 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Certificazioni Cybersecurity Online - Quiz CISSP, CISM, ISO 27001"
+        description="Preparati per certificazioni cybersecurity con oltre 1.000.000 di domande professionali. Quiz CISSP, CISM, OSCP, ISO 27001, GDPR, NIS2, DORA. Corsi live con esperti e certificati riconosciuti. Inizia gratis oggi!"
+        keywords="certificazioni cybersecurity, CISSP online, CISM training, ISO 27001 corso, GDPR compliance, NIS2, DORA, OSCP preparazione, cybersecurity quiz, sicurezza informatica formazione, ethical hacking certificazione"
+        canonicalUrl="https://credactive.academy"
+      />
       <Navigation />
 
       {/* Hero Section */}

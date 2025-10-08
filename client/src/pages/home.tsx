@@ -9,6 +9,7 @@ import QuizCard from "@/components/quiz-card";
 import LanguageSelector from "@/components/language-selector";
 import { LiveCourseModal } from "@/components/LiveCourseModal";
 import Footer from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
@@ -137,6 +138,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Dashboard Quiz - I Tuoi Corsi Cybersecurity"
+        description="Accedi ai tuoi quiz personalizzati su CISSP, CISM, ISO 27001, GDPR e altre certificazioni cybersecurity. Monitora i progressi, visualizza statistiche e continua la tua preparazione."
+        keywords="dashboard quiz, progressi cybersecurity, certificazioni online, CISSP preparazione, CISM quiz"
+      />
       <Navigation />
       
       <LanguageSelector 

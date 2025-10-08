@@ -4464,6 +4464,105 @@ Explicación de audio:`
       res.status(500).json({ message: 'Failed to validate invite' });
     }
   });
+  
+  // Corporate content access - Quiz (admin only)
+  app.post('/api/admin/corporate-access/quiz', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { quizId, corporateAgreementId } = req.body;
+      
+      if (!quizId || !corporateAgreementId) {
+        return res.status(400).json({ message: 'Quiz ID and Corporate Agreement ID are required' });
+      }
+      
+      const access = await storage.grantQuizAccess(quizId, corporateAgreementId);
+      res.json({ message: 'Quiz access granted successfully', access });
+    } catch (error: any) {
+      console.error('Grant quiz access error:', error);
+      res.status(500).json({ message: 'Failed to grant quiz access' });
+    }
+  });
+  
+  app.delete('/api/admin/corporate-access/quiz', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { quizId, corporateAgreementId } = req.body;
+      
+      if (!quizId || !corporateAgreementId) {
+        return res.status(400).json({ message: 'Quiz ID and Corporate Agreement ID are required' });
+      }
+      
+      await storage.revokeQuizAccess(quizId, corporateAgreementId);
+      res.json({ message: 'Quiz access revoked successfully' });
+    } catch (error: any) {
+      console.error('Revoke quiz access error:', error);
+      res.status(500).json({ message: 'Failed to revoke quiz access' });
+    }
+  });
+  
+  // Corporate content access - Live Course (admin only)
+  app.post('/api/admin/corporate-access/live-course', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { liveCourseId, corporateAgreementId } = req.body;
+      
+      if (!liveCourseId || !corporateAgreementId) {
+        return res.status(400).json({ message: 'Live Course ID and Corporate Agreement ID are required' });
+      }
+      
+      const access = await storage.grantLiveCourseAccess(liveCourseId, corporateAgreementId);
+      res.json({ message: 'Live course access granted successfully', access });
+    } catch (error: any) {
+      console.error('Grant live course access error:', error);
+      res.status(500).json({ message: 'Failed to grant live course access' });
+    }
+  });
+  
+  app.delete('/api/admin/corporate-access/live-course', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { liveCourseId, corporateAgreementId } = req.body;
+      
+      if (!liveCourseId || !corporateAgreementId) {
+        return res.status(400).json({ message: 'Live Course ID and Corporate Agreement ID are required' });
+      }
+      
+      await storage.revokeLiveCourseAccess(liveCourseId, corporateAgreementId);
+      res.json({ message: 'Live course access revoked successfully' });
+    } catch (error: any) {
+      console.error('Revoke live course access error:', error);
+      res.status(500).json({ message: 'Failed to revoke live course access' });
+    }
+  });
+  
+  // Corporate content access - On-Demand Course (admin only)
+  app.post('/api/admin/corporate-access/on-demand-course', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { onDemandCourseId, corporateAgreementId } = req.body;
+      
+      if (!onDemandCourseId || !corporateAgreementId) {
+        return res.status(400).json({ message: 'On-Demand Course ID and Corporate Agreement ID are required' });
+      }
+      
+      const access = await storage.grantOnDemandCourseAccess(onDemandCourseId, corporateAgreementId);
+      res.json({ message: 'On-demand course access granted successfully', access });
+    } catch (error: any) {
+      console.error('Grant on-demand course access error:', error);
+      res.status(500).json({ message: 'Failed to grant on-demand course access' });
+    }
+  });
+  
+  app.delete('/api/admin/corporate-access/on-demand-course', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { onDemandCourseId, corporateAgreementId } = req.body;
+      
+      if (!onDemandCourseId || !corporateAgreementId) {
+        return res.status(400).json({ message: 'On-Demand Course ID and Corporate Agreement ID are required' });
+      }
+      
+      await storage.revokeOnDemandCourseAccess(onDemandCourseId, corporateAgreementId);
+      res.json({ message: 'On-demand course access revoked successfully' });
+    } catch (error: any) {
+      console.error('Revoke on-demand course access error:', error);
+      res.status(500).json({ message: 'Failed to revoke on-demand course access' });
+    }
+  });
 
   // Update user nickname
   app.patch('/api/user/nickname', isAuthenticated, async (req, res) => {

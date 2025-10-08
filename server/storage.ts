@@ -28,6 +28,9 @@ import {
   corporateAgreements,
   corporateInvites,
   corporateLicenses,
+  quizCorporateAccess,
+  liveCourseCorporateAccess,
+  onDemandCourseCorporateAccess,
   emailTemplates,
   subscriptionPlans,
   type User,
@@ -60,6 +63,9 @@ import {
   type CorporateAgreement,
   type CorporateInvite,
   type CorporateLicense,
+  type QuizCorporateAccess,
+  type LiveCourseCorporateAccess,
+  type OnDemandCourseCorporateAccess,
   type EmailTemplate,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
@@ -281,6 +287,22 @@ export interface IStorage {
   createCorporateLicense(license: InsertCorporateLicense): Promise<CorporateLicense>;
   getCorporateLicensesByAgreement(agreementId: string): Promise<CorporateLicense[]>;
   updateCorporateLicense(id: string, updates: Partial<CorporateLicense>): Promise<CorporateLicense>;
+  
+  // Corporate content access operations
+  grantQuizAccess(quizId: string, corporateAgreementId: string): Promise<QuizCorporateAccess>;
+  revokeQuizAccess(quizId: string, corporateAgreementId: string): Promise<void>;
+  getQuizAccessByCorporateAgreement(corporateAgreementId: string): Promise<QuizCorporateAccess[]>;
+  checkQuizAccess(quizId: string, corporateAgreementId: string): Promise<boolean>;
+  
+  grantLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<LiveCourseCorporateAccess>;
+  revokeLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<void>;
+  getLiveCourseAccessByCorporateAgreement(corporateAgreementId: string): Promise<LiveCourseCorporateAccess[]>;
+  checkLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<boolean>;
+  
+  grantOnDemandCourseAccess(onDemandCourseId: string, corporateAgreementId: string): Promise<OnDemandCourseCorporateAccess>;
+  revokeOnDemandCourseAccess(onDemandCourseId: string, corporateAgreementId: string): Promise<void>;
+  getOnDemandCourseAccessByCorporateAgreement(corporateAgreementId: string): Promise<OnDemandCourseCorporateAccess[]>;
+  checkOnDemandCourseAccess(onDemandCourseId: string, corporateAgreementId: string): Promise<boolean>;
   
   // Settings operations
   getSetting(key: string): Promise<Setting | undefined>;
@@ -1579,6 +1601,174 @@ export class DatabaseStorage implements IStorage {
       .where(eq(corporateLicenses.id, id))
       .returning();
     return updated;
+  }
+  
+  // Corporate content access operations - Quiz
+  async grantQuizAccess(quizId: string, corporateAgreementId: string): Promise<QuizCorporateAccess> {
+    const [access] = await db
+      .insert(quizCorporateAccess)
+      .values({ quizId, corporateAgreementId })
+      .onConflictDoNothing()
+      .returning();
+    
+    // If access already exists, fetch and return it
+    if (!access) {
+      const [existing] = await db
+        .select()
+        .from(quizCorporateAccess)
+        .where(
+          and(
+            eq(quizCorporateAccess.quizId, quizId),
+            eq(quizCorporateAccess.corporateAgreementId, corporateAgreementId)
+          )
+        );
+      return existing;
+    }
+    
+    return access;
+  }
+  
+  async revokeQuizAccess(quizId: string, corporateAgreementId: string): Promise<void> {
+    await db
+      .delete(quizCorporateAccess)
+      .where(
+        and(
+          eq(quizCorporateAccess.quizId, quizId),
+          eq(quizCorporateAccess.corporateAgreementId, corporateAgreementId)
+        )
+      );
+  }
+  
+  async getQuizAccessByCorporateAgreement(corporateAgreementId: string): Promise<QuizCorporateAccess[]> {
+    return await db
+      .select()
+      .from(quizCorporateAccess)
+      .where(eq(quizCorporateAccess.corporateAgreementId, corporateAgreementId));
+  }
+  
+  async checkQuizAccess(quizId: string, corporateAgreementId: string): Promise<boolean> {
+    const [access] = await db
+      .select()
+      .from(quizCorporateAccess)
+      .where(
+        and(
+          eq(quizCorporateAccess.quizId, quizId),
+          eq(quizCorporateAccess.corporateAgreementId, corporateAgreementId)
+        )
+      );
+    return !!access;
+  }
+  
+  // Corporate content access operations - Live Course
+  async grantLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<LiveCourseCorporateAccess> {
+    const [access] = await db
+      .insert(liveCourseCorporateAccess)
+      .values({ liveCourseId, corporateAgreementId })
+      .onConflictDoNothing()
+      .returning();
+    
+    // If access already exists, fetch and return it
+    if (!access) {
+      const [existing] = await db
+        .select()
+        .from(liveCourseCorporateAccess)
+        .where(
+          and(
+            eq(liveCourseCorporateAccess.liveCourseId, liveCourseId),
+            eq(liveCourseCorporateAccess.corporateAgreementId, corporateAgreementId)
+          )
+        );
+      return existing;
+    }
+    
+    return access;
+  }
+  
+  async revokeLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<void> {
+    await db
+      .delete(liveCourseCorporateAccess)
+      .where(
+        and(
+          eq(liveCourseCorporateAccess.liveCourseId, liveCourseId),
+          eq(liveCourseCorporateAccess.corporateAgreementId, corporateAgreementId)
+        )
+      );
+  }
+  
+  async getLiveCourseAccessByCorporateAgreement(corporateAgreementId: string): Promise<LiveCourseCorporateAccess[]> {
+    return await db
+      .select()
+      .from(liveCourseCorporateAccess)
+      .where(eq(liveCourseCorporateAccess.corporateAgreementId, corporateAgreementId));
+  }
+  
+  async checkLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<boolean> {
+    const [access] = await db
+      .select()
+      .from(liveCourseCorporateAccess)
+      .where(
+        and(
+          eq(liveCourseCorporateAccess.liveCourseId, liveCourseId),
+          eq(liveCourseCorporateAccess.corporateAgreementId, corporateAgreementId)
+        )
+      );
+    return !!access;
+  }
+  
+  // Corporate content access operations - On-Demand Course
+  async grantOnDemandCourseAccess(onDemandCourseId: string, corporateAgreementId: string): Promise<OnDemandCourseCorporateAccess> {
+    const [access] = await db
+      .insert(onDemandCourseCorporateAccess)
+      .values({ onDemandCourseId, corporateAgreementId })
+      .onConflictDoNothing()
+      .returning();
+    
+    // If access already exists, fetch and return it
+    if (!access) {
+      const [existing] = await db
+        .select()
+        .from(onDemandCourseCorporateAccess)
+        .where(
+          and(
+            eq(onDemandCourseCorporateAccess.onDemandCourseId, onDemandCourseId),
+            eq(onDemandCourseCorporateAccess.corporateAgreementId, corporateAgreementId)
+          )
+        );
+      return existing;
+    }
+    
+    return access;
+  }
+  
+  async revokeOnDemandCourseAccess(onDemandCourseId: string, corporateAgreementId: string): Promise<void> {
+    await db
+      .delete(onDemandCourseCorporateAccess)
+      .where(
+        and(
+          eq(onDemandCourseCorporateAccess.onDemandCourseId, onDemandCourseId),
+          eq(onDemandCourseCorporateAccess.corporateAgreementId, corporateAgreementId)
+        )
+      );
+  }
+  
+  async getOnDemandCourseAccessByCorporateAgreement(corporateAgreementId: string): Promise<OnDemandCourseCorporateAccess[]> {
+    return await db
+      .select()
+      .from(onDemandCourseCorporateAccess)
+      .where(eq(onDemandCourseCorporateAccess.corporateAgreementId, corporateAgreementId));
+  }
+  
+  async checkOnDemandCourseAccess(onDemandCourseId: string, corporateAgreementId: string): Promise<boolean> {
+    const [access] = await db
+      .select()
+      .from(onDemandCourseCorporateAccess)
+      .where(
+        and(
+          eq(onDemandCourseCorporateAccess.onDemandCourseId, onDemandCourseId),
+          eq(onDemandCourseCorporateAccess.corporateAgreementId, corporateAgreementId)
+        )
+      );
+    return !!access;
   }
   
   // Settings operations

@@ -10,6 +10,7 @@ import {
   boolean,
   uuid,
   serial,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -110,9 +111,11 @@ export const quizzes = pgTable("quizzes", {
 export const quizCorporateAccess = pgTable("quiz_corporate_access", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   quizId: uuid("quiz_id").notNull().references(() => quizzes.id, { onDelete: 'cascade' }),
-  corporateAgreementId: uuid("corporate_agreement_id").notNull(),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull().references(() => corporateAgreements.id, { onDelete: 'cascade' }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueQuizAgreement: unique().on(table.quizId, table.corporateAgreementId),
+}));
 
 // Quiz questions
 export const questions = pgTable("questions", {
@@ -209,9 +212,11 @@ export const liveCourses = pgTable("live_courses", {
 export const liveCourseCorporateAccess = pgTable("live_course_corporate_access", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   liveCourseId: uuid("live_course_id").notNull().references(() => liveCourses.id, { onDelete: 'cascade' }),
-  corporateAgreementId: uuid("corporate_agreement_id").notNull(),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull().references(() => corporateAgreements.id, { onDelete: 'cascade' }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueCourseAgreement: unique().on(table.liveCourseId, table.corporateAgreementId),
+}));
 
 // Live course sessions (dates)
 export const liveCourseSessions = pgTable("live_course_sessions", {
@@ -272,9 +277,11 @@ export const onDemandCourses = pgTable("on_demand_courses", {
 export const onDemandCourseCorporateAccess = pgTable("on_demand_course_corporate_access", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   onDemandCourseId: uuid("on_demand_course_id").notNull().references(() => onDemandCourses.id, { onDelete: 'cascade' }),
-  corporateAgreementId: uuid("corporate_agreement_id").notNull(),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull().references(() => corporateAgreements.id, { onDelete: 'cascade' }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueCourseAgreement: unique().on(table.onDemandCourseId, table.corporateAgreementId),
+}));
 
 // Course videos
 export const courseVideos = pgTable("course_videos", {

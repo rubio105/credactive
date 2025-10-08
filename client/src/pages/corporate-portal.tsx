@@ -39,6 +39,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -97,14 +104,34 @@ export default function CorporatePortal() {
   const { toast } = useToast();
   const [inviteEmail, setInviteEmail] = useState("");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteType, setInviteType] = useState<'general' | 'course'>('general');
+  const [courseType, setCourseType] = useState<'live' | 'on_demand'>('live');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
 
   const { data: dashboard, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/corporate/dashboard"],
   });
 
+  // Load live courses for course selection
+  const { data: liveCourses } = useQuery<any[]>({
+    queryKey: ["/api/live-courses"],
+    enabled: inviteType === 'course' && courseType === 'live',
+  });
+
+  // Load categories (on-demand courses) for course selection
+  const { data: categories } = useQuery<any[]>({
+    queryKey: ["/api/categories"],
+    enabled: inviteType === 'course' && courseType === 'on_demand',
+  });
+
   const createInviteMutation = useMutation({
-    mutationFn: async (email: string) => {
-      const res = await apiRequest("/api/corporate/invites", "POST", { email });
+    mutationFn: async (data: { 
+      email: string; 
+      targetCourseId?: string; 
+      targetCourseType?: 'live' | 'on_demand';
+      targetCourseName?: string;
+    }) => {
+      const res = await apiRequest("/api/corporate/invites", "POST", data);
       return res.json();
     },
     onSuccess: () => {
@@ -113,6 +140,8 @@ export default function CorporatePortal() {
         description: "L'invito è stato inviato via email con successo.",
       });
       setInviteEmail("");
+      setInviteType('general');
+      setSelectedCourseId('');
       setIsInviteDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/corporate/dashboard"] });
     },
@@ -155,7 +184,41 @@ export default function CorporatePortal() {
       });
       return;
     }
-    createInviteMutation.mutate(inviteEmail.toLowerCase().trim());
+
+    // Validate course-specific invite
+    if (inviteType === 'course' && !selectedCourseId) {
+      toast({
+        title: "Errore",
+        description: "Seleziona un corso per l'invito corso-specifico.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const inviteData: { 
+      email: string; 
+      targetCourseId?: string; 
+      targetCourseType?: 'live' | 'on_demand';
+      targetCourseName?: string;
+    } = {
+      email: inviteEmail.toLowerCase().trim(),
+    };
+
+    if (inviteType === 'course' && selectedCourseId) {
+      inviteData.targetCourseId = selectedCourseId;
+      inviteData.targetCourseType = courseType;
+      
+      // Find course name
+      if (courseType === 'live') {
+        const course = liveCourses?.find(c => c.id === selectedCourseId);
+        inviteData.targetCourseName = course?.title;
+      } else {
+        const category = categories?.find(c => c.id === selectedCourseId);
+        inviteData.targetCourseName = category?.name;
+      }
+    }
+
+    createInviteMutation.mutate(inviteData);
   };
 
   if (isLoading) {
@@ -223,7 +286,7 @@ export default function CorporatePortal() {
                 Invita Dipendente
               </Button>
             </DialogTrigger>
-            <DialogContent>
+<DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Invita un Nuovo Dipendente</DialogTitle>
                 <DialogDescription>
@@ -243,6 +306,73 @@ export default function CorporatePortal() {
                     data-testid="input-invite-email"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="invite-type">Tipo di Invito</Label>
+                  <Select 
+                    value={inviteType} 
+                    onValueChange={(value: 'general' | 'course') => {
+                      setInviteType(value);
+                      setSelectedCourseId('');
+                    }}
+                  >
+                    <SelectTrigger id="invite-type" data-testid="select-invite-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">Invito Generale (Accesso a tutti i contenuti)</SelectItem>
+                      <SelectItem value="course">Invito a Corso Specifico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {inviteType === 'course' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="course-type">Tipo di Corso</Label>
+                      <Select 
+                        value={courseType} 
+                        onValueChange={(value: 'live' | 'on_demand') => {
+                          setCourseType(value);
+                          setSelectedCourseId('');
+                        }}
+                      >
+                        <SelectTrigger id="course-type" data-testid="select-course-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="live">Corso Live</SelectItem>
+                          <SelectItem value="on_demand">Corso On-Demand</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="course-select">Seleziona Corso</Label>
+                      <Select 
+                        value={selectedCourseId} 
+                        onValueChange={setSelectedCourseId}
+                      >
+                        <SelectTrigger id="course-select" data-testid="select-course">
+                          <SelectValue placeholder="Scegli un corso..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courseType === 'live' && liveCourses?.map(course => (
+                            <SelectItem key={course.id} value={course.id}>
+                              {course.title}
+                            </SelectItem>
+                          ))}
+                          {courseType === 'on_demand' && categories?.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   Licenze disponibili: {dashboard.agreement.licensesOwned - dashboard.agreement.licensesUsed} / {dashboard.agreement.licensesOwned}
                 </div>
@@ -250,7 +380,7 @@ export default function CorporatePortal() {
               <DialogFooter>
                 <Button 
                   onClick={handleSendInvite}
-                  disabled={createInviteMutation.isPending}
+                  disabled={createInviteMutation.isPending || (inviteType === 'course' && !selectedCourseId)}
                   data-testid="button-send-invite"
                 >
                   {createInviteMutation.isPending ? "Invio..." : "Invia Invito"}

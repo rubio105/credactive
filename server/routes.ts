@@ -4498,6 +4498,23 @@ Explicación de audio:`
       if (!email || !email.trim()) {
         return res.status(400).json({ message: 'Email is required' });
       }
+
+      // Validate course-specific invite fields
+      if (targetCourseType || targetCourseId || targetCourseName) {
+        // If any course field is provided, all must be provided
+        if (!targetCourseId || !targetCourseType || !targetCourseName) {
+          return res.status(400).json({ 
+            message: 'Course-specific invites require courseId, courseType, and courseName' 
+          });
+        }
+        
+        // Validate courseType
+        if (targetCourseType !== 'live' && targetCourseType !== 'on_demand') {
+          return res.status(400).json({ 
+            message: 'Invalid course type. Must be "live" or "on_demand"' 
+          });
+        }
+      }
       
       // Check if user is corporate admin
       const agreement = await storage.getCorporateAgreementByAdminUserId(userId);

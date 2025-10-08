@@ -1710,7 +1710,7 @@ ${JSON.stringify(questionsToTranslate)}`;
       res.json({
         message: `Email marketing inviata a ${result.sent} utenti (target: ${filtered.length})`,
         ...result,
-        totalSubscribers: subscribedUsers.length
+        totalSubscribers: filtered.length
       });
     } catch (error) {
       console.error("Error sending marketing email:", error);
@@ -4007,6 +4007,66 @@ Explicación de audio:`
         message: "Failed to generate extended audio",
         error: error.message 
       });
+    }
+  });
+
+  // Sitemap.xml endpoint for SEO
+  app.get('/sitemap.xml', async (req, res) => {
+    try {
+      const categories = await storage.getCategories();
+      const quizzes = await storage.getAllQuizzes();
+      const staticPages = await storage.getAllContentPages();
+      
+      const baseUrl = 'https://credactive.academy';
+      const now = new Date().toISOString().split('T')[0];
+      
+      let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/home</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>`;
+      
+      // Add all quiz pages
+      for (const quiz of quizzes) {
+        sitemap += `
+  <url>
+    <loc>${baseUrl}/quiz/${quiz.id}</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+      }
+      
+      // Add static content pages
+      for (const page of staticPages) {
+        if (page.slug) {
+          sitemap += `
+  <url>
+    <loc>${baseUrl}/page/${page.slug}</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`;
+        }
+      }
+      
+      sitemap += `
+</urlset>`;
+      
+      res.header('Content-Type', 'application/xml');
+      res.send(sitemap);
+    } catch (error) {
+      console.error('Sitemap generation error:', error);
+      res.status(500).send('Error generating sitemap');
     }
   });
 

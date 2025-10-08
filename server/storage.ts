@@ -271,16 +271,16 @@ export interface IStorage {
   getCorporateAgreementByAdminUserId(userId: string): Promise<CorporateAgreement | undefined>;
   
   // Corporate invite operations
-  createCorporateInvite(invite: any): Promise<any>;
-  getCorporateInviteByToken(token: string): Promise<any>;
-  getCorporateInvitesByAgreement(agreementId: string): Promise<any[]>;
-  updateCorporateInviteStatus(id: string, status: string, acceptedAt?: Date): Promise<any>;
+  createCorporateInvite(invite: InsertCorporateInvite): Promise<CorporateInvite>;
+  getCorporateInviteByToken(token: string): Promise<CorporateInvite | undefined>;
+  getCorporateInvitesByAgreement(agreementId: string): Promise<CorporateInvite[]>;
+  updateCorporateInviteStatus(id: string, status: string, acceptedAt?: Date): Promise<CorporateInvite>;
   deleteCorporateInvite(id: string): Promise<void>;
   
   // Corporate license operations
-  createCorporateLicense(license: any): Promise<any>;
-  getCorporateLicensesByAgreement(agreementId: string): Promise<any[]>;
-  updateCorporateLicense(id: string, updates: any): Promise<any>;
+  createCorporateLicense(license: InsertCorporateLicense): Promise<CorporateLicense>;
+  getCorporateLicensesByAgreement(agreementId: string): Promise<CorporateLicense[]>;
+  updateCorporateLicense(id: string, updates: Partial<CorporateLicense>): Promise<CorporateLicense>;
   
   // Settings operations
   getSetting(key: string): Promise<Setting | undefined>;
@@ -1507,6 +1507,72 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.corporateAgreementId, agreementId))
       .orderBy(desc(users.createdAt));
+  }
+  
+  async getCorporateAgreementByAdminUserId(userId: string): Promise<CorporateAgreement | undefined> {
+    const [agreement] = await db
+      .select()
+      .from(corporateAgreements)
+      .where(eq(corporateAgreements.adminUserId, userId));
+    return agreement;
+  }
+  
+  // Corporate invite operations
+  async createCorporateInvite(invite: InsertCorporateInvite): Promise<CorporateInvite> {
+    const [created] = await db.insert(corporateInvites).values(invite).returning();
+    return created;
+  }
+  
+  async getCorporateInviteByToken(token: string): Promise<CorporateInvite | undefined> {
+    const [invite] = await db
+      .select()
+      .from(corporateInvites)
+      .where(eq(corporateInvites.token, token));
+    return invite;
+  }
+  
+  async getCorporateInvitesByAgreement(agreementId: string): Promise<CorporateInvite[]> {
+    return await db
+      .select()
+      .from(corporateInvites)
+      .where(eq(corporateInvites.corporateAgreementId, agreementId))
+      .orderBy(desc(corporateInvites.createdAt));
+  }
+  
+  async updateCorporateInviteStatus(id: string, status: string, acceptedAt?: Date): Promise<CorporateInvite> {
+    const [updated] = await db
+      .update(corporateInvites)
+      .set({ status, acceptedAt })
+      .where(eq(corporateInvites.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteCorporateInvite(id: string): Promise<void> {
+    await db.delete(corporateInvites).where(eq(corporateInvites.id, id));
+  }
+  
+  // Corporate license operations
+  async createCorporateLicense(license: InsertCorporateLicense): Promise<CorporateLicense> {
+    const [created] = await db.insert(corporateLicenses).values(license).returning();
+    return created;
+  }
+  
+  async getCorporateLicensesByAgreement(agreementId: string): Promise<CorporateLicense[]> {
+    return await db
+      .select()
+      .from(corporateLicenses)
+      .where(eq(corporateLicenses.corporateAgreementId, agreementId))
+      .orderBy(desc(corporateLicenses.purchasedAt));
+  }
+  
+  async updateCorporateLicense(id: string, updates: Partial<CorporateLicense>): Promise<CorporateLicense> {
+    const [updated] = await db
+      .update(corporateLicenses)
+      .set(updates)
+      .where(eq(corporateLicenses.id, id))
+      .returning();
+    return updated;
   }
   
   // Settings operations

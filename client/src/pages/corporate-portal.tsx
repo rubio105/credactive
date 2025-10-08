@@ -18,7 +18,8 @@ import {
   XCircle,
   Clock,
   Download,
-  Trash2
+  Trash2,
+  Trophy
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -201,7 +202,17 @@ export default function CorporatePortal() {
               Dashboard Aziendale • Piano {dashboard.agreement.tier}
             </p>
           </div>
-          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <div className="flex gap-3">
+            <Button 
+              size="lg"
+              variant="outline"
+              onClick={() => window.location.href = '/leaderboard'}
+              data-testid="button-view-leaderboard"
+            >
+              <Trophy className="mr-2 h-5 w-5" />
+              Classifica Team
+            </Button>
+            <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
             <DialogTrigger asChild>
               <Button 
                 size="lg" 
@@ -247,6 +258,7 @@ export default function CorporatePortal() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Metrics Cards */}

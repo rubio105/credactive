@@ -4888,6 +4888,99 @@ Explicación de audio:`
     }
   });
   
+  // Bulk invite via CSV upload
+  app.post('/api/corporate/invites/bulk-csv', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { emails, courseType, courseId, courseName } = req.body;
+      
+      if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        return res.status(400).json({ message: 'emails must be a non-empty array' });
+      }
+      
+      // Validate course fields if any is provided
+      if ((courseType || courseId || courseName) && (!courseType || !courseId || !courseName)) {
+        return res.status(400).json({ 
+          message: 'If providing course details, all fields (courseType, courseId, courseName) are required' 
+        });
+      }
+      
+      if (courseType && courseType !== 'live' && courseType !== 'on_demand') {
+        return res.status(400).json({ message: 'Invalid courseType. Must be "live" or "on_demand"' });
+      }
+      
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      const results = [];
+      const errors = [];
+      
+      for (const email of emails) {
+        try {
+          const normalizedEmail = email.toLowerCase().trim();
+          
+          // Validate email format
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            errors.push({ email, error: 'Invalid email format' });
+            continue;
+          }
+          
+          // Check if already invited
+          const existingInvites = await storage.getCorporateInvitesByAgreement(agreement.id);
+          if (existingInvites.some(inv => inv.email.toLowerCase() === normalizedEmail && inv.status === 'pending')) {
+            errors.push({ email, error: 'Already invited' });
+            continue;
+          }
+          
+          const token = crypto.randomBytes(32).toString('hex');
+          const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+          
+          const invite = await storage.createCorporateInvite({
+            corporateAgreementId: agreement.id,
+            email: normalizedEmail,
+            invitedBy: userId,
+            token,
+            expiresAt,
+            targetCourseType: courseType || null,
+            targetCourseId: courseId || null,
+            targetCourseName: courseName || null,
+          });
+          
+          // Send email
+          const baseUrl = process.env.BASE_URL || 
+                          (process.env.REPLIT_DOMAINS?.split(',')[0] 
+                            ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+                            : 'http://localhost:5000');
+          const inviteUrl = `${baseUrl}/accept-invite/${token}`;
+          
+          await sendCorporateInviteEmail(
+            normalizedEmail, 
+            agreement.companyName,
+            inviteUrl,
+            courseName || undefined,
+            courseType as 'live' | 'on_demand' | undefined
+          );
+          
+          results.push({ email: normalizedEmail, success: true, inviteId: invite.id });
+        } catch (error: any) {
+          console.error(`Error inviting ${email}:`, error);
+          errors.push({ email, error: error.message || 'Failed to send invite' });
+        }
+      }
+      
+      res.json({ 
+        message: `Sent ${results.length} invites, ${errors.length} failed`,
+        results,
+        errors
+      });
+    } catch (error: any) {
+      console.error('Bulk invite error:', error);
+      res.status(500).json({ message: 'Failed to process bulk invites' });
+    }
+  });
+  
   // Get team members (corporate admin only)
   app.get('/api/corporate/team', isAuthenticated, async (req, res) => {
     try {

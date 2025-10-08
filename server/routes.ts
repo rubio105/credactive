@@ -4724,6 +4724,40 @@ Explicación de audio:`
         }
       }
       
+      // Auto-assign company-wide courses to new employee
+      let companyCourses: any[] = [];
+      try {
+        const courseAssignments = await storage.getCorporateCourseAssignmentsByAgreement(agreement.id);
+        companyCourses = courseAssignments.map(assignment => ({
+          type: assignment.courseType,
+          id: assignment.courseId,
+          name: assignment.courseName
+        }));
+        
+        // Log activity for each assigned course
+        for (const course of companyCourses) {
+          await storage.createActivityLog({
+            userId: user.id,
+            activityType: 'course_auto_assigned',
+            points: 0,
+            metadata: { 
+              courseId: course.id,
+              courseType: course.type,
+              courseName: course.name,
+              corporateAgreementId: agreement.id,
+              source: 'company_wide'
+            },
+          });
+        }
+        
+        if (companyCourses.length > 0) {
+          console.log(`[CORPORATE-COURSES] Auto-assigned ${companyCourses.length} company-wide courses to user ${user.id}`);
+        }
+      } catch (courseError) {
+        console.error('[CORPORATE-COURSES] Error auto-assigning courses:', courseError);
+        // Don't fail invite if course assignment fails
+      }
+      
       res.json({ 
         message: 'Successfully joined organization',
         user: {
@@ -4736,7 +4770,8 @@ Explicación de audio:`
           type: invite.targetCourseType,
           id: invite.targetCourseId,
           name: invite.targetCourseName
-        } : null
+        } : null,
+        companyCourses: companyCourses
       });
     } catch (error: any) {
       console.error('Accept invite error:', error);
@@ -4768,6 +4803,88 @@ Explicación de audio:`
     } catch (error: any) {
       console.error('Delete invite error:', error);
       res.status(500).json({ message: 'Failed to delete invite' });
+    }
+  });
+  
+  // Corporate course assignments - GET all courses assigned to company
+  app.get('/api/corporate/course-assignments', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      const assignments = await storage.getCorporateCourseAssignmentsByAgreement(agreement.id);
+      res.json(assignments);
+    } catch (error: any) {
+      console.error('Get course assignments error:', error);
+      res.status(500).json({ message: 'Failed to get course assignments' });
+    }
+  });
+  
+  // Corporate course assignments - POST assign course to company
+  app.post('/api/corporate/course-assignments', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { courseType, courseId, courseName } = req.body;
+      
+      if (!courseType || !courseId || !courseName) {
+        return res.status(400).json({ message: 'Missing required fields: courseType, courseId, courseName' });
+      }
+      
+      if (courseType !== 'live' && courseType !== 'on_demand') {
+        return res.status(400).json({ message: 'Invalid courseType. Must be "live" or "on_demand"' });
+      }
+      
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      const assignment = await storage.createCorporateCourseAssignment({
+        corporateAgreementId: agreement.id,
+        courseType,
+        courseId,
+        courseName,
+        assignedBy: userId,
+      });
+      
+      res.json(assignment);
+    } catch (error: any) {
+      console.error('Create course assignment error:', error);
+      if (error.message?.includes('duplicate') || error.code === '23505') {
+        return res.status(400).json({ message: 'Course already assigned to this company' });
+      }
+      res.status(500).json({ message: 'Failed to create course assignment' });
+    }
+  });
+  
+  // Corporate course assignments - DELETE remove course from company
+  app.delete('/api/corporate/course-assignments/:id', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params;
+      
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      // Verify assignment belongs to this corporate
+      const assignments = await storage.getCorporateCourseAssignmentsByAgreement(agreement.id);
+      const assignment = assignments.find(a => a.id === id);
+      
+      if (!assignment) {
+        return res.status(404).json({ message: 'Course assignment not found' });
+      }
+      
+      await storage.deleteCorporateCourseAssignment(id);
+      res.json({ message: 'Course assignment deleted successfully' });
+    } catch (error: any) {
+      console.error('Delete course assignment error:', error);
+      res.status(500).json({ message: 'Failed to delete course assignment' });
     }
   });
   

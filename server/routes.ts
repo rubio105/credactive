@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, type WebSocket } from "ws";
 import Stripe from "stripe";
 import OpenAI from "openai";
 import multer from "multer";
@@ -4728,5 +4729,130 @@ Explicación de audio:`
   registerGamificationRoutes(app);
 
   const httpServer = createServer(app);
+  
+  // Setup WebSocket server for live streaming
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws/live-stream' });
+  
+  // Store active connections with metadata
+  interface ClientConnection {
+    ws: WebSocket;
+    userId?: string;
+    sessionId?: string;
+    userName?: string;
+  }
+  
+  const clients = new Map<WebSocket, ClientConnection>();
+  
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('New WebSocket connection');
+    clients.set(ws, { ws });
+    
+    ws.on('message', async (data: Buffer) => {
+      try {
+        const message = JSON.parse(data.toString());
+        const client = clients.get(ws);
+        
+        switch (message.type) {
+          case 'auth':
+            // Authenticate and join session
+            if (client) {
+              client.userId = message.userId;
+              client.sessionId = message.sessionId;
+              client.userName = message.userName;
+              clients.set(ws, client);
+              
+              // Send recent messages
+              if (message.sessionId) {
+                const streamingSession = await storage.getActiveStreamingSession(message.sessionId);
+                if (streamingSession) {
+                  const recentMessages = await storage.getStreamingMessages(streamingSession.id, 50);
+                  ws.send(JSON.stringify({
+                    type: 'history',
+                    messages: recentMessages.reverse()
+                  }));
+                  
+                  // Send active poll if any
+                  const activePoll = await storage.getActivePoll(streamingSession.id);
+                  if (activePoll) {
+                    const pollStats = await storage.getPollStats(activePoll.id);
+                    ws.send(JSON.stringify({
+                      type: 'poll',
+                      poll: activePoll,
+                      stats: pollStats
+                    }));
+                  }
+                }
+              }
+            }
+            break;
+            
+          case 'chat':
+            // Save and broadcast chat message
+            if (client?.userId && client?.sessionId) {
+              const streamingSession = await storage.getActiveStreamingSession(client.sessionId);
+              if (streamingSession) {
+                const savedMessage = await storage.createLiveStreamingMessage({
+                  streamingSessionId: streamingSession.id,
+                  userId: client.userId,
+                  userName: client.userName || 'Anonimo',
+                  message: message.content,
+                  isAdminMessage: message.isAdminMessage || false
+                });
+                
+                // Broadcast to all clients in the same session
+                clients.forEach((c, clientWs) => {
+                  if (c.sessionId === client.sessionId && clientWs.readyState === 1) {
+                    clientWs.send(JSON.stringify({
+                      type: 'chat',
+                      message: savedMessage
+                    }));
+                  }
+                });
+              }
+            }
+            break;
+            
+          case 'poll_vote':
+            // Save poll response
+            if (client?.userId && message.pollId) {
+              // Check if user already voted
+              const existingVote = await storage.getUserPollResponse(message.pollId, client.userId);
+              if (!existingVote) {
+                await storage.createPollResponse({
+                  pollId: message.pollId,
+                  userId: client.userId,
+                  selectedOption: message.selectedOption
+                });
+                
+                // Get updated stats and broadcast
+                const pollStats = await storage.getPollStats(message.pollId);
+                const poll = await storage.getStreamingPolls(client.sessionId!);
+                const activePoll = poll.find(p => p.id === message.pollId);
+                
+                clients.forEach((c, clientWs) => {
+                  if (c.sessionId === client.sessionId && clientWs.readyState === 1) {
+                    clientWs.send(JSON.stringify({
+                      type: 'poll_update',
+                      pollId: message.pollId,
+                      stats: pollStats,
+                      poll: activePoll
+                    }));
+                  }
+                });
+              }
+            }
+            break;
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      clients.delete(ws);
+      console.log('WebSocket connection closed');
+    });
+  });
+  
   return httpServer;
 }

@@ -3265,7 +3265,47 @@ Restituisci SOLO un JSON con:
 
   app.post('/api/admin/corporate-agreements', isAdmin, async (req, res) => {
     try {
-      const validated = insertCorporateAgreementSchema.parse(req.body);
+      const { adminEmail, ...rest } = req.body;
+      let adminUserId = null;
+
+      // Se è fornita un'email admin, cerchiamo o creiamo l'utente
+      if (adminEmail && adminEmail.trim()) {
+        const existingUser = await storage.getUserByEmail(adminEmail.trim());
+        
+        if (existingUser) {
+          // Utente già esiste, usiamo il suo ID
+          adminUserId = existingUser.id;
+        } else {
+          // Creiamo un nuovo utente admin aziendale
+          const bcrypt = await import('bcryptjs');
+          const tempPassword = Math.random().toString(36).slice(-12); // Password temporanea
+          const hashedPassword = await bcrypt.hash(tempPassword, 10);
+          
+          const newUser = await storage.createUser({
+            email: adminEmail.trim(),
+            password: hashedPassword,
+            firstName: rest.companyName || 'Admin',
+            lastName: 'Corporate',
+            isPremium: true, // Admin corporate ha accesso premium
+            emailVerified: false, // Dovrà verificare l'email
+            totalPoints: 0,
+            level: 1,
+            credits: 0,
+            language: 'it'
+          });
+          
+          adminUserId = newUser.id;
+          
+          // TODO: Inviare email con credenziali temporanee
+          console.log(`Created corporate admin user: ${adminEmail} with temp password: ${tempPassword}`);
+        }
+      }
+
+      const validated = insertCorporateAgreementSchema.parse({
+        ...rest,
+        adminUserId
+      });
+      
       const agreement = await storage.createCorporateAgreement(validated);
       res.json(agreement);
     } catch (error) {

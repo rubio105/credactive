@@ -64,6 +64,7 @@ interface NewAgreement {
   isActive: boolean;
   licensesOwned: string;
   notes: string;
+  adminEmail: string;
 }
 
 export function AdminCorporateAgreements() {
@@ -82,6 +83,7 @@ export function AdminCorporateAgreements() {
     isActive: true,
     licensesOwned: '5',
     notes: '',
+    adminEmail: '',
   });
 
   const { data: agreements, isLoading } = useQuery<CorporateAgreement[]>({
@@ -113,6 +115,7 @@ export function AdminCorporateAgreements() {
         isActive: true,
         licensesOwned: '5',
         notes: '',
+        adminEmail: '',
       });
     },
     onError: () => {
@@ -305,6 +308,20 @@ export function AdminCorporateAgreements() {
                 placeholder="es. Acme Corporation"
                 data-testid="input-company-name"
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="adminEmail">Email Admin Aziendale</Label>
+              <Input
+                id="adminEmail"
+                type="email"
+                value={newAgreement.adminEmail}
+                onChange={(e) => setNewAgreement({ ...newAgreement, adminEmail: e.target.value })}
+                placeholder="es. admin@acme.com"
+                data-testid="input-admin-email"
+              />
+              <p className="text-sm text-muted-foreground">
+                Email dell'amministratore aziendale. Se l'utente non esiste, verrà creato automaticamente.
+              </p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="emailDomain">Dominio Email</Label>

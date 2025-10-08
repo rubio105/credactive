@@ -146,7 +146,7 @@ export default function LiveSession() {
     if (!streamingSession?.id || !user) return;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}`;
+    const wsUrl = `${protocol}//${window.location.host}/ws/live-stream`;
     const websocket = new WebSocket(wsUrl);
 
     websocket.onopen = () => {

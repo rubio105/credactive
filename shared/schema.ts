@@ -1096,5 +1096,53 @@ export const campaignRecipients = pgTable("campaign_recipients", {
 
 export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
 
+// AI Scenario Conversations (post-answer interactive scenarios)
+export const scenarioConversations = pgTable("scenario_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  questionId: uuid("question_id").notNull().references(() => questions.id, { onDelete: "cascade" }),
+  quizId: uuid("quiz_id").notNull().references(() => quizzes.id, { onDelete: "cascade" }),
+  
+  // Context for AI to generate relevant scenarios
+  scenarioType: varchar("scenario_type", { length: 50 }).notNull(), // business_case, personal_development
+  category: varchar("category", { length: 100 }), // GDPR, ISO27001, Insight Discovery, etc.
+  userAnswer: varchar("user_answer", { length: 10 }), // A, B, C, D
+  wasCorrect: boolean("was_correct").notNull(),
+  
+  // Scenario metadata
+  scenarioTitle: text("scenario_title"), // e.g., "Data Breach Response Scenario"
+  scenarioContext: text("scenario_context"), // Initial scenario description
+  
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type ScenarioConversation = typeof scenarioConversations.$inferSelect;
+export const insertScenarioConversationSchema = createInsertSchema(scenarioConversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertScenarioConversation = z.infer<typeof insertScenarioConversationSchema>;
+
+// AI Scenario Messages (conversation messages)
+export const scenarioMessages = pgTable("scenario_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => scenarioConversations.id, { onDelete: "cascade" }),
+  
+  role: varchar("role", { length: 20 }).notNull(), // user, assistant
+  content: text("content").notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ScenarioMessage = typeof scenarioMessages.$inferSelect;
+export const insertScenarioMessageSchema = createInsertSchema(scenarioMessages).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertScenarioMessage = z.infer<typeof insertScenarioMessageSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

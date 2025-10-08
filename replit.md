@@ -42,6 +42,7 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM wi
 -   **Corporate B2B Licensing System**: Enterprise solution for bulk license sales, corporate accounts, professional dashboards for company admins, email-based invitation system, atomic license management, and team analytics.
 -   **Leaderboard System with Nicknames**: Gamification features including optional user nicknames, global leaderboards, corporate-exclusive team leaderboards, and credit preservation.
 -   **Corporate Content Visibility System**: Granular access control for quizzes and courses, allowing 'public' or 'corporate_exclusive' visibility, managed via dedicated mapping tables and admin UI controls, with content filtering based on user type.
+-   **AI Conversational Assistant for Post-Quiz Scenarios**: Context-aware AI coaching system using OpenAI GPT-4o for scenario-based learning after quiz responses. Features business case simulations (GDPR, ISO27001, CISSP certifications) and personal development coaching (stress management based on Insight Discovery personality profiles). Includes conversation persistence, auto-resume after page reload, explicit close control, and complete lifecycle management through dedicated database tables (scenario_conversations, scenario_messages).
 
 # External Dependencies
 

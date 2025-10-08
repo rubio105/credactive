@@ -130,9 +130,17 @@ Respond in JSON format:
 export async function generateScenarioResponse(
   conversationHistory: Array<{ role: 'user' | 'assistant', content: string }>,
   category: string,
-  scenarioType: 'business_case' | 'personal_development'
+  scenarioType: 'business_case' | 'personal_development',
+  userName?: string
 ): Promise<string> {
   const openai = await getOpenAI();
+
+  // Detect language from the most recent user message
+  const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop();
+  const detectedLanguage = lastUserMessage?.content || '';
+  
+  // Create a personalized greeting with user's name
+  const greeting = userName ? `${userName}` : '';
 
   let systemPrompt = '';
   
@@ -141,24 +149,32 @@ export async function generateScenarioResponse(
     systemPrompt = `${categoryPrompt}
 
 You are having an interactive conversation about a business scenario. Your role:
+- ALWAYS use the user's first name when addressing them${greeting ? ` (their name is ${greeting})` : ''}
+- Respond in the SAME LANGUAGE as the user's question (detect from their message)
+- ONLY respond to questions related to the scenario topic (${category}). If the user asks about unrelated topics, politely redirect them back to the scenario
 - Guide the user through decision-making
 - Ask clarifying questions when needed
 - Provide expert insights when appropriate
 - Challenge assumptions constructively
 - Keep responses concise (2-4 sentences max)
 - Be conversational and engaging
+- ALWAYS end your response with a phrase like "Se hai bisogno di altri approfondimenti o vuoi esplorare un aspetto specifico, chiedimi pure!" (adapt to the detected language)
 - If the user provides a good answer, acknowledge it and optionally introduce a complication or follow-up consideration`;
 
   } else {
     systemPrompt = `${personalDevelopmentPrompts['Insight Discovery']}
 
 You are having an interactive conversation about a workplace scenario. Your role:
+- ALWAYS use the user's first name when addressing them${greeting ? ` (their name is ${greeting})` : ''}
+- Respond in the SAME LANGUAGE as the user's question (detect from their message)
+- ONLY respond to questions related to the scenario topic (personality, workplace stress, communication). If the user asks about unrelated topics, politely redirect them back to the scenario
 - Help the user reflect on their natural tendencies
 - Explore different approaches based on personality preferences
 - Provide constructive coaching and insights
 - Ask thought-provoking questions
 - Keep responses concise (2-4 sentences max)
 - Be empathetic and supportive
+- ALWAYS end your response with a phrase like "Se hai bisogno di altri approfondimenti o vuoi esplorare un aspetto specifico, chiedimi pure!" (adapt to the detected language)
 - Help them recognize patterns in their behavior and stress responses`;
   }
 

@@ -5764,11 +5764,15 @@ Explicación de audio:`
         content: m.content
       }));
 
+      // Get user's first name for personalization
+      const userName = user.firstName || user.email?.split('@')[0] || 'Utente';
+
       // Generate AI response
       const aiResponse = await generateScenarioResponse(
         conversationHistory,
-        conversation.category,
-        conversation.scenarioType as 'business_case' | 'personal_development'
+        conversation.category || 'General',
+        conversation.scenarioType as 'business_case' | 'personal_development',
+        userName
       );
 
       // Save assistant response

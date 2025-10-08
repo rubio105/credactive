@@ -578,6 +578,12 @@ export async function sendBulkMarketingEmail(
       let htmlContent = recipient.htmlContent;
       let textContent = recipient.textContent;
       
+      console.log(`[Email] Sending to ${recipient.email}:`, {
+        hasPersonalizedHtml: !!htmlContent,
+        hasPlaceholders: htmlContent?.includes('{{') || false,
+        contentPreview: htmlContent?.substring(0, 100)
+      });
+      
       if (!htmlContent && htmlTemplate) {
         const rawName = recipient.firstName || recipient.email.split('@')[0];
         const sanitizedName = sanitizeUserInput(rawName);

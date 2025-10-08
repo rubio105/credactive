@@ -1665,6 +1665,15 @@ ${JSON.stringify(questionsToTranslate)}`;
       }
 
       // Personalize content for each user
+      console.log(`[Marketing] Personalizing email for ${filtered.length} users`);
+      if (htmlContent) {
+        console.log(`[Marketing] Template contains placeholders:`, {
+          hasFirstName: htmlContent.includes('{{firstName}}'),
+          hasLastName: htmlContent.includes('{{lastName}}'),
+          hasProfession: htmlContent.includes('{{profession}}')
+        });
+      }
+      
       const recipients = filtered.map(user => {
         let personalizedHtml = htmlContent;
         let personalizedText = textContent || '';
@@ -1677,6 +1686,12 @@ ${JSON.stringify(questionsToTranslate)}`;
         personalizedText = personalizedText.replace(/\{\{firstName\}\}/g, user.firstName || 'Cliente');
         personalizedText = personalizedText.replace(/\{\{lastName\}\}/g, user.lastName || '');
         personalizedText = personalizedText.replace(/\{\{profession\}\}/g, user.profession || '');
+        
+        console.log(`[Marketing] Personalized for ${user.email}:`, {
+          hasPlaceholders: personalizedHtml.includes('{{'),
+          firstName: user.firstName,
+          profession: user.profession
+        });
         
         return {
           email: user.email,

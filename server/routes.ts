@@ -4675,6 +4675,29 @@ Explicación de audio:`
       // Mark invite as accepted (only after successful increment)
       await storage.updateCorporateInviteStatus(invite.id, 'accepted', new Date());
       
+      // Log course invitation activity if invite includes course details
+      if (invite.targetCourseType && invite.targetCourseId) {
+        try {
+          await storage.createActivityLog({
+            userId: user.id,
+            activityType: 'course_invited',
+            points: 0,
+            metadata: { 
+              courseId: invite.targetCourseId,
+              courseType: invite.targetCourseType,
+              courseName: invite.targetCourseName,
+              inviteId: invite.id,
+              corporateAgreementId: agreement.id
+            },
+          });
+          
+          console.log(`[COURSE-INVITE] User ${user.id} invited to ${invite.targetCourseType} course: ${invite.targetCourseName || invite.targetCourseId}`);
+        } catch (logError) {
+          console.error('[COURSE-INVITE] Error logging course invitation:', logError);
+          // Don't fail the invite acceptance if logging fails
+        }
+      }
+      
       res.json({ 
         message: 'Successfully joined organization',
         user: {
@@ -4682,7 +4705,12 @@ Explicación de audio:`
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName
-        }
+        },
+        enrolledCourse: invite.targetCourseType && invite.targetCourseId ? {
+          type: invite.targetCourseType,
+          id: invite.targetCourseId,
+          name: invite.targetCourseName
+        } : null
       });
     } catch (error: any) {
       console.error('Accept invite error:', error);

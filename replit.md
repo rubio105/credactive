@@ -72,6 +72,15 @@ Preferred communication style: Simple, everyday language.
     - **Brevo Integration**: Bulk email sending to newsletter subscribers with success/failure tracking
     - **Database Schema**: marketingCampaigns table for future campaign tracking and analytics expansion
     - **90-second Timeout**: Optimized client configuration to handle long-running AI generation requests
+-   **SEO Optimization**: Comprehensive search engine optimization for organic traffic growth:
+    - **Dynamic Meta Tags**: react-helmet-async integration for page-specific title, description, keywords, canonical URLs
+    - **Landing Page SEO**: Optimized for "Certificazioni Cybersecurity Online - Quiz CISSP, CISM, ISO 27001" with rich keywords
+    - **Dashboard SEO**: Personalized meta tags for logged-in user experience
+    - **Quiz-Specific SEO**: Dynamic titles and descriptions based on quiz content for individual quiz pages
+    - **Automatic Sitemap**: /sitemap.xml endpoint generating valid XML sitemap with all pages, quizzes, static content, proper priorities and changefreq values
+    - **Open Graph Tags**: Social media sharing optimization with og:title, og:description, og:url, og:type
+    - **Twitter Cards**: Enhanced Twitter sharing with twitter:card, twitter:title, twitter:description
+    - **Canonical URLs**: Proper canonical URL structure to prevent duplicate content issues
 -   **Admin Panel**: Comprehensive user management, quiz rotation control, and tab-based interface for managing content, settings, and analytics. 13-tab navigation system with dedicated Analytics and Marketing tabs for business intelligence and email campaigns.
 
 # External Dependencies

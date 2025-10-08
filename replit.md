@@ -92,6 +92,14 @@ Preferred communication style: Simple, everyday language.
     - **Security Hardening**: Admin-only corporate registration, server-side tier validation, license limits per tier, inactive-by-default accounts requiring manual approval
     - **Transactional Safety**: Complete rollback on failure (deletes new users or reverts corporate links) with preserved original premium status
     - **Professional UI**: Modern dashboard with metric cards, progress visualization, team/invite management tabs, responsive table design
+-   **Leaderboard System with Nicknames**: Gamification and competitive learning features:
+    - **Nickname Support**: Optional user nicknames (max 50 characters) with uniqueness enforcement for privacy and personalization
+    - **Global Leaderboard**: Public ranking of all users by totalPoints, displaying nickname or real name, level, credits, premium status
+    - **Team Leaderboard**: Corporate-exclusive leaderboard showing only team members, fostering internal competition
+    - **Credits Preservation**: Gamification credits maintained for all users (individual and corporate) for future welfare/prize conversion
+    - **Display Name Logic**: Flexible displayName = nickname || firstName + lastName || 'Utente' fallback
+    - **Settings Integration**: Nickname editor in user profile with client and server-side validation
+    - **Corporate Integration**: Team leaderboard button in corporate portal, automatic team filtering
 
 # External Dependencies
 

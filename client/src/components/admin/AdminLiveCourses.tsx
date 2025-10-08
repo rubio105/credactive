@@ -454,7 +454,7 @@ export function AdminLiveCourses() {
       )}
 
       <Dialog open={isCourseDialogOpen} onOpenChange={setIsCourseDialogOpen}>
-        <DialogContent data-testid="dialog-course">
+        <DialogContent className="max-h-[90vh] max-w-[95vw] sm:max-w-[600px] overflow-y-auto" data-testid="dialog-course">
           <DialogHeader>
             <DialogTitle>{editingCourse?.id ? 'Modifica Corso' : 'Nuovo Corso'}</DialogTitle>
             <DialogDescription>Inserisci i dettagli del corso live</DialogDescription>
@@ -635,7 +635,7 @@ export function AdminLiveCourses() {
       </Dialog>
 
       <Dialog open={isSessionDialogOpen} onOpenChange={setIsSessionDialogOpen}>
-        <DialogContent data-testid="dialog-session">
+        <DialogContent className="max-h-[90vh] max-w-[95vw] sm:max-w-[500px] overflow-y-auto" data-testid="dialog-session">
           <DialogHeader>
             <DialogTitle>{editingSession?.id ? 'Modifica Sessione' : 'Nuova Sessione'}</DialogTitle>
             <DialogDescription>Inserisci le date e la capacità della sessione</DialogDescription>

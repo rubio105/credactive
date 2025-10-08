@@ -640,9 +640,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/categories-with-quizzes', async (req, res) => {
+  app.get('/api/categories-with-quizzes', async (req: any, res) => {
     try {
-      const categoriesWithQuizzes = await storage.getCategoriesWithQuizzes();
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const categoriesWithQuizzes = await storage.getCategoriesWithQuizzes(userId);
       res.json(categoriesWithQuizzes);
     } catch (error) {
       console.error("Error fetching categories with quizzes:", error);
@@ -650,10 +651,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/categories/:categoryId/quizzes', async (req, res) => {
+  app.get('/api/categories/:categoryId/quizzes', async (req: any, res) => {
     try {
       const { categoryId } = req.params;
-      const quizzes = await storage.getQuizzesByCategory(categoryId);
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const quizzes = await storage.getQuizzesByCategory(categoryId, userId);
       res.json(quizzes);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
@@ -1775,9 +1777,9 @@ ${JSON.stringify(questionsToTranslate)}`;
     try {
       const { profession, purpose, tone } = req.body;
       
-      // Get relevant courses/categories
+      // Get relevant courses/categories (admin override for full visibility)
       const categories = await storage.getCategories();
-      const quizzes = await storage.getAllQuizzes();
+      const quizzes = await storage.getAllQuizzes(undefined, true);
       
       // Build course context for AI
       const courseContext = {
@@ -2086,7 +2088,7 @@ Restituisci SOLO un JSON con:
   // Admin - Live Courses CRUD
   app.get('/api/admin/live-courses', isAdmin, async (req, res) => {
     try {
-      const courses = await storage.getAllLiveCourses();
+      const courses = await storage.getAllLiveCourses(undefined, true);
       res.json(courses);
     } catch (error) {
       console.error("Error fetching live courses:", error);
@@ -2310,7 +2312,7 @@ Restituisci SOLO un JSON con:
   // Admin - On-Demand Courses CRUD
   app.get('/api/admin/on-demand-courses', isAdmin, async (req, res) => {
     try {
-      const courses = await storage.getAllOnDemandCourses(true); // Include inactive courses for admin
+      const courses = await storage.getAllOnDemandCourses(true, undefined, true); // Include inactive courses, admin override
       res.json(courses);
     } catch (error) {
       console.error("Error fetching on-demand courses:", error);
@@ -2556,7 +2558,7 @@ Restituisci SOLO un JSON con:
         return res.status(403).json({ message: "Premium Plus subscription required" });
       }
 
-      const courses = await storage.getAllOnDemandCourses();
+      const courses = await storage.getAllOnDemandCourses(false, userId);
       res.json(courses);
     } catch (error) {
       console.error("Error fetching on-demand courses:", error);
@@ -4014,7 +4016,7 @@ Explicación de audio:`
   app.get('/sitemap.xml', async (req, res) => {
     try {
       const categories = await storage.getCategories();
-      const quizzes = await storage.getAllQuizzes();
+      const quizzes = await storage.getAllQuizzes(); // Only public quizzes in sitemap
       const staticPages = await storage.getAllContentPages();
       
       const baseUrl = 'https://credactive.academy';

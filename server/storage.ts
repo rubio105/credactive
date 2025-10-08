@@ -124,9 +124,9 @@ export interface IStorage {
   
   // Quiz operations
   getCategories(): Promise<Category[]>;
-  getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: QuizWithCount[] }>>;
-  getAllQuizzes(): Promise<Quiz[]>;
-  getQuizzesByCategory(categoryId: string): Promise<Quiz[]>;
+  getCategoriesWithQuizzes(userId?: string, isAdminOverride?: boolean): Promise<Array<Category & { quizzes: QuizWithCount[] }>>;
+  getAllQuizzes(userId?: string, isAdminOverride?: boolean): Promise<Quiz[]>;
+  getQuizzesByCategory(categoryId: string, userId?: string, isAdminOverride?: boolean): Promise<Quiz[]>;
   getQuizById(id: string): Promise<Quiz | undefined>;
   getQuestionsByQuizId(quizId: string): Promise<Question[]>;
   getQuestionById(id: string): Promise<Question | undefined>;
@@ -171,7 +171,7 @@ export interface IStorage {
   deleteLiveCourse(id: string): Promise<void>;
   getLiveCourseById(id: string): Promise<LiveCourse | undefined>;
   getLiveCourseByQuizId(quizId: string): Promise<LiveCourse | undefined>;
-  getAllLiveCourses(): Promise<LiveCourse[]>;
+  getAllLiveCourses(userId?: string, isAdminOverride?: boolean): Promise<LiveCourse[]>;
   
   // Live course session operations
   createLiveCourseSession(session: InsertLiveCourseSession): Promise<LiveCourseSession>;
@@ -190,7 +190,7 @@ export interface IStorage {
   updateOnDemandCourse(id: string, updates: Partial<OnDemandCourse>): Promise<OnDemandCourse>;
   deleteOnDemandCourse(id: string): Promise<void>;
   getOnDemandCourseById(id: string): Promise<OnDemandCourse | undefined>;
-  getAllOnDemandCourses(includeInactive?: boolean): Promise<OnDemandCourse[]>;
+  getAllOnDemandCourses(includeInactive?: boolean, userId?: string, isAdminOverride?: boolean): Promise<OnDemandCourse[]>;
   
   // Course video operations
   createCourseVideo(video: InsertCourseVideo): Promise<CourseVideo>;
@@ -475,7 +475,21 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(categories).orderBy(categories.sortOrder, categories.name);
   }
 
-  async getCategoriesWithQuizzes(): Promise<Array<Category & { quizzes: QuizWithCount[] }>> {
+  async getCategoriesWithQuizzes(userId?: string, isAdminOverride: boolean = false): Promise<Array<Category & { quizzes: QuizWithCount[] }>> {
+    // Get user's corporate agreement if they have one (skip if admin override)
+    let userCorporateAgreementId: string | null = null;
+    if (userId && !isAdminOverride) {
+      const user = await this.getUser(userId);
+      userCorporateAgreementId = user?.corporateAgreementId || null;
+    }
+
+    // Get accessible quiz IDs for corporate user (skip if admin override)
+    let accessibleQuizIds = new Set<string>();
+    if (userCorporateAgreementId && !isAdminOverride) {
+      const accesses = await this.getQuizAccessByCorporateAgreement(userCorporateAgreementId);
+      accessibleQuizIds = new Set(accesses.map(a => a.quizId));
+    }
+
     // Optimize with a single LEFT JOIN query instead of N+1 queries
     const rows = await db
       .select()
@@ -513,31 +527,91 @@ export class DatabaseStorage implements IStorage {
       }
       
       if (quiz) {
-        // Add question count to quiz
-        const quizWithCount = {
-          ...quiz,
-          questionCount: countMap.get(quiz.id) || 0
-        };
-        categoryMap.get(category.id)!.quizzes.push(quizWithCount);
+        // Filter based on visibility (skip if admin override)
+        const isPublic = !quiz.visibilityType || quiz.visibilityType === 'public';
+        const isCorporateExclusive = quiz.visibilityType === 'corporate_exclusive';
+        const hasAccess = userCorporateAgreementId && accessibleQuizIds.has(quiz.id);
+
+        // Show quiz if: admin override OR it's public OR (it's corporate_exclusive AND user has access)
+        if (isAdminOverride || isPublic || (isCorporateExclusive && hasAccess)) {
+          // Add question count to quiz
+          const quizWithCount = {
+            ...quiz,
+            questionCount: countMap.get(quiz.id) || 0
+          };
+          categoryMap.get(category.id)!.quizzes.push(quizWithCount);
+        }
       }
     }
 
     return Array.from(categoryMap.values());
   }
 
-  async getAllQuizzes(): Promise<Quiz[]> {
-    return await db
+  async getAllQuizzes(userId?: string, isAdminOverride: boolean = false): Promise<Quiz[]> {
+    // Get user's corporate agreement if they have one (skip if admin override)
+    let userCorporateAgreementId: string | null = null;
+    if (userId && !isAdminOverride) {
+      const user = await this.getUser(userId);
+      userCorporateAgreementId = user?.corporateAgreementId || null;
+    }
+
+    // Get accessible quiz IDs for corporate user (skip if admin override)
+    let accessibleQuizIds = new Set<string>();
+    if (userCorporateAgreementId && !isAdminOverride) {
+      const accesses = await this.getQuizAccessByCorporateAgreement(userCorporateAgreementId);
+      accessibleQuizIds = new Set(accesses.map(a => a.quizId));
+    }
+
+    const allQuizzes = await db
       .select()
       .from(quizzes)
       .orderBy(quizzes.title);
+
+    // Filter based on visibility (skip if admin override)
+    if (isAdminOverride) {
+      return allQuizzes;
+    }
+    
+    return allQuizzes.filter(quiz => {
+      const isPublic = !quiz.visibilityType || quiz.visibilityType === 'public';
+      const isCorporateExclusive = quiz.visibilityType === 'corporate_exclusive';
+      const hasAccess = userCorporateAgreementId && accessibleQuizIds.has(quiz.id);
+      return isPublic || (isCorporateExclusive && hasAccess);
+    });
   }
 
-  async getQuizzesByCategory(categoryId: string): Promise<Quiz[]> {
-    return await db
+  async getQuizzesByCategory(categoryId: string, userId?: string, isAdminOverride: boolean = false): Promise<Quiz[]> {
+    // Get user's corporate agreement if they have one (skip if admin override)
+    let userCorporateAgreementId: string | null = null;
+    if (userId && !isAdminOverride) {
+      const user = await this.getUser(userId);
+      userCorporateAgreementId = user?.corporateAgreementId || null;
+    }
+
+    // Get accessible quiz IDs for corporate user (skip if admin override)
+    let accessibleQuizIds = new Set<string>();
+    if (userCorporateAgreementId && !isAdminOverride) {
+      const accesses = await this.getQuizAccessByCorporateAgreement(userCorporateAgreementId);
+      accessibleQuizIds = new Set(accesses.map(a => a.quizId));
+    }
+
+    const categoryQuizzes = await db
       .select()
       .from(quizzes)
       .where(eq(quizzes.categoryId, categoryId))
       .orderBy(quizzes.title);
+
+    // Filter based on visibility (skip if admin override)
+    if (isAdminOverride) {
+      return categoryQuizzes;
+    }
+    
+    return categoryQuizzes.filter(quiz => {
+      const isPublic = !quiz.visibilityType || quiz.visibilityType === 'public';
+      const isCorporateExclusive = quiz.visibilityType === 'corporate_exclusive';
+      const hasAccess = userCorporateAgreementId && accessibleQuizIds.has(quiz.id);
+      return isPublic || (isCorporateExclusive && hasAccess);
+    });
   }
 
   async getQuizById(id: string): Promise<Quiz | undefined> {
@@ -867,11 +941,37 @@ export class DatabaseStorage implements IStorage {
     return course;
   }
 
-  async getAllLiveCourses(): Promise<LiveCourse[]> {
-    return await db
+  async getAllLiveCourses(userId?: string, isAdminOverride: boolean = false): Promise<LiveCourse[]> {
+    // Get user's corporate agreement if they have one (skip if admin override)
+    let userCorporateAgreementId: string | null = null;
+    if (userId && !isAdminOverride) {
+      const user = await this.getUser(userId);
+      userCorporateAgreementId = user?.corporateAgreementId || null;
+    }
+
+    // Get accessible live course IDs for corporate user (skip if admin override)
+    let accessibleLiveCourseIds = new Set<string>();
+    if (userCorporateAgreementId && !isAdminOverride) {
+      const accesses = await this.getLiveCourseAccessByCorporateAgreement(userCorporateAgreementId);
+      accessibleLiveCourseIds = new Set(accesses.map(a => a.liveCourseId));
+    }
+
+    const allCourses = await db
       .select()
       .from(liveCourses)
       .where(eq(liveCourses.isActive, true));
+
+    // Filter based on visibility (skip if admin override)
+    if (isAdminOverride) {
+      return allCourses;
+    }
+    
+    return allCourses.filter(course => {
+      const isPublic = !course.visibilityType || course.visibilityType === 'public';
+      const isCorporateExclusive = course.visibilityType === 'corporate_exclusive';
+      const hasAccess = userCorporateAgreementId && accessibleLiveCourseIds.has(course.id);
+      return isPublic || (isCorporateExclusive && hasAccess);
+    });
   }
 
   // Live course session operations
@@ -968,18 +1068,46 @@ export class DatabaseStorage implements IStorage {
     return course;
   }
 
-  async getAllOnDemandCourses(includeInactive: boolean = false): Promise<OnDemandCourse[]> {
+  async getAllOnDemandCourses(includeInactive: boolean = false, userId?: string, isAdminOverride: boolean = false): Promise<OnDemandCourse[]> {
+    // Get user's corporate agreement if they have one (skip if admin override)
+    let userCorporateAgreementId: string | null = null;
+    if (userId && !isAdminOverride) {
+      const user = await this.getUser(userId);
+      userCorporateAgreementId = user?.corporateAgreementId || null;
+    }
+
+    // Get accessible on-demand course IDs for corporate user (skip if admin override)
+    let accessibleCourseIds = new Set<string>();
+    if (userCorporateAgreementId && !isAdminOverride) {
+      const accesses = await this.getOnDemandCourseAccessByCorporateAgreement(userCorporateAgreementId);
+      accessibleCourseIds = new Set(accesses.map(a => a.onDemandCourseId));
+    }
+
+    let allCourses: OnDemandCourse[];
     if (includeInactive) {
-      return await db
+      allCourses = await db
         .select()
         .from(onDemandCourses)
         .orderBy(onDemandCourses.sortOrder);
+    } else {
+      allCourses = await db
+        .select()
+        .from(onDemandCourses)
+        .where(eq(onDemandCourses.isActive, true))
+        .orderBy(onDemandCourses.sortOrder);
     }
-    return await db
-      .select()
-      .from(onDemandCourses)
-      .where(eq(onDemandCourses.isActive, true))
-      .orderBy(onDemandCourses.sortOrder);
+
+    // Filter based on visibility (skip if admin override)
+    if (isAdminOverride) {
+      return allCourses;
+    }
+    
+    return allCourses.filter(course => {
+      const isPublic = !course.visibilityType || course.visibilityType === 'public';
+      const isCorporateExclusive = course.visibilityType === 'corporate_exclusive';
+      const hasAccess = userCorporateAgreementId && accessibleCourseIds.has(course.id);
+      return isPublic || (isCorporateExclusive && hasAccess);
+    });
   }
 
   // Course video operations

@@ -111,6 +111,12 @@ import {
   type Setting,
   type InsertSetting,
   settings,
+  scenarioConversations,
+  scenarioMessages,
+  type ScenarioConversation,
+  type ScenarioMessage,
+  type InsertScenarioConversation,
+  type InsertScenarioMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
@@ -1079,7 +1085,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(liveCourseEnrollments)
       .where(and(
-        eq(liveCourseEnrollments.liveCourseId, liveCourseId),
+        eq(liveCourseEnrollments.courseId, liveCourseId),
         eq(liveCourseEnrollments.userId, userId)
       ))
       .limit(1);
@@ -2379,6 +2385,60 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.corporateAgreementId, corporateAgreementId))
       .orderBy(desc(users.totalPoints), desc(users.level));
+  }
+
+  // AI Scenario Conversation operations
+  async createScenarioConversation(conversation: InsertScenarioConversation): Promise<ScenarioConversation> {
+    const [created] = await db
+      .insert(scenarioConversations)
+      .values(conversation)
+      .returning();
+    return created;
+  }
+
+  async getScenarioConversation(id: string): Promise<ScenarioConversation | undefined> {
+    const [conversation] = await db
+      .select()
+      .from(scenarioConversations)
+      .where(eq(scenarioConversations.id, id));
+    return conversation;
+  }
+
+  async getUserScenarioConversation(questionId: string, userId: string): Promise<ScenarioConversation | undefined> {
+    const [conversation] = await db
+      .select()
+      .from(scenarioConversations)
+      .where(and(
+        eq(scenarioConversations.questionId, questionId),
+        eq(scenarioConversations.userId, userId),
+        eq(scenarioConversations.isActive, true)
+      ))
+      .orderBy(desc(scenarioConversations.createdAt))
+      .limit(1);
+    return conversation;
+  }
+
+  async createScenarioMessage(message: InsertScenarioMessage): Promise<ScenarioMessage> {
+    const [created] = await db
+      .insert(scenarioMessages)
+      .values(message)
+      .returning();
+    return created;
+  }
+
+  async getConversationMessages(conversationId: string): Promise<ScenarioMessage[]> {
+    return await db
+      .select()
+      .from(scenarioMessages)
+      .where(eq(scenarioMessages.conversationId, conversationId))
+      .orderBy(scenarioMessages.createdAt);
+  }
+
+  async endScenarioConversation(id: string): Promise<void> {
+    await db
+      .update(scenarioConversations)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(scenarioConversations.id, id));
   }
 }
 

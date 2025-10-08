@@ -14,6 +14,7 @@ import { eq, desc } from "drizzle-orm";
 import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
+import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
 import { clearBrevoInstance } from "./email";
 import { 
   insertUserQuizAttemptSchema, 
@@ -5373,6 +5374,172 @@ Explicación de audio:`
       clients.delete(ws);
       console.log('WebSocket connection closed');
     });
+  });
+
+  // AI Scenario Conversation endpoints
+  
+  // Validation schemas
+  const startScenarioSchema = z.object({
+    questionId: z.string().uuid(),
+    quizId: z.string().uuid(),
+    category: z.string(),
+    questionText: z.string(),
+    userAnswer: z.string(),
+    correctAnswer: z.string(),
+    wasCorrect: z.boolean(),
+    scenarioType: z.enum(['business_case', 'personal_development'])
+  });
+
+  const sendScenarioMessageSchema = z.object({
+    message: z.string().min(1)
+  });
+
+  // Start AI scenario conversation (POST /api/scenarios/start)
+  app.post('/api/scenarios/start', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const validated = startScenarioSchema.parse(req.body);
+
+      // Check if there's already an active conversation for this question
+      const existing = await storage.getUserScenarioConversation(validated.questionId, user.id);
+      if (existing) {
+        // Return existing conversation with messages
+        const messages = await storage.getConversationMessages(existing.id);
+        return res.json({ conversation: existing, messages });
+      }
+
+      // Generate scenario using AI
+      const scenario = await generateScenario({
+        category: validated.category,
+        questionText: validated.questionText,
+        userAnswer: validated.userAnswer,
+        correctAnswer: validated.correctAnswer,
+        wasCorrect: validated.wasCorrect,
+        scenarioType: validated.scenarioType
+      });
+
+      // Create conversation
+      const conversation = await storage.createScenarioConversation({
+        userId: user.id,
+        questionId: validated.questionId,
+        quizId: validated.quizId,
+        scenarioType: validated.scenarioType,
+        category: validated.category,
+        userAnswer: validated.userAnswer,
+        wasCorrect: validated.wasCorrect,
+        scenarioTitle: scenario.title,
+        scenarioContext: scenario.context,
+        isActive: true
+      });
+
+      // Create initial assistant message
+      const initialMessage = await storage.createScenarioMessage({
+        conversationId: conversation.id,
+        role: 'assistant',
+        content: `${scenario.context}\n\n${scenario.initialMessage}`
+      });
+
+      res.json({ 
+        conversation, 
+        messages: [initialMessage],
+        scenario 
+      });
+    } catch (error: any) {
+      console.error('Start scenario error:', error);
+      res.status(500).json({ message: error.message || 'Failed to start scenario' });
+    }
+  });
+
+  // Send message in scenario conversation (POST /api/scenarios/:conversationId/message)
+  app.post('/api/scenarios/:conversationId/message', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { conversationId } = req.params;
+      const validated = sendScenarioMessageSchema.parse(req.body);
+
+      // Verify conversation belongs to user
+      const conversation = await storage.getScenarioConversation(conversationId);
+      if (!conversation || conversation.userId !== user.id) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+
+      if (!conversation.isActive) {
+        return res.status(400).json({ message: 'Conversation is closed' });
+      }
+
+      // Save user message
+      await storage.createScenarioMessage({
+        conversationId: conversationId,
+        role: 'user',
+        content: validated.message
+      });
+
+      // Get conversation history for AI context
+      const messages = await storage.getConversationMessages(conversationId);
+      const conversationHistory = messages.map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content
+      }));
+
+      // Generate AI response
+      const aiResponse = await generateScenarioResponse(
+        conversationHistory,
+        conversation.category,
+        conversation.scenarioType as 'business_case' | 'personal_development'
+      );
+
+      // Save assistant response
+      const assistantMessage = await storage.createScenarioMessage({
+        conversationId: conversationId,
+        role: 'assistant',
+        content: aiResponse
+      });
+
+      res.json({ message: assistantMessage });
+    } catch (error: any) {
+      console.error('Send scenario message error:', error);
+      res.status(500).json({ message: error.message || 'Failed to send message' });
+    }
+  });
+
+  // Get scenario conversation (GET /api/scenarios/:conversationId)
+  app.get('/api/scenarios/:conversationId', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { conversationId } = req.params;
+
+      const conversation = await storage.getScenarioConversation(conversationId);
+      if (!conversation || conversation.userId !== user.id) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+
+      const messages = await storage.getConversationMessages(conversationId);
+
+      res.json({ conversation, messages });
+    } catch (error: any) {
+      console.error('Get scenario conversation error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get conversation' });
+    }
+  });
+
+  // End scenario conversation (POST /api/scenarios/:conversationId/end)
+  app.post('/api/scenarios/:conversationId/end', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { conversationId } = req.params;
+
+      const conversation = await storage.getScenarioConversation(conversationId);
+      if (!conversation || conversation.userId !== user.id) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+
+      await storage.endScenarioConversation(conversationId);
+
+      res.json({ message: 'Conversation ended' });
+    } catch (error: any) {
+      console.error('End scenario conversation error:', error);
+      res.status(500).json({ message: error.message || 'Failed to end conversation' });
+    }
   });
   
   return httpServer;

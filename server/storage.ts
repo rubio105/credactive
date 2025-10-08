@@ -10,6 +10,10 @@ import {
   liveCourses,
   liveCourseSessions,
   liveCourseEnrollments,
+  liveStreamingSessions,
+  liveStreamingMessages,
+  liveStreamingPolls,
+  liveStreamingPollResponses,
   contentPages,
   onDemandCourses,
   courseVideos,
@@ -45,6 +49,10 @@ import {
   type LiveCourse,
   type LiveCourseSession,
   type LiveCourseEnrollment,
+  type LiveStreamingSession,
+  type LiveStreamingMessage,
+  type LiveStreamingPoll,
+  type LiveStreamingPollResponse,
   type ContentPage,
   type OnDemandCourse,
   type CourseVideo,
@@ -74,6 +82,10 @@ import {
   type InsertLiveCourse,
   type InsertLiveCourseSession,
   type InsertLiveCourseEnrollment,
+  type InsertLiveStreamingSession,
+  type InsertLiveStreamingMessage,
+  type InsertLiveStreamingPoll,
+  type InsertLiveStreamingPollResponse,
   type InsertContentPage,
   type InsertOnDemandCourse,
   type InsertCourseVideo,
@@ -184,6 +196,29 @@ export interface IStorage {
   createLiveCourseEnrollment(enrollment: InsertLiveCourseEnrollment): Promise<LiveCourseEnrollment>;
   updateLiveCourseEnrollment(id: string, updates: Partial<LiveCourseEnrollment>): Promise<LiveCourseEnrollment>;
   getUserEnrollments(userId: string): Promise<LiveCourseEnrollment[]>;
+  
+  // Live streaming session operations
+  createLiveStreamingSession(session: InsertLiveStreamingSession): Promise<LiveStreamingSession>;
+  updateLiveStreamingSession(id: string, updates: Partial<LiveStreamingSession>): Promise<LiveStreamingSession>;
+  getActiveStreamingSession(sessionId: string): Promise<LiveStreamingSession | undefined>;
+  getLiveStreamingSessionBySessionId(sessionId: string): Promise<LiveStreamingSession | undefined>;
+  endLiveStreamingSession(id: string): Promise<void>;
+  
+  // Live streaming chat operations
+  createLiveStreamingMessage(message: InsertLiveStreamingMessage): Promise<LiveStreamingMessage>;
+  getStreamingMessages(streamingSessionId: string, limit?: number): Promise<LiveStreamingMessage[]>;
+  
+  // Live streaming poll operations
+  createLiveStreamingPoll(poll: InsertLiveStreamingPoll): Promise<LiveStreamingPoll>;
+  updateLiveStreamingPoll(id: string, updates: Partial<LiveStreamingPoll>): Promise<LiveStreamingPoll>;
+  getActivePoll(streamingSessionId: string): Promise<LiveStreamingPoll | undefined>;
+  getStreamingPolls(streamingSessionId: string): Promise<LiveStreamingPoll[]>;
+  
+  // Live streaming poll response operations
+  createPollResponse(response: InsertLiveStreamingPollResponse): Promise<LiveStreamingPollResponse>;
+  getPollResponses(pollId: string): Promise<LiveStreamingPollResponse[]>;
+  getUserPollResponse(pollId: string, userId: string): Promise<LiveStreamingPollResponse | undefined>;
+  getPollStats(pollId: string): Promise<{option: string; count: number}[]>;
   
   // On-demand course operations
   createOnDemandCourse(course: InsertOnDemandCourse): Promise<OnDemandCourse>;
@@ -1036,6 +1071,152 @@ export class DatabaseStorage implements IStorage {
       .from(liveCourseEnrollments)
       .where(eq(liveCourseEnrollments.userId, userId))
       .orderBy(desc(liveCourseEnrollments.enrolledAt));
+  }
+
+  // Live streaming session operations
+  async createLiveStreamingSession(session: InsertLiveStreamingSession): Promise<LiveStreamingSession> {
+    const [created] = await db
+      .insert(liveStreamingSessions)
+      .values(session)
+      .returning();
+    return created;
+  }
+
+  async updateLiveStreamingSession(id: string, updates: Partial<LiveStreamingSession>): Promise<LiveStreamingSession> {
+    const [updated] = await db
+      .update(liveStreamingSessions)
+      .set(updates)
+      .where(eq(liveStreamingSessions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getActiveStreamingSession(sessionId: string): Promise<LiveStreamingSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(liveStreamingSessions)
+      .where(and(
+        eq(liveStreamingSessions.sessionId, sessionId),
+        eq(liveStreamingSessions.isActive, true)
+      ))
+      .limit(1);
+    return session;
+  }
+
+  async getLiveStreamingSessionBySessionId(sessionId: string): Promise<LiveStreamingSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(liveStreamingSessions)
+      .where(eq(liveStreamingSessions.sessionId, sessionId))
+      .orderBy(desc(liveStreamingSessions.createdAt))
+      .limit(1);
+    return session;
+  }
+
+  async endLiveStreamingSession(id: string): Promise<void> {
+    await db
+      .update(liveStreamingSessions)
+      .set({ isActive: false, endedAt: new Date() })
+      .where(eq(liveStreamingSessions.id, id));
+  }
+
+  // Live streaming chat operations
+  async createLiveStreamingMessage(message: InsertLiveStreamingMessage): Promise<LiveStreamingMessage> {
+    const [created] = await db
+      .insert(liveStreamingMessages)
+      .values(message)
+      .returning();
+    return created;
+  }
+
+  async getStreamingMessages(streamingSessionId: string, limit: number = 100): Promise<LiveStreamingMessage[]> {
+    return await db
+      .select()
+      .from(liveStreamingMessages)
+      .where(eq(liveStreamingMessages.streamingSessionId, streamingSessionId))
+      .orderBy(desc(liveStreamingMessages.createdAt))
+      .limit(limit);
+  }
+
+  // Live streaming poll operations
+  async createLiveStreamingPoll(poll: InsertLiveStreamingPoll): Promise<LiveStreamingPoll> {
+    const [created] = await db
+      .insert(liveStreamingPolls)
+      .values(poll)
+      .returning();
+    return created;
+  }
+
+  async updateLiveStreamingPoll(id: string, updates: Partial<LiveStreamingPoll>): Promise<LiveStreamingPoll> {
+    const [updated] = await db
+      .update(liveStreamingPolls)
+      .set(updates)
+      .where(eq(liveStreamingPolls.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getActivePoll(streamingSessionId: string): Promise<LiveStreamingPoll | undefined> {
+    const [poll] = await db
+      .select()
+      .from(liveStreamingPolls)
+      .where(and(
+        eq(liveStreamingPolls.streamingSessionId, streamingSessionId),
+        eq(liveStreamingPolls.isActive, true)
+      ))
+      .orderBy(desc(liveStreamingPolls.createdAt))
+      .limit(1);
+    return poll;
+  }
+
+  async getStreamingPolls(streamingSessionId: string): Promise<LiveStreamingPoll[]> {
+    return await db
+      .select()
+      .from(liveStreamingPolls)
+      .where(eq(liveStreamingPolls.streamingSessionId, streamingSessionId))
+      .orderBy(desc(liveStreamingPolls.createdAt));
+  }
+
+  // Live streaming poll response operations
+  async createPollResponse(response: InsertLiveStreamingPollResponse): Promise<LiveStreamingPollResponse> {
+    const [created] = await db
+      .insert(liveStreamingPollResponses)
+      .values(response)
+      .returning();
+    return created;
+  }
+
+  async getPollResponses(pollId: string): Promise<LiveStreamingPollResponse[]> {
+    return await db
+      .select()
+      .from(liveStreamingPollResponses)
+      .where(eq(liveStreamingPollResponses.pollId, pollId))
+      .orderBy(desc(liveStreamingPollResponses.createdAt));
+  }
+
+  async getUserPollResponse(pollId: string, userId: string): Promise<LiveStreamingPollResponse | undefined> {
+    const [response] = await db
+      .select()
+      .from(liveStreamingPollResponses)
+      .where(and(
+        eq(liveStreamingPollResponses.pollId, pollId),
+        eq(liveStreamingPollResponses.userId, userId)
+      ))
+      .limit(1);
+    return response;
+  }
+
+  async getPollStats(pollId: string): Promise<{option: string; count: number}[]> {
+    const results = await db
+      .select({
+        option: liveStreamingPollResponses.selectedOption,
+        count: sql<number>`count(*)::int`
+      })
+      .from(liveStreamingPollResponses)
+      .where(eq(liveStreamingPollResponses.pollId, pollId))
+      .groupBy(liveStreamingPollResponses.selectedOption);
+    
+    return results.map(r => ({ option: r.option, count: r.count }));
   }
 
   // On-demand course operations

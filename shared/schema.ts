@@ -243,6 +243,52 @@ export const liveCourseEnrollments = pgTable("live_course_enrollments", {
   enrolledAt: timestamp("enrolled_at").defaultNow(),
 });
 
+// Live streaming sessions (active live sessions with video streaming)
+export const liveStreamingSessions = pgTable("live_streaming_sessions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: uuid("session_id").notNull().references(() => liveCourseSessions.id),
+  streamUrl: text("stream_url").notNull(), // YouTube Live, Zoom, Google Meet, etc.
+  isActive: boolean("is_active").default(false),
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Live streaming chat messages
+export const liveStreamingMessages = pgTable("live_streaming_messages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  streamingSessionId: uuid("streaming_session_id").notNull().references(() => liveStreamingSessions.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  userName: varchar("user_name", { length: 200 }).notNull(), // Cached for performance
+  message: text("message").notNull(),
+  isAdminMessage: boolean("is_admin_message").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Live streaming polls/quiz (interactive questions during live)
+export const liveStreamingPolls = pgTable("live_streaming_polls", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  streamingSessionId: uuid("streaming_session_id").notNull().references(() => liveStreamingSessions.id, { onDelete: 'cascade' }),
+  question: text("question").notNull(),
+  options: jsonb("options").notNull(), // Array of {label: string, text: string}
+  correctAnswer: varchar("correct_answer", { length: 10 }), // null for polls, set for quiz questions
+  pollType: varchar("poll_type", { length: 20 }).default("poll"), // poll, quiz
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Live streaming poll responses
+export const liveStreamingPollResponses = pgTable("live_streaming_poll_responses", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  pollId: uuid("poll_id").notNull().references(() => liveStreamingPolls.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  selectedOption: varchar("selected_option", { length: 10 }).notNull(),
+  isCorrect: boolean("is_correct"), // Set if poll is a quiz question
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueUserPoll: unique().on(table.pollId, table.userId),
+}));
+
 // Content pages (CMS for static pages)
 export const contentPages = pgTable("content_pages", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -808,6 +854,10 @@ export type QuizReport = typeof quizReports.$inferSelect;
 export type LiveCourse = typeof liveCourses.$inferSelect;
 export type LiveCourseSession = typeof liveCourseSessions.$inferSelect;
 export type LiveCourseEnrollment = typeof liveCourseEnrollments.$inferSelect;
+export type LiveStreamingSession = typeof liveStreamingSessions.$inferSelect;
+export type LiveStreamingMessage = typeof liveStreamingMessages.$inferSelect;
+export type LiveStreamingPoll = typeof liveStreamingPolls.$inferSelect;
+export type LiveStreamingPollResponse = typeof liveStreamingPollResponses.$inferSelect;
 export type ContentPage = typeof contentPages.$inferSelect;
 export type OnDemandCourse = typeof onDemandCourses.$inferSelect;
 export type CourseVideo = typeof courseVideos.$inferSelect;
@@ -842,6 +892,10 @@ export const insertQuizReportSchema = createInsertSchema(quizReports);
 export const insertLiveCourseSchema = createInsertSchema(liveCourses).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertLiveCourseSessionSchema = createInsertSchema(liveCourseSessions).omit({ id: true, createdAt: true });
 export const insertLiveCourseEnrollmentSchema = createInsertSchema(liveCourseEnrollments).omit({ id: true, enrolledAt: true });
+export const insertLiveStreamingSessionSchema = createInsertSchema(liveStreamingSessions).omit({ id: true, createdAt: true });
+export const insertLiveStreamingMessageSchema = createInsertSchema(liveStreamingMessages).omit({ id: true, createdAt: true });
+export const insertLiveStreamingPollSchema = createInsertSchema(liveStreamingPolls).omit({ id: true, createdAt: true });
+export const insertLiveStreamingPollResponseSchema = createInsertSchema(liveStreamingPollResponses).omit({ id: true, createdAt: true });
 export const insertContentPageSchema = createInsertSchema(contentPages).omit({ id: true, createdAt: true, updatedAt: true });
 export const updateContentPageSchema = createInsertSchema(contentPages).pick({ 
   title: true, 

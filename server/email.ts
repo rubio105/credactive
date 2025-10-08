@@ -1015,3 +1015,169 @@ Il Team CREDACTIVE
     textContent,
   });
 }
+
+export async function sendPremiumUpgradeEmail(
+  email: string,
+  firstName?: string,
+  tier: string = 'premium'
+): Promise<void> {
+  const baseUrl = process.env.BASE_URL || 
+                  (process.env.REPLIT_DOMAINS?.split(',')[0] 
+                    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+                    : 'http://localhost:5000');
+  
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
+  const tierName = tier === 'premium_plus' ? 'Premium Plus' : 'Premium';
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+        .logo { width: 200px; height: 60px; margin-bottom: 20px; }
+        .content { background: white; padding: 40px 30px; }
+        .button { display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; text-decoration: none; border-radius: 8px; margin: 25px 0; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
+        .feature { margin: 15px 0; padding: 15px; background: #f8f9ff; border-radius: 8px; display: flex; align-items: center; }
+        .feature-icon { font-size: 24px; margin-right: 15px; }
+        .success-box { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+        h1 { margin: 0; font-size: 28px; font-weight: 700; }
+        .tier-badge { background: #ffd700; color: #333; padding: 5px 15px; border-radius: 20px; font-weight: bold; display: inline-block; margin-top: 10px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
+            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          </svg>
+          <h1>🎉 Benvenuto in ${tierName}!</h1>
+          <div class="tier-badge">✨ ${tierName.toUpperCase()} ATTIVO</div>
+        </div>
+        <div class="content">
+          <p style="font-size: 18px;">Ciao <strong>${name}</strong>,</p>
+          
+          <div class="success-box">
+            <strong>✅ Pagamento Confermato</strong><br>
+            Il tuo upgrade a <strong>${tierName}</strong> è stato completato con successo!
+          </div>
+          
+          <p style="font-size: 16px;">Ora hai accesso illimitato a tutti i contenuti premium della piattaforma.</p>
+
+          <h3 style="color: #667eea; margin-top: 30px;">🚀 Funzionalità Sbloccate:</h3>
+          
+          <div class="feature">
+            <div class="feature-icon">🎯</div>
+            <div>
+              <strong>Tutti i Quiz Premium</strong><br>
+              <span style="color: #666; font-size: 14px;">Accesso completo a CISSP, CISM, ISO 27001, GDPR, NIS2, DORA e molti altri</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">📊</div>
+            <div>
+              <strong>Report Insight Discovery</strong><br>
+              <span style="color: #666; font-size: 14px;">Analisi professionale della personalità con 72 profili granulari</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🎓</div>
+            <div>
+              <strong>Corsi Live Esclusivi</strong><br>
+              <span style="color: #666; font-size: 14px;">Partecipa ai corsi live con esperti riconosciuti a livello internazionale</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">📚</div>
+            <div>
+              <strong>Contenuti On-Demand</strong><br>
+              <span style="color: #666; font-size: 14px;">Biblioteca completa di video corsi e materiale didattico</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🏆</div>
+            <div>
+              <strong>Certificati Professionali</strong><br>
+              <span style="color: #666; font-size: 14px;">Scarica certificati digitali per ogni quiz completato</span>
+            </div>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🌍</div>
+            <div>
+              <strong>Multilingua Completo</strong><br>
+              <span style="color: #666; font-size: 14px;">Quiz e contenuti in Italiano, Inglese, Spagnolo, Francese</span>
+            </div>
+          </div>
+          
+          <p style="text-align: center; margin-top: 30px;">
+            <a href="${baseUrl}/dashboard" class="button">Inizia Ora 🚀</a>
+          </p>
+          
+          <p style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <strong>💡 Suggerimento:</strong> Inizia dai quiz introduttivi per familiarizzare con la piattaforma, poi passa alle certificazioni avanzate!
+          </p>
+          
+          <p style="margin-top: 30px; color: #666;">
+            Grazie per aver scelto CREDACTIVE Academy!<br>
+            <strong>Il Team CREDACTIVE</strong>
+          </p>
+        </div>
+        <div class="footer">
+          <p style="color: #999; font-size: 12px; margin: 15px 0;">
+            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+          </p>
+          <p style="color: #999; font-size: 12px;">
+            Hai bisogno di aiuto? Contattaci: <a href="mailto:support@credactive.academy" style="color: #667eea;">support@credactive.academy</a>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+CREDACTIVE Academy - Benvenuto in ${tierName}!
+
+Ciao ${rawName},
+
+✅ PAGAMENTO CONFERMATO
+Il tuo upgrade a ${tierName} è stato completato con successo!
+
+Ora hai accesso a:
+- 🎯 Tutti i Quiz Premium (CISSP, CISM, ISO 27001, GDPR, NIS2, DORA...)
+- 📊 Report Insight Discovery professionali
+- 🎓 Corsi Live con esperti internazionali
+- 📚 Contenuti On-Demand completi
+- 🏆 Certificati Professionali scaricabili
+- 🌍 Supporto multilingua (IT, EN, ES, FR)
+
+Inizia subito: ${baseUrl}/dashboard
+
+💡 Suggerimento: Inizia dai quiz introduttivi, poi passa alle certificazioni avanzate!
+
+Grazie per aver scelto CREDACTIVE Academy!
+Il Team CREDACTIVE
+
+---
+Hai bisogno di aiuto? support@credactive.academy
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `🎉 Benvenuto in ${tierName} - CREDACTIVE Academy`,
+    htmlContent,
+    textContent,
+  });
+}

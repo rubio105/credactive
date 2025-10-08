@@ -28,7 +28,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
@@ -1094,7 +1094,11 @@ ${JSON.stringify(questionsToTranslate)}`;
       }
 
       // Call OpenAI for translation
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const apiKey = await getApiKey('OPENAI_API_KEY');
+      if (!apiKey) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      const openai = new OpenAI({ apiKey });
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -1230,6 +1234,15 @@ ${JSON.stringify(questionsToTranslate)}`;
         // Update user to the appropriate tier
         const tier = paymentIntent.metadata.tier || 'premium';
         await storage.updateUserStripeInfo(userId, paymentIntent.customer as string, tier);
+        
+        // Get updated user and send premium upgrade email
+        const user = await storage.getUser(userId);
+        if (user && user.email) {
+          sendPremiumUpgradeEmail(user.email, user.firstName || undefined, tier).catch(err => 
+            console.error("Failed to send premium upgrade email:", err)
+          );
+        }
+        
         res.json({ success: true, message: `${tier === 'premium_plus' ? 'Premium Plus' : 'Premium'} access activated` });
       } else {
         res.status(400).json({ message: "Payment verification failed" });
@@ -3469,7 +3482,11 @@ Restituisci SOLO un JSON con:
         return res.status(400).json({ message: "Description is required" });
       }
 
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const apiKey = await getApiKey('OPENAI_API_KEY');
+      if (!apiKey) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      const openai = new OpenAI({ apiKey });
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
@@ -3791,7 +3808,11 @@ Restituisci SOLO un JSON con:
       }
 
       // Initialize OpenAI
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const apiKey = await getApiKey('OPENAI_API_KEY');
+      if (!apiKey) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      const openai = new OpenAI({ apiKey });
       
       // Choose voice based on language
       const voiceMap: { [key: string]: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' } = {
@@ -3894,7 +3915,11 @@ Restituisci SOLO un JSON con:
       console.log(`[Extended Audio] Correct answer: ${correctOption.text}`);
       
       // Initialize OpenAI
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const apiKey = await getApiKey('OPENAI_API_KEY');
+      if (!apiKey) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      const openai = new OpenAI({ apiKey });
       
       // Create personalized explanation based on whether user answered correctly
       const greeting = useUserName ? userName : '';

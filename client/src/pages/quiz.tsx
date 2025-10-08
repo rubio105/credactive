@@ -222,19 +222,19 @@ export default function QuizPage() {
     }
   }, [quizCompleted]);
 
-  // Limit questions based on URL parameter
+  // Shuffle and limit questions based on URL parameter
   useEffect(() => {
     if (quizData && quizData.questions.length > 0) {
       let questionsToUse = [...quizData.questions];
       
-      // If maxQuestions is specified and less than total, randomly select
+      // ALWAYS shuffle questions using Fisher-Yates algorithm for randomization
+      for (let i = questionsToUse.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questionsToUse[i], questionsToUse[j]] = [questionsToUse[j], questionsToUse[i]];
+      }
+      
+      // If maxQuestions is specified and less than total, take only the requested number
       if (maxQuestions && maxQuestions < questionsToUse.length) {
-        // Shuffle array using Fisher-Yates algorithm
-        for (let i = questionsToUse.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [questionsToUse[i], questionsToUse[j]] = [questionsToUse[j], questionsToUse[i]];
-        }
-        // Take only the requested number
         questionsToUse = questionsToUse.slice(0, maxQuestions);
       }
       
@@ -965,6 +965,19 @@ export default function QuizPage() {
                 </p>
               </div>
               <div className="flex items-center space-x-4">
+                {/* Language Selector */}
+                <Select value={quizLanguage} onValueChange={(value: 'it' | 'en' | 'es') => setQuizLanguage(value)}>
+                  <SelectTrigger className="w-[110px]" data-testid="language-selector">
+                    <Languages className="w-4 h-4 mr-2" />
+                    <SelectValue>{quizLanguage.toUpperCase()}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="it" data-testid="language-it">IT</SelectItem>
+                    <SelectItem value="en" data-testid="language-en">EN</SelectItem>
+                    <SelectItem value="es" data-testid="language-es">ES</SelectItem>
+                  </SelectContent>
+                </Select>
+                
                 {timeRemaining !== null && <Timer timeRemaining={timeRemaining} />}
                 <Button
                   variant="ghost"

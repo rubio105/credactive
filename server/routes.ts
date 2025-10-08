@@ -8,6 +8,9 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
+import { db } from "./db";
+import { liveCourseSessions, liveCourses, liveStreamingSessions } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
@@ -2160,6 +2163,50 @@ Restituisci SOLO un JSON con:
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching sessions:", error);
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
+  // Admin - Get all active streaming sessions
+  app.get('/api/admin/active-streaming-sessions', isAdmin, async (req, res) => {
+    try {
+      const activeSessions = await db
+        .select()
+        .from(liveStreamingSessions)
+        .where(eq(liveStreamingSessions.isActive, true))
+        .orderBy(desc(liveStreamingSessions.createdAt));
+      
+      res.json(activeSessions);
+    } catch (error) {
+      console.error("Error fetching active streaming sessions:", error);
+      res.status(500).json({ message: "Failed to fetch active sessions" });
+    }
+  });
+
+  // Admin - Get all live course sessions with course details
+  app.get('/api/admin/live-course-sessions', isAdmin, async (req, res) => {
+    try {
+      const sessions = await db
+        .select({
+          id: liveCourseSessions.id,
+          liveCourseId: liveCourseSessions.courseId,
+          title: liveCourseSessions.title,
+          startDate: liveCourseSessions.startDate,
+          endDate: liveCourseSessions.endDate,
+          capacity: liveCourseSessions.capacity,
+          enrolled: liveCourseSessions.enrolled,
+          status: liveCourseSessions.status,
+          course: {
+            title: liveCourses.title
+          }
+        })
+        .from(liveCourseSessions)
+        .leftJoin(liveCourses, eq(liveCourseSessions.courseId, liveCourses.id))
+        .orderBy(desc(liveCourseSessions.startDate));
+      
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching all sessions:", error);
       res.status(500).json({ message: "Failed to fetch sessions" });
     }
   });
@@ -4924,7 +4971,7 @@ Explicación de audio:`
       }
       
       // Check if user is enrolled in the live course
-      const enrollment = await storage.getLiveCourseEnrollment(liveCourseSession.liveCourseId, req.user!.id);
+      const enrollment = await storage.getLiveCourseEnrollment(liveCourseSession.courseId, req.user!.id);
       if (!enrollment && !req.user!.isAdmin) {
         return res.status(403).json({ message: 'You must be enrolled in this course to access the live session' });
       }
@@ -4979,7 +5026,7 @@ Explicación de audio:`
                 return;
               }
               
-              const enrollment = await storage.getLiveCourseEnrollment(liveCourseSession.liveCourseId, message.userId);
+              const enrollment = await storage.getLiveCourseEnrollment(liveCourseSession.courseId, message.userId);
               const user = await storage.getUser(message.userId);
               
               if (!enrollment && !user?.isAdmin) {

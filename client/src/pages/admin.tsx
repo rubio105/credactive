@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { AdminUsers } from "@/components/admin/AdminUsers";
@@ -17,6 +17,7 @@ import { AdminCorporateAgreements } from "@/components/admin/AdminCorporateAgree
 import { AdminEmailTemplates } from "@/components/admin/AdminEmailTemplates";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
+import { AdminLiveSessions } from "@/components/admin/AdminLiveSessions";
 
 const menuItems = [
   { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
@@ -26,6 +27,7 @@ const menuItems = [
   { id: "quizzes", icon: BookOpen, label: "Quiz", testId: "tab-quizzes" },
   { id: "questions", icon: HelpCircle, label: "Domande", testId: "tab-questions" },
   { id: "live-courses", icon: Calendar, label: "Corsi Live", testId: "tab-live-courses" },
+  { id: "live-sessions", icon: Tv, label: "Sessioni Live", testId: "tab-live-sessions" },
   { id: "on-demand-courses", icon: Video, label: "Corsi On-Demand", testId: "tab-on-demand-courses" },
   { id: "pages", icon: FileText, label: "Pagine", testId: "tab-pages" },
   { id: "corporate", icon: Building2, label: "Aziende", testId: "tab-corporate" },
@@ -121,6 +123,7 @@ export default function AdminPage() {
           {activeTab === "quizzes" && <AdminQuizzes />}
           {activeTab === "questions" && <AdminQuestions />}
           {activeTab === "live-courses" && <AdminLiveCourses />}
+          {activeTab === "live-sessions" && <AdminLiveSessions />}
           {activeTab === "on-demand-courses" && <AdminOnDemandCourses />}
           {activeTab === "pages" && <AdminContentPages />}
           {activeTab === "corporate" && <AdminCorporateAgreements />}

@@ -32,6 +32,7 @@ import {
   corporateAgreements,
   corporateInvites,
   corporateLicenses,
+  corporateCourseAssignments,
   quizCorporateAccess,
   liveCourseCorporateAccess,
   onDemandCourseCorporateAccess,
@@ -75,6 +76,7 @@ import {
   type LiveCourseCorporateAccess,
   type OnDemandCourseCorporateAccess,
   type EmailTemplate,
+  type SelectCorporateCourseAssignment,
   type InsertUserQuizAttempt,
   type InsertUserProgress,
   type InsertQuizReport,
@@ -104,6 +106,7 @@ import {
   type InsertCorporateAgreement,
   type InsertCorporateInvite,
   type InsertCorporateLicense,
+  type InsertCorporateCourseAssignment,
   type InsertEmailTemplate,
   type SubscriptionPlan,
   type InsertSubscriptionPlan,
@@ -324,6 +327,11 @@ export interface IStorage {
   getCorporateInvitesByAgreement(agreementId: string): Promise<CorporateInvite[]>;
   updateCorporateInviteStatus(id: string, status: string, acceptedAt?: Date): Promise<CorporateInvite>;
   deleteCorporateInvite(id: string): Promise<void>;
+  
+  // Corporate course assignment operations
+  createCorporateCourseAssignment(assignment: InsertCorporateCourseAssignment): Promise<SelectCorporateCourseAssignment>;
+  getCorporateCourseAssignmentsByAgreement(agreementId: string): Promise<SelectCorporateCourseAssignment[]>;
+  deleteCorporateCourseAssignment(id: string): Promise<void>;
   
   // Corporate license operations
   createCorporateLicense(license: InsertCorporateLicense): Promise<CorporateLicense>;
@@ -1906,6 +1914,24 @@ export class DatabaseStorage implements IStorage {
   
   async deleteCorporateInvite(id: string): Promise<void> {
     await db.delete(corporateInvites).where(eq(corporateInvites.id, id));
+  }
+  
+  // Corporate course assignment operations
+  async createCorporateCourseAssignment(assignment: InsertCorporateCourseAssignment): Promise<SelectCorporateCourseAssignment> {
+    const [created] = await db.insert(corporateCourseAssignments).values(assignment).returning();
+    return created;
+  }
+  
+  async getCorporateCourseAssignmentsByAgreement(agreementId: string): Promise<SelectCorporateCourseAssignment[]> {
+    return await db
+      .select()
+      .from(corporateCourseAssignments)
+      .where(eq(corporateCourseAssignments.corporateAgreementId, agreementId))
+      .orderBy(desc(corporateCourseAssignments.createdAt));
+  }
+  
+  async deleteCorporateCourseAssignment(id: string): Promise<void> {
+    await db.delete(corporateCourseAssignments).where(eq(corporateCourseAssignments.id, id));
   }
   
   // Corporate license operations

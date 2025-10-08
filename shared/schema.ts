@@ -560,6 +560,19 @@ export const corporateLicenses = pgTable("corporate_licenses", {
   expiresAt: timestamp("expires_at"),
 });
 
+// Corporate course assignments - courses available to all employees of a company
+export const corporateCourseAssignments = pgTable("corporate_course_assignments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull().references(() => corporateAgreements.id, { onDelete: 'cascade' }),
+  courseType: varchar("course_type", { length: 20 }).notNull(), // 'live' | 'on_demand'
+  courseId: varchar("course_id", { length: 100 }).notNull(), // ID of the live course or quiz
+  courseName: varchar("course_name", { length: 300 }).notNull(), // Name for display
+  assignedBy: varchar("assigned_by").notNull().references(() => users.id), // Admin who assigned
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueCourseAssignment: unique().on(table.corporateAgreementId, table.courseType, table.courseId),
+}));
+
 // Application settings for API keys and configuration
 export const settings = pgTable("settings", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -827,6 +840,7 @@ export const corporateAgreementsRelations = relations(corporateAgreements, ({ on
   }),
   invites: many(corporateInvites),
   licenses: many(corporateLicenses),
+  courseAssignments: many(corporateCourseAssignments),
 }));
 
 export const corporateInvitesRelations = relations(corporateInvites, ({ one }) => ({
@@ -844,6 +858,17 @@ export const corporateLicensesRelations = relations(corporateLicenses, ({ one })
   corporateAgreement: one(corporateAgreements, {
     fields: [corporateLicenses.corporateAgreementId],
     references: [corporateAgreements.id],
+  }),
+}));
+
+export const corporateCourseAssignmentsRelations = relations(corporateCourseAssignments, ({ one }) => ({
+  corporateAgreement: one(corporateAgreements, {
+    fields: [corporateCourseAssignments.corporateAgreementId],
+    references: [corporateAgreements.id],
+  }),
+  assignedByUser: one(users, {
+    fields: [corporateCourseAssignments.assignedBy],
+    references: [users.id],
   }),
 }));
 
@@ -929,6 +954,7 @@ export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id
 export const insertCorporateAgreementSchema = createInsertSchema(corporateAgreements).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCorporateInviteSchema = createInsertSchema(corporateInvites).omit({ id: true, createdAt: true });
 export const insertCorporateLicenseSchema = createInsertSchema(corporateLicenses).omit({ id: true });
+export const insertCorporateCourseAssignmentSchema = createInsertSchema(corporateCourseAssignments).omit({ id: true, createdAt: true });
 export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, createdAt: true, updatedAt: true });
 export const updateSettingSchema = insertSettingSchema.partial();
 export const insertQuizCorporateAccessSchema = createInsertSchema(quizCorporateAccess).omit({ id: true, createdAt: true });
@@ -968,6 +994,8 @@ export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type InsertCorporateAgreement = z.infer<typeof insertCorporateAgreementSchema>;
 export type InsertCorporateInvite = z.infer<typeof insertCorporateInviteSchema>;
 export type InsertCorporateLicense = z.infer<typeof insertCorporateLicenseSchema>;
+export type InsertCorporateCourseAssignment = z.infer<typeof insertCorporateCourseAssignmentSchema>;
+export type SelectCorporateCourseAssignment = typeof corporateCourseAssignments.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type UpdateSetting = z.infer<typeof updateSettingSchema>;
 

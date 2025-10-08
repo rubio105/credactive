@@ -82,6 +82,16 @@ Preferred communication style: Simple, everyday language.
     - **Twitter Cards**: Enhanced Twitter sharing with twitter:card, twitter:title, twitter:description
     - **Canonical URLs**: Proper canonical URL structure to prevent duplicate content issues
 -   **Admin Panel**: Comprehensive user management, quiz rotation control, and tab-based interface for managing content, settings, and analytics. 13-tab navigation system with dedicated Analytics and Marketing tabs for business intelligence and email campaigns.
+-   **Corporate B2B Licensing System**: Enterprise-grade solution for selling bulk licenses to companies:
+    - **Corporate Accounts**: Multi-tier plans (starter:5, premium:25, premium_plus:100, enterprise:500 licenses) with admin-controlled activation
+    - **Corporate Portal**: Professional dashboard for company admins showing team metrics, license utilization, quiz statistics, and engagement analytics
+    - **Invite System**: Email-based employee invitation flow with automatic premium access and email verification bypass for corporate users
+    - **Atomic License Management**: Race-condition-proof license allocation using database-level atomic updates with WHERE clause enforcement
+    - **Double-Check Pattern**: Post-creation validation with automatic rollback to prevent license oversubscription even under concurrent load
+    - **Team Analytics**: Real-time metrics on team performance, points, quiz completion, and activity tracking
+    - **Security Hardening**: Admin-only corporate registration, server-side tier validation, license limits per tier, inactive-by-default accounts requiring manual approval
+    - **Transactional Safety**: Complete rollback on failure (deletes new users or reverts corporate links) with preserved original premium status
+    - **Professional UI**: Modern dashboard with metric cards, progress visualization, team/invite management tabs, responsive table design
 
 # External Dependencies
 

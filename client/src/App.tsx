@@ -29,6 +29,8 @@ import Settings from "@/pages/settings";
 import Leaderboard from "@/pages/leaderboard";
 import Certificates from "@/pages/certificates";
 import Analytics from "@/pages/analytics";
+import CorporatePortal from "@/pages/corporate-portal";
+import CorporateJoin from "@/pages/corporate-join";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -50,6 +52,8 @@ function Router() {
       <Route path="/certificates" component={Certificates} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/admin" component={Admin} />
+      <Route path="/corporate" component={CorporatePortal} />
+      <Route path="/corporate/join/:token" component={CorporateJoin} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

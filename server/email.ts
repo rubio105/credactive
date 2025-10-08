@@ -919,3 +919,99 @@ Il Team CREDACTIVE
     textContent,
   });
 }
+
+export async function sendCorporateInviteEmail(
+  email: string,
+  companyName: string,
+  inviteUrl: string
+): Promise<void> {
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+        .content { background: white; padding: 40px 30px; }
+        .button { display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; text-decoration: none; border-radius: 8px; margin: 25px 0; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
+        .info-box { background: #f8f9ff; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+        h1 { margin: 0; font-size: 28px; font-weight: 700; }
+        .company { color: #667eea; font-weight: 700; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎓 Invito Aziendale</h1>
+        </div>
+        <div class="content">
+          <h2>Benvenuto in CREDACTIVE Academy!</h2>
+          <p>Sei stato invitato da <span class="company">${sanitizeUserInput(companyName)}</span> ad accedere alla piattaforma professionale di certificazione CREDACTIVE Academy.</p>
+          
+          <div class="info-box">
+            <strong>🏢 Account Aziendale</strong><br>
+            Avrai accesso a:
+            <ul style="margin: 10px 0;">
+              <li>✅ Tutti i contenuti premium inclusi</li>
+              <li>📚 Quiz di certificazione professionale</li>
+              <li>📊 Report avanzati Insight Discovery</li>
+              <li>🎯 Tracciamento progressi personalizzato</li>
+            </ul>
+          </div>
+          
+          <p style="text-align: center;">
+            <a href="${inviteUrl}" class="button">Accetta Invito</a>
+          </p>
+          
+          <p style="color: #666; font-size: 14px; margin-top: 30px;">
+            <strong>Nota:</strong> Questo invito scadrà tra 7 giorni. Se non hai richiesto questo invito, puoi ignorare questa email.
+          </p>
+          
+          <p style="margin-top: 30px; color: #666;">
+            A presto,<br>
+            <strong>Il Team CREDACTIVE</strong>
+          </p>
+        </div>
+        <div class="footer">
+          <p style="color: #999; font-size: 12px; margin: 15px 0;">
+            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+CREDACTIVE Academy - Invito Aziendale
+
+Benvenuto!
+
+Sei stato invitato da ${companyName} ad accedere alla piattaforma CREDACTIVE Academy.
+
+Account Aziendale - Benefici:
+- Tutti i contenuti premium inclusi
+- Quiz di certificazione professionale
+- Report avanzati Insight Discovery
+- Tracciamento progressi personalizzato
+
+Per accettare l'invito, clicca qui:
+${inviteUrl}
+
+Nota: Questo invito scadrà tra 7 giorni.
+
+A presto,
+Il Team CREDACTIVE
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `🎓 Invito da ${companyName} - CREDACTIVE Academy`,
+    htmlContent,
+    textContent,
+  });
+}

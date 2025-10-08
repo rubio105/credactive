@@ -1471,23 +1471,24 @@ export class DatabaseStorage implements IStorage {
   }
   
   async incrementCorporateAgreementUsers(id: string): Promise<boolean> {
-    // Atomic increment with maxUsers enforcement
+    // Atomic increment with licensesOwned enforcement
     const result = await db
       .update(corporateAgreements)
       .set({ 
         currentUsers: sql`${corporateAgreements.currentUsers} + 1`,
+        licensesUsed: sql`${corporateAgreements.licensesUsed} + 1`,
         updatedAt: new Date()
       })
       .where(
         and(
           eq(corporateAgreements.id, id),
-          // Only increment if below max (or no max set)
-          sql`(${corporateAgreements.maxUsers} IS NULL OR ${corporateAgreements.currentUsers} < ${corporateAgreements.maxUsers})`
+          // Only increment if below license limit (atomic check-and-update)
+          sql`${corporateAgreements.currentUsers} < ${corporateAgreements.licensesOwned}`
         )
       )
       .returning();
     
-    // Return true if update succeeded (row was updated)
+    // Return true if update succeeded (row was updated), false if limit reached
     return result.length > 0;
   }
   

@@ -28,7 +28,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import DOMPurify from "isomorphic-dompurify";
@@ -4067,6 +4067,401 @@ Explicación de audio:`
     } catch (error) {
       console.error('Sitemap generation error:', error);
       res.status(500).send('Error generating sitemap');
+    }
+  });
+
+  // ===== CORPORATE B2B ROUTES =====
+  
+  // Corporate registration (admin only - for creating new corporate accounts)
+  app.post('/api/corporate/register', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCorporateAgreementSchema.parse(req.body);
+      
+      // Server-side tier validation
+      const validTiers = ['starter', 'premium', 'premium_plus', 'enterprise'];
+      const tier = validatedData.tier && validTiers.includes(validatedData.tier) 
+        ? validatedData.tier 
+        : 'starter';
+      
+      // Enforce license limits per tier
+      const tierLimits: Record<string, number> = {
+        starter: 5,
+        premium: 25,
+        premium_plus: 100,
+        enterprise: 500
+      };
+      
+      const maxLicenses = tierLimits[tier];
+      const licensesOwned = Math.min(validatedData.licensesOwned || 5, maxLicenses);
+      
+      const agreement = await storage.createCorporateAgreement({
+        ...validatedData,
+        tier,
+        licensesOwned,
+        isActive: false, // Requires admin activation
+        licensesUsed: 0,
+        currentUsers: 0
+      });
+      
+      res.json(agreement);
+    } catch (error: any) {
+      console.error('Corporate registration error:', error);
+      res.status(400).json({ 
+        message: error.message || 'Failed to create corporate account' 
+      });
+    }
+  });
+  
+  // Get corporate dashboard data (requires authentication)
+  app.get('/api/corporate/dashboard', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      // Check if user is corporate admin
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      // Get team members
+      const teamMembers = await storage.getUsersByCorporateAgreement(agreement.id);
+      
+      // Get invites
+      const invites = await storage.getCorporateInvitesByAgreement(agreement.id);
+      
+      // Get licenses
+      const licenses = await storage.getCorporateLicensesByAgreement(agreement.id);
+      
+      // Calculate team metrics
+      const totalPoints = teamMembers.reduce((sum, member) => sum + (member.points || 0), 0);
+      const avgPoints = teamMembers.length > 0 ? Math.round(totalPoints / teamMembers.length) : 0;
+      
+      const verifiedMembers = teamMembers.filter(m => m.isVerified).length;
+      const activeMembers = teamMembers.filter(m => (m.points || 0) > 0).length;
+      
+      // Count quiz attempts
+      const quizAttempts = await Promise.all(
+        teamMembers.map(member => storage.getUserQuizAttempts(member.id))
+      );
+      const totalAttempts = quizAttempts.reduce((sum, attempts) => sum + attempts.length, 0);
+      
+      res.json({
+        agreement,
+        team: {
+          members: teamMembers,
+          total: teamMembers.length,
+          verified: verifiedMembers,
+          active: activeMembers,
+          avgPoints
+        },
+        invites: {
+          all: invites,
+          pending: invites.filter(i => i.status === 'pending').length,
+          accepted: invites.filter(i => i.status === 'accepted').length
+        },
+        licenses,
+        metrics: {
+          totalPoints,
+          totalAttempts,
+          utilizationRate: agreement.licensesOwned ? 
+            Math.round((agreement.licensesUsed / agreement.licensesOwned) * 100) : 0
+        }
+      });
+    } catch (error: any) {
+      console.error('Corporate dashboard error:', error);
+      res.status(500).json({ message: 'Failed to load dashboard data' });
+    }
+  });
+  
+  // Create corporate invite (corporate admin only)
+  app.post('/api/corporate/invites', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { email } = req.body;
+      
+      if (!email || !email.trim()) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+      
+      // Check if user is corporate admin
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      // Check available capacity including pending invites
+      const pendingInvites = (await storage.getCorporateInvitesByAgreement(agreement.id))
+        .filter(inv => inv.status === 'pending').length;
+      
+      const totalCommitted = (agreement.currentUsers || agreement.licensesUsed || 0) + pendingInvites;
+      
+      if (agreement.licensesOwned && totalCommitted >= agreement.licensesOwned) {
+        return res.status(400).json({ 
+          message: `License limit reached. ${pendingInvites} invites pending, ${agreement.currentUsers || agreement.licensesUsed} seats used of ${agreement.licensesOwned} total.`
+        });
+      }
+      
+      // Check if email already invited or registered
+      const existingInvite = (await storage.getCorporateInvitesByAgreement(agreement.id))
+        .find(inv => inv.email.toLowerCase() === email.toLowerCase() && inv.status === 'pending');
+      
+      if (existingInvite) {
+        return res.status(400).json({ message: 'User already invited' });
+      }
+      
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.corporateAgreementId === agreement.id) {
+        return res.status(400).json({ message: 'User already part of this organization' });
+      }
+      
+      // Generate secure token
+      const token = crypto.randomBytes(32).toString('hex');
+      
+      // Create invite
+      const invite = await storage.createCorporateInvite({
+        corporateAgreementId: agreement.id,
+        email: email.toLowerCase().trim(),
+        invitedBy: userId,
+        token,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        status: 'pending'
+      });
+      
+      // Double-check post-creation to catch race conditions
+      const allInvites = await storage.getCorporateInvitesByAgreement(agreement.id);
+      const currentPendingInvites = allInvites.filter(inv => inv.status === 'pending').length;
+      const reloadedAgreement = await storage.getCorporateAgreementById(agreement.id);
+      const finalCommitted = (reloadedAgreement?.currentUsers || 0) + currentPendingInvites;
+      
+      if (reloadedAgreement && finalCommitted > reloadedAgreement.licensesOwned) {
+        // Race condition detected - rollback this invite
+        await storage.deleteCorporateInvite(invite.id);
+        return res.status(400).json({ 
+          message: 'License limit reached due to concurrent invites. Please try again.' 
+        });
+      }
+      
+      // Send invitation email
+      try {
+        const inviteUrl = `${req.protocol}://${req.get('host')}/corporate/join/${token}`;
+        await sendCorporateInviteEmail(email, agreement.companyName, inviteUrl);
+      } catch (emailError) {
+        console.error('Failed to send invite email:', emailError);
+        // Continue even if email fails
+      }
+      
+      res.json(invite);
+    } catch (error: any) {
+      console.error('Create invite error:', error);
+      res.status(500).json({ message: 'Failed to create invite' });
+    }
+  });
+  
+  // Get all invites for corporate (corporate admin only)
+  app.get('/api/corporate/invites', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      const invites = await storage.getCorporateInvitesByAgreement(agreement.id);
+      res.json(invites);
+    } catch (error: any) {
+      console.error('Get invites error:', error);
+      res.status(500).json({ message: 'Failed to load invites' });
+    }
+  });
+  
+  // Accept corporate invite (public)
+  app.post('/api/corporate/invites/:token/accept', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { email, password, firstName, lastName } = req.body;
+      
+      // Validate invite token
+      const invite = await storage.getCorporateInviteByToken(token);
+      if (!invite) {
+        return res.status(404).json({ message: 'Invalid or expired invite' });
+      }
+      
+      if (invite.status !== 'pending') {
+        return res.status(400).json({ message: 'Invite already used' });
+      }
+      
+      if (new Date() > invite.expiresAt) {
+        await storage.updateCorporateInviteStatus(invite.id, 'expired');
+        return res.status(400).json({ message: 'Invite has expired' });
+      }
+      
+      if (email.toLowerCase() !== invite.email.toLowerCase()) {
+        return res.status(400).json({ message: 'Email does not match invite' });
+      }
+      
+      // Get corporate agreement
+      const agreement = await storage.getCorporateAgreementById(invite.corporateAgreementId);
+      if (!agreement || !agreement.isActive) {
+        return res.status(400).json({ message: 'Corporate account is not active' });
+      }
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      let user = existingUser;
+      
+      if (existingUser) {
+        // Link existing user to corporate account
+        if (existingUser.corporateAgreementId) {
+          return res.status(400).json({ 
+            message: 'User already belongs to another organization' 
+          });
+        }
+        
+        user = await storage.updateUser(existingUser.id, {
+          corporateAgreementId: agreement.id,
+          isPremium: true
+        });
+      } else {
+        // Create new user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user = await storage.createUser({
+          email: email.toLowerCase().trim(),
+          password: hashedPassword,
+          firstName: firstName?.trim() || '',
+          lastName: lastName?.trim() || '',
+          corporateAgreementId: agreement.id,
+          isVerified: true, // Corporate users are pre-verified
+          isPremium: true, // Corporate users get premium access
+          role: 'user'
+        });
+      }
+      
+      // Atomic increment with rollback protection
+      const incremented = await storage.incrementCorporateAgreementUsers(agreement.id);
+      if (!incremented) {
+        // Rollback user creation/update if license limit reached
+        if (!existingUser) {
+          // New user was created - delete it
+          await storage.deleteUser(user.id);
+        } else {
+          // Existing user was updated - revert link
+          await storage.updateUser(user.id, { 
+            corporateAgreementId: null,
+            isPremium: existingUser.isPremium // Restore original premium status
+          });
+        }
+        return res.status(400).json({ 
+          message: 'License limit reached. All licenses are currently in use.' 
+        });
+      }
+      
+      // Mark invite as accepted (only after successful increment)
+      await storage.updateCorporateInviteStatus(invite.id, 'accepted', new Date());
+      
+      res.json({ 
+        message: 'Successfully joined organization',
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName
+        }
+      });
+    } catch (error: any) {
+      console.error('Accept invite error:', error);
+      res.status(500).json({ message: 'Failed to accept invite' });
+    }
+  });
+  
+  // Delete/cancel invite (corporate admin only)
+  app.delete('/api/corporate/invites/:id', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params;
+      
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      // Verify invite belongs to this corporate
+      const invites = await storage.getCorporateInvitesByAgreement(agreement.id);
+      const invite = invites.find(inv => inv.id === id);
+      
+      if (!invite) {
+        return res.status(404).json({ message: 'Invite not found' });
+      }
+      
+      await storage.deleteCorporateInvite(id);
+      res.json({ message: 'Invite deleted successfully' });
+    } catch (error: any) {
+      console.error('Delete invite error:', error);
+      res.status(500).json({ message: 'Failed to delete invite' });
+    }
+  });
+  
+  // Get team members (corporate admin only)
+  app.get('/api/corporate/team', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      const agreement = await storage.getCorporateAgreementByAdminUserId(userId);
+      if (!agreement) {
+        return res.status(403).json({ message: 'Not a corporate administrator' });
+      }
+      
+      const members = await storage.getUsersByCorporateAgreement(agreement.id);
+      
+      // Enhance with quiz stats
+      const enrichedMembers = await Promise.all(
+        members.map(async (member) => {
+          const attempts = await storage.getUserQuizAttempts(member.id);
+          return {
+            ...member,
+            quizCount: attempts.length,
+            lastActivity: attempts.length > 0 
+              ? new Date(Math.max(...attempts.map(a => new Date(a.completedAt || a.createdAt).getTime())))
+              : null
+          };
+        })
+      );
+      
+      res.json(enrichedMembers);
+    } catch (error: any) {
+      console.error('Get team error:', error);
+      res.status(500).json({ message: 'Failed to load team members' });
+    }
+  });
+  
+  // Validate corporate invite token (public - for pre-filling form)
+  app.get('/api/corporate/invites/:token/validate', async (req, res) => {
+    try {
+      const { token } = req.params;
+      
+      const invite = await storage.getCorporateInviteByToken(token);
+      if (!invite) {
+        return res.status(404).json({ message: 'Invalid invite token' });
+      }
+      
+      if (invite.status !== 'pending') {
+        return res.status(400).json({ message: 'Invite already used' });
+      }
+      
+      if (new Date() > invite.expiresAt) {
+        return res.status(400).json({ message: 'Invite has expired' });
+      }
+      
+      const agreement = await storage.getCorporateAgreementById(invite.corporateAgreementId);
+      
+      res.json({
+        email: invite.email,
+        companyName: agreement?.companyName,
+        expiresAt: invite.expiresAt
+      });
+    } catch (error: any) {
+      console.error('Validate invite error:', error);
+      res.status(500).json({ message: 'Failed to validate invite' });
     }
   });
 

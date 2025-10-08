@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -107,6 +108,14 @@ export default function CorporatePortal() {
   const [inviteType, setInviteType] = useState<'general' | 'course'>('general');
   const [courseType, setCourseType] = useState<'live' | 'on_demand'>('live');
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  
+  // Company-wide courses state
+  const [isCompanyCourseDialogOpen, setIsCompanyCourseDialogOpen] = useState(false);
+  const [companyCourseType, setCompanyCourseType] = useState<'live' | 'on_demand'>('live');
+  const [selectedCompanyCourseId, setSelectedCompanyCourseId] = useState<string>('');
+  
+  // Bulk invite state
+  const [bulkEmails, setBulkEmails] = useState("");
 
   const { data: dashboard, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/corporate/dashboard"],
@@ -122,6 +131,23 @@ export default function CorporatePortal() {
   const { data: categories } = useQuery<any[]>({
     queryKey: ["/api/categories"],
     enabled: inviteType === 'course' && courseType === 'on_demand',
+  });
+  
+  // Load company-wide live courses
+  const { data: companyLiveCourses } = useQuery<any[]>({
+    queryKey: ["/api/live-courses"],
+    enabled: isCompanyCourseDialogOpen && companyCourseType === 'live',
+  });
+  
+  // Load company-wide categories
+  const { data: companyCategories } = useQuery<any[]>({
+    queryKey: ["/api/categories"],
+    enabled: isCompanyCourseDialogOpen && companyCourseType === 'on_demand',
+  });
+  
+  // Load company course assignments
+  const { data: courseAssignments } = useQuery<any[]>({
+    queryKey: ["/api/corporate/course-assignments"],
   });
 
   const createInviteMutation = useMutation({
@@ -170,6 +196,74 @@ export default function CorporatePortal() {
       toast({
         title: "Errore",
         description: error.message || "Impossibile eliminare l'invito.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Company course assignment mutations
+  const assignCourseMutation = useMutation({
+    mutationFn: async (data: { courseType: string; courseId: string; courseName: string }) => {
+      const res = await apiRequest("/api/corporate/course-assignments", "POST", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Corso Assegnato",
+        description: "Il corso è ora disponibile per tutti i dipendenti.",
+      });
+      setSelectedCompanyCourseId('');
+      setIsCompanyCourseDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/corporate/course-assignments"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile assegnare il corso.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest(`/api/corporate/course-assignments/${id}`, "DELETE");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Assegnazione Rimossa",
+        description: "Il corso non è più assegnato all'azienda.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/corporate/course-assignments"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile rimuovere l'assegnazione.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Bulk invite mutation
+  const bulkInviteMutation = useMutation({
+    mutationFn: async (data: { emails: string[]; courseType?: string; courseId?: string; courseName?: string }) => {
+      const res = await apiRequest("/api/corporate/invites/bulk-csv", "POST", data);
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Inviti Inviati",
+        description: `${data.results?.length || 0} inviti inviati con successo. ${data.errors?.length || 0} falliti.`,
+      });
+      setBulkEmails("");
+      queryClient.invalidateQueries({ queryKey: ["/api/corporate/dashboard"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile inviare gli inviti multipli.",
         variant: "destructive",
       });
     },
@@ -452,7 +546,7 @@ export default function CorporatePortal() {
 
         {/* Tabs Content */}
         <Tabs defaultValue="team" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="team" data-testid="tab-team">
               <Users className="mr-2 h-4 w-4" />
               Team ({dashboard.team.total})
@@ -460,6 +554,14 @@ export default function CorporatePortal() {
             <TabsTrigger value="invites" data-testid="tab-invites">
               <Mail className="mr-2 h-4 w-4" />
               Inviti ({dashboard.invites.all.length})
+            </TabsTrigger>
+            <TabsTrigger value="courses" data-testid="tab-courses">
+              <Award className="mr-2 h-4 w-4" />
+              Corsi Aziendali ({courseAssignments?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="bulk-invites" data-testid="tab-bulk-invites">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Inviti Multipli
             </TabsTrigger>
           </TabsList>
 
@@ -604,6 +706,220 @@ export default function CorporatePortal() {
                     )}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="courses" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Corsi Aziendali</CardTitle>
+                  <CardDescription>
+                    Gestisci i corsi disponibili per tutti i dipendenti
+                  </CardDescription>
+                </div>
+                <Dialog open={isCompanyCourseDialogOpen} onOpenChange={setIsCompanyCourseDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-assign-course">
+                      <Award className="mr-2 h-4 w-4" />
+                      Assegna Corso
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Assegna Corso all'Azienda</DialogTitle>
+                      <DialogDescription>
+                        Tutti i dipendenti attuali e futuri avranno accesso automatico
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="company-course-type">Tipo di Corso</Label>
+                        <Select 
+                          value={companyCourseType} 
+                          onValueChange={(value: 'live' | 'on_demand') => {
+                            setCompanyCourseType(value);
+                            setSelectedCompanyCourseId('');
+                          }}
+                        >
+                          <SelectTrigger id="company-course-type" data-testid="select-company-course-type">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="live">Corso Live</SelectItem>
+                            <SelectItem value="on_demand">Corso On-Demand</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="company-course-select">Seleziona Corso</Label>
+                        <Select 
+                          value={selectedCompanyCourseId} 
+                          onValueChange={setSelectedCompanyCourseId}
+                        >
+                          <SelectTrigger id="company-course-select" data-testid="select-company-course">
+                            <SelectValue placeholder="Scegli un corso..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {companyCourseType === 'live' && companyLiveCourses?.map(course => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.title}
+                              </SelectItem>
+                            ))}
+                            {companyCourseType === 'on_demand' && companyCategories?.map(cat => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button 
+                        onClick={() => {
+                          if (!selectedCompanyCourseId) {
+                            toast({
+                              title: "Errore",
+                              description: "Seleziona un corso.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
+                          const courseName = companyCourseType === 'live'
+                            ? companyLiveCourses?.find(c => c.id === selectedCompanyCourseId)?.title
+                            : companyCategories?.find(c => c.id === selectedCompanyCourseId)?.name;
+                          
+                          assignCourseMutation.mutate({
+                            courseType: companyCourseType,
+                            courseId: selectedCompanyCourseId,
+                            courseName: courseName || ''
+                          });
+                        }}
+                        disabled={assignCourseMutation.isPending || !selectedCompanyCourseId}
+                        data-testid="button-submit-assign-course"
+                      >
+                        {assignCourseMutation.isPending ? "Assegnazione..." : "Assegna Corso"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Corso</TableHead>
+                      <TableHead className="text-center">Tipo</TableHead>
+                      <TableHead className="text-center">Data Assegnazione</TableHead>
+                      <TableHead className="text-right">Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!courseAssignments || courseAssignments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-gray-500 py-8">
+                          Nessun corso assegnato. Clicca "Assegna Corso" per iniziare.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      courseAssignments.map((assignment: any) => (
+                        <TableRow key={assignment.id} data-testid={`row-course-assignment-${assignment.id}`}>
+                          <TableCell className="font-medium">{assignment.courseName}</TableCell>
+                          <TableCell className="text-center">
+                            {assignment.courseType === 'live' ? (
+                              <Badge variant="default" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                Live
+                              </Badge>
+                            ) : (
+                              <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                On-Demand
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center text-sm text-gray-600">
+                            {format(new Date(assignment.createdAt), "dd MMM yyyy", { locale: it })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteAssignmentMutation.mutate(assignment.id)}
+                              disabled={deleteAssignmentMutation.isPending}
+                              data-testid={`button-delete-assignment-${assignment.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bulk-invites" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Inviti Multipli</CardTitle>
+                <CardDescription>
+                  Invia inviti a più dipendenti contemporaneamente
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bulk-emails">Email Dipendenti (una per riga)</Label>
+                  <Textarea
+                    id="bulk-emails"
+                    placeholder="dipendente1@azienda.com&#10;dipendente2@azienda.com&#10;dipendente3@azienda.com"
+                    value={bulkEmails}
+                    onChange={(e) => setBulkEmails(e.target.value)}
+                    rows={8}
+                    data-testid="textarea-bulk-emails"
+                  />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Inserisci un indirizzo email per riga. Gli inviti verranno inviati a tutti gli indirizzi validi.
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={() => {
+                    const emailList = bulkEmails
+                      .split('\n')
+                      .map(e => e.trim().toLowerCase())
+                      .filter(e => e && e.includes('@'));
+                    
+                    if (emailList.length === 0) {
+                      toast({
+                        title: "Errore",
+                        description: "Inserisci almeno un indirizzo email valido.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    bulkInviteMutation.mutate({ emails: emailList });
+                  }}
+                  disabled={bulkInviteMutation.isPending}
+                  data-testid="button-send-bulk-invites"
+                >
+                  {bulkInviteMutation.isPending ? "Invio in corso..." : `Invia Inviti (${bulkEmails.split('\n').filter(e => e.trim() && e.includes('@')).length})`}
+                </Button>
+
+                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                    Formato CSV
+                  </h4>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    Puoi anche copiare una colonna di email da un foglio Excel o CSV e incollarla direttamente. 
+                    Il sistema processerà automaticamente gli indirizzi validi.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

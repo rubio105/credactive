@@ -4493,7 +4493,7 @@ Explicación de audio:`
   app.post('/api/corporate/invites', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
-      const { email } = req.body;
+      const { email, targetCourseId, targetCourseType, targetCourseName } = req.body;
       
       if (!email || !email.trim()) {
         return res.status(400).json({ message: 'Email is required' });
@@ -4533,14 +4533,17 @@ Explicación de audio:`
       // Generate secure token
       const token = crypto.randomBytes(32).toString('hex');
       
-      // Create invite
+      // Create invite with optional course details
       const invite = await storage.createCorporateInvite({
         corporateAgreementId: agreement.id,
         email: email.toLowerCase().trim(),
         invitedBy: userId,
         token,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        status: 'pending'
+        status: 'pending',
+        targetCourseId: targetCourseId || undefined,
+        targetCourseType: targetCourseType || undefined,
+        targetCourseName: targetCourseName || undefined
       });
       
       // Double-check post-creation to catch race conditions
@@ -4557,10 +4560,16 @@ Explicación de audio:`
         });
       }
       
-      // Send invitation email
+      // Send invitation email with optional course details
       try {
         const inviteUrl = `${req.protocol}://${req.get('host')}/corporate/join/${token}`;
-        await sendCorporateInviteEmail(email, agreement.companyName, inviteUrl);
+        await sendCorporateInviteEmail(
+          email, 
+          agreement.companyName, 
+          inviteUrl,
+          targetCourseName,
+          targetCourseType as 'live' | 'on_demand' | undefined
+        );
       } catch (emailError) {
         console.error('Failed to send invite email:', emailError);
         // Continue even if email fails

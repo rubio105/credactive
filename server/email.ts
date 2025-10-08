@@ -923,8 +923,25 @@ Il Team CREDACTIVE
 export async function sendCorporateInviteEmail(
   email: string,
   companyName: string,
-  inviteUrl: string
+  inviteUrl: string,
+  courseName?: string,
+  courseType?: 'live' | 'on_demand'
 ): Promise<void> {
+  const courseIcon = courseType === 'live' ? '🎥' : courseType === 'on_demand' ? '📹' : '';
+  const courseTypeText = courseType === 'live' ? 'Corso Live' : courseType === 'on_demand' ? 'Corso On-Demand' : '';
+  
+  const courseSection = courseName && courseType ? `
+          <div class="info-box" style="background: #fff4e6; border-left: 4px solid #ff9800; margin-bottom: 20px;">
+            <strong>${courseIcon} ${courseTypeText} Assegnato</strong><br>
+            <p style="margin: 10px 0; font-size: 16px; color: #333;">
+              <strong>${sanitizeUserInput(courseName)}</strong>
+            </p>
+            <p style="margin: 5px 0; color: #666; font-size: 14px;">
+              Questo invito include l'accesso a questo corso specifico. Dopo aver accettato l'invito, potrai accedere immediatamente al contenuto.
+            </p>
+          </div>
+  ` : '';
+  
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -951,6 +968,8 @@ export async function sendCorporateInviteEmail(
         <div class="content">
           <h2>Benvenuto in CREDACTIVE Academy!</h2>
           <p>Sei stato invitato da <span class="company">${sanitizeUserInput(companyName)}</span> ad accedere alla piattaforma professionale di certificazione CREDACTIVE Academy.</p>
+          
+          ${courseSection}
           
           <div class="info-box">
             <strong>🏢 Account Aziendale</strong><br>
@@ -986,13 +1005,20 @@ export async function sendCorporateInviteEmail(
     </html>
   `;
 
+  const courseTextSection = courseName && courseType ? `
+${courseIcon} ${courseTypeText} Assegnato:
+${courseName}
+
+Questo invito include l'accesso a questo corso specifico.
+` : '';
+
   const textContent = `
 CREDACTIVE Academy - Invito Aziendale
 
 Benvenuto!
 
 Sei stato invitato da ${companyName} ad accedere alla piattaforma CREDACTIVE Academy.
-
+${courseTextSection}
 Account Aziendale - Benefici:
 - Tutti i contenuti premium inclusi
 - Quiz di certificazione professionale
@@ -1010,7 +1036,9 @@ Il Team CREDACTIVE
 
   await sendEmail({
     to: email,
-    subject: `🎓 Invito da ${companyName} - CREDACTIVE Academy`,
+    subject: courseName 
+      ? `🎓 Invito da ${companyName}: ${courseName} - CREDACTIVE Academy`
+      : `🎓 Invito da ${companyName} - CREDACTIVE Academy`,
     htmlContent,
     textContent,
   });

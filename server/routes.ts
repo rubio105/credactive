@@ -4465,6 +4465,91 @@ Explicación de audio:`
     }
   });
 
+  // Update user nickname
+  app.patch('/api/user/nickname', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { nickname } = req.body;
+      
+      // Validate nickname
+      if (!nickname || nickname.trim().length === 0) {
+        return res.status(400).json({ message: 'Nickname cannot be empty' });
+      }
+      
+      if (nickname.length > 50) {
+        return res.status(400).json({ message: 'Nickname must be 50 characters or less' });
+      }
+      
+      // Check if nickname is already taken
+      const existingUser = await storage.getUserByNickname(nickname.trim());
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(400).json({ message: 'This nickname is already taken' });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, { 
+        nickname: nickname.trim() 
+      });
+      
+      res.json({ 
+        message: 'Nickname updated successfully',
+        nickname: updatedUser.nickname 
+      });
+    } catch (error: any) {
+      console.error('Update nickname error:', error);
+      res.status(500).json({ message: 'Failed to update nickname' });
+    }
+  });
+  
+  // Get general leaderboard
+  app.get('/api/leaderboard', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const leaderboard = await storage.getLeaderboard(limit);
+      
+      res.json(leaderboard.map((user, index) => ({
+        rank: index + 1,
+        id: user.id,
+        displayName: user.nickname || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utente',
+        totalPoints: user.totalPoints || 0,
+        level: user.level || 1,
+        credits: user.credits || 0,
+        isPremium: user.isPremium,
+        corporateAgreementId: user.corporateAgreementId
+      })));
+    } catch (error: any) {
+      console.error('Get leaderboard error:', error);
+      res.status(500).json({ message: 'Failed to load leaderboard' });
+    }
+  });
+  
+  // Get team leaderboard (for corporate users)
+  app.get('/api/leaderboard/team', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUserById(userId);
+      
+      if (!user?.corporateAgreementId) {
+        return res.status(400).json({ message: 'User is not part of a corporate team' });
+      }
+      
+      const teamLeaderboard = await storage.getTeamLeaderboard(user.corporateAgreementId);
+      
+      res.json(teamLeaderboard.map((member, index) => ({
+        rank: index + 1,
+        id: member.id,
+        displayName: member.nickname || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Utente',
+        totalPoints: member.totalPoints || 0,
+        level: member.level || 1,
+        credits: member.credits || 0,
+        isPremium: member.isPremium,
+        isCurrentUser: member.id === userId
+      })));
+    } catch (error: any) {
+      console.error('Get team leaderboard error:', error);
+      res.status(500).json({ message: 'Failed to load team leaderboard' });
+    }
+  });
+
   // Register gamification routes
   registerGamificationRoutes(app);
 

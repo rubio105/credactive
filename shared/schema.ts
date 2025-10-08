@@ -58,6 +58,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   language: varchar("language", { length: 2 }), // it, en, es, fr
   // Gamification fields
+  nickname: varchar("nickname", { length: 50 }), // Display name for leaderboards
   totalPoints: integer("total_points").default(0),
   level: integer("level").default(1),
   currentStreak: integer("current_streak").default(0),

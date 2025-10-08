@@ -395,6 +395,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByNickname(nickname: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.nickname, nickname));
+    return user;
+  }
+
   async getUserByResetToken(token: string): Promise<User | undefined> {
     const [user] = await db
       .select()
@@ -1845,6 +1850,23 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSubscriptionPlan(id: string): Promise<void> {
     await db.delete(subscriptionPlans).where(eq(subscriptionPlans.id, id));
+  }
+
+  // Leaderboard operations
+  async getLeaderboard(limit: number = 100): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .orderBy(desc(users.totalPoints), desc(users.level))
+      .limit(limit);
+  }
+
+  async getTeamLeaderboard(corporateAgreementId: string): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.corporateAgreementId, corporateAgreementId))
+      .orderBy(desc(users.totalPoints), desc(users.level));
   }
 }
 

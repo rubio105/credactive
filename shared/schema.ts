@@ -537,6 +537,10 @@ export const corporateInvites = pgTable("corporate_invites", {
   expiresAt: timestamp("expires_at").notNull(),
   acceptedAt: timestamp("accepted_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  // Course-specific invite fields (optional)
+  targetCourseType: varchar("target_course_type", { length: 20 }), // 'live' | 'on_demand' | null
+  targetCourseId: varchar("target_course_id", { length: 100 }), // Course ID if invite is for specific course
+  targetCourseName: varchar("target_course_name", { length: 300 }), // Course name for email (avoids JOIN)
 });
 
 // Corporate license packages purchased by companies

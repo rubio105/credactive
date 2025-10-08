@@ -1,6 +1,6 @@
 # Overview
 
-CREDACTIVE ACADEMY is a professional online platform for quiz-based certification preparation across Cybersecurity, Compliance & Governance, Business & Innovation, and Leadership & Assessment. It offers quizzes, tracks progress, generates reports, and provides premium content via a €90/year Stripe subscription. The platform aims to be a leading destination for professional certifications, leveraging AI for large-scale question generation to eventually offer over 1,000,000 questions.
+CREDACTIVE ACADEMY is an online platform for professional certification preparation, offering quizzes, progress tracking, reports, and premium content via a Stripe subscription. The platform aims to be a leader in professional certifications, planning to leverage AI for generating over 1,000,000 quiz questions across various domains like Cybersecurity, Compliance & Governance, Business & Innovation, and Leadership & Assessment.
 
 # User Preferences
 
@@ -10,108 +10,42 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend
 
--   **Technology Stack**: React with TypeScript, Vite, shadcn/ui (Radix UI + Tailwind CSS) for UI.
--   **State Management**: TanStack Query for server state; local component state for UI.
--   **Routing**: Wouter for client-side navigation.
--   **Forms**: React Hook Form with Zod validation.
--   **UI/UX**: Utilizes `shadcn/ui` for a modern, consistent interface with features like featured categories, improved live course enrollment UX, and consistent admin panel navigation. Includes professional color wheel visualization for Insight Discovery personality reports.
+The frontend uses React with TypeScript, Vite, shadcn/ui (Radix UI + Tailwind CSS) for UI, TanStack Query for server state, Wouter for routing, and React Hook Form with Zod for forms. It provides a modern, consistent interface with features like professional color wheel visualization for personality reports.
 
 ## Backend
 
--   **Framework**: Express.js with Node.js and TypeScript.
--   **API Design**: RESTful, organized by feature.
--   **Authentication**: Email/password via Passport.js Local Strategy (bcrypt) and Google OAuth 2.0. Persistent sessions via `express-session` with PostgreSQL store. Email verification with 6-digit codes and secure password recovery.
--   **Email Service Integration**: Brevo for transactional emails (welcome, password reset, verification, premium upgrade confirmation).
--   **Database Access**: Drizzle ORM for type-safe queries, shared schema.
--   **Security Measures**: Rate limiting on critical endpoints, Helmet.js security headers, CORS for Replit domains, XSS protection via DOMPurify, SQL injection prevention via Drizzle ORM.
--   **Build Process**: `tsx` for development, `esbuild` for production server bundle, `vite` for client bundle.
+The backend is built with Express.js, Node.js, and TypeScript, featuring a RESTful API. Authentication uses Passport.js (local strategy with bcrypt and Google OAuth 2.0) with persistent sessions. Brevo handles transactional emails. Drizzle ORM provides type-safe database access to PostgreSQL. Security measures include rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention. The build process uses `tsx` for development and `esbuild`/`vite` for production.
 
 ## Data Storage
 
--   **Database**: PostgreSQL (Neon's serverless driver).
--   **ORM**: Drizzle ORM with schema-first design.
--   **Schema Design**: Tables for Users (including Stripe data and couponCode for promotional tracking), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs, User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, Email Templates, and Settings. Supports category images and audio explanations.
--   **Type Safety**: End-to-end type safety via Drizzle and shared schema.
+PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM with a schema-first design. The schema includes tables for Users (with Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs, User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, Email Templates, and Settings. It supports category images and audio explanations, ensuring end-to-end type safety.
 
 ## Key Features
 
--   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Fisher-Yates shuffle ALWAYS active for randomized question order on every quiz load. Admin-controlled question rotation (10-100 questions or all), timed quizzes, server-side result generation with detailed reports.
--   **Insight Discovery Personality Reports**: Professional 72-type personality assessment system with enhanced features:
-    - **Methodological Foundation**: Detailed introduction explaining Jung/Hippocrates color theory origins (5th century BC temperaments)
-    - **72-Type Granular Classification**: Precise profiling system (vs. basic 4-color) with descriptive type names (e.g., "9 Leader Visionario", "23 Comunicatore Energico")
-    - **Advanced Color Wheel Visualization**: 72-segment SVG wheel with 5° granularity, opacity-based percentage representation
-    - **Team Value Analysis**: 5 key contributions the individual brings to team dynamics
-    - **Communication Obstacles**: 6 potential barriers to effective communication based on color profile
-    - **Opposite Type Analysis**: Describes complementary opposite personality with differences and collaboration strategies
-    - **Comprehensive Sections**: Strengths, development areas, working style, communication patterns, leadership analysis, stress management, decision-making, all in formal Italian suitable for professional/consulting contexts
--   **Premium Features**: Most content requires an active Stripe subscription.
--   **AI Question Generation with Job Tracking**: Admin panel feature using OpenAI GPT-4o for bulk, context-aware question generation (1-1000 questions, configurable difficulty). Includes real-time generation tracking, and document-based exclusive generation via PDF upload (questions generated only from document content).
--   **Document Upload**: Quizzes can have optional PDF documents for AI question generation.
--   **Question Media**: Supports image uploads for questions and AI-generated text-to-speech (TTS) audio explanations (including personalized greetings).
--   **Live Courses**: System for purchasing one-time live courses via Stripe, including details, sessions, and enrollment tracking.
--   **Content Management System (CMS)**: Manages static content pages with rich text editing and dynamic placement in site navigation.
--   **Internationalization**: Multi-language support for home page, live courses, and an in-quiz language selector (IT/EN/ES) with real-time AI-powered translation via OpenAI GPT-4o. In-quiz header selector allows instant language switching with dynamic question/options translation and audio language sync.
--   **Email Template Management**: Database-backed system for admin customization of transactional emails (welcome, verification, password reset) with dynamic variable substitution, preview mode, and intelligent fallback to hardcoded templates.
--   **Configuration Management**: Secure database-backed API key management for services (OpenAI, Stripe, Brevo) with dynamic loading, 5-minute TTL cache, and automatic instance reset on key updates for zero-downtime deployment.
--   **Subscription Plans Management**: Admin panel for creating and managing subscription plans with AI-powered description formatting. Each plan includes name, price, currency, interval (year/month), features list, active status, and Stripe payment toggle. Plans display in responsive grid (max 3 per row) with visual status indicators.
--   **User Data Management**: CSV export/import functionality for bulk user operations with complete registration field support. Export downloads all user data (excluding sensitive fields like passwords) in CSV format; import accepts CSV files for bulk user creation with validation and error reporting.
--   **Analytics Dashboard**: Comprehensive business intelligence dashboard displaying key metrics including:
-    - **Onboarding Metrics**: Total users, new registrations (7/30 days, monthly), growth percentage tracking
-    - **Revenue Analytics**: Estimated annual/monthly revenue, premium vs free user breakdown, conversion rates, subscription tier distribution
-    - **Coupon Tracking**: Usage rates, coupon code breakdown, promotional campaign effectiveness via couponCode field
-    - **User Verification**: Email verification rates, verified vs unverified user statistics
-    - **Engagement Metrics**: Active users, average points, activity rates, gamification statistics
-    - **Newsletter Analytics**: Subscriber counts, subscription rates
-    - **Authentication Methods**: Provider breakdown (local, Google OAuth)
--   **AI Email Marketing System**: Intelligent email campaign management with AI-powered content generation:
-    - **AI Email Generator**: Uses OpenAI GPT-4o to analyze available courses and generate personalized email content based on target profession
-    - **Smart Course Recommendations**: AI automatically recommends 2-3 most relevant courses/certifications for the specified profession (e.g., CISM, CISSP for Cybersecurity Professionals)
-    - **Professional Content Creation**: Generates compelling HTML emails in Italian with customizable purpose (course promotion, special offers, newsletters) and tone (professional, formal, friendly, urgent, educational)
-    - **Audience Segmentation**: Preview and target users by profession, subscription tier, language, newsletter consent, and engagement level
-    - **Campaign Preview System**: Real-time HTML preview with editable subject and content before sending
-    - **Brevo Integration**: Bulk email sending to newsletter subscribers with success/failure tracking
-    - **Database Schema**: marketingCampaigns table for future campaign tracking and analytics expansion
-    - **90-second Timeout**: Optimized client configuration to handle long-running AI generation requests
--   **SEO Optimization**: Comprehensive search engine optimization for organic traffic growth:
-    - **Dynamic Meta Tags**: react-helmet-async integration for page-specific title, description, keywords, canonical URLs
-    - **Landing Page SEO**: Optimized for "Certificazioni Cybersecurity Online - Quiz CISSP, CISM, ISO 27001" with rich keywords
-    - **Dashboard SEO**: Personalized meta tags for logged-in user experience
-    - **Quiz-Specific SEO**: Dynamic titles and descriptions based on quiz content for individual quiz pages
-    - **Automatic Sitemap**: /sitemap.xml endpoint generating valid XML sitemap with all pages, quizzes, static content, proper priorities and changefreq values
-    - **Open Graph Tags**: Social media sharing optimization with og:title, og:description, og:url, og:type
-    - **Twitter Cards**: Enhanced Twitter sharing with twitter:card, twitter:title, twitter:description
-    - **Canonical URLs**: Proper canonical URL structure to prevent duplicate content issues
--   **Admin Panel**: Comprehensive user management, quiz rotation control, and tab-based interface for managing content, settings, and analytics. 13-tab navigation system with dedicated Analytics and Marketing tabs for business intelligence and email campaigns.
--   **Corporate B2B Licensing System**: Enterprise-grade solution for selling bulk licenses to companies:
-    - **Corporate Accounts**: Multi-tier plans (starter:5, premium:25, premium_plus:100, enterprise:500 licenses) with admin-controlled activation
-    - **Corporate Portal**: Professional dashboard for company admins showing team metrics, license utilization, quiz statistics, and engagement analytics
-    - **Invite System**: Email-based employee invitation flow with automatic premium access and email verification bypass for corporate users
-    - **Atomic License Management**: Race-condition-proof license allocation using database-level atomic updates with WHERE clause enforcement
-    - **Double-Check Pattern**: Post-creation validation with automatic rollback to prevent license oversubscription even under concurrent load
-    - **Team Analytics**: Real-time metrics on team performance, points, quiz completion, and activity tracking
-    - **Security Hardening**: Admin-only corporate registration, server-side tier validation, license limits per tier, inactive-by-default accounts requiring manual approval
-    - **Transactional Safety**: Complete rollback on failure (deletes new users or reverts corporate links) with preserved original premium status
-    - **Professional UI**: Modern dashboard with metric cards, progress visualization, team/invite management tabs, responsive table design
--   **Leaderboard System with Nicknames**: Gamification and competitive learning features:
-    - **Nickname Support**: Optional user nicknames (max 50 characters) with uniqueness enforcement for privacy and personalization
-    - **Global Leaderboard**: Public ranking of all users by totalPoints, displaying nickname or real name, level, credits, premium status
-    - **Team Leaderboard**: Corporate-exclusive leaderboard showing only team members, fostering internal competition
-    - **Credits Preservation**: Gamification credits maintained for all users (individual and corporate) for future welfare/prize conversion
-    - **Display Name Logic**: Flexible displayName = nickname || firstName + lastName || 'Utente' fallback
-    - **Settings Integration**: Nickname editor in user profile with client and server-side validation
-    - **Corporate Integration**: Team leaderboard button in corporate portal, automatic team filtering
--   **Corporate Content Visibility System**: Granular access control for enterprise-exclusive content:
-    - **Visibility Types**: Each quiz, live course, and on-demand course has a visibilityType field ('public' | 'corporate_exclusive')
-    - **Mapping Tables**: Three dedicated tables (quizCorporateAccess, liveCoursesCorporateAccess, onDemandCoursesCorporateAccess) with composite unique constraints on (contentId, corporateAgreementId) to enforce one-to-one relationships
-    - **Admin UI Controls**: Integrated visibility management in quiz/course creation/edit forms with visibilityType selector and corporate agreements multi-select checklist
-    - **Content Filtering**: Backend automatically filters content based on user type - public users see only public content, corporate users see public + accessible content, admins see all content via isAdminOverride parameter
-    - **API Endpoints**: Dedicated endpoints for granting/revoking corporate access (POST/DELETE /api/admin/corporate-agreements/:id/{quiz,live-course,on-demand-course}-access)
-    - **Access Synchronization**: Corporate access changes execute before dialog cleanup to ensure reliable persistence with proper async flow control
-    - **Security**: Cascading deletes on corporate agreement removal, atomic access grants with duplicate prevention, admin-only access management
+-   **Quiz System**: Hierarchical structure with categories, quizzes, and questions, featuring multiple choice with explanations, randomized question order, admin-controlled question rotation, timed quizzes, and detailed server-side reports.
+-   **Insight Discovery Personality Reports**: A 72-type personality assessment system based on Jung/Hippocrates color theory, offering granular classification, an advanced 72-segment SVG color wheel visualization, team value analysis, communication obstacle identification, opposite type analysis, and comprehensive professional reports.
+-   **Premium Features**: Most content is accessible via an active Stripe subscription.
+-   **AI Question Generation with Job Tracking**: Admin panel functionality using OpenAI GPT-4o for bulk, context-aware question generation, including document-based generation from PDF uploads, with real-time tracking.
+-   **Question Media**: Support for image uploads and AI-generated text-to-speech audio explanations.
+-   **Live Courses**: System for purchasing and tracking one-time live courses.
+-   **Live Streaming Sessions**: Real-time interactive learning via WebSockets, supporting embedded external video (YouTube, Zoom, Google Meet), real-time chat with persistence, interactive polls, and comprehensive admin controls.
+-   **Content Management System (CMS)**: Manages static content pages with rich text editing and dynamic navigation placement.
+-   **Internationalization**: Multi-language support with an in-quiz language selector (IT/EN/ES) offering real-time AI-powered translation via OpenAI GPT-4o.
+-   **Email Template Management**: Database-backed system for admin customization of transactional emails with dynamic variable substitution, preview, and intelligent fallbacks.
+-   **Configuration Management**: Secure database-backed API key management with caching and automatic instance reset for zero-downtime deployment.
+-   **Subscription Plans Management**: Admin panel for creating and managing subscription plans with AI-powered descriptions and Stripe integration.
+-   **User Data Management**: CSV export/import for bulk user operations, including validation and error reporting.
+-   **Analytics Dashboard**: Comprehensive business intelligence displaying onboarding, revenue, coupon tracking, user verification, engagement, newsletter, and authentication metrics.
+-   **AI Email Marketing System**: Intelligent email campaign management using OpenAI GPT-4o for personalized content generation, smart course recommendations, audience segmentation, real-time HTML preview, and Brevo integration for bulk sending.
+-   **SEO Optimization**: Comprehensive search engine optimization including dynamic meta tags, landing page optimization, sitemap generation, Open Graph tags, Twitter cards, and canonical URLs.
+-   **Admin Panel**: Comprehensive interface for user management, quiz rotation control, content, settings, and analytics, with 13-tab navigation.
+-   **Corporate B2B Licensing System**: Enterprise solution for bulk license sales, corporate accounts, professional dashboards for company admins, email-based invitation system, atomic license management, and team analytics.
+-   **Leaderboard System with Nicknames**: Gamification features including optional user nicknames, global leaderboards, corporate-exclusive team leaderboards, and credit preservation.
+-   **Corporate Content Visibility System**: Granular access control for quizzes and courses, allowing 'public' or 'corporate_exclusive' visibility, managed via dedicated mapping tables and admin UI controls, with content filtering based on user type.
 
 # External Dependencies
 
--   **Stripe**: Payment processing, subscription management.
+-   **Stripe**: Payment processing and subscription management.
 -   **Brevo (Sendinblue)**: Transactional email service.
 -   **Neon Database**: Serverless PostgreSQL.
--   **OpenAI**: GPT-4o and GPT-4o-mini for AI question generation and text-to-speech (TTS).
+-   **OpenAI**: GPT-4o and GPT-4o-mini for AI question generation and text-to-speech.

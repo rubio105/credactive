@@ -2374,6 +2374,198 @@ Restituisci SOLO un JSON con:
     }
   });
 
+  // Get live course session details
+  app.get('/api/live-course-sessions/:sessionId', isAuthenticated, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const session = await storage.getSessionById(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Get course details
+      const course = await storage.getLiveCourseById(session.courseId);
+      
+      res.json({
+        ...session,
+        course
+      });
+    } catch (error) {
+      console.error("Error fetching session:", error);
+      res.status(500).json({ message: "Failed to fetch session" });
+    }
+  });
+
+  // Check if user is enrolled in a live course session
+  app.get('/api/live-courses/check-enrollment/:sessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.user?.claims?.sub || req.user?.id;
+
+      const session = await storage.getSessionById(sessionId);
+      if (!session) {
+        return res.json(false);
+      }
+
+      const enrollment = await storage.getLiveCourseEnrollment(session.courseId, userId);
+      res.json(!!enrollment || req.user?.isAdmin);
+    } catch (error) {
+      console.error("Error checking enrollment:", error);
+      res.status(500).json({ message: "Failed to check enrollment" });
+    }
+  });
+
+  // Get chat history for streaming session
+  app.get('/api/live-streaming/chat/:streamingSessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { streamingSessionId } = req.params;
+      const userId = req.user?.claims?.sub || req.user?.id;
+
+      // Verify streaming session exists
+      const streamingSession = await storage.getLiveStreamingSessionById(streamingSessionId);
+      if (!streamingSession) {
+        return res.status(404).json({ message: "Streaming session not found" });
+      }
+
+      // Verify user enrollment in the live course
+      const liveCourseSession = await storage.getSessionById(streamingSession.sessionId);
+      if (!liveCourseSession) {
+        return res.status(404).json({ message: "Live course session not found" });
+      }
+
+      const enrollment = await storage.getLiveCourseEnrollment(liveCourseSession.courseId, userId);
+      if (!enrollment && !req.user?.isAdmin) {
+        return res.status(403).json({ message: "You must be enrolled to view chat" });
+      }
+
+      const messages = await storage.getStreamingMessages(streamingSessionId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat:", error);
+      res.status(500).json({ message: "Failed to fetch chat" });
+    }
+  });
+
+  // Send chat message in streaming session
+  app.post('/api/live-streaming/chat/send', isAuthenticated, async (req: any, res) => {
+    try {
+      const { streamingSessionId, message } = req.body;
+      const userId = req.user?.claims?.sub || req.user?.id;
+
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ message: "Message cannot be empty" });
+      }
+
+      // Verify streaming session exists and user is enrolled
+      const streamingSession = await storage.getLiveStreamingSessionById(streamingSessionId);
+      if (!streamingSession) {
+        return res.status(404).json({ message: "Streaming session not found" });
+      }
+
+      const liveCourseSession = await storage.getSessionById(streamingSession.sessionId);
+      if (!liveCourseSession) {
+        return res.status(404).json({ message: "Live course session not found" });
+      }
+
+      const enrollment = await storage.getLiveCourseEnrollment(liveCourseSession.courseId, userId);
+      if (!enrollment && !req.user?.isAdmin) {
+        return res.status(403).json({ message: "You must be enrolled to send messages" });
+      }
+
+      // Create message
+      const chatMessage = await storage.createStreamingMessage({
+        streamingSessionId,
+        userId,
+        message: message.trim()
+      });
+
+      // Broadcast to all connected clients
+      broadcastToSession(streamingSession.sessionId, {
+        type: 'chat',
+        message: chatMessage
+      });
+
+      res.json(chatMessage);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // Get active polls for streaming session
+  app.get('/api/live-streaming/polls/:streamingSessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { streamingSessionId } = req.params;
+      const userId = req.user?.claims?.sub || req.user?.id;
+
+      const polls = await storage.getActivePolls(streamingSessionId);
+      
+      // Enrich polls with stats and user responses
+      const pollsWithData = await Promise.all(polls.map(async (poll) => {
+        const stats = await storage.getPollStats(poll.id);
+        const userResponse = await storage.getUserPollResponse(poll.id, userId);
+        
+        return {
+          ...poll,
+          responses: stats,
+          totalVotes: stats.reduce((sum, r) => sum + r.count, 0),
+          userResponse: userResponse?.selectedOption
+        };
+      }));
+
+      res.json(pollsWithData);
+    } catch (error) {
+      console.error("Error fetching polls:", error);
+      res.status(500).json({ message: "Failed to fetch polls" });
+    }
+  });
+
+  // Vote on a poll
+  app.post('/api/live-streaming/poll/vote', isAuthenticated, async (req: any, res) => {
+    try {
+      const { pollId, option } = req.body;
+      const userId = req.user?.claims?.sub || req.user?.id;
+
+      if (!option) {
+        return res.status(400).json({ message: "Option is required" });
+      }
+
+      // Check if user already voted
+      const existingResponse = await storage.getUserPollResponse(pollId, userId);
+      if (existingResponse) {
+        return res.status(400).json({ message: "You have already voted on this poll" });
+      }
+
+      // Create response
+      await storage.createPollResponse({
+        pollId,
+        userId,
+        selectedOption: option
+      });
+
+      // Get updated stats and broadcast
+      const poll = await storage.getLiveStreamingPollById(pollId);
+      if (poll) {
+        const stats = await storage.getPollStats(pollId);
+        const streamingSession = await storage.getLiveStreamingSessionById(poll.streamingSessionId);
+        
+        if (streamingSession) {
+          broadcastToSession(streamingSession.sessionId, {
+            type: 'poll_updated',
+            poll,
+            stats
+          });
+        }
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error voting on poll:", error);
+      res.status(500).json({ message: "Failed to vote on poll" });
+    }
+  });
+
   // ====================
   // ON-DEMAND COURSES
   // ====================

@@ -102,6 +102,15 @@ export const quizzes = pgTable("quizzes", {
   isActive: boolean("is_active").default(true),
   maxQuestionsPerAttempt: integer("max_questions_per_attempt"), // Optional: limit number of questions shown per attempt (null = all questions)
   documentPdfUrl: text("document_pdf_url"), // Optional: PDF document for AI question generation
+  visibilityType: varchar("visibility_type", { length: 20 }).default("public"), // public, corporate_exclusive
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Quiz corporate access mapping
+export const quizCorporateAccess = pgTable("quiz_corporate_access", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  quizId: uuid("quiz_id").notNull().references(() => quizzes.id, { onDelete: 'cascade' }),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -191,8 +200,17 @@ export const liveCourses = pgTable("live_courses", {
   stripeProductId: varchar("stripe_product_id"),
   stripePriceId: varchar("stripe_price_id"),
   isActive: boolean("is_active").default(true),
+  visibilityType: varchar("visibility_type", { length: 20 }).default("public"), // public, corporate_exclusive
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Live course corporate access mapping
+export const liveCourseCorporateAccess = pgTable("live_course_corporate_access", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  liveCourseId: uuid("live_course_id").notNull().references(() => liveCourses.id, { onDelete: 'cascade' }),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Live course sessions (dates)
@@ -245,8 +263,17 @@ export const onDemandCourses = pgTable("on_demand_courses", {
   isPremiumPlus: boolean("is_premium_plus").default(true), // Requires Premium Plus subscription
   isActive: boolean("is_active").default(true),
   sortOrder: integer("sort_order").default(0),
+  visibilityType: varchar("visibility_type", { length: 20 }).default("public"), // public, corporate_exclusive
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// On-demand course corporate access mapping
+export const onDemandCourseCorporateAccess = pgTable("on_demand_course_corporate_access", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  onDemandCourseId: uuid("on_demand_course_id").notNull().references(() => onDemandCourses.id, { onDelete: 'cascade' }),
+  corporateAgreementId: uuid("corporate_agreement_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Course videos
@@ -792,6 +819,9 @@ export type CorporateAgreement = typeof corporateAgreements.$inferSelect;
 export type CorporateInvite = typeof corporateInvites.$inferSelect;
 export type CorporateLicense = typeof corporateLicenses.$inferSelect;
 export type Setting = typeof settings.$inferSelect;
+export type QuizCorporateAccess = typeof quizCorporateAccess.$inferSelect;
+export type LiveCourseCorporateAccess = typeof liveCourseCorporateAccess.$inferSelect;
+export type OnDemandCourseCorporateAccess = typeof onDemandCourseCorporateAccess.$inferSelect;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -833,6 +863,9 @@ export const insertCorporateInviteSchema = createInsertSchema(corporateInvites).
 export const insertCorporateLicenseSchema = createInsertSchema(corporateLicenses).omit({ id: true });
 export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, createdAt: true, updatedAt: true });
 export const updateSettingSchema = insertSettingSchema.partial();
+export const insertQuizCorporateAccessSchema = createInsertSchema(quizCorporateAccess).omit({ id: true, createdAt: true });
+export const insertLiveCourseCorporateAccessSchema = createInsertSchema(liveCourseCorporateAccess).omit({ id: true, createdAt: true });
+export const insertOnDemandCourseCorporateAccessSchema = createInsertSchema(onDemandCourseCorporateAccess).omit({ id: true, createdAt: true });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;

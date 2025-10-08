@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Navigation from "@/components/navigation";
 import Timer from "@/components/ui/timer";
 import { SEO } from "@/components/SEO";
+import { ScenarioChat } from "@/components/ScenarioChat";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, ArrowRight, Clock, Lightbulb, Trophy, RotateCcw, FileText, Download, Languages, Volume2, Mic, Coins } from "lucide-react";
@@ -1221,6 +1222,36 @@ export default function QuizPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* AI Scenario Chat - Show after answering for relevant quiz types */}
+        {!isInsightDiscovery && showExplanation && currentQuestion && quizData && (
+          <ScenarioChat
+            questionId={currentQuestion.id}
+            quizId={quizData.quiz.id}
+            category={currentQuestion.category || quizData.quiz.title}
+            questionText={currentQuestion.question}
+            userAnswer={typeof selectedAnswer === 'string' ? selectedAnswer : selectedAnswer[0] || ''}
+            correctAnswer={currentQuestion.correctAnswer}
+            wasCorrect={typeof selectedAnswer === 'string' 
+              ? selectedAnswer === currentQuestion.correctAnswer 
+              : false}
+            isInsightDiscovery={false}
+          />
+        )}
+
+        {/* AI Scenario Chat for Insight Discovery - Personal development scenarios */}
+        {isInsightDiscovery && showExplanation && currentQuestion && quizData && (
+          <ScenarioChat
+            questionId={currentQuestion.id}
+            quizId={quizData.quiz.id}
+            category="Insight Discovery"
+            questionText={currentQuestion.question}
+            userAnswer={typeof selectedAnswer === 'string' ? selectedAnswer : selectedAnswer[0] || ''}
+            correctAnswer={currentQuestion.correctAnswer}
+            wasCorrect={true} // No right/wrong for personality tests
+            isInsightDiscovery={true}
+          />
         )}
 
         {/* Navigation Buttons */}

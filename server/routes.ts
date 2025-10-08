@@ -5378,6 +5378,25 @@ Explicación de audio:`
 
   // AI Scenario Conversation endpoints
   
+  // Check for existing active conversation (GET /api/scenarios/check/:questionId)
+  app.get('/api/scenarios/check/:questionId', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { questionId } = req.params;
+
+      const conversation = await storage.getUserScenarioConversation(questionId, user.id);
+      if (!conversation) {
+        return res.json({ conversation: null, messages: [] });
+      }
+
+      const messages = await storage.getConversationMessages(conversation.id);
+      res.json({ conversation, messages });
+    } catch (error: any) {
+      console.error('Check scenario conversation error:', error);
+      res.status(500).json({ message: error.message || 'Failed to check conversation' });
+    }
+  });
+  
   // Validation schemas
   const startScenarioSchema = z.object({
     questionId: z.string().uuid(),

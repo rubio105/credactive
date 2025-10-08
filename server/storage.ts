@@ -120,6 +120,9 @@ import {
   type ScenarioMessage,
   type InsertScenarioConversation,
   type InsertScenarioMessage,
+  userFeedback,
+  type UserFeedback,
+  type InsertUserFeedback,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
@@ -374,6 +377,12 @@ export interface IStorage {
   createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
   updateSubscriptionPlan(id: string, updates: Partial<SubscriptionPlan>): Promise<SubscriptionPlan>;
   deleteSubscriptionPlan(id: string): Promise<void>;
+
+  // User feedback operations
+  createUserFeedback(feedback: InsertUserFeedback): Promise<UserFeedback>;
+  getAllUserFeedback(): Promise<(UserFeedback & { user?: User })[]>;
+  getUserFeedbackByUserId(userId: string): Promise<UserFeedback[]>;
+  checkUserHasRecentFeedback(userId: string, days?: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2465,6 +2474,65 @@ export class DatabaseStorage implements IStorage {
       .update(scenarioConversations)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(scenarioConversations.id, id));
+  }
+
+  // User feedback operations
+  async createUserFeedback(feedback: InsertUserFeedback): Promise<UserFeedback> {
+    const [created] = await db
+      .insert(userFeedback)
+      .values(feedback)
+      .returning();
+    return created;
+  }
+
+  async getAllUserFeedback(): Promise<(UserFeedback & { user?: User })[]> {
+    const feedbacks = await db
+      .select({
+        id: userFeedback.id,
+        userId: userFeedback.userId,
+        rating: userFeedback.rating,
+        comment: userFeedback.comment,
+        source: userFeedback.source,
+        createdAt: userFeedback.createdAt,
+        user: users,
+      })
+      .from(userFeedback)
+      .leftJoin(users, eq(userFeedback.userId, users.id))
+      .orderBy(desc(userFeedback.createdAt));
+    
+    return feedbacks.map(f => ({
+      id: f.id,
+      userId: f.userId,
+      rating: f.rating,
+      comment: f.comment,
+      source: f.source,
+      createdAt: f.createdAt,
+      user: f.user || undefined,
+    }));
+  }
+
+  async getUserFeedbackByUserId(userId: string): Promise<UserFeedback[]> {
+    return await db
+      .select()
+      .from(userFeedback)
+      .where(eq(userFeedback.userId, userId))
+      .orderBy(desc(userFeedback.createdAt));
+  }
+
+  async checkUserHasRecentFeedback(userId: string, days: number = 30): Promise<boolean> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    const [result] = await db
+      .select()
+      .from(userFeedback)
+      .where(and(
+        eq(userFeedback.userId, userId),
+        gte(userFeedback.createdAt, cutoffDate)
+      ))
+      .limit(1);
+    
+    return !!result;
   }
 }
 

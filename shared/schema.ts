@@ -1176,5 +1176,22 @@ export const insertScenarioMessageSchema = createInsertSchema(scenarioMessages).
 });
 export type InsertScenarioMessage = z.infer<typeof insertScenarioMessageSchema>;
 
+// User Feedback (rating and comments)
+export const userFeedback = pgTable("user_feedback", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  rating: integer("rating").notNull(), // 1-5 stars
+  comment: text("comment"),
+  source: varchar("source", { length: 50 }), // popup, email, manual
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type UserFeedback = typeof userFeedback.$inferSelect;
+export const insertUserFeedbackSchema = createInsertSchema(userFeedback).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertUserFeedback = z.infer<typeof insertUserFeedbackSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

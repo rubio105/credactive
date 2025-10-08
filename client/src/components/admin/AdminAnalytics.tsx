@@ -54,7 +54,7 @@ interface AnalyticsData {
 }
 
 export function AdminAnalytics() {
-  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
+  const { data: analytics, isLoading, error } = useQuery<AnalyticsData>({
     queryKey: ['/api/admin/analytics']
   });
 
@@ -66,12 +66,14 @@ export function AdminAnalytics() {
     );
   }
 
-  if (!analytics) {
+  if (error || !analytics) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Errore</CardTitle>
-          <CardDescription>Impossibile caricare i dati analytics</CardDescription>
+          <CardDescription>
+            {error ? `Errore: ${(error as any).message}` : 'Impossibile caricare i dati analytics'}
+          </CardDescription>
         </CardHeader>
       </Card>
     );

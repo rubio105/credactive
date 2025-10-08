@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { HelmetProvider } from 'react-helmet-async';
 import CookieBanner from "@/components/cookie-banner";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Quiz from "@/pages/quiz";
@@ -80,6 +81,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <CookieBanner />
+          <FeedbackDialog />
           <Router />
         </TooltipProvider>
       </QueryClientProvider>

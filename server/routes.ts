@@ -5824,6 +5824,58 @@ Explicación de audio:`
       res.status(500).json({ message: error.message || 'Failed to end conversation' });
     }
   });
+
+  // User Feedback API
+
+  // Submit feedback (POST /api/feedback)
+  app.post('/api/feedback', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { rating, comment, source } = req.body;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+      }
+
+      const feedback = await storage.createUserFeedback({
+        userId: user.id,
+        rating,
+        comment: comment || null,
+        source: source || 'popup',
+      });
+
+      res.json(feedback);
+    } catch (error: any) {
+      console.error('Submit feedback error:', error);
+      res.status(500).json({ message: error.message || 'Failed to submit feedback' });
+    }
+  });
+
+  // Check if user should see feedback prompt (GET /api/feedback/should-prompt)
+  app.get('/api/feedback/should-prompt', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Check if user has submitted feedback in the last 30 days
+      const hasRecentFeedback = await storage.checkUserHasRecentFeedback(user.id, 30);
+      
+      res.json({ shouldPrompt: !hasRecentFeedback });
+    } catch (error: any) {
+      console.error('Check feedback prompt error:', error);
+      res.status(500).json({ message: error.message || 'Failed to check feedback prompt' });
+    }
+  });
+
+  // Admin - Get all feedback (GET /api/admin/feedback)
+  app.get('/api/admin/feedback', isAdmin, async (req, res) => {
+    try {
+      const feedbacks = await storage.getAllUserFeedback();
+      res.json(feedbacks);
+    } catch (error: any) {
+      console.error('Get feedback error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get feedback' });
+    }
+  });
   
   return httpServer;
 }

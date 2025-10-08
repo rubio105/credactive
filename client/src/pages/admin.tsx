@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { AdminUsers } from "@/components/admin/AdminUsers";
@@ -18,9 +18,11 @@ import { AdminEmailTemplates } from "@/components/admin/AdminEmailTemplates";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
 import { AdminLiveSessions } from "@/components/admin/AdminLiveSessions";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 
 const menuItems = [
   { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
+  { id: "feedback", icon: MessageSquare, label: "Feedback", testId: "tab-feedback" },
   { id: "marketing", icon: Mail, label: "Marketing", testId: "tab-marketing" },
   { id: "users", icon: Users, label: "Utenti", testId: "tab-users" },
   { id: "categories", icon: BookOpen, label: "Categorie", testId: "tab-categories" },
@@ -117,6 +119,7 @@ export default function AdminPage() {
 
         <div className="p-8">
           {activeTab === "analytics" && <AdminAnalytics />}
+          {activeTab === "feedback" && <AdminFeedback />}
           {activeTab === "marketing" && <AdminMarketing />}
           {activeTab === "users" && <AdminUsers />}
           {activeTab === "categories" && <AdminCategories />}

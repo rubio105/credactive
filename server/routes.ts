@@ -511,8 +511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Test-only authentication endpoint (only available in development)
-  if (process.env.NODE_ENV === 'development') {
+  // Test-only authentication endpoint (only available in development and test)
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     app.post('/api/auth/test-login', async (req, res) => {
       try {
         const { email } = req.body;

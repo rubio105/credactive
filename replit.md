@@ -21,7 +21,7 @@ Preferred communication style: Simple, everyday language.
 -   **Framework**: Express.js with Node.js and TypeScript.
 -   **API Design**: RESTful, organized by feature.
 -   **Authentication**: Email/password via Passport.js Local Strategy (bcrypt) and Google OAuth 2.0. Persistent sessions via `express-session` with PostgreSQL store. Email verification with 6-digit codes and secure password recovery.
--   **Email Service Integration**: Brevo for transactional emails (welcome, password reset, verification).
+-   **Email Service Integration**: Brevo for transactional emails (welcome, password reset, verification, premium upgrade confirmation).
 -   **Database Access**: Drizzle ORM for type-safe queries, shared schema.
 -   **Security Measures**: Rate limiting on critical endpoints, Helmet.js security headers, CORS for Replit domains, XSS protection via DOMPurify, SQL injection prevention via Drizzle ORM.
 -   **Build Process**: `tsx` for development, `esbuild` for production server bundle, `vite` for client bundle.
@@ -35,7 +35,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Key Features
 
--   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Supports shuffled questions, admin-controlled question rotation (10-100 questions or all), timed quizzes, server-side result generation with detailed reports.
+-   **Quiz System**: Hierarchical structure (Categories > Quizzes > Questions), multiple choice with explanations. Fisher-Yates shuffle ALWAYS active for randomized question order on every quiz load. Admin-controlled question rotation (10-100 questions or all), timed quizzes, server-side result generation with detailed reports.
 -   **Insight Discovery Personality Reports**: Professional 72-type personality assessment system with enhanced features:
     - **Methodological Foundation**: Detailed introduction explaining Jung/Hippocrates color theory origins (5th century BC temperaments)
     - **72-Type Granular Classification**: Precise profiling system (vs. basic 4-color) with descriptive type names (e.g., "9 Leader Visionario", "23 Comunicatore Energico")
@@ -50,7 +50,7 @@ Preferred communication style: Simple, everyday language.
 -   **Question Media**: Supports image uploads for questions and AI-generated text-to-speech (TTS) audio explanations (including personalized greetings).
 -   **Live Courses**: System for purchasing one-time live courses via Stripe, including details, sessions, and enrollment tracking.
 -   **Content Management System (CMS)**: Manages static content pages with rich text editing and dynamic placement in site navigation.
--   **Internationalization**: Multi-language support for home page, live courses, and an in-quiz language selector (IT/EN/ES) with dynamic audio language sync.
+-   **Internationalization**: Multi-language support for home page, live courses, and an in-quiz language selector (IT/EN/ES) with real-time AI-powered translation via OpenAI GPT-4o. In-quiz header selector allows instant language switching with dynamic question/options translation and audio language sync.
 -   **Email Template Management**: Database-backed system for admin customization of transactional emails (welcome, verification, password reset) with dynamic variable substitution, preview mode, and intelligent fallback to hardcoded templates.
 -   **Configuration Management**: Secure database-backed API key management for services (OpenAI, Stripe, Brevo) with dynamic loading, 5-minute TTL cache, and automatic instance reset on key updates for zero-downtime deployment.
 -   **Subscription Plans Management**: Admin panel for creating and managing subscription plans with AI-powered description formatting. Each plan includes name, price, currency, interval (year/month), features list, active status, and Stripe payment toggle. Plans display in responsive grid (max 3 per row) with visual status indicators.

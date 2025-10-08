@@ -46,6 +46,13 @@ interface OnDemandCourse {
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
+  visibilityType?: 'public' | 'corporate_exclusive';
+}
+
+interface CorporateAgreement {
+  id: string;
+  companyName: string;
+  isActive: boolean;
 }
 
 interface CourseVideo {
@@ -80,9 +87,14 @@ export function AdminOnDemandCourses() {
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"videos" | "questions">("videos");
+  const [selectedCorporateAccess, setSelectedCorporateAccess] = useState<string[]>([]);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+  });
+
+  const { data: corporateAgreements } = useQuery<CorporateAgreement[]>({
+    queryKey: ["/api/admin/corporate-agreements"],
   });
 
   const { data: courses, isLoading: coursesLoading } = useQuery<OnDemandCourse[]>({
@@ -102,12 +114,6 @@ export function AdminOnDemandCourses() {
   const createCourseMutation = useMutation({
     mutationFn: (data: Partial<OnDemandCourse>) =>
       apiRequest("/api/admin/on-demand-courses", "POST", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/on-demand-courses"] });
-      toast({ title: "Corso creato con successo" });
-      setIsCourseDialogOpen(false);
-      setEditingCourse(null);
-    },
     onError: (error: any) => {
       toast({ 
         title: "Errore durante la creazione", 
@@ -120,12 +126,6 @@ export function AdminOnDemandCourses() {
   const updateCourseMutation = useMutation({
     mutationFn: (data: { id: string; updates: Partial<OnDemandCourse> }) =>
       apiRequest(`/api/admin/on-demand-courses/${data.id}`, "PUT", data.updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/on-demand-courses"] });
-      toast({ title: "Corso aggiornato con successo" });
-      setIsCourseDialogOpen(false);
-      setEditingCourse(null);
-    },
     onError: (error: any) => {
       toast({ 
         title: "Errore durante l'aggiornamento",
@@ -247,16 +247,33 @@ export function AdminOnDemandCourses() {
       categoryId: categories?.[0]?.id || '',
       difficulty: 'beginner',
       isActive: true,
+      visibilityType: 'public',
     });
+    setSelectedCorporateAccess([]);
     setIsCourseDialogOpen(true);
   };
 
-  const handleEditCourse = (course: OnDemandCourse) => {
+  const handleEditCourse = async (course: OnDemandCourse) => {
     setEditingCourse(course);
     setIsCourseDialogOpen(true);
+    
+    // Load corporate access if course is corporate_exclusive
+    if (course.visibilityType === 'corporate_exclusive') {
+      try {
+        const response = await fetch(`/api/admin/corporate-access/on-demand-course/${course.id}`, {
+          credentials: 'include'
+        });
+        const access = await response.json();
+        setSelectedCorporateAccess(access.map((a: any) => a.corporateAgreementId));
+      } catch (error) {
+        console.error('Error loading corporate access:', error);
+      }
+    } else {
+      setSelectedCorporateAccess([]);
+    }
   };
 
-  const handleSaveCourse = () => {
+  const handleSaveCourse = async () => {
     if (!editingCourse?.title) {
       toast({ title: "Il titolo è obbligatorio", variant: "destructive" });
       return;
@@ -267,13 +284,73 @@ export function AdminOnDemandCourses() {
       return;
     }
 
-    if (editingCourse.id) {
-      updateCourseMutation.mutate({
-        id: editingCourse.id,
-        updates: editingCourse,
-      });
-    } else {
-      createCourseMutation.mutate(editingCourse);
+    try {
+      if (editingCourse.id) {
+        await updateCourseMutation.mutateAsync({
+          id: editingCourse.id,
+          updates: editingCourse,
+        });
+        
+        // Update corporate access
+        if (editingCourse.visibilityType === 'corporate_exclusive') {
+          const response = await fetch(`/api/admin/corporate-access/on-demand-course/${editingCourse.id}`, {
+            credentials: 'include'
+          });
+          const currentAccess = await response.json();
+          const currentIds = new Set(currentAccess.map((a: any) => a.corporateAgreementId));
+          const selectedIds = new Set(selectedCorporateAccess);
+          
+          for (const access of currentAccess) {
+            if (!selectedIds.has(access.corporateAgreementId)) {
+              await apiRequest('/api/admin/corporate-access/on-demand-course', 'DELETE', {
+                onDemandCourseId: editingCourse.id,
+                corporateAgreementId: access.corporateAgreementId
+              });
+            }
+          }
+          
+          for (const agreementId of selectedCorporateAccess) {
+            if (!currentIds.has(agreementId)) {
+              await apiRequest('/api/admin/corporate-access/on-demand-course', 'POST', {
+                onDemandCourseId: editingCourse.id,
+                corporateAgreementId: agreementId
+              });
+            }
+          }
+        } else {
+          const response = await fetch(`/api/admin/corporate-access/on-demand-course/${editingCourse.id}`, {
+            credentials: 'include'
+          });
+          const currentAccess = await response.json();
+          for (const access of currentAccess) {
+            await apiRequest('/api/admin/corporate-access/on-demand-course', 'DELETE', {
+              onDemandCourseId: editingCourse.id,
+              corporateAgreementId: access.corporateAgreementId
+            });
+          }
+        }
+      } else {
+        const response = await createCourseMutation.mutateAsync(editingCourse);
+        const result = await response.json();
+        
+        if (editingCourse.visibilityType === 'corporate_exclusive' && selectedCorporateAccess.length > 0) {
+          for (const agreementId of selectedCorporateAccess) {
+            await apiRequest('/api/admin/corporate-access/on-demand-course', 'POST', {
+              onDemandCourseId: result.id,
+              corporateAgreementId: agreementId
+            });
+          }
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/on-demand-courses"] });
+      toast({ title: editingCourse.id ? "Corso aggiornato con successo" : "Corso creato con successo" });
+      setIsCourseDialogOpen(false);
+      setEditingCourse(null);
+      setSelectedCorporateAccess([]);
+    } catch (error) {
+      console.error('Error saving course:', error);
+      toast({ title: "Errore durante il salvataggio", variant: "destructive" });
     }
   };
 
@@ -1017,6 +1094,68 @@ export function AdminOnDemandCourses() {
                 data-testid="switch-is-active"
               />
               <Label htmlFor="isActive">Corso attivo e visibile agli utenti</Label>
+            </div>
+            
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-2">Visibilità Contenuto</h4>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="visibilityType">Tipo di Visibilità</Label>
+                  <select
+                    id="visibilityType"
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={editingCourse?.visibilityType || 'public'}
+                    onChange={(e) => {
+                      setEditingCourse({ ...editingCourse, visibilityType: e.target.value as 'public' | 'corporate_exclusive' });
+                      if (e.target.value === 'public') {
+                        setSelectedCorporateAccess([]);
+                      }
+                    }}
+                    data-testid="select-on-demand-visibility-type"
+                  >
+                    <option value="public">Pubblico (tutti gli utenti)</option>
+                    <option value="corporate_exclusive">Esclusivo Corporate</option>
+                  </select>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    I corsi pubblici sono visibili a tutti. I corsi esclusivi corporate sono visibili solo alle aziende selezionate.
+                  </p>
+                </div>
+                
+                {editingCourse?.visibilityType === 'corporate_exclusive' && (
+                  <div>
+                    <Label>Aziende Autorizzate</Label>
+                    <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                      {corporateAgreements?.filter(ca => ca.isActive).map((agreement) => (
+                        <div key={agreement.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`corp-on-demand-${agreement.id}`}
+                            checked={selectedCorporateAccess.includes(agreement.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCorporateAccess([...selectedCorporateAccess, agreement.id]);
+                              } else {
+                                setSelectedCorporateAccess(selectedCorporateAccess.filter(id => id !== agreement.id));
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                            data-testid={`checkbox-on-demand-corporate-${agreement.id}`}
+                          />
+                          <label htmlFor={`corp-on-demand-${agreement.id}`} className="text-sm cursor-pointer">
+                            {agreement.companyName}
+                          </label>
+                        </div>
+                      ))}
+                      {(!corporateAgreements || corporateAgreements.filter(ca => ca.isActive).length === 0) && (
+                        <p className="text-sm text-muted-foreground">Nessun account corporate attivo disponibile</p>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Seleziona le aziende che possono accedere a questo corso.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>

@@ -45,6 +45,13 @@ interface Quiz {
   isActive: boolean;
   maxQuestionsPerAttempt?: number;
   documentPdfUrl?: string;
+  visibilityType?: 'public' | 'corporate_exclusive';
+}
+
+interface CorporateAgreement {
+  id: string;
+  companyName: string;
+  isActive: boolean;
 }
 
 interface Category {
@@ -64,9 +71,14 @@ export function AdminQuizzes() {
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [generatingJobId, setGeneratingJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
+  const [selectedCorporateAccess, setSelectedCorporateAccess] = useState<string[]>([]);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+  });
+
+  const { data: corporateAgreements } = useQuery<CorporateAgreement[]>({
+    queryKey: ["/api/admin/corporate-agreements"],
   });
 
   const { data: categoriesWithQuizzes, isLoading } = useQuery<Array<Category & { quizzes: Quiz[] }>>({
@@ -128,13 +140,6 @@ export function AdminQuizzes() {
 
   const createMutation = useMutation({
     mutationFn: (data: Partial<Quiz>) => apiRequest("/api/admin/quizzes", "POST", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories-with-quizzes"] });
-      toast({ title: "Quiz creato con successo" });
-      setIsDialogOpen(false);
-      setEditingQuiz(null);
-      setIsCreating(false);
-    },
     onError: () => {
       toast({ title: "Errore durante la creazione", variant: "destructive" });
     },
@@ -143,12 +148,6 @@ export function AdminQuizzes() {
   const updateMutation = useMutation({
     mutationFn: (data: { id: string; updates: Partial<Quiz> }) =>
       apiRequest(`/api/admin/quizzes/${data.id}`, "PATCH", data.updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories-with-quizzes"] });
-      toast({ title: "Quiz aggiornato con successo" });
-      setIsDialogOpen(false);
-      setEditingQuiz(null);
-    },
     onError: () => {
       toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
     },
@@ -213,10 +212,25 @@ export function AdminQuizzes() {
     });
   };
 
-  const handleEdit = (quiz: Quiz) => {
+  const handleEdit = async (quiz: Quiz) => {
     setEditingQuiz(quiz);
     setIsCreating(false);
     setIsDialogOpen(true);
+    
+    // Load corporate access if quiz is corporate_exclusive
+    if (quiz.visibilityType === 'corporate_exclusive') {
+      try {
+        const response = await fetch(`/api/admin/corporate-access/quiz/${quiz.id}`, {
+          credentials: 'include'
+        });
+        const access = await response.json();
+        setSelectedCorporateAccess(access.map((a: any) => a.corporateAgreementId));
+      } catch (error) {
+        console.error('Error loading corporate access:', error);
+      }
+    } else {
+      setSelectedCorporateAccess([]);
+    }
   };
 
   const handleCreate = () => {
@@ -228,7 +242,9 @@ export function AdminQuizzes() {
       difficulty: 'intermediate',
       isPremium: true,
       isActive: true,
+      visibilityType: 'public',
     });
+    setSelectedCorporateAccess([]);
     setIsCreating(true);
     setIsDialogOpen(true);
   };
@@ -279,16 +295,82 @@ export function AdminQuizzes() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editingQuiz) return;
     
-    if (isCreating) {
-      createMutation.mutate(editingQuiz);
-    } else if (editingQuiz.id) {
-      updateMutation.mutate({
-        id: editingQuiz.id,
-        updates: editingQuiz,
-      });
+    try {
+      if (isCreating) {
+        const response = await createMutation.mutateAsync(editingQuiz);
+        const result = await response.json();
+        
+        // Grant corporate access if needed
+        if (editingQuiz.visibilityType === 'corporate_exclusive' && selectedCorporateAccess.length > 0) {
+          for (const agreementId of selectedCorporateAccess) {
+            await apiRequest('/api/admin/corporate-access/quiz', 'POST', {
+              quizId: result.id,
+              corporateAgreementId: agreementId
+            });
+          }
+        }
+      } else if (editingQuiz.id) {
+        await updateMutation.mutateAsync({
+          id: editingQuiz.id,
+          updates: editingQuiz,
+        });
+        
+        // Update corporate access
+        if (editingQuiz.visibilityType === 'corporate_exclusive') {
+          // Get current access
+          const response = await fetch(`/api/admin/corporate-access/quiz/${editingQuiz.id}`, {
+            credentials: 'include'
+          });
+          const currentAccess = await response.json();
+          const currentIds = new Set(currentAccess.map((a: any) => a.corporateAgreementId));
+          const selectedIds = new Set(selectedCorporateAccess);
+          
+          // Remove access that's no longer selected
+          for (const access of currentAccess) {
+            if (!selectedIds.has(access.corporateAgreementId)) {
+              await apiRequest('/api/admin/corporate-access/quiz', 'DELETE', {
+                quizId: editingQuiz.id,
+                corporateAgreementId: access.corporateAgreementId
+              });
+            }
+          }
+          
+          // Grant new access
+          for (const agreementId of selectedCorporateAccess) {
+            if (!currentIds.has(agreementId)) {
+              await apiRequest('/api/admin/corporate-access/quiz', 'POST', {
+                quizId: editingQuiz.id,
+                corporateAgreementId: agreementId
+              });
+            }
+          }
+        } else {
+          // Remove all corporate access if changing to public
+          const response = await fetch(`/api/admin/corporate-access/quiz/${editingQuiz.id}`, {
+            credentials: 'include'
+          });
+          const currentAccess = await response.json();
+          for (const access of currentAccess) {
+            await apiRequest('/api/admin/corporate-access/quiz', 'DELETE', {
+              quizId: editingQuiz.id,
+              corporateAgreementId: access.corporateAgreementId
+            });
+          }
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/categories-with-quizzes"] });
+      toast({ title: isCreating ? "Quiz creato con successo" : "Quiz aggiornato con successo" });
+      setIsDialogOpen(false);
+      setEditingQuiz(null);
+      setSelectedCorporateAccess([]);
+      setIsCreating(false);
+    } catch (error) {
+      console.error('Error saving quiz:', error);
+      toast({ title: "Errore durante il salvataggio", variant: "destructive" });
     }
   };
 
@@ -530,6 +612,71 @@ export function AdminQuizzes() {
                   </Select>
                 </div>
               </div>
+              
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Visibilità Contenuto</h4>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="visibilityType">Tipo di Visibilità</Label>
+                    <Select
+                      value={editingQuiz.visibilityType || 'public'}
+                      onValueChange={(value: 'public' | 'corporate_exclusive') => {
+                        setEditingQuiz({ ...editingQuiz, visibilityType: value });
+                        if (value === 'public') {
+                          setSelectedCorporateAccess([]);
+                        }
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-visibility-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="public">Pubblico (tutti gli utenti)</SelectItem>
+                        <SelectItem value="corporate_exclusive">Esclusivo Corporate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      I contenuti pubblici sono visibili a tutti. I contenuti esclusivi corporate sono visibili solo alle aziende selezionate.
+                    </p>
+                  </div>
+                  
+                  {editingQuiz.visibilityType === 'corporate_exclusive' && (
+                    <div>
+                      <Label>Aziende Autorizzate</Label>
+                      <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                        {corporateAgreements?.filter(ca => ca.isActive).map((agreement) => (
+                          <div key={agreement.id} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`corp-${agreement.id}`}
+                              checked={selectedCorporateAccess.includes(agreement.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedCorporateAccess([...selectedCorporateAccess, agreement.id]);
+                                } else {
+                                  setSelectedCorporateAccess(selectedCorporateAccess.filter(id => id !== agreement.id));
+                                }
+                              }}
+                              className="rounded border-gray-300"
+                              data-testid={`checkbox-corporate-${agreement.id}`}
+                            />
+                            <label htmlFor={`corp-${agreement.id}`} className="text-sm cursor-pointer">
+                              {agreement.companyName}
+                            </label>
+                          </div>
+                        ))}
+                        {(!corporateAgreements || corporateAgreements.filter(ca => ca.isActive).length === 0) && (
+                          <p className="text-sm text-muted-foreground">Nessun account corporate attivo disponibile</p>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Seleziona le aziende che possono accedere a questo quiz.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
               <div className="flex items-center justify-between">
                 <Label htmlFor="isPremium">Premium</Label>
                 <Switch

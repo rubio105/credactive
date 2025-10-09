@@ -19,7 +19,9 @@ import {
   Clock,
   Download,
   Trash2,
-  Trophy
+  Trophy,
+  LogOut,
+  Home
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -116,6 +118,15 @@ export default function CorporatePortal() {
   
   // Bulk invite state
   const [bulkEmails, setBulkEmails] = useState("");
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const { data: dashboard, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/corporate/dashboard"],
@@ -363,11 +374,29 @@ export default function CorporatePortal() {
             <Button 
               size="lg"
               variant="outline"
+              onClick={() => window.location.href = '/'}
+              data-testid="button-home"
+            >
+              <Home className="mr-2 h-5 w-5" />
+              Home
+            </Button>
+            <Button 
+              size="lg"
+              variant="outline"
               onClick={() => window.location.href = '/leaderboard'}
               data-testid="button-view-leaderboard"
             >
               <Trophy className="mr-2 h-5 w-5" />
               Classifica Team
+            </Button>
+            <Button 
+              size="lg"
+              variant="outline"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="mr-2 h-5 w-5" />
+              Esci
             </Button>
             <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
             <DialogTrigger asChild>

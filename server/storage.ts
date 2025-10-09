@@ -123,6 +123,35 @@ import {
   userFeedback,
   type UserFeedback,
   type InsertUserFeedback,
+  // Prevention system
+  preventionDocuments,
+  preventionTopics,
+  triageSessions,
+  triageMessages,
+  triageAlerts,
+  prohmedCodes,
+  type PreventionDocument,
+  type InsertPreventionDocument,
+  type PreventionTopic,
+  type InsertPreventionTopic,
+  type TriageSession,
+  type InsertTriageSession,
+  type TriageMessage,
+  type InsertTriageMessage,
+  type TriageAlert,
+  type InsertTriageAlert,
+  type ProhmedCode,
+  type InsertProhmedCode,
+  // Crossword game
+  crosswordPuzzles,
+  crosswordAttempts,
+  crosswordLeaderboard,
+  type CrosswordPuzzle,
+  type InsertCrosswordPuzzle,
+  type CrosswordAttempt,
+  type InsertCrosswordAttempt,
+  type CrosswordLeaderboard,
+  type InsertCrosswordLeaderboard,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
@@ -384,6 +413,68 @@ export interface IStorage {
   getAllUserFeedback(): Promise<(UserFeedback & { user?: User })[]>;
   getUserFeedbackByUserId(userId: string): Promise<UserFeedback[]>;
   checkUserHasRecentFeedback(userId: string, days?: number): Promise<boolean>;
+
+  // ========== PREVENTION SYSTEM ==========
+  
+  // Prevention document operations
+  createPreventionDocument(doc: InsertPreventionDocument): Promise<PreventionDocument>;
+  getPreventionDocumentById(id: string): Promise<PreventionDocument | undefined>;
+  getAllPreventionDocuments(activeOnly?: boolean): Promise<PreventionDocument[]>;
+  updatePreventionDocument(id: string, updates: Partial<PreventionDocument>): Promise<PreventionDocument>;
+  deletePreventionDocument(id: string): Promise<void>;
+  
+  // Prevention topic operations
+  createPreventionTopic(topic: InsertPreventionTopic): Promise<PreventionTopic>;
+  getPreventionTopicById(id: string): Promise<PreventionTopic | undefined>;
+  getAllPreventionTopics(): Promise<PreventionTopic[]>;
+  updatePreventionTopic(id: string, updates: Partial<PreventionTopic>): Promise<PreventionTopic>;
+  deletePreventionTopic(id: string): Promise<void>;
+  
+  // Triage session operations
+  createTriageSession(session: InsertTriageSession): Promise<TriageSession>;
+  getTriageSessionById(id: string): Promise<TriageSession | undefined>;
+  getTriageSessionsByUser(userId: string): Promise<TriageSession[]>;
+  updateTriageSession(id: string, updates: Partial<TriageSession>): Promise<TriageSession>;
+  closeTriageSession(id: string): Promise<TriageSession>;
+  
+  // Triage message operations
+  createTriageMessage(message: InsertTriageMessage): Promise<TriageMessage>;
+  getTriageMessagesBySession(sessionId: string): Promise<TriageMessage[]>;
+  
+  // Triage alert operations
+  createTriageAlert(alert: InsertTriageAlert): Promise<TriageAlert>;
+  getTriageAlertsBySession(sessionId: string): Promise<TriageAlert[]>;
+  getUnreviewedTriageAlerts(): Promise<TriageAlert[]>;
+  updateTriageAlert(id: string, updates: Partial<TriageAlert>): Promise<TriageAlert>;
+  
+  // Prohmed code operations
+  createProhmedCode(code: InsertProhmedCode): Promise<ProhmedCode>;
+  getProhmedCodeByCode(code: string): Promise<ProhmedCode | undefined>;
+  getProhmedCodesByUser(userId: string): Promise<ProhmedCode[]>;
+  updateProhmedCode(id: string, updates: Partial<ProhmedCode>): Promise<ProhmedCode>;
+  redeemProhmedCode(code: string): Promise<ProhmedCode>;
+
+  // ========== CROSSWORD GAME ==========
+  
+  // Crossword puzzle operations
+  createCrosswordPuzzle(puzzle: InsertCrosswordPuzzle): Promise<CrosswordPuzzle>;
+  getCrosswordPuzzleById(id: string): Promise<CrosswordPuzzle | undefined>;
+  getAllCrosswordPuzzles(activeOnly?: boolean): Promise<CrosswordPuzzle[]>;
+  getWeeklyCrosswordChallenge(weekNumber: number, weekYear: number): Promise<CrosswordPuzzle | undefined>;
+  updateCrosswordPuzzle(id: string, updates: Partial<CrosswordPuzzle>): Promise<CrosswordPuzzle>;
+  
+  // Crossword attempt operations
+  createCrosswordAttempt(attempt: InsertCrosswordAttempt): Promise<CrosswordAttempt>;
+  getCrosswordAttemptById(id: string): Promise<CrosswordAttempt | undefined>;
+  getCrosswordAttemptByUserAndPuzzle(userId: string, puzzleId: string): Promise<CrosswordAttempt | undefined>;
+  getCrosswordAttemptsByUser(userId: string): Promise<CrosswordAttempt[]>;
+  updateCrosswordAttempt(id: string, updates: Partial<CrosswordAttempt>): Promise<CrosswordAttempt>;
+  
+  // Crossword leaderboard operations
+  upsertCrosswordLeaderboard(entry: InsertCrosswordLeaderboard): Promise<CrosswordLeaderboard>;
+  getCrosswordLeaderboardByWeek(weekNumber: number, weekYear: number): Promise<CrosswordLeaderboard[]>;
+  getCrosswordLeaderboardByUser(userId: string): Promise<CrosswordLeaderboard[]>;
+  updateCrosswordLeaderboard(id: string, updates: Partial<CrosswordLeaderboard>): Promise<CrosswordLeaderboard>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2541,6 +2632,312 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return !!result;
+  }
+
+  // ========== PREVENTION SYSTEM IMPLEMENTATIONS ==========
+  
+  // Prevention document operations
+  async createPreventionDocument(doc: InsertPreventionDocument): Promise<PreventionDocument> {
+    const [document] = await db.insert(preventionDocuments).values(doc).returning();
+    return document;
+  }
+
+  async getPreventionDocumentById(id: string): Promise<PreventionDocument | undefined> {
+    const [doc] = await db.select().from(preventionDocuments).where(eq(preventionDocuments.id, id));
+    return doc;
+  }
+
+  async getAllPreventionDocuments(activeOnly: boolean = false): Promise<PreventionDocument[]> {
+    const query = db.select().from(preventionDocuments);
+    if (activeOnly) {
+      return await query.where(eq(preventionDocuments.isActive, true)).orderBy(desc(preventionDocuments.createdAt));
+    }
+    return await query.orderBy(desc(preventionDocuments.createdAt));
+  }
+
+  async updatePreventionDocument(id: string, updates: Partial<PreventionDocument>): Promise<PreventionDocument> {
+    const [doc] = await db
+      .update(preventionDocuments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(preventionDocuments.id, id))
+      .returning();
+    return doc;
+  }
+
+  async deletePreventionDocument(id: string): Promise<void> {
+    await db.delete(preventionDocuments).where(eq(preventionDocuments.id, id));
+  }
+
+  // Prevention topic operations
+  async createPreventionTopic(topic: InsertPreventionTopic): Promise<PreventionTopic> {
+    const [newTopic] = await db.insert(preventionTopics).values(topic).returning();
+    return newTopic;
+  }
+
+  async getPreventionTopicById(id: string): Promise<PreventionTopic | undefined> {
+    const [topic] = await db.select().from(preventionTopics).where(eq(preventionTopics.id, id));
+    return topic;
+  }
+
+  async getAllPreventionTopics(): Promise<PreventionTopic[]> {
+    return await db.select().from(preventionTopics).orderBy(preventionTopics.name);
+  }
+
+  async updatePreventionTopic(id: string, updates: Partial<PreventionTopic>): Promise<PreventionTopic> {
+    const [topic] = await db
+      .update(preventionTopics)
+      .set(updates)
+      .where(eq(preventionTopics.id, id))
+      .returning();
+    return topic;
+  }
+
+  async deletePreventionTopic(id: string): Promise<void> {
+    await db.delete(preventionTopics).where(eq(preventionTopics.id, id));
+  }
+
+  // Triage session operations
+  async createTriageSession(session: InsertTriageSession): Promise<TriageSession> {
+    const [newSession] = await db.insert(triageSessions).values(session).returning();
+    return newSession;
+  }
+
+  async getTriageSessionById(id: string): Promise<TriageSession | undefined> {
+    const [session] = await db.select().from(triageSessions).where(eq(triageSessions.id, id));
+    return session;
+  }
+
+  async getTriageSessionsByUser(userId: string): Promise<TriageSession[]> {
+    return await db
+      .select()
+      .from(triageSessions)
+      .where(eq(triageSessions.userId, userId))
+      .orderBy(desc(triageSessions.createdAt));
+  }
+
+  async updateTriageSession(id: string, updates: Partial<TriageSession>): Promise<TriageSession> {
+    const [session] = await db
+      .update(triageSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(triageSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async closeTriageSession(id: string): Promise<TriageSession> {
+    const [session] = await db
+      .update(triageSessions)
+      .set({ status: 'closed', closedAt: new Date(), updatedAt: new Date() })
+      .where(eq(triageSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  // Triage message operations
+  async createTriageMessage(message: InsertTriageMessage): Promise<TriageMessage> {
+    const [newMessage] = await db.insert(triageMessages).values(message).returning();
+    return newMessage;
+  }
+
+  async getTriageMessagesBySession(sessionId: string): Promise<TriageMessage[]> {
+    return await db
+      .select()
+      .from(triageMessages)
+      .where(eq(triageMessages.sessionId, sessionId))
+      .orderBy(triageMessages.createdAt);
+  }
+
+  // Triage alert operations
+  async createTriageAlert(alert: InsertTriageAlert): Promise<TriageAlert> {
+    const [newAlert] = await db.insert(triageAlerts).values(alert).returning();
+    return newAlert;
+  }
+
+  async getTriageAlertsBySession(sessionId: string): Promise<TriageAlert[]> {
+    return await db
+      .select()
+      .from(triageAlerts)
+      .where(eq(triageAlerts.sessionId, sessionId))
+      .orderBy(desc(triageAlerts.createdAt));
+  }
+
+  async getUnreviewedTriageAlerts(): Promise<TriageAlert[]> {
+    return await db
+      .select()
+      .from(triageAlerts)
+      .where(eq(triageAlerts.isReviewed, false))
+      .orderBy(desc(triageAlerts.createdAt));
+  }
+
+  async updateTriageAlert(id: string, updates: Partial<TriageAlert>): Promise<TriageAlert> {
+    const [alert] = await db
+      .update(triageAlerts)
+      .set(updates)
+      .where(eq(triageAlerts.id, id))
+      .returning();
+    return alert;
+  }
+
+  // Prohmed code operations
+  async createProhmedCode(code: InsertProhmedCode): Promise<ProhmedCode> {
+    const [newCode] = await db.insert(prohmedCodes).values(code).returning();
+    return newCode;
+  }
+
+  async getProhmedCodeByCode(code: string): Promise<ProhmedCode | undefined> {
+    const [codeRecord] = await db.select().from(prohmedCodes).where(eq(prohmedCodes.code, code));
+    return codeRecord;
+  }
+
+  async getProhmedCodesByUser(userId: string): Promise<ProhmedCode[]> {
+    return await db
+      .select()
+      .from(prohmedCodes)
+      .where(eq(prohmedCodes.userId, userId))
+      .orderBy(desc(prohmedCodes.createdAt));
+  }
+
+  async updateProhmedCode(id: string, updates: Partial<ProhmedCode>): Promise<ProhmedCode> {
+    const [code] = await db
+      .update(prohmedCodes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(prohmedCodes.id, id))
+      .returning();
+    return code;
+  }
+
+  async redeemProhmedCode(code: string): Promise<ProhmedCode> {
+    const [redeemedCode] = await db
+      .update(prohmedCodes)
+      .set({ status: 'redeemed', redeemedAt: new Date(), updatedAt: new Date() })
+      .where(eq(prohmedCodes.code, code))
+      .returning();
+    return redeemedCode;
+  }
+
+  // ========== CROSSWORD GAME IMPLEMENTATIONS ==========
+  
+  // Crossword puzzle operations
+  async createCrosswordPuzzle(puzzle: InsertCrosswordPuzzle): Promise<CrosswordPuzzle> {
+    const [newPuzzle] = await db.insert(crosswordPuzzles).values(puzzle).returning();
+    return newPuzzle;
+  }
+
+  async getCrosswordPuzzleById(id: string): Promise<CrosswordPuzzle | undefined> {
+    const [puzzle] = await db.select().from(crosswordPuzzles).where(eq(crosswordPuzzles.id, id));
+    return puzzle;
+  }
+
+  async getAllCrosswordPuzzles(activeOnly: boolean = false): Promise<CrosswordPuzzle[]> {
+    const query = db.select().from(crosswordPuzzles);
+    if (activeOnly) {
+      return await query.where(eq(crosswordPuzzles.isActive, true)).orderBy(desc(crosswordPuzzles.createdAt));
+    }
+    return await query.orderBy(desc(crosswordPuzzles.createdAt));
+  }
+
+  async getWeeklyCrosswordChallenge(weekNumber: number, weekYear: number): Promise<CrosswordPuzzle | undefined> {
+    const [puzzle] = await db
+      .select()
+      .from(crosswordPuzzles)
+      .where(and(
+        eq(crosswordPuzzles.isWeeklyChallenge, true),
+        eq(crosswordPuzzles.weekNumber, weekNumber),
+        eq(crosswordPuzzles.weekYear, weekYear)
+      ));
+    return puzzle;
+  }
+
+  async updateCrosswordPuzzle(id: string, updates: Partial<CrosswordPuzzle>): Promise<CrosswordPuzzle> {
+    const [puzzle] = await db
+      .update(crosswordPuzzles)
+      .set(updates)
+      .where(eq(crosswordPuzzles.id, id))
+      .returning();
+    return puzzle;
+  }
+
+  // Crossword attempt operations
+  async createCrosswordAttempt(attempt: InsertCrosswordAttempt): Promise<CrosswordAttempt> {
+    const [newAttempt] = await db.insert(crosswordAttempts).values(attempt).returning();
+    return newAttempt;
+  }
+
+  async getCrosswordAttemptById(id: string): Promise<CrosswordAttempt | undefined> {
+    const [attempt] = await db.select().from(crosswordAttempts).where(eq(crosswordAttempts.id, id));
+    return attempt;
+  }
+
+  async getCrosswordAttemptByUserAndPuzzle(userId: string, puzzleId: string): Promise<CrosswordAttempt | undefined> {
+    const [attempt] = await db
+      .select()
+      .from(crosswordAttempts)
+      .where(and(
+        eq(crosswordAttempts.userId, userId),
+        eq(crosswordAttempts.puzzleId, puzzleId)
+      ));
+    return attempt;
+  }
+
+  async getCrosswordAttemptsByUser(userId: string): Promise<CrosswordAttempt[]> {
+    return await db
+      .select()
+      .from(crosswordAttempts)
+      .where(eq(crosswordAttempts.userId, userId))
+      .orderBy(desc(crosswordAttempts.createdAt));
+  }
+
+  async updateCrosswordAttempt(id: string, updates: Partial<CrosswordAttempt>): Promise<CrosswordAttempt> {
+    const [attempt] = await db
+      .update(crosswordAttempts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crosswordAttempts.id, id))
+      .returning();
+    return attempt;
+  }
+
+  // Crossword leaderboard operations
+  async upsertCrosswordLeaderboard(entry: InsertCrosswordLeaderboard): Promise<CrosswordLeaderboard> {
+    const [leaderboardEntry] = await db
+      .insert(crosswordLeaderboard)
+      .values(entry)
+      .onConflictDoUpdate({
+        target: [crosswordLeaderboard.userId, crosswordLeaderboard.weekNumber, crosswordLeaderboard.weekYear],
+        set: {
+          ...entry,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return leaderboardEntry;
+  }
+
+  async getCrosswordLeaderboardByWeek(weekNumber: number, weekYear: number): Promise<CrosswordLeaderboard[]> {
+    return await db
+      .select()
+      .from(crosswordLeaderboard)
+      .where(and(
+        eq(crosswordLeaderboard.weekNumber, weekNumber),
+        eq(crosswordLeaderboard.weekYear, weekYear)
+      ))
+      .orderBy(desc(crosswordLeaderboard.totalScore));
+  }
+
+  async getCrosswordLeaderboardByUser(userId: string): Promise<CrosswordLeaderboard[]> {
+    return await db
+      .select()
+      .from(crosswordLeaderboard)
+      .where(eq(crosswordLeaderboard.userId, userId))
+      .orderBy(desc(crosswordLeaderboard.weekYear), desc(crosswordLeaderboard.weekNumber));
+  }
+
+  async updateCrosswordLeaderboard(id: string, updates: Partial<CrosswordLeaderboard>): Promise<CrosswordLeaderboard> {
+    const [entry] = await db
+      .update(crosswordLeaderboard)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crosswordLeaderboard.id, id))
+      .returning();
+    return entry;
   }
 }
 

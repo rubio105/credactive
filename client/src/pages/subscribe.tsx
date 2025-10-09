@@ -11,11 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
 import { CheckCircle, Crown, Shield, Star, ArrowLeft, Sparkles, Video, Calendar, Users, Headphones } from "lucide-react";
 
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+// Stripe configuration - non-blocking check
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+if (!stripeKey) {
+  console.warn('⚠️ Stripe not configured: VITE_STRIPE_PUBLIC_KEY missing');
 }
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 interface CheckoutFormProps {
   amount: number;

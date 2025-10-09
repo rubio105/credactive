@@ -15,7 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Stripe configuration - safe fallback
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 interface LiveCourseSession {
   id: string;

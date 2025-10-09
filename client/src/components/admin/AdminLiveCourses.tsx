@@ -255,8 +255,7 @@ export function AdminLiveCourses() {
           }
         }
       } else {
-        const response = await createCourseMutation.mutateAsync(cleanData);
-        const result = await response.json();
+        const result = await createCourseMutation.mutateAsync(cleanData);
         
         if (editingCourse.visibilityType === 'corporate_exclusive' && selectedCorporateAccess.length > 0) {
           for (const agreementId of selectedCorporateAccess) {

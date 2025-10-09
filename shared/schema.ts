@@ -1193,5 +1193,269 @@ export const insertUserFeedbackSchema = createInsertSchema(userFeedback).omit({
 });
 export type InsertUserFeedback = z.infer<typeof insertUserFeedbackSchema>;
 
+// ========== MEDICAL PREVENTION SYSTEM ==========
+
+// Prevention Documents (uploaded PDFs for AI analysis)
+export const preventionDocuments = pgTable("prevention_documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  fileUrl: text("file_url").notNull(), // PDF file URL
+  fileSize: integer("file_size"), // bytes
+  uploadedById: varchar("uploaded_by_id").notNull().references(() => users.id),
+  
+  // AI Analysis Results (from Gemini)
+  analysisStatus: varchar("analysis_status", { length: 20 }).default("pending"), // pending, processing, completed, failed
+  extractedTopics: text("extracted_topics").array(), // Topics extracted by AI
+  extractedKeywords: text("extracted_keywords").array(), // Keywords extracted by AI
+  summary: text("summary"), // AI-generated summary
+  language: varchar("language", { length: 2 }), // it, en, es
+  
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PreventionDocument = typeof preventionDocuments.$inferSelect;
+export const insertPreventionDocumentSchema = createInsertSchema(preventionDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPreventionDocument = z.infer<typeof insertPreventionDocumentSchema>;
+
+// Prevention Topics (managed topics for quiz categorization)
+export const preventionTopics = pgTable("prevention_topics", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  icon: varchar("icon", { length: 50 }),
+  color: varchar("color", { length: 20 }),
+  isSensitive: boolean("is_sensitive").default(false), // Flag for sensitive topics requiring doctor referral
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PreventionTopic = typeof preventionTopics.$inferSelect;
+export const insertPreventionTopicSchema = createInsertSchema(preventionTopics).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertPreventionTopic = z.infer<typeof insertPreventionTopicSchema>;
+
+// Medical Triage Sessions (conversational AI triage "Chiedi a Prohmed")
+export const triageSessions = pgTable("triage_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Session metadata
+  title: varchar("title", { length: 200 }), // Auto-generated from first message
+  status: varchar("status", { length: 20 }).default("active"), // active, closed, escalated
+  
+  // Medical flags
+  isSensitive: boolean("is_sensitive").default(false),
+  suggestDoctor: boolean("suggest_doctor").default(false),
+  urgencyLevel: varchar("urgency_level", { length: 20 }).default("low"), // low, medium, high, emergency
+  relatedTopics: text("related_topics").array(),
+  
+  // Context
+  documentContext: text("document_context"), // Relevant prevention document excerpts
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  closedAt: timestamp("closed_at"),
+});
+
+export type TriageSession = typeof triageSessions.$inferSelect;
+export const insertTriageSessionSchema = createInsertSchema(triageSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertTriageSession = z.infer<typeof insertTriageSessionSchema>;
+
+// Triage Messages (conversation messages)
+export const triageMessages = pgTable("triage_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => triageSessions.id, { onDelete: "cascade" }),
+  
+  role: varchar("role", { length: 20 }).notNull(), // user, assistant
+  content: text("content").notNull(),
+  
+  // AI response metadata (for assistant messages)
+  aiUrgencyLevel: varchar("ai_urgency_level", { length: 20 }),
+  aiSuggestDoctor: boolean("ai_suggest_doctor"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type TriageMessage = typeof triageMessages.$inferSelect;
+export const insertTriageMessageSchema = createInsertSchema(triageMessages).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertTriageMessage = z.infer<typeof insertTriageMessageSchema>;
+
+// Triage Medical Alerts (flagged sensitive topics for admin review)
+export const triageAlerts = pgTable("triage_alerts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => triageSessions.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  alertType: varchar("alert_type", { length: 50 }).notNull(), // sensitive_topic, high_urgency, emergency, doctor_suggested
+  reason: text("reason").notNull(),
+  urgencyLevel: varchar("urgency_level", { length: 20 }).notNull(),
+  
+  isReviewed: boolean("is_reviewed").default(false),
+  reviewedById: varchar("reviewed_by_id").references(() => users.id),
+  reviewNotes: text("review_notes"),
+  reviewedAt: timestamp("reviewed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type TriageAlert = typeof triageAlerts.$inferSelect;
+export const insertTriageAlertSchema = createInsertSchema(triageAlerts).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertTriageAlert = z.infer<typeof insertTriageAlertSchema>;
+
+// Prohmed Access Codes (telemedicine app access codes)
+export const prohmedCodes = pgTable("prohmed_codes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).notNull().unique(), // Generated access code
+  
+  // User who earned/received the code
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // How the code was earned
+  source: varchar("source", { length: 50 }).notNull(), // full_plus_subscription, crossword_winner, prevention_completion
+  sourceDetails: text("source_details"), // Additional context
+  
+  // Code status
+  status: varchar("status", { length: 20 }).default("active"), // active, redeemed, expired, revoked
+  redeemedAt: timestamp("redeemed_at"),
+  expiresAt: timestamp("expires_at"),
+  
+  // Code type
+  accessType: varchar("access_type", { length: 50 }).default("individual"), // individual, family
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type ProhmedCode = typeof prohmedCodes.$inferSelect;
+export const insertProhmedCodeSchema = createInsertSchema(prohmedCodes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProhmedCode = z.infer<typeof insertProhmedCodeSchema>;
+
+// ========== CROSSWORD GAME SYSTEM ==========
+
+// Crossword Puzzles (AI-generated medical crosswords)
+export const crosswordPuzzles = pgTable("crossword_puzzles", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  title: varchar("title", { length: 200 }).notNull(),
+  topic: varchar("topic", { length: 100 }).notNull(), // Medical topic
+  difficulty: varchar("difficulty", { length: 20 }).notNull(), // easy, medium, hard
+  size: integer("size").default(15), // Grid size (15x15)
+  
+  // Puzzle data (generated by Gemini AI)
+  cluesData: jsonb("clues_data").notNull(), // Array of clue objects
+  gridData: jsonb("grid_data").notNull(), // 2D array of letters
+  solutionHash: varchar("solution_hash", { length: 64 }), // For validation
+  
+  // Challenge tracking
+  isWeeklyChallenge: boolean("is_weekly_challenge").default(false),
+  weekNumber: integer("week_number"), // ISO week number
+  weekYear: integer("week_year"), // Year for the week
+  
+  // Stats
+  totalAttempts: integer("total_attempts").default(0),
+  totalCompletions: integer("total_completions").default(0),
+  
+  isActive: boolean("is_active").default(true),
+  createdById: varchar("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CrosswordPuzzle = typeof crosswordPuzzles.$inferSelect;
+export const insertCrosswordPuzzleSchema = createInsertSchema(crosswordPuzzles).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCrosswordPuzzle = z.infer<typeof insertCrosswordPuzzleSchema>;
+
+// Crossword Attempts (user gameplay)
+export const crosswordAttempts = pgTable("crossword_attempts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  puzzleId: uuid("puzzle_id").notNull().references(() => crosswordPuzzles.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Progress
+  status: varchar("status", { length: 20 }).default("in_progress"), // in_progress, completed, abandoned
+  progressData: jsonb("progress_data"), // User's current answers
+  
+  // Performance
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  timeSpent: integer("time_spent"), // seconds
+  correctAnswers: integer("correct_answers").default(0),
+  totalClues: integer("total_clues"),
+  score: integer("score").default(0), // Calculated score
+  
+  // Hints used
+  hintsUsed: integer("hints_used").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueUserPuzzle: unique().on(table.userId, table.puzzleId),
+}));
+
+export type CrosswordAttempt = typeof crosswordAttempts.$inferSelect;
+export const insertCrosswordAttemptSchema = createInsertSchema(crosswordAttempts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCrosswordAttempt = z.infer<typeof insertCrosswordAttemptSchema>;
+
+// Crossword Leaderboard (weekly rankings)
+export const crosswordLeaderboard = pgTable("crossword_leaderboard", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  weekNumber: integer("week_number").notNull(),
+  weekYear: integer("week_year").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Performance metrics
+  totalScore: integer("total_score").default(0),
+  puzzlesCompleted: integer("puzzles_completed").default(0),
+  averageTime: integer("average_time"), // seconds
+  perfectSolves: integer("perfect_solves").default(0), // Completed without hints
+  
+  // Ranking
+  rank: integer("rank"),
+  isWinner: boolean("is_winner").default(false), // Top N winners get Prohmed codes
+  prohmedCodeId: uuid("prohmed_code_id").references(() => prohmedCodes.id),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueUserWeek: unique().on(table.userId, table.weekNumber, table.weekYear),
+}));
+
+export type CrosswordLeaderboard = typeof crosswordLeaderboard.$inferSelect;
+export const insertCrosswordLeaderboardSchema = createInsertSchema(crosswordLeaderboard).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCrosswordLeaderboard = z.infer<typeof insertCrosswordLeaderboardSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

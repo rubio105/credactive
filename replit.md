@@ -18,7 +18,7 @@ The backend is built with Express.js, Node.js, and TypeScript, featuring a RESTf
 
 ## Data Storage
 
-PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM with a schema-first design. The schema includes tables for Users (with Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs, User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, Email Templates, and Settings. It supports category images and audio explanations, ensuring end-to-end type safety.
+PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM with a schema-first design. The schema includes tables for Users (with Stripe data), Categories, Quizzes, Questions (JSONB for options), Quiz Generation Jobs, User progress, Reports (JSONB), Sessions, Live Courses, Static Content Pages, Email Templates, Settings, Prevention Documents (AI-analyzed medical PDFs), Prevention Topics (taxonomy with sensitivity flags), Triage Sessions/Messages/Alerts (conversational medical triage), Prohmed Codes (telemedicine access), and Crossword Puzzles/Attempts/Leaderboard (weekly challenges). It supports category images, audio explanations, and Gemini AI integration, ensuring end-to-end type safety.
 
 ## Key Features
 
@@ -46,6 +46,8 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM wi
 -   **Corporate Content Visibility System**: Granular access control for quizzes and courses, allowing 'public' or 'corporate_exclusive' visibility, managed via dedicated mapping tables and admin UI controls, with content filtering based on user type.
 -   **AI Conversational Assistant for Post-Quiz Scenarios**: Context-aware AI coaching system using OpenAI GPT-4o for scenario-based learning after quiz responses. Features business case simulations (GDPR, ISO27001, CISSP certifications) and personal development coaching (stress management based on Insight Discovery personality profiles). Includes conversation persistence, auto-resume after page reload, explicit close control, and complete lifecycle management through dedicated database tables (scenario_conversations, scenario_messages).
 -   **Admin Documentation System**: Comprehensive in-platform documentation with 3 tabs: Technical Documentation (architecture, database schema, API endpoints, environment variables), Server Commands (complete Replit→GitHub→Hetzner deployment workflow with copy-to-clipboard functionality), and User Documentation (platform features guide for administrators). Provides step-by-step deployment instructions, PM2 commands, database sync procedures, and troubleshooting guidance.
+-   **Medical Prevention System (Prohmed Partnership)**: Comprehensive health prevention module powered by Google Gemini AI, featuring medical document upload/analysis (PDF parsing with AI topic extraction), prevention topic taxonomy with sensitive content flags, AI-powered conversational triage system ("Chiedi approfondimenti a Prohmed") with urgency assessment and doctor referral suggestions, medical alert system for admin review, and Prohmed telemedicine app access code generation for premium users and challenge winners.
+-   **Interactive Crossword Game**: AI-generated 15x15 medical crossword puzzles using Gemini AI, featuring difficulty levels (easy/medium/hard), weekly challenge system with leaderboard rankings, performance tracking (time, accuracy, hints used), gamification rewards where top weekly winners receive free Prohmed family access codes, and comprehensive attempt/completion analytics.
 
 ## Deployment Architecture
 
@@ -62,3 +64,4 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM wi
 -   **Brevo (Sendinblue)**: Transactional email service.
 -   **Neon Database**: Serverless PostgreSQL.
 -   **OpenAI**: GPT-4o and GPT-4o-mini for AI question generation and text-to-speech.
+-   **Google Gemini AI**: Gemini-2.5-pro and Gemini-2.5-flash for medical document analysis, conversational triage, and crossword puzzle generation.

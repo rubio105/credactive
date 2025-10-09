@@ -5079,6 +5079,17 @@ Explicación de audio:`
   });
   
   // Corporate content access - Live Course (admin only)
+  app.get('/api/admin/corporate-access/live-course/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const liveCourseId = req.params.id;
+      const access = await storage.getLiveCourseAccessByLiveCourseId(liveCourseId);
+      res.json(access);
+    } catch (error: any) {
+      console.error('Get live course access error:', error);
+      res.status(500).json({ message: 'Failed to get live course access' });
+    }
+  });
+  
   app.post('/api/admin/corporate-access/live-course', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { liveCourseId, corporateAgreementId } = req.body;

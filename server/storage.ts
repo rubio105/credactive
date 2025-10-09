@@ -350,6 +350,7 @@ export interface IStorage {
   grantLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<LiveCourseCorporateAccess>;
   revokeLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<void>;
   getLiveCourseAccessByCorporateAgreement(corporateAgreementId: string): Promise<LiveCourseCorporateAccess[]>;
+  getLiveCourseAccessByLiveCourseId(liveCourseId: string): Promise<LiveCourseCorporateAccess[]>;
   checkLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<boolean>;
   
   grantOnDemandCourseAccess(onDemandCourseId: string, corporateAgreementId: string): Promise<OnDemandCourseCorporateAccess>;
@@ -2063,6 +2064,13 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(liveCourseCorporateAccess)
       .where(eq(liveCourseCorporateAccess.corporateAgreementId, corporateAgreementId));
+  }
+  
+  async getLiveCourseAccessByLiveCourseId(liveCourseId: string): Promise<LiveCourseCorporateAccess[]> {
+    return await db
+      .select()
+      .from(liveCourseCorporateAccess)
+      .where(eq(liveCourseCorporateAccess.liveCourseId, liveCourseId));
   }
   
   async checkLiveCourseAccess(liveCourseId: string, corporateAgreementId: string): Promise<boolean> {

@@ -33,6 +33,7 @@ import Analytics from "@/pages/analytics";
 import CorporatePortal from "@/pages/corporate-portal";
 import CorporateJoin from "@/pages/corporate-join";
 import LiveSession from "@/pages/live-session";
+import Prevention from "@/pages/prevention";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -66,6 +67,7 @@ function Router() {
           <Route path="/corsi-on-demand" component={CorsiOnDemand} />
           <Route path="/corsi-on-demand/:courseId" component={CorsoOnDemand} />
           <Route path="/live-session/:sessionId" component={LiveSession} />
+          <Route path="/prevention" component={Prevention} />
         </>
       )}
       <Route path="/page/:slug" component={DynamicContentPage} />

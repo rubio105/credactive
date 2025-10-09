@@ -6189,6 +6189,19 @@ Explicación de audio:`
     }
   });
 
+  // Get active triage session (GET /api/triage/session/active)
+  app.get('/api/triage/session/active', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const sessions = await storage.getTriageSessionsByUser(user.id);
+      const activeSession = sessions.find(s => s.status === 'active');
+      res.json(activeSession || null);
+    } catch (error: any) {
+      console.error('Get active triage session error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get active session' });
+    }
+  });
+
   // Close triage session (POST /api/triage/:sessionId/close)
   app.post('/api/triage/:sessionId/close', isAuthenticated, async (req, res) => {
     try {

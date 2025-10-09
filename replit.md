@@ -45,6 +45,16 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM wi
 -   **Leaderboard System with Nicknames**: Gamification features including optional user nicknames, global leaderboards, corporate-exclusive team leaderboards, and credit preservation.
 -   **Corporate Content Visibility System**: Granular access control for quizzes and courses, allowing 'public' or 'corporate_exclusive' visibility, managed via dedicated mapping tables and admin UI controls, with content filtering based on user type.
 -   **AI Conversational Assistant for Post-Quiz Scenarios**: Context-aware AI coaching system using OpenAI GPT-4o for scenario-based learning after quiz responses. Features business case simulations (GDPR, ISO27001, CISSP certifications) and personal development coaching (stress management based on Insight Discovery personality profiles). Includes conversation persistence, auto-resume after page reload, explicit close control, and complete lifecycle management through dedicated database tables (scenario_conversations, scenario_messages).
+-   **Admin Documentation System**: Comprehensive in-platform documentation with 3 tabs: Technical Documentation (architecture, database schema, API endpoints, environment variables), Server Commands (complete Replit→GitHub→Hetzner deployment workflow with copy-to-clipboard functionality), and User Documentation (platform features guide for administrators). Provides step-by-step deployment instructions, PM2 commands, database sync procedures, and troubleshooting guidance.
+
+## Deployment Architecture
+
+-   **Development Environment**: Replit with auto-reload and hot module replacement
+-   **Version Control**: GitHub repository (https://github.com/rubio105/credactive.git)
+-   **Production Server**: Hetzner VPS (IP: 157.180.21.147, port 5000) with PM2 process manager
+-   **Database**: Neon PostgreSQL (shared between development and production)
+-   **Build System**: esbuild (backend) + Vite (frontend)
+-   **Deployment Workflow**: Manual Git-based workflow - develop on Replit → commit/push to GitHub → SSH to Hetzner → pull/rebuild/restart PM2
 
 # External Dependencies
 

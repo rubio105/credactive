@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare, Book } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { AdminUsers } from "@/components/admin/AdminUsers";
@@ -19,6 +19,7 @@ import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
 import { AdminLiveSessions } from "@/components/admin/AdminLiveSessions";
 import { AdminFeedback } from "@/components/admin/AdminFeedback";
+import { AdminDocumentation } from "@/components/admin/AdminDocumentation";
 
 const menuItems = [
   { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
@@ -36,6 +37,7 @@ const menuItems = [
   { id: "email", icon: Mail, label: "Email", testId: "tab-email" },
   { id: "api", icon: Key, label: "API Keys", testId: "tab-api" },
   { id: "settings", icon: Settings, label: "Impostazioni", testId: "tab-settings" },
+  { id: "documentation", icon: Book, label: "Documentazione", testId: "tab-documentation" },
 ];
 
 export default function AdminPage() {
@@ -133,6 +135,7 @@ export default function AdminPage() {
           {activeTab === "email" && <AdminEmailTemplates />}
           {activeTab === "api" && <AdminAPIKeys />}
           {activeTab === "settings" && <AdminSettings />}
+          {activeTab === "documentation" && <AdminDocumentation />}
         </div>
       </main>
     </div>

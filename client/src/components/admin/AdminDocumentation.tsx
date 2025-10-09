@@ -93,17 +93,37 @@ export function AdminDocumentation() {
               </ul>
 
               <h3>Variabili d'Ambiente (.env)</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                <strong>⚠️ Importante:</strong> Le variabili con prefisso <code>VITE_</code> vengono inserite nel bundle frontend durante il build. 
+                Usa <code>export $(cat .env | xargs) && npm run build</code> per caricarle correttamente.
+              </p>
               <pre className="bg-muted p-4 rounded-md text-sm">
-{`DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=require
-STRIPE_SECRET_KEY=sk_live_...
+{`# Backend
+DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=require
+STRIPE_SECRET_KEY=sk_test_... (usa sk_live_... solo con HTTPS)
 STRIPE_WEBHOOK_SECRET=whsec_...
 OPENAI_API_KEY=sk-...
 BREVO_API_KEY=xkeysib-...
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-SESSION_SECRET=...
-NODE_ENV=production`}
+GOOGLE_CLIENT_ID=... (opzionale)
+GOOGLE_CLIENT_SECRET=... (opzionale)
+SESSION_SECRET=... (genera con: openssl rand -base64 32)
+NODE_ENV=production
+
+# Frontend (prefisso VITE_ obbligatorio)
+VITE_STRIPE_PUBLIC_KEY=pk_test_... (usa pk_live_... solo con HTTPS)
+VITE_GOOGLE_ANALYTICS_ID=G-...`}
               </pre>
+              
+              <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+                  🔒 Note su HTTP vs HTTPS:
+                </p>
+                <ul className="text-sm text-muted-foreground mt-2 space-y-1">
+                  <li>• <strong>HTTP (attuale):</strong> Usa chiavi Stripe TEST (<code>pk_test_</code>)</li>
+                  <li>• <strong>HTTPS (futuro):</strong> Necessario per chiavi LIVE e cookie sicuri</li>
+                  <li>• <strong>Sessioni:</strong> Controllate da <code>FORCE_HTTPS</code> (default: false per HTTP)</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -186,7 +206,7 @@ NODE_ENV=production`}
                       { id: 'cd', cmd: 'cd /var/www/credactive' },
                       { id: 'pull', cmd: 'git pull origin main' },
                       { id: 'install', cmd: 'npm install' },
-                      { id: 'build', cmd: 'npm run build' },
+                      { id: 'build', cmd: 'export $(cat .env | xargs) && npm run build' },
                       { id: 'restart', cmd: 'pm2 restart all' }
                     ].map(({ id, cmd }) => (
                       <div key={id} className="flex items-center gap-2 bg-muted p-3 rounded-md mb-2">

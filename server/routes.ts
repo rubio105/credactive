@@ -15,6 +15,7 @@ import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
+import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle } from "./gemini";
 import { clearBrevoInstance } from "./email";
 import { 
   insertUserQuizAttemptSchema, 
@@ -28,7 +29,11 @@ import {
   updateCourseVideoSchema,
   updateVideoQuestionSchema,
   updateCourseQuestionSchema,
-  insertCorporateAgreementSchema
+  insertCorporateAgreementSchema,
+  insertPreventionDocumentSchema,
+  insertTriageSessionSchema,
+  insertProhmedCodeSchema,
+  insertCrosswordPuzzleSchema
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -5889,6 +5894,668 @@ Explicación de audio:`
     } catch (error: any) {
       console.error('Get feedback error:', error);
       res.status(500).json({ message: error.message || 'Failed to get feedback' });
+    }
+  });
+
+  // ========== PREVENTION SYSTEM ROUTES ==========
+  
+  // Get all prevention documents (GET /api/prevention/documents)
+  app.get('/api/prevention/documents', isAuthenticated, async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly === 'true';
+      const documents = await storage.getAllPreventionDocuments(activeOnly);
+      res.json(documents);
+    } catch (error: any) {
+      console.error('Get prevention documents error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get documents' });
+    }
+  });
+
+  // Get prevention document by ID (GET /api/prevention/documents/:id)
+  app.get('/api/prevention/documents/:id', isAuthenticated, async (req, res) => {
+    try {
+      const document = await storage.getPreventionDocumentById(req.params.id);
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+      res.json(document);
+    } catch (error: any) {
+      console.error('Get prevention document error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get document' });
+    }
+  });
+
+  // Upload and analyze prevention document (POST /api/prevention/documents/upload) - ADMIN ONLY
+  app.post('/api/prevention/documents/upload', isAdmin, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { title, fileUrl, pdfContent } = req.body;
+
+      if (!title || !pdfContent || !fileUrl) {
+        return res.status(400).json({ message: 'Title, fileUrl, and PDF content are required' });
+      }
+
+      // Analyze document with Gemini AI
+      const analysis = await analyzePreventionDocument(pdfContent);
+
+      // Create document record
+      const document = await storage.createPreventionDocument({
+        title,
+        fileUrl,
+        uploadedById: user.id,
+        analysisStatus: 'completed',
+        extractedTopics: analysis.topics,
+        extractedKeywords: analysis.keywords,
+        summary: analysis.summary,
+        language: analysis.language,
+        isActive: true,
+      });
+
+      // Create topic records if they don't exist
+      for (const topicName of analysis.topics) {
+        const existingTopics = await storage.getAllPreventionTopics();
+        const exists = existingTopics.find(t => t.name.toLowerCase() === topicName.toLowerCase());
+        
+        if (!exists) {
+          await storage.createPreventionTopic({
+            name: topicName,
+            isSensitive: false,
+          });
+        }
+      }
+
+      res.json(document);
+    } catch (error: any) {
+      console.error('Upload prevention document error:', error);
+      res.status(500).json({ message: error.message || 'Failed to upload document' });
+    }
+  });
+
+  // Update prevention document (PATCH /api/prevention/documents/:id) - ADMIN ONLY
+  app.patch('/api/prevention/documents/:id', isAdmin, async (req, res) => {
+    try {
+      const document = await storage.updatePreventionDocument(req.params.id, req.body);
+      res.json(document);
+    } catch (error: any) {
+      console.error('Update prevention document error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update document' });
+    }
+  });
+
+  // Delete prevention document (DELETE /api/prevention/documents/:id) - ADMIN ONLY
+  app.delete('/api/prevention/documents/:id', isAdmin, async (req, res) => {
+    try {
+      await storage.deletePreventionDocument(req.params.id);
+      res.json({ message: 'Document deleted successfully' });
+    } catch (error: any) {
+      console.error('Delete prevention document error:', error);
+      res.status(500).json({ message: error.message || 'Failed to delete document' });
+    }
+  });
+
+  // Get all prevention topics (GET /api/prevention/topics)
+  app.get('/api/prevention/topics', isAuthenticated, async (req, res) => {
+    try {
+      const topics = await storage.getAllPreventionTopics();
+      res.json(topics);
+    } catch (error: any) {
+      console.error('Get prevention topics error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get topics' });
+    }
+  });
+
+  // Create prevention topic (POST /api/prevention/topics) - ADMIN ONLY
+  app.post('/api/prevention/topics', isAdmin, async (req, res) => {
+    try {
+      const topic = await storage.createPreventionTopic(req.body);
+      res.json(topic);
+    } catch (error: any) {
+      console.error('Create prevention topic error:', error);
+      res.status(500).json({ message: error.message || 'Failed to create topic' });
+    }
+  });
+
+  // Update prevention topic (PATCH /api/prevention/topics/:id) - ADMIN ONLY
+  app.patch('/api/prevention/topics/:id', isAdmin, async (req, res) => {
+    try {
+      const topic = await storage.updatePreventionTopic(req.params.id, req.body);
+      res.json(topic);
+    } catch (error: any) {
+      console.error('Update prevention topic error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update topic' });
+    }
+  });
+
+  // ========== TRIAGE CONVERSATION ROUTES ==========
+  
+  // Start new triage session (POST /api/triage/start)
+  app.post('/api/triage/start', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { initialSymptom, language } = req.body;
+
+      if (!initialSymptom) {
+        return res.status(400).json({ message: 'Initial symptom is required' });
+      }
+
+      // Create triage session
+      const session = await storage.createTriageSession({
+        userId: user.id,
+        status: 'active',
+      });
+
+      // Create initial message
+      const userMessage = await storage.createTriageMessage({
+        sessionId: session.id,
+        role: 'user',
+        content: initialSymptom,
+      });
+
+      // Get AI response
+      const aiResponse = await generateTriageResponse(initialSymptom, []);
+
+      // Save AI response
+      const aiMessage = await storage.createTriageMessage({
+        sessionId: session.id,
+        role: 'assistant',
+        content: aiResponse.message,
+      });
+
+      // Check for sensitive flags and create alerts
+      if (aiResponse.isSensitive || aiResponse.suggestDoctor) {
+        await storage.createTriageAlert({
+          userId: user.id,
+          sessionId: session.id,
+          urgencyLevel: aiResponse.urgencyLevel,
+          alertType: aiResponse.isSensitive ? 'sensitive_topic' : 'doctor_referral',
+          reason: `Urgency: ${aiResponse.urgencyLevel}. Related topics: ${aiResponse.relatedTopics.join(', ')}`,
+          isReviewed: false,
+        });
+      }
+
+      res.json({
+        session,
+        messages: [userMessage, aiMessage],
+        suggestDoctor: aiResponse.suggestDoctor,
+        urgencyLevel: aiResponse.urgencyLevel,
+      });
+    } catch (error: any) {
+      console.error('Start triage error:', error);
+      res.status(500).json({ message: error.message || 'Failed to start triage session' });
+    }
+  });
+
+  // Send message to triage session (POST /api/triage/:sessionId/message)
+  app.post('/api/triage/:sessionId/message', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { content, language } = req.body;
+      const sessionId = req.params.sessionId;
+
+      if (!content) {
+        return res.status(400).json({ message: 'Message content is required' });
+      }
+
+      // Verify session belongs to user
+      const session = await storage.getTriageSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+      if (session.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      if (session.status === 'closed') {
+        return res.status(400).json({ message: 'Session is closed' });
+      }
+
+      // Create user message
+      const userMessage = await storage.createTriageMessage({
+        sessionId,
+        role: 'user',
+        content,
+      });
+
+      // Get conversation history
+      const messages = await storage.getTriageMessagesBySession(sessionId);
+      const history = messages.map(m => ({ role: m.role, content: m.content }));
+
+      // Get AI response
+      const aiResponse = await generateTriageResponse(content, history);
+
+      // Save AI response
+      const aiMessage = await storage.createTriageMessage({
+        sessionId,
+        role: 'assistant',
+        content: aiResponse.message,
+      });
+
+      // Check for sensitive flags and create alerts
+      if (aiResponse.isSensitive || aiResponse.suggestDoctor) {
+        await storage.createTriageAlert({
+          userId: user.id,
+          sessionId,
+          urgencyLevel: aiResponse.urgencyLevel,
+          alertType: aiResponse.isSensitive ? 'sensitive_topic' : 'doctor_referral',
+          reason: `Urgency: ${aiResponse.urgencyLevel}. Related topics: ${aiResponse.relatedTopics.join(', ')}`,
+          isReviewed: false,
+        });
+      }
+
+      res.json({
+        userMessage,
+        aiMessage,
+        suggestDoctor: aiResponse.suggestDoctor,
+        urgencyLevel: aiResponse.urgencyLevel,
+      });
+    } catch (error: any) {
+      console.error('Send triage message error:', error);
+      res.status(500).json({ message: error.message || 'Failed to send message' });
+    }
+  });
+
+  // Get triage session (GET /api/triage/:sessionId)
+  app.get('/api/triage/:sessionId', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const sessionId = req.params.sessionId;
+
+      const session = await storage.getTriageSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+      if (session.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const messages = await storage.getTriageMessagesBySession(sessionId);
+      const alerts = await storage.getTriageAlertsBySession(sessionId);
+
+      res.json({ session, messages, alerts });
+    } catch (error: any) {
+      console.error('Get triage session error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get session' });
+    }
+  });
+
+  // Get user's triage sessions (GET /api/triage/user/sessions)
+  app.get('/api/triage/user/sessions', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const sessions = await storage.getTriageSessionsByUser(user.id);
+      res.json(sessions);
+    } catch (error: any) {
+      console.error('Get user triage sessions error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get sessions' });
+    }
+  });
+
+  // Close triage session (POST /api/triage/:sessionId/close)
+  app.post('/api/triage/:sessionId/close', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const sessionId = req.params.sessionId;
+
+      const session = await storage.getTriageSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+      if (session.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const closedSession = await storage.closeTriageSession(sessionId);
+      res.json(closedSession);
+    } catch (error: any) {
+      console.error('Close triage session error:', error);
+      res.status(500).json({ message: error.message || 'Failed to close session' });
+    }
+  });
+
+  // Admin: Get unreviewed triage alerts (GET /api/admin/triage/alerts/unreviewed)
+  app.get('/api/admin/triage/alerts/unreviewed', isAdmin, async (req, res) => {
+    try {
+      const alerts = await storage.getUnreviewedTriageAlerts();
+      res.json(alerts);
+    } catch (error: any) {
+      console.error('Get unreviewed alerts error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get alerts' });
+    }
+  });
+
+  // Admin: Mark alert as reviewed (PATCH /api/admin/triage/alerts/:id/review)
+  app.patch('/api/admin/triage/alerts/:id/review', isAdmin, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { reviewNotes } = req.body;
+      const alert = await storage.updateTriageAlert(req.params.id, {
+        isReviewed: true,
+        reviewedAt: new Date(),
+        reviewedById: user.id,
+        reviewNotes: reviewNotes || null,
+      });
+      res.json(alert);
+    } catch (error: any) {
+      console.error('Review alert error:', error);
+      res.status(500).json({ message: error.message || 'Failed to review alert' });
+    }
+  });
+
+  // ========== PROHMED CODES ROUTES ==========
+  
+  // Generate Prohmed code (POST /api/prohmed/codes/generate) - ADMIN ONLY
+  app.post('/api/prohmed/codes/generate', isAdmin, async (req, res) => {
+    try {
+      const { userId, source, sourceDetails } = req.body;
+
+      if (!userId || !source) {
+        return res.status(400).json({ message: 'User ID and source are required' });
+      }
+
+      // Generate unique code
+      const code = `PROHMED-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      const prohmедCode = await storage.createProhmedCode({
+        userId,
+        code,
+        source, // 'crossword_winner', 'full_plus_subscriber', 'manual_admin'
+        sourceDetails: sourceDetails || null,
+        status: 'active',
+      });
+
+      res.json(prohmедCode);
+    } catch (error: any) {
+      console.error('Generate Prohmed code error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate code' });
+    }
+  });
+
+  // Get user's Prohmed codes (GET /api/prohmed/codes/my)
+  app.get('/api/prohmed/codes/my', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const codes = await storage.getProhmedCodesByUser(user.id);
+      res.json(codes);
+    } catch (error: any) {
+      console.error('Get Prohmed codes error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get codes' });
+    }
+  });
+
+  // Verify Prohmed code (GET /api/prohmed/codes/verify/:code)
+  app.get('/api/prohmed/codes/verify/:code', async (req, res) => {
+    try {
+      const code = await storage.getProhmedCodeByCode(req.params.code);
+      if (!code) {
+        return res.status(404).json({ message: 'Code not found' });
+      }
+      res.json({ valid: code.status === 'active', code });
+    } catch (error: any) {
+      console.error('Verify Prohmed code error:', error);
+      res.status(500).json({ message: error.message || 'Failed to verify code' });
+    }
+  });
+
+  // Redeem Prohmed code (POST /api/prohmed/codes/redeem/:code)
+  app.post('/api/prohmed/codes/redeem/:code', async (req, res) => {
+    try {
+      const codeRecord = await storage.getProhmedCodeByCode(req.params.code);
+      if (!codeRecord) {
+        return res.status(404).json({ message: 'Code not found' });
+      }
+      if (codeRecord.status !== 'active') {
+        return res.status(400).json({ message: 'Code already redeemed or expired' });
+      }
+
+      const redeemedCode = await storage.redeemProhmedCode(req.params.code);
+      res.json(redeemedCode);
+    } catch (error: any) {
+      console.error('Redeem Prohmed code error:', error);
+      res.status(500).json({ message: error.message || 'Failed to redeem code' });
+    }
+  });
+
+  // ========== CROSSWORD GAME ROUTES ==========
+  
+  // Get all crossword puzzles (GET /api/crossword/puzzles)
+  app.get('/api/crossword/puzzles', isAuthenticated, async (req, res) => {
+    try {
+      const activeOnly = req.query.activeOnly === 'true';
+      const puzzles = await storage.getAllCrosswordPuzzles(activeOnly);
+      res.json(puzzles);
+    } catch (error: any) {
+      console.error('Get crossword puzzles error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get puzzles' });
+    }
+  });
+
+  // Get weekly crossword challenge (GET /api/crossword/weekly-challenge)
+  app.get('/api/crossword/weekly-challenge', isAuthenticated, async (req, res) => {
+    try {
+      const now = new Date();
+      const weekNumber = Math.ceil((now.getDate()) / 7);
+      const weekYear = now.getFullYear();
+
+      const puzzle = await storage.getWeeklyCrosswordChallenge(weekNumber, weekYear);
+      if (!puzzle) {
+        return res.status(404).json({ message: 'No weekly challenge available' });
+      }
+
+      res.json(puzzle);
+    } catch (error: any) {
+      console.error('Get weekly challenge error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get weekly challenge' });
+    }
+  });
+
+  // Generate crossword puzzle with AI (POST /api/crossword/puzzles/generate) - ADMIN ONLY
+  app.post('/api/crossword/puzzles/generate', isAdmin, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { topic, difficulty, isWeeklyChallenge } = req.body;
+
+      if (!topic || !difficulty) {
+        return res.status(400).json({ message: 'Topic and difficulty are required' });
+      }
+
+      // Generate crossword with Gemini AI
+      const crosswordData = await generateCrosswordPuzzle(topic, difficulty as 'easy' | 'medium' | 'hard');
+
+      // Calculate week number if it's a weekly challenge
+      let weekNumber = null;
+      let weekYear = null;
+      if (isWeeklyChallenge) {
+        const now = new Date();
+        weekNumber = Math.ceil((now.getDate()) / 7);
+        weekYear = now.getFullYear();
+      }
+
+      const puzzle = await storage.createCrosswordPuzzle({
+        title: crosswordData.title,
+        topic,
+        difficulty,
+        cluesData: crosswordData.clues,
+        gridData: crosswordData.grid,
+        isWeeklyChallenge: isWeeklyChallenge || false,
+        weekNumber,
+        weekYear,
+        createdById: user.id,
+        isActive: true,
+      });
+
+      res.json(puzzle);
+    } catch (error: any) {
+      console.error('Generate crossword error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate crossword' });
+    }
+  });
+
+  // Get crossword puzzle by ID (GET /api/crossword/puzzles/:id)
+  app.get('/api/crossword/puzzles/:id', isAuthenticated, async (req, res) => {
+    try {
+      const puzzle = await storage.getCrosswordPuzzleById(req.params.id);
+      if (!puzzle) {
+        return res.status(404).json({ message: 'Puzzle not found' });
+      }
+      res.json(puzzle);
+    } catch (error: any) {
+      console.error('Get crossword puzzle error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get puzzle' });
+    }
+  });
+
+  // Start crossword attempt (POST /api/crossword/attempts/start)
+  app.post('/api/crossword/attempts/start', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { puzzleId } = req.body;
+
+      if (!puzzleId) {
+        return res.status(400).json({ message: 'Puzzle ID is required' });
+      }
+
+      // Check if user already has an attempt for this puzzle
+      const existing = await storage.getCrosswordAttemptByUserAndPuzzle(user.id, puzzleId);
+      if (existing) {
+        return res.json(existing);
+      }
+
+      const attempt = await storage.createCrosswordAttempt({
+        userId: user.id,
+        puzzleId,
+        status: 'in_progress',
+        progressData: {},
+        hintsUsed: 0,
+      });
+
+      res.json(attempt);
+    } catch (error: any) {
+      console.error('Start crossword attempt error:', error);
+      res.status(500).json({ message: error.message || 'Failed to start attempt' });
+    }
+  });
+
+  // Update crossword attempt progress (PATCH /api/crossword/attempts/:id)
+  app.patch('/api/crossword/attempts/:id', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { progressData, hintsUsed, status, timeSpent, score } = req.body;
+
+      const existing = await storage.getCrosswordAttemptById(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ message: 'Attempt not found' });
+      }
+      if (existing.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const updates: any = {};
+      if (progressData !== undefined) updates.progressData = progressData;
+      if (hintsUsed !== undefined) updates.hintsUsed = hintsUsed;
+      if (status !== undefined) {
+        updates.status = status;
+        if (status === 'completed') {
+          updates.completedAt = new Date();
+          if (timeSpent !== undefined) updates.timeSpent = timeSpent;
+          if (score !== undefined) updates.score = score;
+        }
+      }
+
+      const attempt = await storage.updateCrosswordAttempt(req.params.id, updates);
+      res.json(attempt);
+    } catch (error: any) {
+      console.error('Update crossword attempt error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update attempt' });
+    }
+  });
+
+  // Submit crossword completion (POST /api/crossword/attempts/:id/complete)
+  app.post('/api/crossword/attempts/:id/complete', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { timeSpentSeconds, accuracy, hintsUsed } = req.body;
+
+      const attempt = await storage.getCrosswordAttemptById(req.params.id);
+      if (!attempt) {
+        return res.status(404).json({ message: 'Attempt not found' });
+      }
+      if (attempt.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      // Mark as completed
+      const completedAttempt = await storage.updateCrosswordAttempt(req.params.id, {
+        status: 'completed',
+        completedAt: new Date(),
+        timeSpent: timeSpentSeconds || 0,
+        correctAnswers: Math.round((accuracy || 0) * 100),
+        hintsUsed: hintsUsed || 0,
+        score: Math.round((accuracy || 0) * 1000 - (hintsUsed || 0) * 50),
+      });
+
+      // Get puzzle to check if it's a weekly challenge
+      const puzzle = await storage.getCrosswordPuzzleById(attempt.puzzleId);
+      
+      if (puzzle?.isWeeklyChallenge && puzzle.weekNumber && puzzle.weekYear) {
+        // Calculate score (higher accuracy, less time, fewer hints = better score)
+        const baseScore = (accuracy || 0) * 100;
+        const timeBonus = Math.max(0, 1000 - timeSpentSeconds);
+        const hintPenalty = (hintsUsed || 0) * 50;
+        const totalScore = Math.round(baseScore + timeBonus - hintPenalty);
+
+        // Update leaderboard
+        await storage.upsertCrosswordLeaderboard({
+          userId: user.id,
+          weekNumber: puzzle.weekNumber,
+          weekYear: puzzle.weekYear,
+          totalScore,
+          puzzlesCompleted: 1,
+          averageTime: timeSpentSeconds,
+        });
+      }
+
+      res.json(completedAttempt);
+    } catch (error: any) {
+      console.error('Complete crossword attempt error:', error);
+      res.status(500).json({ message: error.message || 'Failed to complete attempt' });
+    }
+  });
+
+  // Get user's crossword attempts (GET /api/crossword/attempts/my)
+  app.get('/api/crossword/attempts/my', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const attempts = await storage.getCrosswordAttemptsByUser(user.id);
+      res.json(attempts);
+    } catch (error: any) {
+      console.error('Get crossword attempts error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get attempts' });
+    }
+  });
+
+  // Get weekly leaderboard (GET /api/crossword/leaderboard/weekly)
+  app.get('/api/crossword/leaderboard/weekly', isAuthenticated, async (req, res) => {
+    try {
+      const now = new Date();
+      const weekNumber = Math.ceil((now.getDate()) / 7);
+      const weekYear = now.getFullYear();
+
+      const leaderboard = await storage.getCrosswordLeaderboardByWeek(weekNumber, weekYear);
+      res.json(leaderboard);
+    } catch (error: any) {
+      console.error('Get weekly leaderboard error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get leaderboard' });
+    }
+  });
+
+  // Get user's leaderboard history (GET /api/crossword/leaderboard/my)
+  app.get('/api/crossword/leaderboard/my', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const history = await storage.getCrosswordLeaderboardByUser(user.id);
+      res.json(history);
+    } catch (error: any) {
+      console.error('Get leaderboard history error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get history' });
     }
   });
   

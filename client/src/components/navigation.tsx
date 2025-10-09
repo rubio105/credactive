@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3 } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2 } from "lucide-react";
 import logoImage from "@assets/image_1759658677025.png";
 
 interface User {
@@ -23,6 +23,7 @@ interface User {
   isPremium: boolean;
   isAdmin: boolean;
   credits?: number;
+  corporateAgreementId?: string;
 }
 
 interface ContentPage {
@@ -234,6 +235,17 @@ export default function Navigation() {
                         Analytics
                       </DropdownMenuItem>
                     </Link>
+                    {typedUser?.corporateAgreementId && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <Link href="/corporate">
+                          <DropdownMenuItem className="text-blue-600" data-testid="menu-corporate">
+                            <Building2 className="w-4 h-4 mr-2" />
+                            Portale Aziendale
+                          </DropdownMenuItem>
+                        </Link>
+                      </>
+                    )}
                     {typedUser?.isAdmin && (
                       <>
                         <DropdownMenuSeparator />

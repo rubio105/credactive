@@ -107,21 +107,25 @@ export function AdminPrevention() {
     setPdfFile(file);
     
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('pdf', file);
 
     try {
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/admin/upload-pdf', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
       
-      if (!response.ok) throw new Error('Upload failed');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
       
       const data = await response.json();
       setPdfContent(data.text || "");
-      setUploadedFileUrl(data.url || data.path || "");
+      setUploadedFileUrl(data.url || "");
       
-      toast({ title: "PDF caricato, pronto per l'analisi AI" });
+      toast({ title: `PDF caricato (${data.pages} pagine), pronto per l'analisi AI` });
     } catch (error: any) {
       toast({ title: "Errore caricamento PDF: " + error.message, variant: "destructive" });
     }

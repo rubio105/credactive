@@ -21,7 +21,8 @@ export async function setupAuth(app: Express) {
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      // Only use secure cookies when HTTPS is explicitly enabled
+      secure: process.env.FORCE_HTTPS === "true",
       sameSite: "lax",
     },
   };

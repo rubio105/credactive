@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare, Book } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare, Book, Shield, Gift } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { AdminUsers } from "@/components/admin/AdminUsers";
@@ -20,6 +20,8 @@ import { AdminMarketing } from "@/components/admin/AdminMarketing";
 import { AdminLiveSessions } from "@/components/admin/AdminLiveSessions";
 import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { AdminDocumentation } from "@/components/admin/AdminDocumentation";
+import { AdminPrevention } from "@/components/admin/AdminPrevention";
+import { AdminProhmedCodes } from "@/components/admin/AdminProhmedCodes";
 
 const menuItems = [
   { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
@@ -34,6 +36,8 @@ const menuItems = [
   { id: "on-demand-courses", icon: Video, label: "Corsi On-Demand", testId: "tab-on-demand-courses" },
   { id: "pages", icon: FileText, label: "Pagine", testId: "tab-pages" },
   { id: "corporate", icon: Building2, label: "Aziende", testId: "tab-corporate" },
+  { id: "prevention", icon: Shield, label: "Prevenzione", testId: "tab-prevention" },
+  { id: "prohmed-codes", icon: Gift, label: "Codici Prohmed", testId: "tab-prohmed-codes" },
   { id: "email", icon: Mail, label: "Email", testId: "tab-email" },
   { id: "api", icon: Key, label: "API Keys", testId: "tab-api" },
   { id: "settings", icon: Settings, label: "Impostazioni", testId: "tab-settings" },
@@ -132,6 +136,8 @@ export default function AdminPage() {
           {activeTab === "on-demand-courses" && <AdminOnDemandCourses />}
           {activeTab === "pages" && <AdminContentPages />}
           {activeTab === "corporate" && <AdminCorporateAgreements />}
+          {activeTab === "prevention" && <AdminPrevention />}
+          {activeTab === "prohmed-codes" && <AdminProhmedCodes />}
           {activeTab === "email" && <AdminEmailTemplates />}
           {activeTab === "api" && <AdminAPIKeys />}
           {activeTab === "settings" && <AdminSettings />}

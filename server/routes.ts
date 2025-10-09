@@ -2043,7 +2043,7 @@ Restituisci SOLO un JSON con:
       
       // Read and parse the PDF to validate page count
       const pdfBuffer = fs.readFileSync(req.file.path);
-      const pdfParse = (await import('pdf-parse')) as any;
+      const pdfParse = (await import('pdf-parse')).default;
       const pdfData = await pdfParse(pdfBuffer);
       
       // Validate max 600 pages

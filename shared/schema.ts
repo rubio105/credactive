@@ -1320,6 +1320,87 @@ export const insertTriageAlertSchema = createInsertSchema(triageAlerts).omit({
 });
 export type InsertTriageAlert = z.infer<typeof insertTriageAlertSchema>;
 
+// Prevention Assessments (initial health assessment with max 10 questions)
+export const preventionAssessments = pgTable("prevention_assessments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Assessment metadata
+  title: varchar("title", { length: 200 }).default("Assessment Prevenzione"),
+  status: varchar("status", { length: 20 }).default("in_progress"), // in_progress, completed
+  score: integer("score"), // Overall score (0-100)
+  
+  // User profile data used for assessment
+  userAge: integer("user_age"),
+  userGender: varchar("user_gender", { length: 50 }),
+  userProfession: varchar("user_profession", { length: 100 }),
+  
+  // AI-generated insights
+  riskLevel: varchar("risk_level", { length: 20 }), // low, moderate, high
+  recommendations: text("recommendations").array(), // AI-generated recommendations
+  reportPdfUrl: text("report_pdf_url"), // Generated PDF report URL
+  
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PreventionAssessment = typeof preventionAssessments.$inferSelect;
+export const insertPreventionAssessmentSchema = createInsertSchema(preventionAssessments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPreventionAssessment = z.infer<typeof insertPreventionAssessmentSchema>;
+
+// Prevention Assessment Questions (AI-generated personalized questions, max 10)
+export const preventionAssessmentQuestions = pgTable("prevention_assessment_questions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  assessmentId: uuid("assessment_id").notNull().references(() => preventionAssessments.id, { onDelete: "cascade" }),
+  
+  questionText: text("question_text").notNull(),
+  questionType: varchar("question_type", { length: 20 }).notNull(), // multiple_choice, yes_no, scale, text
+  options: text("options").array(), // For multiple choice: ["Opzione 1", "Opzione 2", ...]
+  orderIndex: integer("order_index").notNull(), // Display order (1-10)
+  
+  // AI context
+  category: varchar("category", { length: 100 }), // lifestyle, symptoms, history, habits, nutrition, etc.
+  importance: varchar("importance", { length: 20 }), // high, medium, low
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PreventionAssessmentQuestion = typeof preventionAssessmentQuestions.$inferSelect;
+export const insertPreventionAssessmentQuestionSchema = createInsertSchema(preventionAssessmentQuestions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertPreventionAssessmentQuestion = z.infer<typeof insertPreventionAssessmentQuestionSchema>;
+
+// Prevention User Responses (user answers to assessment questions - saved for learning)
+export const preventionUserResponses = pgTable("prevention_user_responses", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  assessmentId: uuid("assessment_id").notNull().references(() => preventionAssessments.id, { onDelete: "cascade" }),
+  questionId: uuid("question_id").notNull().references(() => preventionAssessmentQuestions.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  answer: text("answer").notNull(), // User's answer
+  answerType: varchar("answer_type", { length: 20 }).notNull(), // text, choice, scale_value
+  
+  // Learning/Analytics metadata
+  isCorrect: boolean("is_correct"), // For validation if needed
+  confidenceLevel: varchar("confidence_level", { length: 20 }), // high, medium, low (user's confidence)
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PreventionUserResponse = typeof preventionUserResponses.$inferSelect;
+export const insertPreventionUserResponseSchema = createInsertSchema(preventionUserResponses).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertPreventionUserResponse = z.infer<typeof insertPreventionUserResponseSchema>;
+
 // Prohmed Access Codes (telemedicine app access codes)
 export const prohmedCodes = pgTable("prohmed_codes", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

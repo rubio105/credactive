@@ -57,14 +57,8 @@ export default function PreventionPage() {
     queryKey: ["/api/prevention/documents"],
   });
 
-  // Check if user needs to take assessment
-  useEffect(() => {
-    if (!assessmentLoading) {
-      if (!latestAssessment || latestAssessment.status !== 'completed') {
-        setShowAssessment(true);
-      }
-    }
-  }, [latestAssessment, assessmentLoading]);
+  // Assessment is optional - user can access directly without completing it
+  // Educational focus: learn about prevention, not mandatory diagnostic assessment
 
   const { data: activeSession } = useQuery<TriageSession>({
     queryKey: ["/api/triage/session/active"],
@@ -124,33 +118,15 @@ export default function PreventionPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Show assessment if user hasn't completed it
-  if (showAssessment) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container py-8 max-w-7xl">
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold mb-2">Hub Prevenzione Medica</h1>
-            <p className="text-muted-foreground">
-              Completa l'assessment per accedere alle risorse di prevenzione
-            </p>
-          </div>
-          <PreventionAssessment onComplete={() => {
-            setShowAssessment(false);
-            queryClient.invalidateQueries({ queryKey: ["/api/prevention/assessment/latest"] });
-          }} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-8 max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Hub Prevenzione Medica</h1>
-          <p className="text-muted-foreground">
-            Risorse educative e assistente AI per la tua salute
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            AI Prohmed - Impara la Prevenzione
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Condividi il tuo caso personale e scopri strategie pratiche per la prevenzione con l'intelligenza artificiale
           </p>
         </div>
 
@@ -205,42 +181,62 @@ export default function PreventionPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Shield className="w-5 h-5" />
-                      Chiedi Approfondimenti a Prohmed
+                      <Shield className="w-5 h-5 text-emerald-600" />
+                      Parla del Tuo Caso
                     </CardTitle>
                     <CardDescription>
-                      Assistente AI per orientamento medico (non sostituisce il medico)
+                      Conversazione educativa personalizzata sulla prevenzione
                     </CardDescription>
                   </div>
-                  {session?.hasAlert && (
-                    <Badge variant="destructive">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      Richiesta Consulto
-                    </Badge>
-                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {session?.hasAlert && (
-                  <Alert variant="destructive">
-                    <AlertTriangle className="w-4 h-4" />
-                    <AlertDescription>
-                      Sulla base dei sintomi descritti, ti consigliamo di contattare un medico.
-                      Il nostro team ha ricevuto la tua segnalazione.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 {!sessionId ? (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Descrivi i tuoi sintomi o domande sulla prevenzione. 
-                      L'assistente AI ti fornirà informazioni educative e, se necessario, 
-                      suggerirà di consultare un medico.
-                    </p>
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                      <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                        💡 Come funziona l'educazione alla prevenzione?
+                      </p>
+                      <ul className="text-sm text-emerald-800 dark:text-emerald-200 space-y-1">
+                        <li>• Condividi il tuo caso personale o interesse</li>
+                        <li>• L'AI ti guida nell'apprendimento di strategie preventive</li>
+                        <li>• Ricevi consigli pratici basati su evidenze scientifiche</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Esempi di casi pratici:</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        <Button 
+                          variant="outline" 
+                          className="justify-start text-left h-auto py-2"
+                          onClick={() => setUserInput("Ho familiarità con il diabete, come posso prevenirlo?")}
+                          data-testid="button-example-diabetes"
+                        >
+                          <span className="text-xs">Ho familiarità con il diabete, come posso prevenirlo?</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="justify-start text-left h-auto py-2"
+                          onClick={() => setUserInput("Lavoro molto seduto, cosa posso fare per la mia salute cardiovascolare?")}
+                          data-testid="button-example-cardiovascular"
+                        >
+                          <span className="text-xs">Lavoro molto seduto, cosa posso fare per la salute cardiovascolare?</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="justify-start text-left h-auto py-2"
+                          onClick={() => setUserInput("Ho 45 anni, quali screening preventivi dovrei fare?")}
+                          data-testid="button-example-screening"
+                        >
+                          <span className="text-xs">Ho 45 anni, quali screening preventivi dovrei fare?</span>
+                        </Button>
+                      </div>
+                    </div>
+                    
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Es: Ho mal di testa frequente..."
+                        placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleStart()}
@@ -249,6 +245,7 @@ export default function PreventionPage() {
                       <Button
                         onClick={handleStart}
                         disabled={startTriageMutation.isPending}
+                        className="bg-emerald-600 hover:bg-emerald-700"
                         data-testid="button-start-triage"
                       >
                         <Send className="w-4 h-4 mr-2" />

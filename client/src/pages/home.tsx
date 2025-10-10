@@ -189,25 +189,21 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* AI Prohmed - Prevenzione e Salute */}
+        {/* CIRY - Care & Intelligence Ready for You */}
         <Card className="mb-8 bg-gradient-to-r from-orange-500 to-orange-600 text-white border-none shadow-lg">
           <CardContent className="p-8">
             <div className="flex items-start justify-between mb-6">
               <div className="flex items-center gap-4">
                 <img 
-                  src="/attached_assets/image_1760060236448.png" 
-                  alt="AI Prohmed Logo" 
-                  className="w-16 h-16"
+                  src="/attached_assets/image_1760060153729.png" 
+                  alt="CIRY Logo" 
+                  className="h-20"
                 />
-                <div>
-                  <h2 className="text-2xl font-bold">AI Prohmed - Impara la Prevenzione</h2>
-                  <Badge className="mt-1 bg-white/30 text-white border-white/40">Intelligenza Artificiale per la Salute</Badge>
-                </div>
               </div>
             </div>
 
             <p className="text-white/90 text-base mb-6 max-w-3xl">
-              Il tuo assistente intelligente per la prevenzione sanitaria. Carica documenti medici, genera report personalizzati e scopri strategie di prevenzione basate su evidenze scientifiche.
+              Care & Intelligence Ready for You. Il tuo assistente intelligente per la prevenzione sanitaria. Carica documenti medici, genera report personalizzati e scopri strategie di prevenzione basate su evidenze scientifiche.
             </p>
 
             {/* Dashboard Indicators */}
@@ -260,12 +256,12 @@ export default function Home() {
               <Link href="/prevention" className="block">
                 <Button 
                   className="w-full bg-white text-orange-600 hover:bg-white/90 font-semibold"
-                  data-testid="button-ai-chat"
+                  data-testid="button-ciry-chat"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
-                  Chat AI Prevenzione
+                  Chat CIRY
                 </Button>
               </Link>
 
@@ -273,12 +269,12 @@ export default function Home() {
                 <Button 
                   variant="outline" 
                   className="w-full bg-white/10 text-white border-white/30 hover:bg-white/20"
-                  data-testid="button-upload-document"
+                  data-testid="button-upload-medical"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  Carica Documento
+                  Carica Referto
                 </Button>
               </Link>
 
@@ -286,12 +282,12 @@ export default function Home() {
                 <Button 
                   variant="outline" 
                   className="w-full bg-white/10 text-white border-white/30 hover:bg-white/20"
-                  data-testid="button-generate-report"
+                  data-testid="button-health-report"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Genera Report PDF
+                  Health Report
                 </Button>
               </Link>
             </div>

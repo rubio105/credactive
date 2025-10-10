@@ -7217,6 +7217,62 @@ Le risposte DEVONO essere in italiano.`;
     }
   });
 
+  // User - Generate crossword for quiz (with 3/day limit)
+  app.post('/api/quizzes/:quizId/generate-crossword', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { quizId } = req.params;
+
+      // Check daily limit (3 per quiz per day)
+      const count = await storage.countUserCrosswordsForQuizToday(user.id, quizId);
+      if (count >= 3) {
+        return res.status(429).json({ 
+          message: 'Hai raggiunto il limite giornaliero di 3 cruciverba per questo quiz. Riprova domani!',
+          limit: 3,
+          current: count
+        });
+      }
+
+      // Get quiz details
+      const quiz = await storage.getQuizById(quizId);
+      if (!quiz) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      // Map quiz difficulty to crossword difficulty
+      let difficultyLevel: 'easy' | 'medium' | 'hard' = 'medium';
+      if (quiz.difficulty === 'beginner') difficultyLevel = 'easy';
+      else if (quiz.difficulty === 'intermediate') difficultyLevel = 'medium';
+      else if (['advanced', 'expert'].includes(quiz.difficulty)) difficultyLevel = 'hard';
+
+      // Generate crossword with Gemini AI
+      const crosswordData = await generateCrosswordPuzzle(quiz.title, difficultyLevel);
+
+      // Create crossword puzzle
+      const puzzle = await storage.createCrosswordPuzzle({
+        quizId,
+        title: `${quiz.title} - Cruciverba`,
+        topic: quiz.title,
+        difficulty: difficultyLevel,
+        cluesData: crosswordData.clues,
+        gridData: crosswordData.grid,
+        isWeeklyChallenge: false,
+        weekNumber: null,
+        weekYear: null,
+        createdById: user.id,
+        isActive: true,
+      });
+
+      res.json({ 
+        puzzle, 
+        remaining: 2 - count // remaining attempts today
+      });
+    } catch (error: any) {
+      console.error('Generate user crossword error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate crossword' });
+    }
+  });
+
   // Generate crossword puzzle with AI (POST /api/crossword/puzzles/generate) - ADMIN ONLY
   app.post('/api/crossword/puzzles/generate', isAdmin, async (req, res) => {
     try {
@@ -7272,10 +7328,17 @@ Le risposte DEVONO essere in italiano.`;
         row.map((cell: any) => cell ? '' : null)
       );
       
-      // Return puzzle with empty grid - solutions hidden
+      // Extract answers from clues for validation (but don't show in grid)
+      const cluesWithAnswers = (puzzle.cluesData as any[]).map((clue: any) => ({
+        number: clue.number,
+        answer: clue.answer?.toUpperCase() || ''
+      }));
+      
+      // Return puzzle with empty grid - solutions hidden but answers available for validation
       res.json({
         ...puzzle,
-        gridData: emptyGrid
+        gridData: emptyGrid,
+        solutions: cluesWithAnswers // For client-side validation only
       });
     } catch (error: any) {
       console.error('Get crossword puzzle error:', error);

@@ -510,6 +510,7 @@ export interface IStorage {
   getAllCrosswordPuzzles(activeOnly?: boolean): Promise<CrosswordPuzzle[]>;
   getWeeklyCrosswordChallenge(weekNumber: number, weekYear: number): Promise<CrosswordPuzzle | undefined>;
   updateCrosswordPuzzle(id: string, updates: Partial<CrosswordPuzzle>): Promise<CrosswordPuzzle>;
+  countUserCrosswordsForQuizToday(userId: string, quizId: string): Promise<number>;
   
   // Crossword attempt operations
   createCrosswordAttempt(attempt: InsertCrosswordAttempt): Promise<CrosswordAttempt>;
@@ -3114,6 +3115,25 @@ export class DatabaseStorage implements IStorage {
       .where(eq(crosswordPuzzles.id, id))
       .returning();
     return puzzle;
+  }
+
+  async countUserCrosswordsForQuizToday(userId: string, quizId: string): Promise<number> {
+    // Calculate 24 hours ago
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const result = await db
+      .select({ count: sql<number>`cast(count(*) as integer)` })
+      .from(crosswordPuzzles)
+      .where(
+        and(
+          eq(crosswordPuzzles.quizId, quizId),
+          eq(crosswordPuzzles.createdById, userId),
+          gte(crosswordPuzzles.createdAt, twentyFourHoursAgo)
+        )
+      );
+
+    return result[0]?.count || 0;
   }
 
   // Crossword attempt operations

@@ -18,6 +18,7 @@ interface CrosswordPuzzle {
   difficulty: string;
   cluesData: any[];
   gridData: string[][];
+  solutions?: Array<{ number: number; answer: string }>;
 }
 
 export default function CrosswordPage() {
@@ -106,6 +107,17 @@ export default function CrosswordPage() {
       ...userAnswers,
       [clueNumber]: value.toUpperCase(),
     });
+  };
+
+  // Check if answer is correct
+  const isCorrect = (clueNumber: number): boolean | null => {
+    const userAnswer = userAnswers[clueNumber];
+    if (!userAnswer) return null;
+    
+    const solution = puzzle?.solutions?.find(s => s.number === clueNumber);
+    if (!solution) return null;
+    
+    return userAnswer === solution.answer;
   };
 
   return (
@@ -206,7 +218,13 @@ export default function CrosswordPage() {
                           value={userAnswers[clue.number] || ''}
                           onChange={(e) => handleAnswerChange(clue.number, e.target.value)}
                           placeholder="Risposta..."
-                          className="h-8 text-sm uppercase"
+                          className={`h-8 text-sm uppercase ${
+                            isCorrect(clue.number) === true 
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300' 
+                              : isCorrect(clue.number) === false 
+                              ? 'border-red-500 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300' 
+                              : ''
+                          }`}
                           maxLength={clue.answer.length}
                         />
                       </div>
@@ -238,7 +256,13 @@ export default function CrosswordPage() {
                           value={userAnswers[clue.number] || ''}
                           onChange={(e) => handleAnswerChange(clue.number, e.target.value)}
                           placeholder="Risposta..."
-                          className="h-8 text-sm uppercase"
+                          className={`h-8 text-sm uppercase ${
+                            isCorrect(clue.number) === true 
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300' 
+                              : isCorrect(clue.number) === false 
+                              ? 'border-red-500 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300' 
+                              : ''
+                          }`}
                           maxLength={clue.answer.length}
                         />
                       </div>

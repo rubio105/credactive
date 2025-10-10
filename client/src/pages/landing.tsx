@@ -146,7 +146,8 @@ export default function Landing() {
               Guidati da <span className="font-bold text-foreground">esperti riconosciuti a livello nazionale e internazionale</span>, 
               offriamo una <span className="font-semibold text-foreground">piattaforma interattiva</span> dedicata ad 
               <span className="font-bold text-primary"> aziende e professionisti</span> che vogliono eccellere nelle certificazioni di 
-              Cybersecurity, Compliance, AI Security e Leadership.
+              Cybersecurity, Compliance, AI Security, Leadership e <span className="font-bold text-orange-600">prevenzione sanitaria intelligente</span> 
+              con il supporto di AI avanzata.
             </p>
           </div>
         </div>

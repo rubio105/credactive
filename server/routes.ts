@@ -7208,6 +7208,81 @@ Le risposte DEVONO essere in italiano.`;
     }
   });
 
+  // Patient AI login with Prohmed code (POST /api/patient-ai/login)
+  app.post('/api/patient-ai/login', async (req, res) => {
+    try {
+      const { code } = req.body;
+
+      if (!code) {
+        return res.status(400).json({ message: 'Codice Prohmed richiesto' });
+      }
+
+      const codeRecord = await storage.getProhmedCodeByCode(code);
+      if (!codeRecord) {
+        return res.status(404).json({ message: 'Codice non valido' });
+      }
+
+      // Allow redeemed codes if they have a userId (returning patient)
+      if (codeRecord.status !== 'active' && codeRecord.status !== 'redeemed') {
+        return res.status(400).json({ message: 'Codice scaduto o revocato' });
+      }
+
+      // If code is redeemed but has no userId, reject
+      if (codeRecord.status === 'redeemed' && !codeRecord.userId) {
+        return res.status(400).json({ message: 'Codice già utilizzato' });
+      }
+
+      let user;
+
+      if (codeRecord.userId) {
+        // Returning patient - authenticate existing user
+        user = await storage.getUser(codeRecord.userId);
+        if (!user) {
+          return res.status(404).json({ message: 'Utente associato non trovato' });
+        }
+      } else {
+        // First-time patient - create new account
+        const tempEmail = `patient-${code.replace(/[^A-Za-z0-9]/g, '').toLowerCase()}@prohmed-temp.local`;
+        user = await storage.createUser({
+          email: tempEmail,
+          password: null,
+          firstName: 'Paziente',
+          lastName: 'Prohmed',
+          authProvider: 'prohmed',
+          isPremium: false,
+          isAdmin: false,
+        });
+
+        await storage.updateProhmedCode(codeRecord.id, {
+          userId: user.id,
+          status: 'redeemed',
+          redeemedAt: new Date(),
+        });
+      }
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.status(500).json({ message: 'Errore durante il login' });
+        }
+        
+        // Sanitize user data - only return safe public fields
+        const safeUser = {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          authProvider: user.authProvider,
+        };
+        
+        res.json({ success: true, user: safeUser });
+      });
+    } catch (error: any) {
+      console.error('Patient AI login error:', error);
+      res.status(500).json({ message: error.message || 'Errore durante l\'autenticazione' });
+    }
+  });
+
   // Generate Prohmed codes for weekly crossword winners (POST /api/prohmed/codes/generate-weekly-winners) - ADMIN ONLY
   app.post('/api/prohmed/codes/generate-weekly-winners', isAdmin, async (req, res) => {
     try {

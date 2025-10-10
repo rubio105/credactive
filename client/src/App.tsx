@@ -36,6 +36,7 @@ import LiveSession from "@/pages/live-session";
 import Prevention from "@/pages/prevention";
 import WebinarHealth from "@/pages/webinar-health";
 import CrosswordPage from "@/pages/crossword";
+import PatientAI from "@/pages/patient-ai";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -44,6 +45,7 @@ function Router() {
     <Switch>
       <Route path="/chi-siamo" component={ChiSiamo} />
       <Route path="/contatti" component={Contatti} />
+      <Route path="/patient-ai" component={PatientAI} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/verify-email" component={VerifyEmail} />

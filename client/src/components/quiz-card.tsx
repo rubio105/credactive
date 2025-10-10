@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, HelpCircle, BarChart3, Lock, Crown, Play, Shield, FileText, Users, Brain, Database, AlertTriangle, Bot, Calendar } from "lucide-react";
+import { Clock, HelpCircle, BarChart3, Lock, Crown, Play, Shield, FileText, Users, Brain, Database, AlertTriangle, Bot, Calendar, Gamepad2 } from "lucide-react";
 
 interface QuizCardProps {
   quiz: {
@@ -18,9 +18,12 @@ interface QuizCardProps {
     gradient: string;
     icon: string;
     imageUrl?: string;
+    gamingEnabled?: boolean;
+    crosswordId?: string;
   };
   onStartQuiz: () => void;
   onLiveCourse?: () => void;
+  onCrossword?: () => void;
   hasLiveCourse?: boolean;
   showPremiumBadge?: boolean;
 }
@@ -56,7 +59,7 @@ const levelColors = {
   "SecOps": "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300"
 };
 
-export default function QuizCard({ quiz, onStartQuiz, onLiveCourse, hasLiveCourse = false, showPremiumBadge = true }: QuizCardProps) {
+export default function QuizCard({ quiz, onStartQuiz, onLiveCourse, onCrossword, hasLiveCourse = false, showPremiumBadge = true }: QuizCardProps) {
   const IconComponent = iconMap[quiz.icon] || Shield;
   const [imageError, setImageError] = useState(false);
   
@@ -172,6 +175,17 @@ export default function QuizCard({ quiz, onStartQuiz, onLiveCourse, hasLiveCours
             >
               <Calendar className="w-4 h-4 mr-2" />
               Corso Live
+            </Button>
+          )}
+          
+          {quiz.gamingEnabled && onCrossword && (
+            <Button 
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white" 
+              onClick={onCrossword}
+              data-testid={`quiz-button-gaming-${quiz.id}`}
+            >
+              <Gamepad2 className="w-4 h-4 mr-2" />
+              Gaming
             </Button>
           )}
         </div>

@@ -1727,4 +1727,4 @@ export const insertUserTokenUsageSchema = createInsertSchema(userTokenUsage).omi
 export type InsertUserTokenUsage = z.infer<typeof insertUserTokenUsageSchema>;
 
 // Extended types for API responses
-export type QuizWithCount = Quiz & { questionCount: number };
+export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

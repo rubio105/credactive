@@ -52,6 +52,8 @@ export interface QuizCardData {
   gradient: string;
   icon: string;
   imageUrl?: string;
+  gamingEnabled?: boolean;
+  crosswordId?: string;
 }
 
 export function mapQuizToCardData(quiz: QuizWithCount, category: Category): QuizCardData {
@@ -74,6 +76,8 @@ export function mapQuizToCardData(quiz: QuizWithCount, category: Category): Quiz
     gradient: colorGradients[category.color || "blue"] || "from-blue-600 to-blue-700",
     icon: category.icon || "shield-alt",
     imageUrl,
+    gamingEnabled: quiz.gamingEnabled || false,
+    crosswordId: quiz.crosswordId || undefined,
   };
 }
 

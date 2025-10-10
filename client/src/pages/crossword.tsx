@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,19 @@ export default function CrosswordPage() {
   
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [selectedClue, setSelectedClue] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [isTimerActive, setIsTimerActive] = useState(true);
+
+  // Timer
+  useEffect(() => {
+    if (!isTimerActive) return;
+    
+    const interval = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isTimerActive]);
   
   const { data: puzzle, isLoading } = useQuery<CrosswordPuzzle>({
     queryKey: ["/api/crossword/puzzles", puzzleId],
@@ -39,9 +52,11 @@ export default function CrosswordPage() {
       return apiRequest(`/api/crossword/attempts/submit`, "POST", {
         puzzleId,
         answers: userAnswers,
+        timeSpent: elapsedTime,
       });
     },
     onSuccess: () => {
+      setIsTimerActive(false);
       toast({
         title: "Risposta salvata!",
         description: "Il tuo progresso è stato salvato.",
@@ -105,9 +120,17 @@ export default function CrosswordPage() {
 
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">{puzzle.title}</h1>
-          <div className="flex gap-2 items-center">
-            <Badge variant="outline">{puzzle.topic}</Badge>
-            <Badge variant="secondary">{puzzle.difficulty}</Badge>
+          <div className="flex gap-2 items-center justify-between">
+            <div className="flex gap-2">
+              <Badge variant="outline">{puzzle.topic}</Badge>
+              <Badge variant="secondary">{puzzle.difficulty}</Badge>
+            </div>
+            <div className="flex items-center gap-2 bg-orange-50 dark:bg-orange-950 px-4 py-2 rounded-lg">
+              <Clock className="w-4 h-4 text-orange-600" />
+              <span className="font-mono font-bold text-orange-600">
+                {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,7 @@ interface DashboardData {
 export default function Home() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [selectedLiveCourseQuiz, setSelectedLiveCourseQuiz] = useState<{ id: string; title: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -211,6 +212,10 @@ export default function Home() {
 
   const handleLiveCourse = (quizId: string, quizTitle: string) => {
     setSelectedLiveCourseQuiz({ id: quizId, title: quizTitle });
+  };
+
+  const handleCrossword = (crosswordId: string) => {
+    setLocation(`/crossword/${crosswordId}`);
   };
 
   const handleLanguageSelected = () => {
@@ -550,6 +555,7 @@ export default function Home() {
                   quiz={quiz}
                   onStartQuiz={() => handleStartQuiz(quiz.id, quiz.isPremium)}
                   onLiveCourse={() => handleLiveCourse(quiz.id, quiz.title)}
+                  onCrossword={quiz.crosswordId ? () => handleCrossword(quiz.crosswordId!) : undefined}
                   hasLiveCourse={hasLiveCourse(quiz.title)}
                   showPremiumBadge={!(user as User)?.isPremium}
                 />
@@ -571,6 +577,7 @@ export default function Home() {
                 quiz={quiz}
                 onStartQuiz={() => handleStartQuiz(quiz.id, quiz.isPremium)}
                 onLiveCourse={() => handleLiveCourse(quiz.id, quiz.title)}
+                onCrossword={quiz.crosswordId ? () => handleCrossword(quiz.crosswordId!) : undefined}
                 hasLiveCourse={hasLiveCourse(quiz.title)}
                 showPremiumBadge={!(user as User)?.isPremium}
               />

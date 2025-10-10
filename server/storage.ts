@@ -741,6 +741,22 @@ export class DatabaseStorage implements IStorage {
       countMap.set(quizId, count);
     }
 
+    // Get crossword IDs for all quizzes in one query
+    const crosswordIds = await db
+      .select({
+        quizId: crosswordPuzzles.quizId,
+        crosswordId: crosswordPuzzles.id,
+      })
+      .from(crosswordPuzzles);
+
+    // Create a map of quiz ID to crossword ID
+    const crosswordMap = new Map<string, string>();
+    for (const { quizId, crosswordId } of crosswordIds) {
+      if (quizId) {
+        crosswordMap.set(quizId, crosswordId);
+      }
+    }
+
     // Group quizzes by category
     const categoryMap = new Map<string, Category & { quizzes: QuizWithCount[] }>();
     
@@ -763,10 +779,11 @@ export class DatabaseStorage implements IStorage {
 
         // Show quiz if: admin override OR it's public OR (it's corporate_exclusive AND user has access)
         if (isAdminOverride || isPublic || (isCorporateExclusive && hasAccess)) {
-          // Add question count to quiz
+          // Add question count and crossword ID to quiz
           const quizWithCount = {
             ...quiz,
-            questionCount: countMap.get(quiz.id) || 0
+            questionCount: countMap.get(quiz.id) || 0,
+            crosswordId: crosswordMap.get(quiz.id)
           };
           categoryMap.get(category.id)!.quizzes.push(quizWithCount);
         }

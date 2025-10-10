@@ -176,6 +176,10 @@ import {
   userTokenUsage,
   type UserTokenUsage,
   type InsertUserTokenUsage,
+  // Job Queue System
+  jobQueue,
+  type JobQueue,
+  type InsertJobQueue,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
@@ -554,6 +558,18 @@ export interface IStorage {
   getUserTokenUsage(userId: string, monthYear: string): Promise<UserTokenUsage | undefined>;
   upsertUserTokenUsage(userId: string, monthYear: string, tokensToAdd: number): Promise<UserTokenUsage>;
   getOrCreateTokenUsage(userId: string): Promise<UserTokenUsage>;
+
+  // ========== JOB QUEUE SYSTEM ==========
+  
+  // Job queue operations
+  createJob(job: InsertJobQueue): Promise<JobQueue>;
+  getJobById(id: string): Promise<JobQueue | undefined>;
+  getJobsByUser(userId: string, limit?: number): Promise<JobQueue[]>;
+  getPendingJobs(limit?: number): Promise<JobQueue[]>;
+  updateJob(id: string, updates: Partial<JobQueue>): Promise<JobQueue>;
+  updateJobProgress(id: string, progress: number, currentStep: string): Promise<JobQueue>;
+  completeJob(id: string, outputData: any): Promise<JobQueue>;
+  failJob(id: string, errorMessage: string): Promise<JobQueue>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3422,6 +3438,93 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return created;
+  }
+
+  // ========== JOB QUEUE SYSTEM ==========
+
+  async createJob(job: InsertJobQueue): Promise<JobQueue> {
+    const [created] = await db.insert(jobQueue).values(job).returning();
+    return created;
+  }
+
+  async getJobById(id: string): Promise<JobQueue | undefined> {
+    const [job] = await db.select().from(jobQueue).where(eq(jobQueue.id, id));
+    return job;
+  }
+
+  async getJobsByUser(userId: string, limit: number = 50): Promise<JobQueue[]> {
+    return await db
+      .select()
+      .from(jobQueue)
+      .where(eq(jobQueue.userId, userId))
+      .orderBy(desc(jobQueue.createdAt))
+      .limit(limit);
+  }
+
+  async getPendingJobs(limit: number = 10): Promise<JobQueue[]> {
+    return await db
+      .select()
+      .from(jobQueue)
+      .where(eq(jobQueue.status, 'pending'))
+      .orderBy(jobQueue.priority, desc(jobQueue.createdAt))
+      .limit(limit);
+  }
+
+  async updateJob(id: string, updates: Partial<JobQueue>): Promise<JobQueue> {
+    const [updated] = await db
+      .update(jobQueue)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(jobQueue.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateJobProgress(id: string, progress: number, currentStep: string): Promise<JobQueue> {
+    const [updated] = await db
+      .update(jobQueue)
+      .set({
+        progress,
+        currentStep,
+        status: 'processing',
+        updatedAt: new Date(),
+      })
+      .where(eq(jobQueue.id, id))
+      .returning();
+    return updated;
+  }
+
+  async completeJob(id: string, outputData: any): Promise<JobQueue> {
+    const [completed] = await db
+      .update(jobQueue)
+      .set({
+        status: 'completed',
+        progress: 100,
+        outputData,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(jobQueue.id, id))
+      .returning();
+    return completed;
+  }
+
+  async failJob(id: string, errorMessage: string): Promise<JobQueue> {
+    const job = await this.getJobById(id);
+    const retryCount = job?.retryCount || 0;
+    const maxRetries = job?.maxRetries || 3;
+    const shouldRetry = job && retryCount < maxRetries;
+
+    const [failed] = await db
+      .update(jobQueue)
+      .set({
+        status: shouldRetry ? 'pending' : 'failed',
+        errorMessage,
+        retryCount: retryCount + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(jobQueue.id, id))
+      .returning();
+    return failed;
   }
 }
 

@@ -1735,5 +1735,47 @@ export const insertUserTokenUsageSchema = createInsertSchema(userTokenUsage).omi
 });
 export type InsertUserTokenUsage = z.infer<typeof insertUserTokenUsageSchema>;
 
+// Job Queue (for async processing of heavy tasks like document analysis)
+export const jobQueue = pgTable("job_queue", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Job metadata
+  jobType: varchar("job_type", { length: 50 }).notNull(), // medical_report_analysis, health_score_calculation
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, processing, completed, failed
+  priority: integer("priority").default(5), // 1 (highest) to 10 (lowest)
+  
+  // Input/Output data
+  inputData: jsonb("input_data").notNull(), // Job parameters (filePath, fileType, etc)
+  outputData: jsonb("output_data"), // Job results
+  
+  // Progress tracking
+  progress: integer("progress").default(0), // 0-100
+  currentStep: varchar("current_step", { length: 100 }), // OCR, PII removal, AI analysis, etc
+  
+  // Error handling
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  
+  // Timing
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_job_queue_status").on(table.status),
+  index("idx_job_queue_user").on(table.userId),
+  index("idx_job_queue_created").on(table.createdAt),
+]);
+
+export type JobQueue = typeof jobQueue.$inferSelect;
+export const insertJobQueueSchema = createInsertSchema(jobQueue).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertJobQueue = z.infer<typeof insertJobQueueSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

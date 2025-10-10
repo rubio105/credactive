@@ -5,7 +5,8 @@ import {
   triageAlerts,
   preventionDocuments,
   preventionIndices,
-  users
+  users,
+  userHealthReports
 } from "@shared/schema";
 import { eq, and, gte, sql, desc } from "drizzle-orm";
 
@@ -69,8 +70,8 @@ export async function calculatePreventionIndex(userId: string): Promise<Preventi
   const avgMessages = Number(messagesResult[0]?.avgMessages || 0);
   const depthScore = Math.min(Math.round((avgMessages / 5) * 20), 20);
 
-  // 3. DOCUMENT SCORE (20 points max): Documents uploaded
-  const docsResult = await db
+  // 3. DOCUMENT SCORE (20 points max): Documents uploaded (prevention_documents + user_health_reports)
+  const preventionDocsResult = await db
     .select({
       count: sql<number>`COUNT(*)`
     })
@@ -82,7 +83,19 @@ export async function calculatePreventionIndex(userId: string): Promise<Preventi
       )
     );
 
-  const docCount = Number(docsResult[0]?.count || 0);
+  const healthReportsResult = await db
+    .select({
+      count: sql<number>`COUNT(*)`
+    })
+    .from(userHealthReports)
+    .where(
+      and(
+        eq(userHealthReports.userId, userId),
+        gte(userHealthReports.createdAt, thirtyDaysAgo)
+      )
+    );
+
+  const docCount = Number(preventionDocsResult[0]?.count || 0) + Number(healthReportsResult[0]?.count || 0);
   const documentScore = Math.min(Math.round((docCount / 3) * 20), 20);
 
   // 4. ALERT SCORE (15 points max): Critical alerts managed

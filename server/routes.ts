@@ -6157,11 +6157,30 @@ Explicación de audio:`
 
   // ========== PREVENTION SYSTEM ROUTES ==========
   
-  // Get all prevention documents (GET /api/prevention/documents) - Public endpoint
+  // Get all prevention documents (GET /api/prevention/documents) - Public endpoint with user health reports if authenticated
   app.get('/api/prevention/documents', async (req, res) => {
     try {
       const activeOnly = req.query.activeOnly === 'true';
       const documents = await storage.getAllPreventionDocuments(activeOnly);
+      
+      // If user is authenticated, also include their health reports transformed as prevention documents
+      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+        const user = req.user as any;
+        const healthReports = await storage.getHealthReportsByUser(user.id);
+        
+        // Transform health reports to prevention document format
+        const transformedReports = healthReports.map(report => ({
+          id: report.id,
+          title: report.reportType || report.fileName,
+          fileUrl: report.filePath || `/medical-reports/${report.fileName}`,
+          extractedTopics: report.medicalKeywords || [],
+          summary: report.aiSummary || undefined,
+        }));
+        
+        // Combine and return both types of documents
+        return res.json([...documents, ...transformedReports]);
+      }
+      
       res.json(documents);
     } catch (error: any) {
       console.error('Get prevention documents error:', error);

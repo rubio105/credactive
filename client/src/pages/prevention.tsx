@@ -394,11 +394,28 @@ export default function PreventionPage() {
     onSuccess: (data) => {
       setUploadResult(data);
       setSelectedFile(null);
-      toast({ 
-        title: "Referto caricato con successo!", 
-        description: `Tipo: ${data.report?.reportType || 'N/A'} - PII rimossi: ${data.piiRemoved || 0}` 
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/health-score/latest'] });
+      
+      // Handle async job response (new job queue system)
+      if (data.jobId) {
+        toast({ 
+          title: "Referto in elaborazione!", 
+          description: `Stiamo analizzando il tuo documento in background. Tempo stimato: ${data.estimatedTime || '5-10 secondi'}` 
+        });
+        // Invalidate queries to refresh UI when job completes
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/health-score/latest'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/prevention/documents'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/prevention/index'] });
+        }, 8000); // Refresh after estimated completion time
+      } else {
+        // Handle old sync response (backwards compatibility)
+        toast({ 
+          title: "Referto caricato con successo!", 
+          description: `Tipo: ${data.report?.reportType || 'N/A'} - PII rimossi: ${data.piiRemoved || 0}` 
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/health-score/latest'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/prevention/documents'] });
+      }
     },
     onError: (error: any) => {
       toast({ 

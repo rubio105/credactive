@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import PreventionAssessment from "@/components/PreventionAssessment";
-const ciryFullLogo = "/images/ciry-logo.png";
+const ciryFullLogo = "/images/ciry-full-logo.png";
 const prohmedLogo = "/images/ciry-logo.png";
 import {
   AlertDialog,

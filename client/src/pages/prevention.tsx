@@ -263,11 +263,11 @@ export default function PreventionPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleCloseSession}
-                      className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-900"
+                      className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900"
                       data-testid="button-close-session"
                     >
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      Nuova Conversazione
+                      <X className="w-4 h-4 mr-2" />
+                      Esci dalla Chat
                     </Button>
                   )}
                 </div>

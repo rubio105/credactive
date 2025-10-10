@@ -228,6 +228,7 @@ export const liveCourseSessions = pgTable("live_course_sessions", {
   capacity: integer("capacity").default(30),
   enrolled: integer("enrolled").default(0),
   status: varchar("status", { length: 20 }).default("available"), // available, full, completed, cancelled
+  streamingUrl: text("streaming_url"), // URL for live streaming/webinar (Zoom, Teams, Google Meet, etc.)
   createdAt: timestamp("created_at").defaultNow(),
 });
 

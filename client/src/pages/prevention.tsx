@@ -695,6 +695,32 @@ export default function PreventionPage() {
                 </a>
               </CardContent>
             </Card>
+
+            {/* Webinar Health */}
+            <Card className="shadow-lg border-purple-100 dark:border-purple-900 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-900 dark:text-purple-100">
+                  <Activity className="w-5 h-5" />
+                  Webinar Health
+                </CardTitle>
+                <CardDescription className="text-purple-700 dark:text-purple-300">
+                  Eventi live con medici esperti
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-purple-800 dark:text-purple-200">
+                  Partecipa ai nostri webinar gratuiti sulla prevenzione con professionisti sanitari
+                </p>
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  onClick={() => setLocation('/webinar-health')}
+                  data-testid="button-view-webinars"
+                >
+                  <Activity className="w-4 h-4 mr-2" />
+                  Vedi Webinar Disponibili
+                </Button>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="lg:col-span-2">

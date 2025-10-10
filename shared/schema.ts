@@ -1538,5 +1538,135 @@ export const insertCrosswordLeaderboardSchema = createInsertSchema(crosswordLead
 });
 export type InsertCrosswordLeaderboard = z.infer<typeof insertCrosswordLeaderboardSchema>;
 
+// ========== HEALTH SCORE SYSTEM ==========
+
+// User Health Reports (uploaded medical reports with anonymization)
+export const userHealthReports = pgTable("user_health_reports", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // File metadata
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileType: varchar("file_type", { length: 50 }).notNull(), // pdf, image/jpeg, image/png
+  fileSize: integer("file_size"), // bytes
+  fileHash: varchar("file_hash", { length: 64 }), // SHA-256 for de-duplication
+  filePath: text("file_path"), // Server file path
+  
+  // Report metadata
+  reportType: varchar("report_type", { length: 100 }), // blood_test, radiology, cardiology, etc
+  reportDate: timestamp("report_date"), // Date of the medical exam
+  issuer: varchar("issuer", { length: 200 }), // Hospital/lab name (anonymized)
+  
+  // Extracted and anonymized content
+  originalText: text("original_text"), // OCR extracted text (anonymized)
+  anonymizedText: text("anonymized_text").notNull(), // PII removed
+  removedPiiTypes: text("removed_pii_types").array(), // Types of PII found: name, cf, phone, etc
+  
+  // AI-extracted structured data
+  extractedValues: jsonb("extracted_values"), // {glucose: 95, cholesterol: 180, ...}
+  medicalKeywords: text("medical_keywords").array(), // Keywords for semantic search
+  detectedLanguage: varchar("detected_language", { length: 5 }), // it, en, es
+  
+  // Context and analysis
+  aiSummary: text("ai_summary"), // Brief summary by AI
+  healthImpact: varchar("health_impact", { length: 20 }), // positive, neutral, concerning, critical
+  
+  // Conversational context
+  uploadedVia: varchar("uploaded_via", { length: 50 }).default("manual"), // manual, chat_request, triage
+  triageSessionId: varchar("triage_session_id").references(() => triageSessions.id),
+  
+  // Privacy and consent
+  isAnonymized: boolean("is_anonymized").default(true),
+  userConsent: boolean("user_consent").default(false), // Consent for ML training
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type UserHealthReport = typeof userHealthReports.$inferSelect;
+export const insertUserHealthReportSchema = createInsertSchema(userHealthReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUserHealthReport = z.infer<typeof insertUserHealthReportSchema>;
+
+// Health Score History (track user's health score over time)
+export const healthScoreHistory = pgTable("health_score_history", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Score calculation
+  overallScore: integer("overall_score").notNull(), // 0-100
+  calculationMethod: varchar("calculation_method", { length: 50 }).default("rule_based"), // rule_based, ml_model, hybrid
+  
+  // Score components (weighted average)
+  lifestyleScore: integer("lifestyle_score"), // 0-100
+  labResultsScore: integer("lab_results_score"), // 0-100
+  symptomScore: integer("symptom_score"), // 0-100
+  riskFactorsScore: integer("risk_factors_score"), // 0-100
+  
+  // Contributing factors
+  contributingReportIds: text("contributing_report_ids").array(), // UUIDs of reports used
+  contributingAssessmentIds: text("contributing_assessment_ids").array(), // UUIDs of assessments used
+  
+  // AI insights
+  scoreInsights: text("score_insights").array(), // Key insights from AI
+  trendDirection: varchar("trend_direction", { length: 20 }), // improving, stable, declining
+  
+  // Metadata
+  calculatedAt: timestamp("calculated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type HealthScoreHistory = typeof healthScoreHistory.$inferSelect;
+export const insertHealthScoreHistorySchema = createInsertSchema(healthScoreHistory).omit({
+  id: true,
+  createdAt: true,
+  calculatedAt: true,
+});
+export type InsertHealthScoreHistory = z.infer<typeof insertHealthScoreHistorySchema>;
+
+// Health Insights (AI-generated personalized health insights and recommendations)
+export const healthInsights = pgTable("health_insights", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Insight metadata
+  insightType: varchar("insight_type", { length: 50 }).notNull(), // attention_area, strength, recommendation, warning
+  category: varchar("category", { length: 100 }).notNull(), // cardiovascular, metabolic, lifestyle, mental_health
+  priority: varchar("priority", { length: 20 }).default("medium"), // low, medium, high, urgent
+  
+  // Content
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  actionableSteps: text("actionable_steps").array(), // Steps user can take
+  
+  // Evidence
+  basedOnReportIds: text("based_on_report_ids").array(), // Supporting reports
+  basedOnAssessmentIds: text("based_on_assessment_ids").array(), // Supporting assessments
+  confidence: integer("confidence"), // 0-100, AI confidence level
+  
+  // Status
+  status: varchar("status", { length: 20 }).default("active"), // active, acknowledged, resolved, dismissed
+  acknowledgedAt: timestamp("acknowledged_at"),
+  resolvedAt: timestamp("resolved_at"),
+  
+  // Follow-up
+  suggestedFollowUpDays: integer("suggested_follow_up_days"), // Days until recheck
+  relatedPreventionTopics: text("related_prevention_topics").array(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type HealthInsight = typeof healthInsights.$inferSelect;
+export const insertHealthInsightSchema = createInsertSchema(healthInsights).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHealthInsight = z.infer<typeof insertHealthInsightSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

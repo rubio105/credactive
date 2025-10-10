@@ -382,7 +382,7 @@ export default function PreventionPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <a 
-                  href="https://play.google.com/store/apps/details?id=com.prohmed" 
+                  href="https://play.google.com/store/apps/details?id=com.prohmed.prohmedApp&pcampaignid=web_share" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="block"
@@ -394,7 +394,7 @@ export default function PreventionPage() {
                   </Button>
                 </a>
                 <a 
-                  href="https://apps.apple.com/app/prohmed/id123456789" 
+                  href="https://apps.apple.com/it/app/prohmed/id6449252498" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="block"

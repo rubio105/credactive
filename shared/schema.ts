@@ -1401,6 +1401,36 @@ export const insertPreventionUserResponseSchema = createInsertSchema(preventionU
 });
 export type InsertPreventionUserResponse = z.infer<typeof insertPreventionUserResponseSchema>;
 
+// Prevention Index (engagement metric calculated from user activity)
+export const preventionIndices = pgTable("prevention_indices", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  
+  // Calculated score (0-100)
+  score: integer("score").notNull().default(0),
+  tier: varchar("tier", { length: 20 }).notNull().default("low"), // low (0-39), medium (40-69), high (70-100)
+  
+  // Detailed breakdown of metrics contributing to score
+  breakdown: jsonb("breakdown").notNull().default({
+    frequencyScore: 0,      // Consultation frequency (30 points max)
+    depthScore: 0,           // Conversational depth (20 points max)
+    documentScore: 0,        // Documents uploaded (20 points max)
+    alertScore: 0,           // Critical alerts managed (15 points max)
+    insightScore: 0,         // Health insights follow-up (15 points max)
+  }),
+  
+  calculatedAt: timestamp("calculated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PreventionIndex = typeof preventionIndices.$inferSelect;
+export const insertPreventionIndexSchema = createInsertSchema(preventionIndices).omit({
+  id: true,
+  calculatedAt: true,
+  updatedAt: true,
+});
+export type InsertPreventionIndex = z.infer<typeof insertPreventionIndexSchema>;
+
 // Prohmed Access Codes (telemedicine app access codes)
 export const prohmedCodes = pgTable("prohmed_codes", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

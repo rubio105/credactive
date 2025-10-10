@@ -213,7 +213,7 @@ export default function CrosswordPage() {
                               </span>
                             )}
                             {letter && (
-                              <span className="text-slate-900 dark:text-slate-100 font-bold text-lg">
+                              <span className="text-white font-bold text-lg">
                                 {letter}
                               </span>
                             )}

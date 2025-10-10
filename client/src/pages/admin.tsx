@@ -22,6 +22,7 @@ import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { AdminDocumentation } from "@/components/admin/AdminDocumentation";
 import { AdminPrevention } from "@/components/admin/AdminPrevention";
 import { AdminProhmedCodes } from "@/components/admin/AdminProhmedCodes";
+import { AdminWebinarHealth } from "@/components/admin/AdminWebinarHealth";
 
 const menuItems = [
   { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
@@ -33,6 +34,7 @@ const menuItems = [
   { id: "questions", icon: HelpCircle, label: "Domande", testId: "tab-questions" },
   { id: "live-courses", icon: Calendar, label: "Corsi Live", testId: "tab-live-courses" },
   { id: "live-sessions", icon: Tv, label: "Sessioni Live", testId: "tab-live-sessions" },
+  { id: "webinar-health", icon: Shield, label: "Webinar Health", testId: "tab-webinar-health" },
   { id: "on-demand-courses", icon: Video, label: "Corsi On-Demand", testId: "tab-on-demand-courses" },
   { id: "pages", icon: FileText, label: "Pagine", testId: "tab-pages" },
   { id: "corporate", icon: Building2, label: "Aziende", testId: "tab-corporate" },
@@ -133,6 +135,7 @@ export default function AdminPage() {
           {activeTab === "questions" && <AdminQuestions />}
           {activeTab === "live-courses" && <AdminLiveCourses />}
           {activeTab === "live-sessions" && <AdminLiveSessions />}
+          {activeTab === "webinar-health" && <AdminWebinarHealth />}
           {activeTab === "on-demand-courses" && <AdminOnDemandCourses />}
           {activeTab === "pages" && <AdminContentPages />}
           {activeTab === "corporate" && <AdminCorporateAgreements />}

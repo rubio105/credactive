@@ -7792,6 +7792,90 @@ Format as JSON: {
       res.status(500).json({ message: error.message || 'Failed to enroll in webinar' });
     }
   });
+
+  // ===========================
+  // Admin Webinar Health Endpoints
+  // ===========================
+
+  // Get all webinar health courses for admin (GET /api/admin/webinar-health)
+  app.get('/api/admin/webinar-health', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      // Get all active live courses (admin override to see all courses)
+      const courses = await storage.getAllLiveCourses(undefined, true);
+      
+      // Filter for webinar health courses
+      const webinarCourses = courses.filter(course => 
+        course.title.toLowerCase().includes('webinar') || 
+        course.title.toLowerCase().includes('prevenzione')
+      );
+      
+      // Get sessions for each webinar
+      const webinarsWithSessions = await Promise.all(
+        webinarCourses.map(async (course) => {
+          const sessions = await storage.getSessionsByCourseId(course.id);
+          return {
+            ...course,
+            sessions,
+          };
+        })
+      );
+      
+      res.json(webinarsWithSessions);
+    } catch (error: any) {
+      console.error('Get admin webinar health error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get webinar health courses' });
+    }
+  });
+
+  // Update streaming URL for session (POST /api/admin/webinar-health/streaming-url)
+  app.post('/api/admin/webinar-health/streaming-url', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { sessionId, streamingUrl } = req.body;
+      
+      if (!sessionId) {
+        return res.status(400).json({ message: 'Session ID is required' });
+      }
+      
+      // Update session with streaming URL
+      const session = await storage.updateLiveCourseSession(sessionId, {
+        streamingUrl: streamingUrl || null,
+      });
+      
+      res.json({ success: true, session });
+    } catch (error: any) {
+      console.error('Update streaming URL error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update streaming URL' });
+    }
+  });
+
+  // Get enrollments for a session (GET /api/admin/webinar-health/enrollments/:sessionId)
+  app.get('/api/admin/webinar-health/enrollments/:sessionId', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      
+      // Get all enrollments for this session
+      const enrollments = await db
+        .select({
+          id: liveCourseEnrollments.id,
+          userId: liveCourseEnrollments.userId,
+          enrolledAt: liveCourseEnrollments.enrolledAt,
+          user: {
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+          },
+        })
+        .from(liveCourseEnrollments)
+        .innerJoin(users, eq(liveCourseEnrollments.userId, users.id))
+        .where(eq(liveCourseEnrollments.sessionId, sessionId))
+        .orderBy(desc(liveCourseEnrollments.enrolledAt));
+      
+      res.json(enrollments);
+    } catch (error: any) {
+      console.error('Get session enrollments error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get session enrollments' });
+    }
+  });
   
   return httpServer;
 }

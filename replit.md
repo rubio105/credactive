@@ -46,6 +46,7 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 -   **Prohmed Code Management System**: Admin bulk code generation system for Prohmed telemedicine access with status tracking and distribution management.
 -   **Health Score System**: AI-powered personal health scoring system featuring medical report upload/analysis (PDF and images), Gemini Vision OCR, automatic PII anonymization, structured medical data extraction, health score calculation, AI-generated personalized health insights, and conversational AI integration.
 -   **Token Usage System**: Implemented tiered monthly token limits for AI interactions (FREE, PREMIUM, PREMIUM_PLUS) with a dual-check system and database tracking. UI elements show token usage and upgrade CTAs.
+-   **Webinar Health System**: Free webinar platform for prevention education with medical experts. Features include dedicated webinar page with session calendar, free user enrollment with automatic confirmation emails, streaming URL management for Zoom/Teams/Google Meet integration, admin panel for webinar management and attendee tracking, and integration with live course infrastructure for robust session handling.
 
 ## Deployment Architecture
 

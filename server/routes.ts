@@ -6712,6 +6712,72 @@ Explicación de audio:`
     }
   });
 
+  // Generate Prohmed codes for weekly crossword winners (POST /api/prohmed/codes/generate-weekly-winners) - ADMIN ONLY
+  app.post('/api/prohmed/codes/generate-weekly-winners', isAdmin, async (req, res) => {
+    try {
+      let { weekNumber, weekYear } = req.body;
+      
+      // Use current week if not specified (consistent with crossword system)
+      const now = new Date();
+      const targetWeekNumber = weekNumber ? parseInt(weekNumber, 10) : Math.ceil(now.getDate() / 7);
+      const targetWeekYear = weekYear ? parseInt(weekYear, 10) : now.getFullYear();
+
+      if (isNaN(targetWeekNumber) || isNaN(targetWeekYear)) {
+        return res.status(400).json({ message: 'Invalid week number or year' });
+      }
+
+      // Get top 3 from leaderboard
+      const leaderboard = await storage.getCrosswordLeaderboardByWeek(targetWeekNumber, targetWeekYear);
+      const top3 = leaderboard
+        .sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
+        .slice(0, 3);
+
+      if (top3.length === 0) {
+        return res.status(404).json({ message: 'No winners found for this week' });
+      }
+
+      // Generate family codes for top 3
+      const generatedCodes = [];
+      const skippedWinners = [];
+      
+      for (const winner of top3) {
+        // Check if winner already has a code for this week (structured check)
+        const existingCodes = await storage.getProhmedCodesByUser(winner.userId);
+        const hasWeeklyCode = existingCodes.some(
+          c => c.source === 'crossword_winner' && 
+          c.sourceDetails === `W${targetWeekNumber}/${targetWeekYear}`
+        );
+
+        if (!hasWeeklyCode) {
+          const code = `PROHMED-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+          const prohmedCode = await storage.createProhmedCode({
+            userId: winner.userId,
+            code,
+            accessType: 'family', // Family plan for winners
+            source: 'crossword_winner',
+            sourceDetails: `W${targetWeekNumber}/${targetWeekYear}`, // Structured format for exact matching
+            status: 'active',
+          });
+          generatedCodes.push(prohmedCode);
+        } else {
+          skippedWinners.push({ userId: winner.userId, reason: 'Already has code for this week' });
+        }
+      }
+
+      res.json({
+        week: `${targetWeekNumber}/${targetWeekYear}`,
+        winners: top3.length,
+        codesGenerated: generatedCodes.length,
+        skipped: skippedWinners.length,
+        codes: generatedCodes,
+        skippedWinners,
+      });
+    } catch (error: any) {
+      console.error('Generate weekly winners codes error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate codes for winners' });
+    }
+  });
+
   // ========== CROSSWORD GAME ROUTES ==========
   
   // Get all crossword puzzles (GET /api/crossword/puzzles)

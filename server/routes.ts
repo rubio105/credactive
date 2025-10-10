@@ -15,7 +15,7 @@ import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
-import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions } from "./gemini";
+import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent } from "./gemini";
 import { clearBrevoInstance } from "./email";
 import { 
   insertUserQuizAttemptSchema, 
@@ -166,6 +166,39 @@ const uploadPdf = multer({
       return cb(null, true);
     } else {
       cb(new Error('Only PDF files are allowed'));
+    }
+  }
+});
+
+// Configure multer for medical reports (PDF + images)
+const medicalReportsDir = path.join(process.cwd(), 'public', 'medical-reports');
+if (!fs.existsSync(medicalReportsDir)) {
+  fs.mkdirSync(medicalReportsDir, { recursive: true });
+}
+
+const medicalReportStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, medicalReportsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'medical-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadMedicalReport = multer({
+  storage: medicalReportStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for medical reports
+  fileFilter: (req, file, cb) => {
+    const allowedExtensions = /pdf|jpeg|jpg|png/;
+    const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
+    const allowedMimetypes = /application\/pdf|image\/jpeg|image\/jpg|image\/png/;
+    const mimetype = allowedMimetypes.test(file.mimetype);
+    
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only PDF and images (JPEG, JPG, PNG) are allowed for medical reports!'));
     }
   }
 });
@@ -6796,6 +6829,286 @@ Explicación de audio:`
     } catch (error: any) {
       console.error('Get leaderboard history error:', error);
       res.status(500).json({ message: error.message || 'Failed to get history' });
+    }
+  });
+
+  // ========== HEALTH SCORE ROUTES ==========
+
+  // Upload and analyze medical report (POST /api/health-score/upload)
+  app.post('/api/health-score/upload', isAuthenticated, uploadMedicalReport.single('report'), async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      const { triageSessionId, userConsent } = req.body;
+      
+      // Validate user consent (required for GDPR compliance)
+      if (userConsent !== 'true') {
+        // Delete uploaded file if no consent
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ message: 'User consent is required to process medical reports' });
+      }
+
+      const filePath = req.file.path;
+      const fileType = req.file.mimetype;
+
+      // Step 1: Extract text from medical report (OCR)
+      const ocrResult = await extractTextFromMedicalReport(filePath, fileType);
+
+      // Step 2: Anonymize extracted text (PII removal)
+      const anonymizationResult = await anonymizeMedicalText(ocrResult.extractedText);
+
+      // Step 3: Create health report record
+      const healthReport = await storage.createHealthReport({
+        userId: user.id,
+        triageSessionId: triageSessionId || null,
+        reportType: ocrResult.reportType,
+        fileName: req.file.originalname,
+        fileType: fileType,
+        fileSize: req.file.size,
+        filePath: `medical-reports/${path.basename(filePath)}`,
+        originalText: ocrResult.extractedText,
+        anonymizedText: anonymizationResult.anonymizedText,
+        detectedLanguage: ocrResult.detectedLanguage,
+        medicalKeywords: ocrResult.medicalKeywords,
+        extractedValues: ocrResult.extractedValues,
+        aiSummary: ocrResult.summary,
+        issuer: ocrResult.issuer || null,
+        reportDate: ocrResult.reportDate ? new Date(ocrResult.reportDate) : null,
+        isAnonymized: true,
+        removedPiiTypes: anonymizationResult.removedPiiTypes,
+        userConsent: true,
+      });
+
+      res.json({
+        success: true,
+        reportId: healthReport.id,
+        report: healthReport,
+        ocrConfidence: ocrResult.confidence,
+        piiRemoved: anonymizationResult.piiCount,
+      });
+    } catch (error: any) {
+      console.error('Upload medical report error:', error);
+      // Clean up file on error
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({ message: error.message || 'Failed to upload medical report' });
+    }
+  });
+
+  // Calculate health score based on reports (POST /api/health-score/calculate)
+  app.post('/api/health-score/calculate', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Get user's health reports
+      const reports = await storage.getHealthReportsByUser(user.id);
+      
+      if (reports.length === 0) {
+        return res.status(400).json({ 
+          message: 'No health reports found. Please upload at least one medical report first.' 
+        });
+      }
+
+      // Calculate health score using Gemini AI
+      const reportsData = reports.map(r => ({
+        reportType: r.reportType,
+        keywords: r.medicalKeywords,
+        values: r.extractedValues,
+        summary: r.aiSummary,
+        date: r.createdAt,
+      }));
+
+      const scorePrompt = `
+Analyze these medical reports and calculate a health score (0-100):
+${JSON.stringify(reportsData, null, 2)}
+
+Provide:
+1. Overall health score (0-100, where 100 is excellent health)
+2. Lifestyle score (0-100): diet, exercise, sleep patterns
+3. Lab results score (0-100): based on medical test values
+4. Symptom score (0-100): severity and frequency of symptoms
+5. Risk factors score (0-100): identified health risks
+6. Key insights about the health status
+7. Trend direction (improving, stable, declining)
+8. Recommendations for improvement
+
+Format as JSON: {
+  "overallScore": number,
+  "lifestyleScore": number,
+  "labResultsScore": number,
+  "symptomScore": number,
+  "riskFactorsScore": number,
+  "scoreInsights": string[],
+  "trendDirection": string,
+  "recommendations": string[]
+}`;
+
+      const aiResponse = await generateGeminiContent(scorePrompt);
+      const scoreData = JSON.parse(aiResponse);
+
+      // Create health score history entry
+      const scoreHistory = await storage.createHealthScoreHistory({
+        userId: user.id,
+        overallScore: scoreData.overallScore,
+        lifestyleScore: scoreData.lifestyleScore || null,
+        labResultsScore: scoreData.labResultsScore || null,
+        symptomScore: scoreData.symptomScore || null,
+        riskFactorsScore: scoreData.riskFactorsScore || null,
+        scoreInsights: scoreData.scoreInsights || [],
+        trendDirection: scoreData.trendDirection || 'stable',
+        contributingReportIds: reports.map(r => r.id),
+      });
+
+      // Create health insights for high-priority recommendations
+      const insights = await Promise.all(
+        scoreData.recommendations.slice(0, 3).map((rec: string, idx: number) => 
+          storage.createHealthInsight({
+            userId: user.id,
+            insightType: 'recommendation',
+            category: 'general',
+            title: `Health Recommendation ${idx + 1}`,
+            description: rec,
+            priority: idx === 0 ? 'high' : idx === 1 ? 'medium' : 'low',
+            status: 'active',
+            basedOnReportIds: reports.map(r => r.id),
+          })
+        )
+      );
+
+      res.json({
+        success: true,
+        score: scoreHistory,
+        insights: insights,
+      });
+    } catch (error: any) {
+      console.error('Calculate health score error:', error);
+      res.status(500).json({ message: error.message || 'Failed to calculate health score' });
+    }
+  });
+
+  // Get user's health reports (GET /api/health-score/reports)
+  app.get('/api/health-score/reports', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const reports = await storage.getHealthReportsByUser(user.id);
+      res.json(reports);
+    } catch (error: any) {
+      console.error('Get health reports error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get health reports' });
+    }
+  });
+
+  // Get reports for a triage session (GET /api/health-score/reports/triage/:sessionId)
+  app.get('/api/health-score/reports/triage/:sessionId', isAuthenticated, async (req, res) => {
+    try {
+      const reports = await storage.getHealthReportsByTriageSession(req.params.sessionId);
+      res.json(reports);
+    } catch (error: any) {
+      console.error('Get triage reports error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get triage reports' });
+    }
+  });
+
+  // Get user's health score history (GET /api/health-score/history)
+  app.get('/api/health-score/history', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const history = await storage.getHealthScoreHistory(user.id, limit);
+      res.json(history);
+    } catch (error: any) {
+      console.error('Get health score history error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get health score history' });
+    }
+  });
+
+  // Get latest health score (GET /api/health-score/latest)
+  app.get('/api/health-score/latest', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const latestScore = await storage.getLatestHealthScore(user.id);
+      
+      if (!latestScore) {
+        return res.status(404).json({ message: 'No health score found. Please upload medical reports first.' });
+      }
+
+      res.json(latestScore);
+    } catch (error: any) {
+      console.error('Get latest health score error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get latest health score' });
+    }
+  });
+
+  // Get user's health insights (GET /api/health-score/insights)
+  app.get('/api/health-score/insights', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const statusFilter = req.query.status as string | undefined;
+      const insights = await storage.getHealthInsightsByUser(user.id, statusFilter);
+      res.json(insights);
+    } catch (error: any) {
+      console.error('Get health insights error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get health insights' });
+    }
+  });
+
+  // Acknowledge health insight (POST /api/health-score/insights/:id/acknowledge)
+  app.post('/api/health-score/insights/:id/acknowledge', isAuthenticated, async (req, res) => {
+    try {
+      const insight = await storage.acknowledgeHealthInsight(req.params.id);
+      res.json(insight);
+    } catch (error: any) {
+      console.error('Acknowledge health insight error:', error);
+      res.status(500).json({ message: error.message || 'Failed to acknowledge insight' });
+    }
+  });
+
+  // Resolve health insight (POST /api/health-score/insights/:id/resolve)
+  app.post('/api/health-score/insights/:id/resolve', isAuthenticated, async (req, res) => {
+    try {
+      const insight = await storage.resolveHealthInsight(req.params.id);
+      res.json(insight);
+    } catch (error: any) {
+      console.error('Resolve health insight error:', error);
+      res.status(500).json({ message: error.message || 'Failed to resolve insight' });
+    }
+  });
+
+  // Delete health report (DELETE /api/health-score/reports/:id)
+  app.delete('/api/health-score/reports/:id', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const report = await storage.getHealthReportById(req.params.id);
+      
+      if (!report) {
+        return res.status(404).json({ message: 'Health report not found' });
+      }
+
+      // Check ownership
+      if (report.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ message: 'Not authorized to delete this report' });
+      }
+
+      // Delete physical file
+      if (report.filePath) {
+        const fullPath = path.join(process.cwd(), 'public', report.filePath);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      }
+
+      // Delete database record
+      await storage.deleteHealthReport(req.params.id);
+      
+      res.json({ message: 'Health report deleted successfully' });
+    } catch (error: any) {
+      console.error('Delete health report error:', error);
+      res.status(500).json({ message: error.message || 'Failed to delete health report' });
     }
   });
   

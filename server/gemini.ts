@@ -11,6 +11,16 @@ if (!process.env.GEMINI_API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+// Generic Gemini content generation helper
+export async function generateGeminiContent(prompt: string, model: string = "gemini-2.5-pro"): Promise<string> {
+  const response = await ai.models.generateContent({
+    model,
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+  });
+
+  return response.text || "";
+}
+
 export async function summarizeArticle(text: string): Promise<string> {
   const prompt = `Please summarize the following text concisely while maintaining key points:\n\n${text}`;
 

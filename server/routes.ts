@@ -7400,6 +7400,14 @@ Le risposte DEVONO essere in italiano.`;
       const filePath = req.file.path;
       const fileType = req.file.mimetype;
 
+      // Validate file is not empty or too small
+      if (req.file.size < 100) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ 
+          message: 'Il file caricato è vuoto o danneggiato. Carica un referto medico valido.' 
+        });
+      }
+
       // Step 1: Extract text from medical report (OCR)
       const ocrResult = await extractTextFromMedicalReport(filePath, fileType);
 

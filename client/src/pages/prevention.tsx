@@ -82,9 +82,21 @@ export default function PreventionPage() {
   }, [activeSession, sessionId]);
 
   const startTriageMutation = useMutation({
-    mutationFn: (symptom: string) =>
-      apiRequest("/api/triage/start", "POST", { initialSymptom: symptom }),
+    mutationFn: async (symptom: string) => {
+      const response = await apiRequest("/api/triage/start", "POST", { initialSymptom: symptom });
+      return response.json();
+    },
     onSuccess: (data: any) => {
+      // Validate response structure
+      if (!data || !data.session || !data.session.id) {
+        toast({ 
+          title: "Errore", 
+          description: "Risposta non valida dal server. Riprova.",
+          variant: "destructive" 
+        });
+        return;
+      }
+      
       setSessionId(data.session.id);
       // Set data directly in cache instead of invalidating to avoid race conditions
       queryClient.setQueryData(["/api/triage/session", data.session.id], data.session);
@@ -103,8 +115,10 @@ export default function PreventionPage() {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (message: string) =>
-      apiRequest(`/api/triage/${sessionId}/message`, "POST", { content: message }),
+    mutationFn: async (message: string) => {
+      const response = await apiRequest(`/api/triage/${sessionId}/message`, "POST", { content: message });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/triage/session", sessionId] });
@@ -136,8 +150,10 @@ export default function PreventionPage() {
   };
 
   const closeSessionMutation = useMutation({
-    mutationFn: (sessionId: string) =>
-      apiRequest(`/api/triage/${sessionId}/close`, "POST", {}),
+    mutationFn: async (sessionId: string) => {
+      const response = await apiRequest(`/api/triage/${sessionId}/close`, "POST", {});
+      return response.json();
+    },
     onSuccess: () => {
       // Clear cached active session BEFORE clearing local state to prevent useEffect from restoring it
       queryClient.setQueryData(["/api/triage/session/active"], null);
@@ -165,69 +181,77 @@ export default function PreventionPage() {
   }, [messages]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+        {/* Hero Section */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 mb-4 shadow-lg">
+            <Shield className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             AI Prohmed - Impara la Prevenzione
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-xl max-w-3xl mx-auto">
             Condividi il tuo caso personale e scopri strategie pratiche per la prevenzione con l'intelligenza artificiale
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
+                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                   <FileText className="w-5 h-5" />
                   Documenti Prevenzione
                 </CardTitle>
                 <CardDescription>Guide educative verificate</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {documents?.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                    data-testid={`doc-card-${doc.id}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm mb-1">{doc.title}</h4>
-                        {doc.summary && (
-                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                            {doc.summary}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap gap-1">
-                          {doc.extractedTopics?.slice(0, 2).map((topic, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {topic}
-                            </Badge>
-                          ))}
+              <CardContent className="space-y-3 pt-6">
+                {documents && documents.length > 0 ? (
+                  documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="p-4 border border-emerald-100 dark:border-emerald-800 rounded-lg hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-600 transition-all duration-200 bg-white dark:bg-gray-950"
+                      data-testid={`doc-card-${doc.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-sm mb-1">{doc.title}</h4>
+                          {doc.summary && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                              {doc.summary}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-1">
+                            {doc.extractedTopics?.slice(0, 2).map((topic, i) => (
+                              <Badge key={i} variant="outline" className="text-xs bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                                {topic}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
+                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                          <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950" data-testid={`button-view-${doc.id}`}>
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </a>
                       </div>
-                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" data-testid={`button-view-${doc.id}`}>
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </a>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nessun documento disponibile</p>
+                )}
               </CardContent>
             </Card>
           </div>
 
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
+            <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-emerald-600" />
+                    <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                      <Shield className="w-5 h-5" />
                       Parla del Tuo Caso
                     </CardTitle>
                     <CardDescription>
@@ -239,6 +263,7 @@ export default function PreventionPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleCloseSession}
+                      className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-900"
                       data-testid="button-close-session"
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
@@ -297,22 +322,23 @@ export default function PreventionPage() {
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+                        className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
                         data-testid="input-triage-start"
                       />
                       <Button
                         onClick={handleStart}
                         disabled={startTriageMutation.isPending}
-                        className="bg-emerald-600 hover:bg-emerald-700"
+                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
                         data-testid="button-start-triage"
                       >
                         <Send className="w-4 h-4 mr-2" />
-                        Inizia
+                        {startTriageMutation.isPending ? "Avvio..." : "Inizia"}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <ScrollArea className="h-[400px] border rounded-md p-4">
+                    <ScrollArea className="h-[450px] border border-emerald-100 dark:border-emerald-800 rounded-lg p-4 bg-gradient-to-b from-white to-emerald-50/30 dark:from-gray-950 dark:to-emerald-950/30">
                       <div className="space-y-4">
                         {messages?.map((msg) => (
                           <div
@@ -321,13 +347,13 @@ export default function PreventionPage() {
                             data-testid={`message-${msg.id}`}
                           >
                             <div
-                              className={`max-w-[80%] p-3 rounded-lg ${
+                              className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
                                 msg.role === 'user'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
+                                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
+                                  : 'bg-white dark:bg-gray-900 border border-emerald-100 dark:border-emerald-800'
                               }`}
                             >
-                              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                             </div>
                           </div>
                         ))}
@@ -342,11 +368,13 @@ export default function PreventionPage() {
                           value={userInput}
                           onChange={(e) => setUserInput(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                          className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
                           data-testid="input-triage-message"
                         />
                         <Button
                           onClick={handleSend}
                           disabled={sendMessageMutation.isPending}
+                          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
                           data-testid="button-send-message"
                         >
                           <Send className="w-4 h-4" />

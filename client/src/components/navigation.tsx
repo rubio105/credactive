@@ -12,8 +12,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail } from "lucide-react";
+import logoImageFull from "@assets/ciry-full-logo.png";
 const logoImageSmall = "/images/ciry-logo.png";
-const logoImageFull = "/images/ciry-full-logo.png";
 
 interface User {
   id: string;
@@ -42,7 +42,7 @@ interface NavigationProps {
 export default function Navigation({ useLandingLogo = false }: NavigationProps = {}) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const typedUser = user as User;
-  const logoImage = logoImageFull; // Always use full logo
+  const logoImage = logoImageFull;
   const [location, setLocation] = useLocation();
 
   const { data: headerPages = [] } = useQuery<ContentPage[]>({

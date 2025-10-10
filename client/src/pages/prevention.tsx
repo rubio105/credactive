@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import PreventionAssessment from "@/components/PreventionAssessment";
 import ciryFullLogo from "@assets/ChatGPT Image 10 ott 2025, 12_49_48_1760093428797.png";
-import prohmedLogo from "@assets/image_1760071152562.png";
+import prohmedLogo from "@assets/image_1760116137233.png";
 import {
   AlertDialog,
   AlertDialogAction,

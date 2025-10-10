@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, Sparkles, ArrowLeft } from "lucide-react";
+import { Pencil, Trash2, Plus, Sparkles, ArrowLeft, Gamepad2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -46,6 +46,8 @@ interface Quiz {
   maxQuestionsPerAttempt?: number;
   documentPdfUrl?: string;
   visibilityType?: 'public' | 'corporate_exclusive';
+  gamingEnabled?: boolean;
+  crosswordSolutionsCount?: number;
 }
 
 interface CorporateAgreement {
@@ -72,6 +74,10 @@ export function AdminQuizzes() {
   const [generatingJobId, setGeneratingJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
   const [selectedCorporateAccess, setSelectedCorporateAccess] = useState<string[]>([]);
+  // Gaming/Crossword states
+  const [gamingDialogOpen, setGamingDialogOpen] = useState(false);
+  const [selectedQuizForGaming, setSelectedQuizForGaming] = useState<Quiz | null>(null);
+  const [solutionsCount, setSolutionsCount] = useState('15');
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -198,6 +204,27 @@ export function AdminQuizzes() {
     },
   });
 
+  const generateCrosswordMutation = useMutation({
+    mutationFn: (data: { quizId: string; solutionsCount: number }) =>
+      apiRequest(`/api/admin/quizzes/${data.quizId}/generate-crossword`, "POST", { solutionsCount: data.solutionsCount }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories-with-quizzes"] });
+      toast({ 
+        title: "Cruciverba generato!", 
+        description: "Il cruciverba è stato creato con successo e il quiz è ora abilitato al gaming."
+      });
+      setGamingDialogOpen(false);
+      setSelectedQuizForGaming(null);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore durante la generazione", 
+        description: error.message || "Si è verificato un errore",
+        variant: "destructive" 
+      });
+    },
+  });
+
   const handleGenerateAI = (quiz: Quiz) => {
     setSelectedQuizForAI(quiz);
     setAiDialogOpen(true);
@@ -209,6 +236,20 @@ export function AdminQuizzes() {
       quizId: selectedQuizForAI.id,
       count: parseInt(aiQuestionCount),
       difficulty: aiDifficulty,
+    });
+  };
+
+  const handleGenerateGaming = (quiz: Quiz) => {
+    setSelectedQuizForGaming(quiz);
+    setSolutionsCount(quiz.crosswordSolutionsCount?.toString() || '15');
+    setGamingDialogOpen(true);
+  };
+
+  const handleStartCrosswordGeneration = () => {
+    if (!selectedQuizForGaming) return;
+    generateCrosswordMutation.mutate({
+      quizId: selectedQuizForGaming.id,
+      solutionsCount: parseInt(solutionsCount),
     });
   };
 
@@ -448,6 +489,16 @@ export function AdminQuizzes() {
                     >
                       <Sparkles className="w-4 h-4 mr-1" />
                       AI
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleGenerateGaming(quiz)}
+                      className={quiz.gamingEnabled ? "text-green-600" : "text-orange-500"}
+                      data-testid={`button-gaming-quiz-${quiz.id}`}
+                    >
+                      <Gamepad2 className="w-4 h-4 mr-1" />
+                      {quiz.gamingEnabled ? "✓" : "Gaming"}
                     </Button>
                     <Button
                       variant="ghost"
@@ -772,6 +823,58 @@ export function AdminQuizzes() {
             >
               <Sparkles className="w-4 h-4 mr-2" />
               {generateAIMutation.isPending ? "Avvio..." : "Genera Domande"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={gamingDialogOpen} onOpenChange={setGamingDialogOpen}>
+        <DialogContent data-testid="dialog-gaming-generate">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gamepad2 className="w-5 h-5 text-orange-500" />
+              Genera Cruciverba Gaming
+            </DialogTitle>
+            <DialogDescription>
+              {selectedQuizForGaming && `Genera un cruciverba interattivo per: ${selectedQuizForGaming.title}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="solutions-count">Numero di Soluzioni</Label>
+              <Input
+                id="solutions-count"
+                type="number"
+                value={solutionsCount}
+                onChange={(e) => setSolutionsCount(e.target.value)}
+                placeholder="es. 15"
+                min="5"
+                max="30"
+                data-testid="input-solutions-count"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Numero di parole/soluzioni nel cruciverba (consigliato: 15-20)
+              </p>
+            </div>
+            <div className="bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
+              <p className="text-sm text-muted-foreground">
+                🎮 Il cruciverba verrà generato con AI basandosi sul tema del quiz. 
+                Gli utenti potranno giocare e competere in una leaderboard!
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGamingDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleStartCrosswordGeneration} 
+              disabled={generateCrosswordMutation.isPending || !solutionsCount}
+              data-testid="button-start-crossword-generation"
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              <Gamepad2 className="w-4 h-4 mr-2" />
+              {generateCrosswordMutation.isPending ? "Generazione..." : "Genera Cruciverba"}
             </Button>
           </DialogFooter>
         </DialogContent>

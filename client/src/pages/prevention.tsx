@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -754,28 +754,6 @@ export default function PreventionPage() {
               </CardContent>
             </Card>
 
-            {/* Reportistica */}
-            <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
-              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
-                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                  <BarChart3 className="w-5 h-5" />
-                  Reportistica
-                </CardTitle>
-                <CardDescription>I tuoi report personalizzati</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950"
-                  onClick={() => setLocation('/dashboard')}
-                  data-testid="button-view-reports"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Vai al Profilo
-                </Button>
-              </CardContent>
-            </Card>
-
             {/* App Prohmed */}
             <Card className="shadow-lg border-blue-100 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
               <CardHeader>
@@ -821,7 +799,7 @@ export default function PreventionPage() {
             <Card className="shadow-lg border-purple-100 dark:border-purple-900 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-purple-900 dark:text-purple-100">
-                  <Activity className="w-5 h-5" />
+                  <Lightbulb className="w-5 h-5" />
                   Webinar Health
                 </CardTitle>
                 <CardDescription className="text-purple-700 dark:text-purple-300">

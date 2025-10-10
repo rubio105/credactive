@@ -162,6 +162,16 @@ import {
   type InsertCrosswordAttempt,
   type CrosswordLeaderboard,
   type InsertCrosswordLeaderboard,
+  // Health Score System
+  userHealthReports,
+  healthScoreHistory,
+  healthInsights,
+  type UserHealthReport,
+  type InsertUserHealthReport,
+  type HealthScoreHistory,
+  type InsertHealthScoreHistory,
+  type HealthInsight,
+  type InsertHealthInsight,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
@@ -504,6 +514,29 @@ export interface IStorage {
   getCrosswordLeaderboardByWeek(weekNumber: number, weekYear: number): Promise<CrosswordLeaderboard[]>;
   getCrosswordLeaderboardByUser(userId: string): Promise<CrosswordLeaderboard[]>;
   updateCrosswordLeaderboard(id: string, updates: Partial<CrosswordLeaderboard>): Promise<CrosswordLeaderboard>;
+
+  // ========== HEALTH SCORE SYSTEM ==========
+  
+  // Health report operations
+  createHealthReport(report: InsertUserHealthReport): Promise<UserHealthReport>;
+  getHealthReportById(id: string): Promise<UserHealthReport | undefined>;
+  getHealthReportsByUser(userId: string): Promise<UserHealthReport[]>;
+  getHealthReportsByTriageSession(sessionId: string): Promise<UserHealthReport[]>;
+  updateHealthReport(id: string, updates: Partial<UserHealthReport>): Promise<UserHealthReport>;
+  deleteHealthReport(id: string): Promise<void>;
+  
+  // Health score history operations
+  createHealthScoreHistory(score: InsertHealthScoreHistory): Promise<HealthScoreHistory>;
+  getLatestHealthScore(userId: string): Promise<HealthScoreHistory | undefined>;
+  getHealthScoreHistory(userId: string, limit?: number): Promise<HealthScoreHistory[]>;
+  
+  // Health insight operations
+  createHealthInsight(insight: InsertHealthInsight): Promise<HealthInsight>;
+  getHealthInsightsByUser(userId: string, statusFilter?: string): Promise<HealthInsight[]>;
+  updateHealthInsight(id: string, updates: Partial<HealthInsight>): Promise<HealthInsight>;
+  acknowledgeHealthInsight(id: string): Promise<HealthInsight>;
+  resolveHealthInsight(id: string): Promise<HealthInsight>;
+  deleteHealthInsight(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3066,6 +3099,149 @@ export class DatabaseStorage implements IStorage {
       .where(eq(crosswordLeaderboard.id, id))
       .returning();
     return entry;
+  }
+
+  // ========== HEALTH SCORE SYSTEM ==========
+  
+  // Health report operations
+  async createHealthReport(report: InsertUserHealthReport): Promise<UserHealthReport> {
+    const [healthReport] = await db
+      .insert(userHealthReports)
+      .values(report)
+      .returning();
+    return healthReport;
+  }
+
+  async getHealthReportById(id: string): Promise<UserHealthReport | undefined> {
+    const [report] = await db
+      .select()
+      .from(userHealthReports)
+      .where(eq(userHealthReports.id, id));
+    return report;
+  }
+
+  async getHealthReportsByUser(userId: string): Promise<UserHealthReport[]> {
+    return await db
+      .select()
+      .from(userHealthReports)
+      .where(eq(userHealthReports.userId, userId))
+      .orderBy(desc(userHealthReports.createdAt));
+  }
+
+  async getHealthReportsByTriageSession(sessionId: string): Promise<UserHealthReport[]> {
+    return await db
+      .select()
+      .from(userHealthReports)
+      .where(eq(userHealthReports.triageSessionId, sessionId))
+      .orderBy(desc(userHealthReports.createdAt));
+  }
+
+  async updateHealthReport(id: string, updates: Partial<UserHealthReport>): Promise<UserHealthReport> {
+    const [report] = await db
+      .update(userHealthReports)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userHealthReports.id, id))
+      .returning();
+    return report;
+  }
+
+  async deleteHealthReport(id: string): Promise<void> {
+    await db.delete(userHealthReports).where(eq(userHealthReports.id, id));
+  }
+
+  // Health score history operations
+  async createHealthScoreHistory(score: InsertHealthScoreHistory): Promise<HealthScoreHistory> {
+    const [scoreEntry] = await db
+      .insert(healthScoreHistory)
+      .values(score)
+      .returning();
+    return scoreEntry;
+  }
+
+  async getLatestHealthScore(userId: string): Promise<HealthScoreHistory | undefined> {
+    const [score] = await db
+      .select()
+      .from(healthScoreHistory)
+      .where(eq(healthScoreHistory.userId, userId))
+      .orderBy(desc(healthScoreHistory.calculatedAt))
+      .limit(1);
+    return score;
+  }
+
+  async getHealthScoreHistory(userId: string, limit: number = 10): Promise<HealthScoreHistory[]> {
+    return await db
+      .select()
+      .from(healthScoreHistory)
+      .where(eq(healthScoreHistory.userId, userId))
+      .orderBy(desc(healthScoreHistory.calculatedAt))
+      .limit(limit);
+  }
+
+  // Health insight operations
+  async createHealthInsight(insight: InsertHealthInsight): Promise<HealthInsight> {
+    const [healthInsight] = await db
+      .insert(healthInsights)
+      .values(insight)
+      .returning();
+    return healthInsight;
+  }
+
+  async getHealthInsightsByUser(userId: string, statusFilter?: string): Promise<HealthInsight[]> {
+    if (statusFilter) {
+      return await db
+        .select()
+        .from(healthInsights)
+        .where(and(
+          eq(healthInsights.userId, userId),
+          eq(healthInsights.status, statusFilter)
+        ))
+        .orderBy(desc(healthInsights.priority), desc(healthInsights.createdAt));
+    }
+    
+    return await db
+      .select()
+      .from(healthInsights)
+      .where(eq(healthInsights.userId, userId))
+      .orderBy(desc(healthInsights.priority), desc(healthInsights.createdAt));
+  }
+
+  async updateHealthInsight(id: string, updates: Partial<HealthInsight>): Promise<HealthInsight> {
+    const [insight] = await db
+      .update(healthInsights)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(healthInsights.id, id))
+      .returning();
+    return insight;
+  }
+
+  async acknowledgeHealthInsight(id: string): Promise<HealthInsight> {
+    const [insight] = await db
+      .update(healthInsights)
+      .set({ 
+        status: 'acknowledged',
+        acknowledgedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(healthInsights.id, id))
+      .returning();
+    return insight;
+  }
+
+  async resolveHealthInsight(id: string): Promise<HealthInsight> {
+    const [insight] = await db
+      .update(healthInsights)
+      .set({ 
+        status: 'resolved',
+        resolvedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(healthInsights.id, id))
+      .returning();
+    return insight;
+  }
+
+  async deleteHealthInsight(id: string): Promise<void> {
+    await db.delete(healthInsights).where(eq(healthInsights.id, id));
   }
 }
 

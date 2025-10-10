@@ -57,6 +57,7 @@ interface LiveCourseSession {
   capacity: number;
   enrolled: number;
   status: 'available' | 'full' | 'cancelled' | 'completed';
+  streamingUrl?: string | null;
 }
 
 interface Quiz {
@@ -255,7 +256,8 @@ export function AdminLiveCourses() {
           }
         }
       } else {
-        const result = await createCourseMutation.mutateAsync(cleanData);
+        const response = await createCourseMutation.mutateAsync(cleanData);
+        const result = await response.json();
         
         if (editingCourse.visibilityType === 'corporate_exclusive' && selectedCorporateAccess.length > 0) {
           for (const agreementId of selectedCorporateAccess) {
@@ -287,6 +289,7 @@ export function AdminLiveCourses() {
       capacity: 30,
       enrolled: 0,
       status: 'available',
+      streamingUrl: '',
     });
     setIsSessionDialogOpen(true);
   };
@@ -688,6 +691,20 @@ export function AdminLiveCourses() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div>
+              <Label htmlFor="streamingUrl">Link Streaming (opzionale)</Label>
+              <Input
+                id="streamingUrl"
+                type="url"
+                placeholder="https://zoom.us/j/... o Google Meet o Teams"
+                value={editingSession?.streamingUrl || ''}
+                onChange={(e) => setEditingSession({ ...editingSession, streamingUrl: e.target.value })}
+                data-testid="input-session-streaming-url"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Link per partecipare al webinar (Zoom, Google Meet, Teams, etc.)
+              </p>
             </div>
           </div>
           <DialogFooter>

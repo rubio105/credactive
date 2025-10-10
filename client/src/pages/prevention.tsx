@@ -367,11 +367,14 @@ export default function PreventionPage() {
 
         {/* Hero Section */}
         <div className="mb-8 text-center">
-          <div className="flex items-center justify-center gap-3 mb-6">
+          <div className="flex items-center justify-center gap-3 mb-4">
             <img src={ciryLogo} alt="CIRY" className="h-16" />
             <span className="text-2xl font-semibold text-muted-foreground">by</span>
             <img src={prohmedLogo} alt="Prohmed" className="h-16 object-contain" />
           </div>
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+            AI Assistente Prevenzione
+          </h1>
           <p className="text-muted-foreground text-xl max-w-3xl mx-auto">
             Scopri strategie pratiche per la prevenzione con il nostro modello AI
           </p>

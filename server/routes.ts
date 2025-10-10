@@ -1676,6 +1676,34 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Admin - Send prevention invite email
+  app.post('/api/admin/send-prevention-invite', isAdmin, async (req, res) => {
+    try {
+      const { email, firstName } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email è obbligatoria" });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Formato email non valido" });
+      }
+
+      const { sendPreventionInviteEmail } = await import("./email");
+      await sendPreventionInviteEmail(email, firstName);
+
+      res.json({
+        message: `Invito alla prevenzione inviato con successo a ${email}`,
+        email,
+      });
+    } catch (error) {
+      console.error("Error sending prevention invite:", error);
+      res.status(500).json({ message: "Errore durante l'invio dell'invito" });
+    }
+  });
+
   // Admin - Send marketing email to newsletter subscribers
   app.post('/api/admin/send-marketing-email', isAdmin, async (req, res) => {
     try {

@@ -1044,6 +1044,157 @@ Il Team CREDACTIVE
   });
 }
 
+export async function sendPreventionInviteEmail(
+  email: string,
+  firstName?: string
+): Promise<void> {
+  const baseUrl = process.env.BASE_URL || 
+                  (process.env.REPLIT_DOMAINS?.split(',')[0] 
+                    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+                    : 'http://localhost:5000');
+  const preventionUrl = `${baseUrl}/prevention`;
+  
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 40px 30px; text-align: center; }
+        .content { background: white; padding: 40px 30px; }
+        .button { display: inline-block; padding: 18px 45px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white !important; text-decoration: none; border-radius: 10px; margin: 25px 0; font-weight: 700; font-size: 18px; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+        .info-box { background: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .feature { margin: 15px 0; display: flex; align-items: start; }
+        .feature-icon { font-size: 24px; margin-right: 15px; min-width: 30px; }
+        .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+        h1 { margin: 0; font-size: 30px; font-weight: 700; }
+        .ai-badge { background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px; display: inline-block; margin-top: 10px; border: 1px solid rgba(255,255,255,0.3); }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🛡️ Scopri AI Prohmed</h1>
+          <div class="ai-badge">🤖 Intelligenza Artificiale per la Prevenzione</div>
+        </div>
+        <div class="content">
+          <p style="font-size: 18px;">Ciao <strong>${name}</strong>,</p>
+          
+          <p style="font-size: 16px;">
+            Hai accesso esclusivo ad <strong>AI Prohmed</strong>, il tuo assistente intelligente per l'educazione alla prevenzione sanitaria.
+          </p>
+
+          <div class="info-box">
+            <strong>🎯 Come funziona AI Prohmed</strong><br>
+            <p style="margin: 10px 0;">
+              Condividi il tuo caso personale e l'AI ti guiderà nell'apprendimento delle migliori strategie di prevenzione basate su evidenze scientifiche.
+            </p>
+          </div>
+
+          <h3 style="color: #059669; margin-top: 30px;">✨ Cosa imparerai:</h3>
+          
+          <div class="feature">
+            <div class="feature-icon">🧠</div>
+            <div>
+              <strong>Conversazione Educativa Personalizzata</strong><br>
+              <span style="color: #666; font-size: 14px;">L'AI analizza il tuo caso e ti offre un percorso di apprendimento su misura</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">📚</div>
+            <div>
+              <strong>Strategie di Prevenzione Evidence-Based</strong><br>
+              <span style="color: #666; font-size: 14px;">Consigli pratici basati sulle più recenti ricerche scientifiche</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">💡</div>
+            <div>
+              <strong>Risorse e Documenti Personalizzati</strong><br>
+              <span style="color: #666; font-size: 14px;">Materiali educativi mirati al tuo percorso di prevenzione</span>
+            </div>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🔒</div>
+            <div>
+              <strong>100% Privato e Sicuro</strong><br>
+              <span style="color: #666; font-size: 14px;">Le tue conversazioni sono anonime e protette</span>
+            </div>
+          </div>
+
+          <p style="text-align: center; margin-top: 35px;">
+            <a href="${preventionUrl}" class="button">🚀 Inizia il Tuo Percorso di Prevenzione</a>
+          </p>
+          
+          <p style="color: #666; font-size: 14px; margin-top: 30px; text-align: center;">
+            <strong>Nota:</strong> Il servizio è completamente gratuito e non richiede registrazione.<br>
+            Puoi iniziare subito a imparare strategie di prevenzione personalizzate.
+          </p>
+          
+          <p style="margin-top: 30px; color: #666;">
+            Buona prevenzione,<br>
+            <strong>Il Team CREDACTIVE & Prohmed</strong>
+          </p>
+        </div>
+        <div class="footer">
+          <p style="color: #999; font-size: 12px; margin: 15px 0;">
+            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+AI Prohmed - Il Tuo Assistente per la Prevenzione
+
+Ciao ${rawName},
+
+Hai accesso esclusivo ad AI Prohmed, il tuo assistente intelligente per l'educazione alla prevenzione sanitaria.
+
+Come funziona:
+Condividi il tuo caso personale e l'AI ti guiderà nell'apprendimento delle migliori strategie di prevenzione basate su evidenze scientifiche.
+
+Cosa imparerai:
+🧠 Conversazione Educativa Personalizzata
+   L'AI analizza il tuo caso e ti offre un percorso di apprendimento su misura
+
+📚 Strategie di Prevenzione Evidence-Based
+   Consigli pratici basati sulle più recenti ricerche scientifiche
+
+💡 Risorse e Documenti Personalizzati
+   Materiali educativi mirati al tuo percorso di prevenzione
+
+🔒 100% Privato e Sicuro
+   Le tue conversazioni sono anonime e protette
+
+Inizia subito il tuo percorso di prevenzione:
+${preventionUrl}
+
+Nota: Il servizio è completamente gratuito e non richiede registrazione.
+
+Buona prevenzione,
+Il Team CREDACTIVE & Prohmed
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: "🛡️ Inizia il Tuo Percorso di Prevenzione con AI Prohmed",
+    htmlContent,
+    textContent,
+  });
+}
+
 export async function sendPremiumUpgradeEmail(
   email: string,
   firstName?: string,

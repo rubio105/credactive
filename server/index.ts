@@ -105,6 +105,106 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Webinar reminder system - Check every hour for sessions starting in 24 hours
+  setInterval(async () => {
+    try {
+      const { db } = await import("@/db");
+      const { sendEmail } = await import("./email");
+      const { liveCourseSessions, liveCourses, liveCourseEnrollments, users } = await import("@shared/schema");
+      const { eq, and, gte, lte } = await import("drizzle-orm");
+      
+      const now = new Date();
+      const in23Hours = new Date(now.getTime() + 23 * 60 * 60 * 1000);
+      const in25Hours = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+      
+      // Find sessions starting in 24 hours (+/- 1 hour window)
+      const upcomingSessions = await db
+        .select({
+          sessionId: liveCourseSessions.id,
+          sessionStartDate: liveCourseSessions.startDate,
+          sessionEndDate: liveCourseSessions.endDate,
+          streamingUrl: liveCourseSessions.streamingUrl,
+          courseId: liveCourseSessions.courseId,
+          courseTitle: liveCourses.title,
+          instructor: liveCourses.instructor,
+        })
+        .from(liveCourseSessions)
+        .innerJoin(liveCourses, eq(liveCourseSessions.courseId, liveCourses.id))
+        .where(
+          and(
+            gte(liveCourseSessions.startDate, in23Hours),
+            lte(liveCourseSessions.startDate, in25Hours)
+          )
+        );
+      
+      for (const session of upcomingSessions) {
+        const { isNull } = await import("drizzle-orm");
+        
+        // Get enrollments that haven't received a reminder yet
+        const enrollments = await db
+          .select({
+            enrollmentId: liveCourseEnrollments.id,
+            userId: liveCourseEnrollments.userId,
+            userEmail: users.email,
+            userFirstName: users.firstName,
+          })
+          .from(liveCourseEnrollments)
+          .innerJoin(users, eq(liveCourseEnrollments.userId, users.id))
+          .where(
+            and(
+              eq(liveCourseEnrollments.sessionId, session.sessionId),
+              isNull(liveCourseEnrollments.reminderSentAt) // Only send if reminder not sent yet
+            )
+          );
+        
+        // Send reminder email to each enrolled user (only once)
+        for (const enrollment of enrollments) {
+          try {
+            const emailSubject = `Promemoria: Webinar "${session.courseTitle}" domani`;
+            const emailContent = `
+              <h2>Ciao ${enrollment.userFirstName || 'Partecipante'},</h2>
+              <p>Ti ricordiamo che domani inizia il webinar a cui sei iscritto:</p>
+              <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>${session.courseTitle}</h3>
+                <p><strong>Data e ora:</strong> ${new Date(session.sessionStartDate).toLocaleDateString('it-IT', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })} alle ${new Date(session.sessionStartDate).toLocaleTimeString('it-IT', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}</p>
+                ${session.instructor ? `<p><strong>Relatore:</strong> ${session.instructor}</p>` : ''}
+                ${session.streamingUrl ? `<p><strong>Link per partecipare:</strong> <a href="${session.streamingUrl}">${session.streamingUrl}</a></p>` : ''}
+              </div>
+              <p>Ci vediamo domani!</p>
+              <p>Il Team CIRY</p>
+            `;
+            
+            await sendEmail(enrollment.userEmail, emailSubject, emailContent);
+            
+            // Mark reminder as sent
+            await db
+              .update(liveCourseEnrollments)
+              .set({ reminderSentAt: new Date() })
+              .where(eq(liveCourseEnrollments.id, enrollment.enrollmentId));
+            
+            console.log(`Reminder email sent to ${enrollment.userEmail} for session ${session.sessionId}`);
+          } catch (emailError) {
+            console.error(`Failed to send reminder email to ${enrollment.userEmail}:`, emailError);
+          }
+        }
+      }
+      
+      if (upcomingSessions.length > 0) {
+        console.log(`Processed ${upcomingSessions.length} webinar reminder(s)`);
+      }
+    } catch (error) {
+      console.error('Webinar reminder system error:', error);
+    }
+  }, 60 * 60 * 1000); // Run every hour
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

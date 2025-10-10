@@ -241,6 +241,7 @@ export const liveCourseEnrollments = pgTable("live_course_enrollments", {
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   amountPaid: integer("amount_paid").notNull(), // Amount in cents
   status: varchar("status", { length: 20 }).default("pending"), // pending, confirmed, cancelled
+  reminderSentAt: timestamp("reminder_sent_at"), // Track when 24h reminder was sent
   enrolledAt: timestamp("enrolled_at").defaultNow(),
 });
 

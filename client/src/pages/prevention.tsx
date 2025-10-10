@@ -120,6 +120,50 @@ export default function PreventionPage() {
     enabled: !!user,
   });
 
+  interface WebinarSession {
+    id: string;
+    startDate: string;
+    endDate: string;
+    capacity: number;
+    enrolled: number;
+    isUserEnrolled: boolean;
+    streamingUrl?: string;
+  }
+
+  interface WebinarCourse {
+    id: string;
+    title: string;
+    description: string;
+    instructor: string;
+    sessions: WebinarSession[];
+  }
+
+  const { data: webinars } = useQuery<WebinarCourse[]>({
+    queryKey: ["/api/webinar-health"],
+    enabled: !!user,
+  });
+
+  const enrollWebinarMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const response = await apiRequest(`/api/webinar-health/enroll/${sessionId}`, "POST");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "Iscrizione confermata!", 
+        description: "Riceverai un'email di conferma e un promemoria 24h prima dell'evento." 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/webinar-health"] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Impossibile completare l'iscrizione",
+        variant: "destructive" 
+      });
+    },
+  });
+
   // Assessment is optional - user can access directly without completing it
   // Educational focus: learn about prevention, not mandatory diagnostic assessment
 
@@ -708,17 +752,73 @@ export default function PreventionPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-purple-800 dark:text-purple-200">
-                  Partecipa ai nostri webinar gratuiti sulla prevenzione con professionisti sanitari
-                </p>
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                  onClick={() => setLocation('/webinar-health')}
-                  data-testid="button-view-webinars"
-                >
-                  <Activity className="w-4 h-4 mr-2" />
-                  Vedi Webinar Disponibili
-                </Button>
+                {webinars && webinars.length > 0 ? (
+                  <ScrollArea className="h-64">
+                    <div className="space-y-3 pr-4">
+                      {webinars.map((webinar) => (
+                        <div key={webinar.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm">
+                          <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100 mb-1">
+                            {webinar.title}
+                          </h4>
+                          {webinar.instructor && (
+                            <p className="text-xs text-purple-700 dark:text-purple-300 mb-2">
+                              Con: {webinar.instructor}
+                            </p>
+                          )}
+                          <div className="space-y-2">
+                            {webinar.sessions.map((session) => (
+                              <div key={session.id} className="flex items-center justify-between text-xs">
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    {new Date(session.startDate).toLocaleDateString('it-IT', { 
+                                      day: '2-digit', 
+                                      month: 'short',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                  <p className="text-gray-600 dark:text-gray-400">
+                                    {session.enrolled}/{session.capacity} iscritti
+                                  </p>
+                                </div>
+                                {session.isUserEnrolled ? (
+                                  <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                    Iscritto
+                                  </Badge>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white h-7 px-3 text-xs"
+                                    onClick={() => enrollWebinarMutation.mutate(session.id)}
+                                    disabled={enrollWebinarMutation.isPending || session.enrolled >= session.capacity}
+                                    data-testid={`button-enroll-${session.id}`}
+                                  >
+                                    {session.enrolled >= session.capacity ? 'Completo' : 'Iscriviti'}
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-sm text-purple-800 dark:text-purple-200 mb-3">
+                      {user ? 'Nessun webinar disponibile al momento' : 'Accedi per vedere i webinar disponibili'}
+                    </p>
+                    {!user && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setLocation('/login')}
+                        className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                      >
+                        Accedi
+                      </Button>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

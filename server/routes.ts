@@ -42,7 +42,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import { generateAssessmentPDFBuffer } from "./assessmentPDFGenerator";
@@ -664,6 +664,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Contact form endpoint
+  app.post('/api/contact', authLimiter, async (req, res) => {
+    try {
+      const { name, email, subject, message, privacy } = req.body;
+
+      // Validation
+      if (!name || name.length < 2) {
+        return res.status(400).json({ message: "Il nome deve contenere almeno 2 caratteri" });
+      }
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ message: "Email non valida" });
+      }
+      if (!subject || subject.length < 3) {
+        return res.status(400).json({ message: "L'oggetto deve contenere almeno 3 caratteri" });
+      }
+      if (!message || message.length < 10) {
+        return res.status(400).json({ message: "Il messaggio deve contenere almeno 10 caratteri" });
+      }
+      if (!privacy) {
+        return res.status(400).json({ message: "Devi accettare la privacy policy" });
+      }
+
+      // Send email to support
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+            .field { margin-bottom: 15px; padding: 15px; background: white; border-radius: 6px; }
+            .label { font-weight: bold; color: #667eea; margin-bottom: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2 style="margin: 0;">Nuovo Messaggio di Contatto</h2>
+            </div>
+            <div class="content">
+              <div class="field">
+                <div class="label">Nome:</div>
+                <div>${name}</div>
+              </div>
+              <div class="field">
+                <div class="label">Email:</div>
+                <div>${email}</div>
+              </div>
+              <div class="field">
+                <div class="label">Oggetto:</div>
+                <div>${subject}</div>
+              </div>
+              <div class="field">
+                <div class="label">Messaggio:</div>
+                <div>${message}</div>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      await sendEmail({
+        to: 'support@ciry.app',
+        subject: `Contatto: ${subject}`,
+        htmlContent,
+        textContent: `Nuovo messaggio da ${name} (${email})\n\nOggetto: ${subject}\n\nMessaggio:\n${message}`,
+      });
+
+      res.json({ message: "Messaggio inviato con successo" });
+    } catch (error) {
+      console.error("Error sending contact form:", error);
+      res.status(500).json({ message: "Errore durante l'invio del messaggio" });
     }
   });
 

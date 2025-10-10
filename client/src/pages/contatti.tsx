@@ -13,6 +13,9 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useState } from "react";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Il nome deve contenere almeno 2 caratteri"),
@@ -40,13 +43,29 @@ export default function Contatti() {
     },
   });
 
+  const contactMutation = useMutation({
+    mutationFn: async (data: ContactFormData) => {
+      const response = await apiRequest('/api/contact', 'POST', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Messaggio inviato!",
+        description: "Ti risponderemo il prima possibile a support@ciry.app",
+      });
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante l'invio del messaggio",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: ContactFormData) => {
-    console.log("Contact form submitted:", data);
-    toast({
-      title: "Messaggio inviato!",
-      description: "Ti risponderemo il prima possibile.",
-    });
-    form.reset();
+    contactMutation.mutate(data);
   };
 
   return (
@@ -170,8 +189,13 @@ export default function Contatti() {
                   )}
                 />
 
-                <Button type="submit" className="w-full" data-testid="button-submit-contact">
-                  Invia Messaggio
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  data-testid="button-submit-contact"
+                  disabled={contactMutation.isPending}
+                >
+                  {contactMutation.isPending ? "Invio in corso..." : "Invia Messaggio"}
                 </Button>
               </form>
             </Form>

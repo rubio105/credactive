@@ -420,7 +420,7 @@ export default function PreventionPage() {
             AI Assistente Prevenzione
           </h1>
           <p className="text-muted-foreground text-lg max-w-4xl mx-auto leading-relaxed">
-            Guidati da esperti riconosciuti a livello nazionale e internazionale, offriamo una piattaforma interattiva dedicata ad aziende e professionisti che vogliono eccellere nelle certificazioni di Cybersecurity, Compliance, AI Security, Leadership e guida alla prevenzione medica intelligente con il supporto di AI avanzata.
+            Condividi il tuo caso personale a Ciry e scopri strategie pratiche per la prevenzione con l'intelligenza artificiale
           </p>
         </div>
 

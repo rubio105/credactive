@@ -70,6 +70,9 @@ export default function Landing() {
               <p className="text-lg md:text-xl text-white/90">
                 CIRY combina certificazioni cybersecurity professionali (CISSP, CISM, ISO 27001) con AI per la prevenzione sanitaria. Oltre 1.000.000 di domande, corsi live, health reports personalizzati e assistente AI per la tua salute.
               </p>
+              <p className="text-base md:text-lg text-white/80">
+                Guidati da esperti riconosciuti a livello nazionale e internazionale, offriamo una piattaforma interattiva dedicata ad aziende e professionisti che vogliono eccellere nelle certificazioni di Cybersecurity, Compliance, AI Security, Leadership e guida alla prevenzione medica intelligente con il supporto di AI avanzata.
+              </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
                   size="lg"

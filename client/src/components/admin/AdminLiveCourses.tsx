@@ -38,6 +38,7 @@ interface LiveCourse {
   duration?: string;
   language?: string;
   price: number;
+  isWebinarHealth?: boolean;
   createdAt: string;
   updatedAt?: string;
   visibilityType?: 'public' | 'corporate_exclusive';
@@ -169,6 +170,7 @@ export function AdminLiveCourses() {
       duration: '',
       price: 0,
       quizId: '',
+      isWebinarHealth: false,
       visibilityType: 'public',
     });
     setSelectedCorporateAccess([]);
@@ -558,6 +560,25 @@ export function AdminLiveCourses() {
                   onChange={(e) => setEditingCourse({ ...editingCourse, price: parseFloat(e.target.value) * 100 })}
                   data-testid="input-course-price"
                 />
+              </div>
+            </div>
+            
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isWebinarHealth"
+                  checked={editingCourse?.isWebinarHealth || false}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, isWebinarHealth: e.target.checked })}
+                  className="rounded border-gray-300"
+                  data-testid="checkbox-webinar-health"
+                />
+                <label htmlFor="isWebinarHealth" className="text-sm font-medium cursor-pointer">
+                  💡 Webinar Health
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  (Apparirà nella sezione Webinar Health della pagina AI Prevenzione)
+                </p>
               </div>
             </div>
             

@@ -2326,9 +2326,13 @@ Restituisci SOLO un JSON con:
   app.post('/api/admin/live-courses/:courseId/sessions', isAdmin, async (req, res) => {
     try {
       const { courseId } = req.params;
+      const { startDate, endDate, ...rest } = req.body;
+      
       const session = await storage.createLiveCourseSession({
-        ...req.body,
-        courseId
+        ...rest,
+        courseId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate)
       });
       res.json(session);
     } catch (error) {
@@ -2340,7 +2344,13 @@ Restituisci SOLO un JSON con:
   app.put('/api/admin/live-course-sessions/:id', isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const session = await storage.updateLiveCourseSession(id, req.body);
+      const { startDate, endDate, ...rest } = req.body;
+      
+      const updates: any = { ...rest };
+      if (startDate) updates.startDate = new Date(startDate);
+      if (endDate) updates.endDate = new Date(endDate);
+      
+      const session = await storage.updateLiveCourseSession(id, updates);
       res.json(session);
     } catch (error) {
       console.error("Error updating session:", error);

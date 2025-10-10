@@ -143,7 +143,6 @@ export default function PreventionPage() {
 
   const { data: webinars } = useQuery<WebinarCourse[]>({
     queryKey: ["/api/webinar-health"],
-    enabled: !!user,
   });
 
   const enrollWebinarMutation = useMutation({
@@ -844,7 +843,18 @@ export default function PreventionPage() {
                                   <Button
                                     size="sm"
                                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white h-7 px-3 text-xs"
-                                    onClick={() => enrollWebinarMutation.mutate(session.id)}
+                                    onClick={() => {
+                                      if (!user) {
+                                        toast({
+                                          title: "Accesso richiesto",
+                                          description: "Devi effettuare l'accesso per iscriverti al webinar",
+                                          variant: "destructive"
+                                        });
+                                        setTimeout(() => setLocation('/login'), 1500);
+                                        return;
+                                      }
+                                      enrollWebinarMutation.mutate(session.id);
+                                    }}
                                     disabled={enrollWebinarMutation.isPending || session.enrolled >= session.capacity}
                                     data-testid={`button-enroll-${session.id}`}
                                   >
@@ -860,18 +870,9 @@ export default function PreventionPage() {
                   </ScrollArea>
                 ) : (
                   <div className="text-center py-6">
-                    <p className="text-sm text-purple-800 dark:text-purple-200 mb-3">
-                      {user ? 'Nessun webinar disponibile al momento' : 'Accedi per vedere i webinar disponibili'}
+                    <p className="text-sm text-purple-800 dark:text-purple-200">
+                      Nessun webinar disponibile al momento
                     </p>
-                    {!user && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setLocation('/login')}
-                        className="border-purple-300 text-purple-700 hover:bg-purple-100"
-                      >
-                        Accedi
-                      </Button>
-                    )}
                   </div>
                 )}
               </CardContent>

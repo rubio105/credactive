@@ -7669,13 +7669,14 @@ Format as JSON: {
   // Webinar Health Endpoints
   // ===========================
 
-  // Get all webinar health courses (GET /api/webinar-health)
-  app.get('/api/webinar-health', isAuthenticated, async (req, res) => {
+  // Get all webinar health courses (GET /api/webinar-health) - PUBLIC ENDPOINT
+  app.get('/api/webinar-health', async (req, res) => {
     try {
       const user = req.user as any;
+      const userId = user?.id;
       
-      // Get all active live courses
-      const courses = await storage.getAllLiveCourses(user.id);
+      // Get all active live courses (public access, no user filter for anonymous)
+      const courses = await storage.getAllLiveCourses(userId);
       
       // Filter for webinar health courses (using isWebinarHealth flag)
       const webinarCourses = courses.filter(course => course.isWebinarHealth === true);
@@ -7685,10 +7686,12 @@ Format as JSON: {
         webinarCourses.map(async (course) => {
           const sessions = await storage.getSessionsByCourseId(course.id);
           
-          // Check if user is enrolled in each session
+          // Check if user is enrolled in each session (only for authenticated users)
           const sessionsWithEnrollment = await Promise.all(
             sessions.map(async (session) => {
-              const enrollment = await storage.getUserEnrollmentForSession(user.id, session.id);
+              const enrollment = userId 
+                ? await storage.getUserEnrollmentForSession(userId, session.id)
+                : null;
               return {
                 ...session,
                 enrolled: session.enrolled || 0,

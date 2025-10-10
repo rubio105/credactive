@@ -40,12 +40,12 @@ export function generateCertificatePDF(data: CertificateData): typeof PDFDocumen
   doc.fontSize(24)
      .fillColor(primaryColor)
      .font('Helvetica-Bold')
-     .text('CREDACTIVE', 0, 80, { align: 'center' });
+     .text('CIRY', 0, 80, { align: 'center' });
   
-  doc.fontSize(16)
+  doc.fontSize(14)
      .fillColor(secondaryColor)
      .font('Helvetica')
-     .text('ACADEMY', 0, 110, { align: 'center' });
+     .text('Care & Intelligence Ready for You', 0, 110, { align: 'center' });
   
   // Certificate title
   doc.fontSize(36)
@@ -145,7 +145,7 @@ export function generateCertificatePDF(data: CertificateData): typeof PDFDocumen
      .fillColor('#9ca3af')
      .font('Helvetica')
      .text(
-       'This certificate verifies successful completion and can be verified at credactive.academy/verify',
+       'This certificate verifies successful completion and can be verified at ciry.app/verify',
        50,
        doc.page.height - 60,
        { align: 'center', width: doc.page.width - 100 }

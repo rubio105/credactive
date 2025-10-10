@@ -14,13 +14,13 @@ export function SEO({
   title,
   description,
   keywords,
-  ogImage = 'https://credactive.academy/attached_assets/image_1760060236448.png',
+  ogImage = 'https://ciry.app/attached_assets/image_1760060236448.png',
   ogType = 'website',
   canonicalUrl,
   noIndex = false,
 }: SEOProps) {
   const fullTitle = `${title} | CIRY`;
-  const url = canonicalUrl || `https://credactive.academy${window.location.pathname}`;
+  const url = canonicalUrl || `https://ciry.app${window.location.pathname}`;
 
   return (
     <Helmet>

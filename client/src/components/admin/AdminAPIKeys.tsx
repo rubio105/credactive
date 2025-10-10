@@ -53,7 +53,7 @@ const API_KEYS = [
     key: "BREVO_SENDER_EMAIL",
     label: "Brevo Sender Email",
     description: "Email mittente per Brevo",
-    placeholder: "noreply@credactive.academy",
+    placeholder: "noreply@ciry.app",
   },
 ];
 

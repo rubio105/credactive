@@ -97,7 +97,7 @@ export async function sendTemplateEmail(
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
   const sendSmtpEmail = new brevo.SendSmtpEmail();
 
-  const senderEmail = options.senderEmail || await getApiKey('BREVO_SENDER_EMAIL') || "noreply@credactive.academy";
+  const senderEmail = options.senderEmail || await getApiKey('BREVO_SENDER_EMAIL') || "noreply@ciry.app";
   
   sendSmtpEmail.sender = {
     name: options.senderName || "CIRY",
@@ -270,9 +270,8 @@ export async function sendWelcomeEmail(
         </div>
         <div class="footer">
           <div class="footer-links">
-            <a href="mailto:support@credactive.com">Supporto</a> |
-            <a href="https://credactive.com/faq">FAQ</a> |
-            <a href="https://credactive.com/privacy">Privacy</a>
+            <a href="mailto:support@ciry.app">Supporto</a> |
+            <a href="https://ciry.app/page/privacy-policy">Privacy</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
             © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
@@ -400,9 +399,8 @@ export async function sendVerificationCodeEmail(
         </div>
         <div class="footer">
           <div class="footer-links">
-            <a href="mailto:support@credactive.com">Supporto</a> |
-            <a href="https://credactive.com/faq">FAQ</a> |
-            <a href="https://credactive.com/privacy">Privacy</a>
+            <a href="mailto:support@ciry.app">Supporto</a> |
+            <a href="https://ciry.app/page/privacy-policy">Privacy</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
             © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
@@ -541,9 +539,8 @@ export async function sendPasswordResetEmail(
         </div>
         <div class="footer">
           <div class="footer-links">
-            <a href="mailto:support@credactive.com">Supporto</a> |
-            <a href="https://credactive.com/faq">FAQ</a> |
-            <a href="https://credactive.com/privacy">Privacy</a>
+            <a href="mailto:support@ciry.app">Supporto</a> |
+            <a href="https://ciry.app/page/privacy-policy">Privacy</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
             © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
@@ -1409,7 +1406,7 @@ export async function sendPremiumUpgradeEmail(
             © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
           <p style="color: #999; font-size: 12px;">
-            Hai bisogno di aiuto? Contattaci: <a href="mailto:support@credactive.academy" style="color: #667eea;">support@credactive.academy</a>
+            Hai bisogno di aiuto? Contattaci: <a href="mailto:support@ciry.app" style="color: #667eea;">support@ciry.app</a>
           </p>
         </div>
       </div>
@@ -1441,7 +1438,7 @@ Grazie per aver scelto CIRY!
 Il Team CIRY
 
 ---
-Hai bisogno di aiuto? support@credactive.academy
+Hai bisogno di aiuto? support@ciry.app
   `;
 
   await sendEmail({

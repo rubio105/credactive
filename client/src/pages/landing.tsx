@@ -42,7 +42,7 @@ export default function Landing() {
         title="CIRY - Care & Intelligence Ready for You | Cybersecurity & Health Prevention"
         description="CIRY unisce salute e sicurezza digitale. Certificazioni cybersecurity (CISSP, CISM, ISO 27001) + AI per prevenzione sanitaria. Oltre 1.000.000 di domande, corsi live e health reports personalizzati."
         keywords="CIRY, cybersecurity certificazioni, CISSP online, CISM training, ISO 27001, prevenzione sanitaria AI, health report, medical AI, GDPR, NIS2, DORA, sicurezza informatica, intelligenza artificiale salute"
-        canonicalUrl="https://credactive.academy"
+        canonicalUrl="https://ciry.app"
       />
       <Navigation useLandingLogo={true} />
 

@@ -4518,7 +4518,7 @@ Explicación de audio:`
       const quizzes = await storage.getAllQuizzes(); // Only public quizzes in sitemap
       const staticPages = await storage.getAllContentPages();
       
-      const baseUrl = 'https://credactive.academy';
+      const baseUrl = 'https://ciry.app';
       const now = new Date().toISOString().split('T')[0];
       
       let sitemap = `<?xml version="1.0" encoding="UTF-8"?>

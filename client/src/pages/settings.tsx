@@ -467,7 +467,7 @@ export default function Settings() {
 
                     {!isFull && (
                       <Button 
-                        onClick={() => window.location.href = 'mailto:info@credactive.it?subject=Richiesta Piano Full'}
+                        onClick={() => window.location.href = 'mailto:info@ciry.app?subject=Richiesta Piano Full'}
                         className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
                         data-testid="button-contact-full"
                       >

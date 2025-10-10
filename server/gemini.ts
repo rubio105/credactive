@@ -1,9 +1,14 @@
 import * as fs from "fs";
 import { GoogleGenAI, Modality } from "@google/genai";
+import { createRequire } from "module";
 
 // DON'T DELETE THIS COMMENT
 // Blueprint: javascript_gemini integration
 // Gemini AI service for medical prevention system
+
+// pdf-parse (CommonJS module) - use createRequire for compatibility
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
 if (!process.env.GEMINI_API_KEY) {
   throw new Error("GEMINI_API_KEY environment variable is required");
@@ -564,8 +569,6 @@ export async function extractTextFromMedicalReport(
     // Handle PDF files
     if (mimeType === "application/pdf") {
       const pdfBuffer = fs.readFileSync(filePath);
-      // @ts-ignore - pdf-parse has default export in runtime but not in types
-      const pdfParse = (await import('pdf-parse')).default;
       const pdfData = await pdfParse(pdfBuffer);
       extractedText = pdfData.text;
       console.log("[Gemini] PDF text extracted:", extractedText.length, "characters");
@@ -649,20 +652,6 @@ Rispondi con JSON in questo formato esatto:
       model: "gemini-2.5-pro",
       config: {
         responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            reportType: { type: "string" },
-            detectedLanguage: { type: "string" },
-            issuer: { type: "string" },
-            reportDate: { type: "string" },
-            extractedValues: { type: "object" },
-            medicalKeywords: { type: "array", items: { type: "string" } },
-            summary: { type: "string" },
-            confidence: { type: "number" },
-          },
-          required: ["reportType", "detectedLanguage", "summary", "confidence"],
-        },
       },
       contents: [{ role: "user", parts: [{ text: analysisPrompt }] }],
     });

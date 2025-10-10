@@ -8,11 +8,14 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Technical Fixes (October 2025)
 
-## PDF Upload & Schema Fixes
+## PDF Upload & Medical Report Analysis Fixes
 -   **Prevention Index Schema**: Fixed `preventionIndices` table schema by removing duplicate `updatedAt` column that was causing database insert failures. Schema now correctly uses only `calculatedAt` timestamp, matching database structure.
--   **PDF-Parse CommonJS Import**: Resolved "pdfParse is not a function" error in admin PDF upload by implementing `createRequire` from Node.js 'module' package. Changed from dynamic ESM import to CommonJS require for compatibility with pdf-parse library.
+-   **PDF-Parse CommonJS Import**: Resolved "pdfParse is not a function" error in both `server/routes.ts` AND `server/gemini.ts` by implementing `createRequire` from Node.js 'module' package. Changed from dynamic ESM import to CommonJS require for compatibility with pdf-parse library.
+-   **Gemini AI Italian Language**: Modified Gemini AI prompts to force **ALL** extracted data in Italian - reportType ("esame_sangue" not "blood_test"), extractedValues ("glucosio", "colesterolo totale" instead of English), medicalKeywords (Italian medical terms), and summary.
+-   **Gemini Schema Fix**: Removed rigid `responseSchema` with empty object properties that caused 400 errors. Now uses flexible JSON response while maintaining structure through prompt instructions.
+-   **Medical Report Upload Dialog**: Added upload dialog in home page (CIRY section) that opens on "Carica Referto" button click instead of navigation. Includes file input (PDF/images), consent checkbox, privacy notice, and FormData submission to `/api/health-score/upload`.
 -   **Admin Authentication**: Updated admin credentials for testing purposes (email: admin@ciry.it, password: Admin2025!).
--   **Testing**: End-to-end tests confirm PDF upload, Gemini AI analysis, and document list display all function correctly.
+-   **Testing**: End-to-end tests confirm complete flow - PDF upload, Italian language extraction, Gemini AI analysis, anonymization, success toast, and dialog close all function correctly.
 
 # System Architecture
 

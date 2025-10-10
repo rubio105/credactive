@@ -297,7 +297,7 @@ export default function Landing() {
           </div>
 
           {/* Subscription Plans */}
-          <div className="text-center mb-12">
+          <div id="subscriptions" className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Scegli il Tuo Piano</h2>
             <p className="text-xl text-muted-foreground">
               Quiz professionali e corsi per la tua formazione certificata

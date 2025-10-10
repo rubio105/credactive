@@ -75,12 +75,19 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const handlePlansClick = () => {
     // If not on landing page, navigate to it first
     if (location !== '/') {
-      setLocation('/#pricing');
+      setLocation('/');
+      // Wait for navigation and DOM update, then scroll
+      setTimeout(() => {
+        const subscriptionsSection = document.getElementById('subscriptions');
+        if (subscriptionsSection) {
+          subscriptionsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     } else {
       // Already on landing, just scroll
-      const pricingSection = document.getElementById('pricing');
-      if (pricingSection) {
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
+      const subscriptionsSection = document.getElementById('subscriptions');
+      if (subscriptionsSection) {
+        subscriptionsSection.scrollIntoView({ behavior: 'smooth' });
       }
     }
   };

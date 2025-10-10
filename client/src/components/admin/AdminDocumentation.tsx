@@ -51,6 +51,7 @@ export function AdminDocumentation() {
 
               <h3>Deployment</h3>
               <ul>
+                <li><strong>Dominio Produzione:</strong> ciry.app</li>
                 <li><strong>Sviluppo:</strong> Replit (auto-reload, hot module replacement)</li>
                 <li><strong>Repository:</strong> GitHub (https://github.com/rubio105/credactive.git)</li>
                 <li><strong>Produzione:</strong> Hetzner VPS (IP: 157.180.21.147, porta 5000)</li>
@@ -58,24 +59,39 @@ export function AdminDocumentation() {
                 <li><strong>Build System:</strong> esbuild (backend) + Vite (frontend)</li>
               </ul>
 
+              <h3>Account di Test</h3>
+              <p><strong>Per testing in produzione:</strong></p>
+              <ul>
+                <li><strong>Admin:</strong> admin@ciry.app / AdminTest123! (tier: premium_plus, is_admin: true)</li>
+                <li><strong>User:</strong> user@ciry.app / UserTest123! (tier: free, is_admin: false)</li>
+              </ul>
+              <p className="text-sm text-yellow-600 dark:text-yellow-400">⚠️ Ricorda di cambiare/rimuovere questi account dopo il testing iniziale</p>
+
               <h3>Database Schema</h3>
               <p>Il database è gestito tramite <strong>Drizzle ORM</strong> con schema-first design in <code>shared/schema.ts</code>.</p>
               <p><strong>Tabelle principali:</strong></p>
               <ul>
                 <li><code>users</code> - Utenti (con dati Stripe, subscription status)</li>
+                <li><code>subscription_plans</code> - Piani abbonamento database-driven con limiti configurabili</li>
                 <li><code>categories</code> - Categorie quiz (con immagini)</li>
-                <li><code>quizzes</code> - Quiz con timer e rotation control</li>
+                <li><code>quizzes</code> - Quiz con timer, rotation control, e gaming_enabled</li>
                 <li><code>questions</code> - Domande (JSONB options, immagini, audio)</li>
                 <li><code>user_progress</code> - Avanzamento quiz utenti</li>
                 <li><code>reports</code> - Report personalità (JSONB data)</li>
                 <li><code>quiz_generation_jobs</code> - Job AI generation tracking</li>
-                <li><code>live_courses</code> - Corsi live acquistabili</li>
+                <li><code>live_courses</code> - Corsi live acquistabili (con flag isWebinarHealth)</li>
                 <li><code>live_sessions</code> - Sessioni streaming WebSocket</li>
                 <li><code>content_pages</code> - CMS pagine statiche</li>
                 <li><code>email_templates</code> - Template email customizzabili</li>
                 <li><code>settings</code> - Configurazione app (API keys, ecc.)</li>
                 <li><code>corporate_agreements</code> - Contratti B2B</li>
                 <li><code>corporate_licenses</code> - Licenze aziendali</li>
+                <li><code>prevention_documents</code> - Documenti medici prevenzione</li>
+                <li><code>triage_sessions</code> - Sessioni AI conversazione prevenzione</li>
+                <li><code>triage_messages</code> - Messaggi chat AI prevenzione</li>
+                <li><code>crossword_puzzles</code> - Cruciverba AI-generated con quiz_id</li>
+                <li><code>health_scores</code> - Punteggi salute utenti con AI insights</li>
+                <li><code>prohmed_codes</code> - Codici accesso telemedicina Prohmed</li>
               </ul>
 
               <h3>API Endpoints Principali</h3>
@@ -85,8 +101,16 @@ export function AdminDocumentation() {
                 <li><code>GET /api/categories-with-quizzes</code> - Categorie + quiz</li>
                 <li><code>POST /api/quizzes/:id/start</code> - Inizia quiz</li>
                 <li><code>POST /api/quizzes/:id/submit</code> - Submit risposte</li>
+                <li><code>POST /api/quizzes/:id/generate-crossword</code> - Genera cruciverba AI (max 3/giorno)</li>
+                <li><code>GET /api/subscription-plans</code> - Piani abbonamento da database</li>
                 <li><code>POST /api/checkout</code> - Checkout Stripe</li>
                 <li><code>POST /api/webhook</code> - Webhook Stripe</li>
+                <li><code>POST /api/contact</code> - Form contatti → support@ciry.app</li>
+                <li><code>POST /api/triage/start</code> - Avvia chat AI prevenzione</li>
+                <li><code>POST /api/triage/message</code> - Invia messaggio chat AI</li>
+                <li><code>GET /api/prevention/index</code> - Indice prevenzione utente</li>
+                <li><code>POST /api/health-score/upload</code> - Upload referto medico con OCR</li>
+                <li><code>GET /api/webinar-health</code> - Lista webinar salute (pubblico)</li>
                 <li><code>POST /api/admin/questions/generate</code> - AI generation</li>
                 <li><code>POST /api/admin/marketing/send-campaign</code> - Email marketing</li>
                 <li><code>WebSocket /v2</code> - Live streaming chat</li>
@@ -391,9 +415,48 @@ VITE_GOOGLE_ANALYTICS_ID=G-...`}
                 <li>Credit system con preservazione</li>
               </ul>
 
+              <h4>🏥 Sistema Prevenzione & Salute</h4>
+              <ul>
+                <li><strong>AI Prevention Chat:</strong> Conversazione AI powered by Gemini per prevenzione salute</li>
+                <li><strong>Prevention Index:</strong> Indice engagement utente (0-100) con design circolare migliorato, badge emoji (🏆/⭐/🌱), e 5 progress bar colorate</li>
+                <li><strong>Health Score:</strong> Upload referto medico (PDF/immagini) con OCR Gemini Vision, anonymizzazione PII, e scoring AI</li>
+                <li><strong>Webinar Health:</strong> Sistema webinar gratuiti per formazione prevenzione con flag isWebinarHealth, enrollment email automatiche, reminder 24h</li>
+                <li><strong>Prohmed Integration:</strong> Codici accesso telemedicina con generazione bulk admin</li>
+              </ul>
+
+              <h4>🎮 Quiz Gaming & Crossword</h4>
+              <ul>
+                <li><strong>Crossword Gaming:</strong> Admin abilita gaming per quiz, genera cruciverba AI (Gemini) con 5-30 soluzioni</li>
+                <li><strong>Daily Limits:</strong> Utenti generano max 3 cruciverba/quiz/giorno</li>
+                <li><strong>Real-time Feedback:</strong> Risposte validate in tempo reale (verde=corretto, rosso=errato)</li>
+                <li><strong>Timer & Leaderboard:</strong> Timer MM:SS auto-start, punteggi salvati</li>
+              </ul>
+
+              <h4>💎 Token Usage System</h4>
+              <ul>
+                <li><strong>FREE:</strong> 120 AI tokens/mese</li>
+                <li><strong>PREMIUM:</strong> 1000 AI tokens/mese</li>
+                <li><strong>PREMIUM PLUS:</strong> Token illimitati</li>
+                <li><strong>UI Display:</strong> Barra progresso, upgrade CTA, controllo dual-check (frontend + backend)</li>
+              </ul>
+
+              <h4>📋 Subscription Plans Database-Driven</h4>
+              <ul>
+                <li><strong>Admin CRUD:</strong> Gestione piani subscription direttamente da database con AI-powered feature formatting (GPT-4o-mini)</li>
+                <li><strong>Limiti Configurabili:</strong> maxCoursesPerMonth, maxQuizGamingPerWeek, aiTokensPerMonth (valore -1 = illimitato)</li>
+                <li><strong>Features Boolean:</strong> includesWebinarHealth, includesProhmedSupport</li>
+                <li><strong>UI Dinamica:</strong> Subscribe page fetcha piani dal database, rendering automatico prezzi con Intl.NumberFormat</li>
+              </ul>
+
+              <h4>📧 Form Contatti</h4>
+              <ul>
+                <li><strong>Email Delivery:</strong> POST /api/contact invia a support@ciry.app via Brevo</li>
+                <li><strong>Validazione:</strong> Campi obbligatori, privacy consent, rate limiting</li>
+              </ul>
+
               <h4>🔧 Configurazione Avanzata</h4>
               <ul>
-                <li><strong>API Keys:</strong> Gestione sicura con caching, auto-instance reset</li>
+                <li><strong>API Keys:</strong> Gestione sicura con caching, auto-instance reset (OpenAI, Gemini, Stripe, Brevo)</li>
                 <li><strong>Email Templates:</strong> Customizzazione con dynamic variables, preview, fallback</li>
                 <li><strong>Settings:</strong> Configurazione globale app</li>
               </ul>

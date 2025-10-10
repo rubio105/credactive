@@ -2068,6 +2068,59 @@ Restituisci SOLO un JSON con:
     }
   });
 
+  // Admin - Generate crossword puzzle for quiz (Gaming feature)
+  app.post('/api/admin/quizzes/:quizId/generate-crossword', isAdmin, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { quizId } = req.params;
+      const { solutionsCount, difficulty } = req.body;
+
+      // Get quiz details
+      const quiz = await storage.getQuizById(quizId);
+      if (!quiz) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      // Use quiz difficulty if not provided
+      const crosswordDifficulty = difficulty || quiz.difficulty;
+      
+      // Map quiz difficulty to crossword difficulty format
+      let difficultyLevel: 'easy' | 'medium' | 'hard' = 'medium';
+      if (crosswordDifficulty === 'beginner') difficultyLevel = 'easy';
+      else if (crosswordDifficulty === 'intermediate') difficultyLevel = 'medium';
+      else if (['advanced', 'expert'].includes(crosswordDifficulty)) difficultyLevel = 'hard';
+
+      // Generate crossword with Gemini AI using quiz title as topic
+      const crosswordData = await generateCrosswordPuzzle(quiz.title, difficultyLevel);
+
+      // Create crossword puzzle linked to the quiz
+      const puzzle = await storage.createCrosswordPuzzle({
+        quizId,
+        title: `${quiz.title} - Cruciverba`,
+        topic: quiz.title,
+        difficulty: difficultyLevel,
+        cluesData: crosswordData.clues,
+        gridData: crosswordData.grid,
+        isWeeklyChallenge: false,
+        weekNumber: null,
+        weekYear: null,
+        createdById: user.id,
+        isActive: true,
+      });
+
+      // Update quiz to enable gaming and set solutions count
+      await storage.updateQuiz(quizId, {
+        gamingEnabled: true,
+        crosswordSolutionsCount: solutionsCount || crosswordData.clues.length,
+      });
+
+      res.json({ puzzle, quiz: { ...quiz, gamingEnabled: true, crosswordSolutionsCount: solutionsCount || crosswordData.clues.length } });
+    } catch (error: any) {
+      console.error('Generate quiz crossword error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate crossword for quiz' });
+    }
+  });
+
   // Admin - Get all questions (must be before :id route)
   app.get('/api/admin/questions', isAdmin, async (req, res) => {
     try {

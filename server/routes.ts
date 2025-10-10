@@ -1093,7 +1093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Define token limits based on subscription tier
       const TOKEN_LIMITS = {
-        free: 30,
+        free: 120,
         premium: 1000, // High limit for premium
         premium_plus: -1, // Unlimited (-1 means no limit)
       };
@@ -6816,7 +6816,7 @@ Le risposte DEVONO essere in italiano.`;
       if (user?.id) {
         const tokenUsage = await storage.getOrCreateTokenUsage(user.id);
         const TOKEN_LIMITS = {
-          free: 30,
+          free: 120,
           premium: 1000,
           premium_plus: -1, // Unlimited
         };
@@ -6882,7 +6882,7 @@ Le risposte DEVONO essere in italiano.`;
         const actualTokens = Math.ceil((content.length + aiResponse.message.length) / 4);
         const tokenUsage = await storage.getOrCreateTokenUsage(user.id);
         const TOKEN_LIMITS = {
-          free: 30,
+          free: 120,
           premium: 1000,
           premium_plus: -1,
         };

@@ -77,7 +77,7 @@ export default function Landing() {
                   onClick={() => window.location.href = '/prevention'}
                   data-testid="button-ciry-chat"
                 >
-                  Chat CIRY
+                  Prova Ciry
                 </Button>
                 <Button 
                   size="lg"

@@ -64,6 +64,13 @@ export default function PreventionPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
+  // Richiedi registrazione per accedere alla prevenzione AI
+  useEffect(() => {
+    if (!user) {
+      setLocation('/login');
+    }
+  }, [user, setLocation]);
+
   const { data: latestAssessment, isLoading: assessmentLoading } = useQuery<LatestAssessment>({
     queryKey: ["/api/prevention/assessment/latest"],
     retry: false,

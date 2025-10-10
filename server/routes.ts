@@ -6091,6 +6091,21 @@ Explicación de audio:`
     }
   });
 
+  // ========== PREVENTION INDEX ROUTES ==========
+
+  // Get prevention index for current user (GET /api/prevention/index)
+  app.get('/api/prevention/index', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { getPreventionIndex } = await import('./preventionIndexService');
+      const indexData = await getPreventionIndex(user.id);
+      res.json(indexData);
+    } catch (error: any) {
+      console.error('Get prevention index error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get prevention index' });
+    }
+  });
+
   // ========== PREVENTION ASSESSMENT ROUTES ==========
 
   // Start new prevention assessment (POST /api/prevention/assessment/start)

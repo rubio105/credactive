@@ -41,7 +41,7 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 -   **Corporate Content Visibility System**: Granular access control for quizzes and courses based on user type.
 -   **AI Conversational Assistant**: Context-aware AI coaching system using OpenAI GPT-4o for scenario-based learning after quiz responses and personal development coaching.
 -   **Admin Documentation System**: In-platform documentation covering technical aspects, server commands, and user guides.
--   **Medical Prevention System (Prohmed Partnership)**: Comprehensive health prevention module powered by Google Gemini AI, featuring medical document upload/analysis, prevention topic taxonomy, AI-powered educational prevention assistant ("AI Prohmed - Impara la Prevenzione") publicly accessible, medical alert system, and Prohmed telemedicine app access code generation.
+-   **Medical Prevention System (Prohmed Partnership)**: Comprehensive health prevention module powered by Google Gemini AI, featuring medical document upload/analysis, prevention topic taxonomy, AI-powered educational prevention assistant ("AI Prohmed - Impara la Prevenzione") publicly accessible, medical alert system, and Prohmed telemedicine app access code generation. **UI Enhancement**: Prevention Index card features circular gradient score display (0-100), emoji badges (🏆 >80 "Champion", ⭐ 50-80 "Engaged", 🌱 <50 "Beginner"), animated rotating score visualization, and 5 color-coded progress bars for engagement metrics (documents uploaded, AI chats, alerts received, webinar enrollments, assessments). Assessment results display gradient headers and emoji-enhanced risk badges for improved UX.
 -   **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI, with difficulty levels, weekly challenges, leaderboard, and gamification rewards. **Quiz Gaming Integration** - admins can enable crossword gaming for any quiz via the admin panel, generating AI-powered crossword puzzles linked to quiz topics with customizable solution counts (5-30). Crossword puzzles are stored with quiz_id reference, and quizzes track gaming_enabled status and crossword_solutions_count. **Gaming Features** - Orange "Gaming" button appears in quiz cards when gaming is enabled, linking directly to crossword puzzle via SPA navigation. Crossword page includes real-time timer (MM:SS format) that auto-starts on load, stops on submission, and tracks elapsed time. Solutions are hidden from grid - users solve via input fields under clues to prevent cheating. **Real-Time Feedback System** - Answer fields provide instant visual feedback (green border/background for correct answers, red for incorrect) as users type, with solutions stored separately from grid for validation. **Daily Generation Limits** - Users can generate up to 3 crossword puzzles per quiz per day via user-friendly endpoint `/api/quizzes/:quizId/generate-crossword` with 24-hour rolling window tracking; returns HTTP 429 with Italian message and remaining attempts when limit reached.
 -   **Prohmed Code Management System**: Admin bulk code generation system for Prohmed telemedicine access with status tracking and distribution management.
 -   **Health Score System**: AI-powered personal health scoring system featuring medical report upload/analysis (PDF and images), Gemini Vision OCR, automatic PII anonymization, structured medical data extraction, health score calculation, AI-generated personalized health insights, and conversational AI integration.
@@ -50,12 +50,14 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 
 ## Deployment Architecture
 
+-   **Production Domain**: ciry.app
 -   **Development Environment**: Replit with auto-reload.
 -   **Version Control**: GitHub.
 -   **Production Server**: Hetzner VPS with PM2.
 -   **Database**: Neon PostgreSQL.
 -   **Build System**: esbuild (backend) + Vite (frontend).
 -   **Deployment Workflow**: Manual Git-based workflow.
+-   **Test Accounts for Production Validation**: admin@ciry.app (AdminTest123!, premium_plus tier), user@ciry.app (UserTest123!, free tier) - rotate/remove after initial deployment testing.
 
 # External Dependencies
 

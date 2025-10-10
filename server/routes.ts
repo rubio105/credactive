@@ -7266,7 +7266,17 @@ Le risposte DEVONO essere in italiano.`;
       if (!puzzle) {
         return res.status(404).json({ message: 'Puzzle not found' });
       }
-      res.json(puzzle);
+      
+      // Create empty grid with same dimensions (hide solutions from user)
+      const emptyGrid = (puzzle.gridData as any[][]).map((row: any[]) => 
+        row.map((cell: any) => cell ? '' : null)
+      );
+      
+      // Return puzzle with empty grid - solutions hidden
+      res.json({
+        ...puzzle,
+        gridData: emptyGrid
+      });
     } catch (error: any) {
       console.error('Get crossword puzzle error:', error);
       res.status(500).json({ message: error.message || 'Failed to get puzzle' });

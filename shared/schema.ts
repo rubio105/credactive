@@ -105,6 +105,9 @@ export const quizzes = pgTable("quizzes", {
   maxQuestionsPerAttempt: integer("max_questions_per_attempt"), // Optional: limit number of questions shown per attempt (null = all questions)
   documentPdfUrl: text("document_pdf_url"), // Optional: PDF document for AI question generation
   visibilityType: varchar("visibility_type", { length: 20 }).default("public"), // public, corporate_exclusive
+  // Gaming/Crossword features
+  gamingEnabled: boolean("gaming_enabled").default(false), // Enable crossword puzzle gaming for this quiz
+  crosswordSolutionsCount: integer("crossword_solutions_count"), // Number of solutions for AI-generated crossword
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -1469,6 +1472,9 @@ export type InsertProhmedCode = z.infer<typeof insertProhmedCodeSchema>;
 // Crossword Puzzles (AI-generated medical crosswords)
 export const crosswordPuzzles = pgTable("crossword_puzzles", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Quiz linking (optional - for quiz-specific crosswords)
+  quizId: uuid("quiz_id").references(() => quizzes.id, { onDelete: "cascade" }),
   
   title: varchar("title", { length: 200 }).notNull(),
   topic: varchar("topic", { length: 100 }).notNull(), // Medical topic

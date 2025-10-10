@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import PreventionAssessment from "@/components/PreventionAssessment";
 import prohmedLogo from "@assets/image_1760071152562.png";
+import ciryLogo from "@assets/image_1760068094229.png";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -366,15 +367,14 @@ export default function PreventionPage() {
 
         {/* Hero Section */}
         <div className="mb-8 text-center">
-          <p className="text-muted-foreground text-xl max-w-3xl mx-auto mb-6">
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <img src={ciryLogo} alt="CIRY" className="h-16" />
+            <span className="text-2xl font-semibold text-muted-foreground">by</span>
+            <img src={prohmedLogo} alt="Prohmed" className="h-16 object-contain" />
+          </div>
+          <p className="text-muted-foreground text-xl max-w-3xl mx-auto">
             Scopri strategie pratiche per la prevenzione con il nostro modello AI
           </p>
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 mb-4 shadow-lg">
-            <Shield className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-            AI Prohmed
-          </h1>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">

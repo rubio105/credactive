@@ -74,8 +74,11 @@ export default function PreventionPage() {
   const [showAttentionPointsDialog, setShowAttentionPointsDialog] = useState(false);
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
   const [attentionPointsData, setAttentionPointsData] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadResult, setUploadResult] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Prevention page is publicly accessible - both authenticated and anonymous users can use it
   // Anonymous users have limited features, authenticated users see token limits and personalized features
@@ -365,6 +368,80 @@ export default function PreventionPage() {
       });
     },
   });
+
+  // Upload Medical Report Mutation
+  const uploadReportMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('report', file);
+      formData.append('userConsent', 'true');
+      if (sessionId) {
+        formData.append('triageSessionId', sessionId);
+      }
+
+      const response = await fetch('/api/health-score/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Errore durante il caricamento');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setUploadResult(data);
+      setSelectedFile(null);
+      toast({ 
+        title: "Referto caricato con successo!", 
+        description: `Tipo: ${data.report?.reportType || 'N/A'} - PII rimossi: ${data.piiRemoved || 0}` 
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/health-score/latest'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante il caricamento del referto",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      toast({ 
+        title: "Formato non valido", 
+        description: "Usa solo PDF, JPG o PNG", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ 
+        title: "File troppo grande", 
+        description: "Il file deve essere max 10MB", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleUploadFile = () => {
+    if (!selectedFile) return;
+    uploadReportMutation.mutate(selectedFile);
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1104,28 +1181,83 @@ export default function PreventionPage() {
 
             <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
               <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-sm text-muted-foreground mb-2">
-                Trascina qui i tuoi file o clicca per selezionarli
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Formati supportati: PDF, JPG, PNG (max 10MB)
-              </p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => {
-                  if (!user) {
-                    toast({ title: "Accesso richiesto", description: "Effettua il login per caricare documenti", variant: "destructive" });
-                    return;
-                  }
-                  // TODO: implement file upload
-                  toast({ title: "Funzionalità in arrivo", description: "Upload documenti sarà disponibile a breve" });
-                }}
-                data-testid="button-select-files"
-              >
-                Seleziona File
-              </Button>
+              {!selectedFile ? (
+                <>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Clicca per selezionare il tuo referto medico
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Formati supportati: PDF, JPG, PNG (max 10MB)
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    data-testid="input-file-report"
+                  />
+                  <Button 
+                    variant="outline" 
+                    className="mt-2"
+                    onClick={() => {
+                      if (!user) {
+                        toast({ title: "Accesso richiesto", description: "Effettua il login per caricare documenti", variant: "destructive" });
+                        return;
+                      }
+                      fileInputRef.current?.click();
+                    }}
+                    data-testid="button-select-files"
+                  >
+                    Seleziona File
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium mb-2">{selectedFile.name}</p>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSelectedFile(null)}
+                      data-testid="button-cancel-file"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Annulla
+                    </Button>
+                    <Button 
+                      onClick={handleUploadFile}
+                      disabled={uploadReportMutation.isPending}
+                      data-testid="button-upload-file"
+                    >
+                      {uploadReportMutation.isPending ? "Caricamento..." : "Carica Referto"}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
+
+            {/* Upload Result */}
+            {uploadResult && (
+              <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                <Activity className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <AlertDescription className="ml-2">
+                  <p className="font-semibold text-green-900 dark:text-green-100 mb-2">
+                    ✅ Referto Elaborato con Successo
+                  </p>
+                  <div className="text-sm text-green-800 dark:text-green-200 space-y-1">
+                    <p><strong>Tipo:</strong> {uploadResult.report?.reportType || 'N/A'}</p>
+                    <p><strong>Dati PII rimossi:</strong> {uploadResult.piiRemoved || 0}</p>
+                    <p><strong>Confidenza OCR:</strong> {uploadResult.ocrConfidence || 0}%</p>
+                    {uploadResult.report?.aiSummary && (
+                      <p className="mt-2"><strong>Riepilogo:</strong> {uploadResult.report.aiSummary}</p>
+                    )}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </DialogContent>
       </Dialog>

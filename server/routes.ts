@@ -7328,17 +7328,29 @@ Le risposte DEVONO essere in italiano.`;
         row.map((cell: any) => cell ? '' : null)
       );
       
-      // Extract answers from clues for validation (but don't show in grid)
-      const cluesWithAnswers = (puzzle.cluesData as any[]).map((clue: any) => ({
+      // Keep clues with all data (row, col, direction) but WITHOUT showing answers in clue text
+      // The frontend needs these coordinates to map letters to grid cells
+      const cluesWithoutAnswersInText = (puzzle.cluesData as any[]).map((clue: any) => ({
         number: clue.number,
-        answer: clue.answer?.toUpperCase() || ''
+        clue: clue.clue,
+        direction: clue.direction,
+        row: clue.row,
+        col: clue.col,
+        answer: clue.answer?.toUpperCase() || '' // Keep for length and validation
       }));
       
-      // Return puzzle with empty grid - solutions hidden but answers available for validation
+      // Extract just answers for separate validation
+      const solutions = cluesWithoutAnswersInText.map((clue: any) => ({
+        number: clue.number,
+        answer: clue.answer
+      }));
+      
+      // Return puzzle with empty grid - solutions hidden but clues have all coordinates
       res.json({
         ...puzzle,
+        cluesData: cluesWithoutAnswersInText,
         gridData: emptyGrid,
-        solutions: cluesWithAnswers // For client-side validation only
+        solutions // For client-side validation only
       });
     } catch (error: any) {
       console.error('Get crossword puzzle error:', error);

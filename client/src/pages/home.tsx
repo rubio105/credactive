@@ -183,9 +183,16 @@ export default function Home() {
             <p className="text-muted-foreground">
               {t.subtitle}
             </p>
-            <p className="text-sm text-primary font-medium mt-2">
-              🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
-            </p>
+            <div className="flex items-center gap-3 mt-4">
+              <img 
+                src={prohmedLogo} 
+                alt="Prohmed Logo" 
+                className="h-16 w-16 object-contain"
+              />
+              <p className="text-sm text-primary font-medium">
+                🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
+              </p>
+            </div>
           </div>
           <Link href="/dashboard">
             <Button variant="outline" data-testid="button-view-dashboard">

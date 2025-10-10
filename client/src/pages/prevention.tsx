@@ -503,10 +503,11 @@ export default function PreventionPage() {
                   className="block"
                   data-testid="link-android-app"
                 >
-                  <Button variant="outline" className="w-full justify-start border-blue-200 hover:bg-blue-100 dark:border-blue-800 dark:hover:bg-blue-900">
-                    <Smartphone className="w-4 h-4 mr-2" />
-                    Scarica per Android
-                  </Button>
+                  <img 
+                    src="https://play.google.com/intl/en_us/badges/static/images/badges/it_badge_web_generic.png"
+                    alt="Disponibile su Google Play"
+                    className="h-14 w-auto hover:opacity-80 transition-opacity"
+                  />
                 </a>
                 <a 
                   href="https://apps.apple.com/it/app/prohmed/id6449252498" 
@@ -515,10 +516,11 @@ export default function PreventionPage() {
                   className="block"
                   data-testid="link-ios-app"
                 >
-                  <Button variant="outline" className="w-full justify-start border-blue-200 hover:bg-blue-100 dark:border-blue-800 dark:hover:bg-blue-900">
-                    <Smartphone className="w-4 h-4 mr-2" />
-                    Scarica per iOS
-                  </Button>
+                  <img 
+                    src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/it-it?size=250x83&releaseDate=1280620800"
+                    alt="Scarica su App Store"
+                    className="h-14 w-auto hover:opacity-80 transition-opacity"
+                  />
                 </a>
               </CardContent>
             </Card>

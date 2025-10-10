@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -337,17 +337,30 @@ export default function PreventionPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container py-8 max-w-7xl">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation('/home')}
+            className="gap-2"
+            data-testid="button-back-home"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Torna alla Home
+          </Button>
+        </div>
+
         {/* Hero Section */}
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 mb-4 shadow-lg">
+          <p className="text-muted-foreground text-xl max-w-3xl mx-auto mb-6">
+            Scopri strategie pratiche per la prevenzione con il nostro modello AI
+          </p>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 mb-4 shadow-lg">
             <Shield className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            AI Prohmed - Impara la Prevenzione
+          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+            AI Prohmed
           </h1>
-          <p className="text-muted-foreground text-xl max-w-3xl mx-auto">
-            Condividi il tuo caso personale e scopri strategie pratiche per la prevenzione con l'intelligenza artificiale
-          </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">

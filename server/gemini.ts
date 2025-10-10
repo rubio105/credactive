@@ -491,3 +491,155 @@ Respond with JSON in this exact format:
     throw new Error(`Failed to generate crossword puzzle: ${error}`);
   }
 }
+
+// ========== HEALTH SCORE SYSTEM - OCR & ANALYSIS ==========
+
+/**
+ * Extract text from medical report (PDF or image) using OCR
+ */
+export interface MedicalReportOCR {
+  extractedText: string;
+  reportType: string; // blood_test, radiology, cardiology, general, etc
+  detectedLanguage: string; // it, en, es
+  issuer?: string; // Hospital/lab name
+  reportDate?: string; // ISO date string if detected
+  extractedValues: Record<string, any>; // Medical values like {glucose: 95, cholesterol: 180}
+  medicalKeywords: string[]; // Relevant keywords for search
+  summary: string; // Brief AI summary
+  confidence: number; // 0-100 OCR confidence
+}
+
+export async function extractTextFromMedicalReport(
+  filePath: string,
+  mimeType: string
+): Promise<MedicalReportOCR> {
+  try {
+    let extractedText = "";
+    
+    // Handle PDF files
+    if (mimeType === "application/pdf") {
+      const pdfBuffer = fs.readFileSync(filePath);
+      // @ts-ignore - pdf-parse has default export in runtime but not in types
+      const pdfParse = (await import('pdf-parse')).default;
+      const pdfData = await pdfParse(pdfBuffer);
+      extractedText = pdfData.text;
+      console.log("[Gemini] PDF text extracted:", extractedText.length, "characters");
+    }
+    // Handle images (JPEG, PNG) with Gemini Vision OCR
+    else if (mimeType.startsWith("image/")) {
+      const imageBytes = fs.readFileSync(filePath);
+      
+      const ocrPrompt = `Extract ALL text from this medical report image using OCR.
+      
+IMPORTANT REQUIREMENTS:
+- Extract EVERY piece of text visible in the image
+- Preserve the exact structure and formatting
+- Include patient data, test names, values, units, reference ranges
+- Include headers, footers, hospital/lab names, dates
+- If text is unclear, include it with [?] marker
+- Return the complete raw text as it appears
+
+Respond ONLY with the extracted text, no additional commentary.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{
+          role: "user",
+          parts: [
+            {
+              inlineData: {
+                data: imageBytes.toString("base64"),
+                mimeType,
+              },
+            },
+            { text: ocrPrompt }
+          ]
+        }],
+      });
+
+      extractedText = response.text || "";
+      console.log("[Gemini] Image OCR completed:", extractedText.length, "characters");
+    } else {
+      throw new Error(`Unsupported file type: ${mimeType}`);
+    }
+
+    if (!extractedText || extractedText.trim().length < 10) {
+      throw new Error("No text could be extracted from the medical report");
+    }
+
+    // Analyze extracted text with Gemini to structure medical data
+    const analysisPrompt = `Analyze this medical report text and extract structured information.
+
+Medical Report Text:
+${extractedText}
+
+Extract the following information:
+1. Report type (blood_test, radiology, cardiology, ultrasound, mri, ct_scan, ecg, urinalysis, general, other)
+2. Detected language (it, en, es)
+3. Hospital/lab name if visible
+4. Report date if visible (ISO format YYYY-MM-DD)
+5. Medical values as key-value pairs (e.g., glucose: 95, cholesterol: 180)
+6. Medical keywords for search (max 15 keywords)
+7. Brief summary (2-3 sentences in Italian)
+8. OCR confidence (0-100 based on text clarity)
+
+Respond with JSON in this exact format:
+{
+  "reportType": "blood_test",
+  "detectedLanguage": "it",
+  "issuer": "Hospital/Lab Name or null",
+  "reportDate": "2024-03-15 or null",
+  "extractedValues": {"param1": value1, "param2": value2},
+  "medicalKeywords": ["keyword1", "keyword2", ...],
+  "summary": "brief summary in Italian",
+  "confidence": 85
+}`;
+
+    const analysisResponse = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            reportType: { type: "string" },
+            detectedLanguage: { type: "string" },
+            issuer: { type: "string" },
+            reportDate: { type: "string" },
+            extractedValues: { type: "object" },
+            medicalKeywords: { type: "array", items: { type: "string" } },
+            summary: { type: "string" },
+            confidence: { type: "number" },
+          },
+          required: ["reportType", "detectedLanguage", "summary", "confidence"],
+        },
+      },
+      contents: [{ role: "user", parts: [{ text: analysisPrompt }] }],
+    });
+
+    const analysisJson = analysisResponse.text;
+    if (!analysisJson) {
+      throw new Error("Empty analysis response from Gemini");
+    }
+
+    const analysis = JSON.parse(analysisJson);
+    
+    const result: MedicalReportOCR = {
+      extractedText,
+      reportType: analysis.reportType || "general",
+      detectedLanguage: analysis.detectedLanguage || "it",
+      issuer: analysis.issuer || undefined,
+      reportDate: analysis.reportDate || undefined,
+      extractedValues: analysis.extractedValues || {},
+      medicalKeywords: analysis.medicalKeywords || [],
+      summary: analysis.summary,
+      confidence: analysis.confidence || 70,
+    };
+
+    console.log("[Gemini] Medical report OCR completed:", result.reportType, result.confidence + "% confidence");
+    return result;
+  } catch (error) {
+    console.error("[Gemini] Failed to extract text from medical report:", error);
+    throw new Error(`Failed to extract text from medical report: ${error}`);
+  }
+}

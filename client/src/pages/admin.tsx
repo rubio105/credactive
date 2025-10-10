@@ -84,7 +84,7 @@ export default function AdminPage() {
             Torna alla Home
           </Link>
           <h2 className="text-xl font-bold mt-4">Admin Panel</h2>
-          <p className="text-sm text-muted-foreground mt-1">CREDACTIVE ACADEMY</p>
+          <p className="text-sm text-muted-foreground mt-1">CIRY</p>
         </div>
         
         <nav className="flex-1 p-4 overflow-y-auto">

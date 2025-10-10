@@ -1,6 +1,6 @@
 # Overview
 
-CREDACTIVE ACADEMY is an online platform for professional certification preparation, offering quizzes, progress tracking, reports, and premium content via a Stripe subscription. The platform aims to be a leader in professional certifications, planning to leverage AI for generating over 1,000,000 quiz questions across various domains like Cybersecurity, Compliance & Governance, Business & Innovation, and Leadership & Assessment.
+CIRY (Care & Intelligence Ready for You) is an innovative B2B platform that unites health prevention and cybersecurity education. The platform combines professional certification preparation (quizzes, progress tracking, reports, premium content via Stripe) with AI-powered health prevention systems. It aims to be a leader in dual-domain education, leveraging AI for generating over 1,000,000 quiz questions across Cybersecurity, Compliance & Governance domains, plus comprehensive health prevention through conversational AI and medical document analysis.
 
 # User Preferences
 

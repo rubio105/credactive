@@ -14,12 +14,12 @@ export function SEO({
   title,
   description,
   keywords,
-  ogImage = 'https://credactive.academy/attached_assets/image_1759658677025.png',
+  ogImage = 'https://credactive.academy/attached_assets/image_1760060236448.png',
   ogType = 'website',
   canonicalUrl,
   noIndex = false,
 }: SEOProps) {
-  const fullTitle = `${title} | CREDACTIVE Academy`;
+  const fullTitle = `${title} | CIRY`;
   const url = canonicalUrl || `https://credactive.academy${window.location.pathname}`;
 
   return (
@@ -35,7 +35,7 @@ export function SEO({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={ogImage} />
-      <meta property="og:site_name" content="CREDACTIVE Academy" />
+      <meta property="og:site_name" content="CIRY" />
       
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />

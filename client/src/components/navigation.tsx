@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2 } from "lucide-react";
-import logoImage from "@assets/image_1759658677025.png";
+import logoImage from "@assets/image_1760060236448.png";
 
 interface User {
   id: string;
@@ -74,7 +74,7 @@ export default function Navigation() {
             <div className="flex items-center cursor-pointer" data-testid="logo">
               <img 
                 src={logoImage} 
-                alt="CREDACTIVE" 
+                alt="CIRY" 
                 className="h-12 w-auto object-contain"
               />
             </div>

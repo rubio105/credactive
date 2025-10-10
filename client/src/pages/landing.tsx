@@ -39,9 +39,9 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <SEO 
-        title="Certificazioni Cybersecurity Online - Quiz CISSP, CISM, ISO 27001"
-        description="Preparati per certificazioni cybersecurity con oltre 1.000.000 di domande professionali. Quiz CISSP, CISM, OSCP, ISO 27001, GDPR, NIS2, DORA. Corsi live con esperti e certificati riconosciuti. Inizia gratis oggi!"
-        keywords="certificazioni cybersecurity, CISSP online, CISM training, ISO 27001 corso, GDPR compliance, NIS2, DORA, OSCP preparazione, cybersecurity quiz, sicurezza informatica formazione, ethical hacking certificazione"
+        title="CIRY - Care & Intelligence Ready for You | Cybersecurity & Health Prevention"
+        description="CIRY unisce salute e sicurezza digitale. Certificazioni cybersecurity (CISSP, CISM, ISO 27001) + AI per prevenzione sanitaria. Oltre 1.000.000 di domande, corsi live e health reports personalizzati."
+        keywords="CIRY, cybersecurity certificazioni, CISSP online, CISM training, ISO 27001, prevenzione sanitaria AI, health report, medical AI, GDPR, NIS2, DORA, sicurezza informatica, intelligenza artificiale salute"
         canonicalUrl="https://credactive.academy"
       />
       <Navigation />
@@ -62,22 +62,22 @@ export default function Landing() {
             <div className="space-y-6 fade-in">
               <Badge className="bg-white/10 backdrop-blur-sm text-white border-white/20" data-testid="badge-hero">
                 <Star className="w-4 h-4 mr-2 text-warning" />
-                Piattaforma #1 per Certificazioni Professionali
+                Care & Intelligence Ready for You
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Prepara le tue <span className="text-accent">Certificazioni</span> con Quiz e Corsi Professionali
+                La formazione che unisce <span className="text-accent">Salute</span> e <span className="text-accent">Sicurezza Digitale</span>
               </h1>
               <p className="text-lg md:text-xl text-white/90">
-                Quiz professionali e corsi completi per la tua formazione. Oltre 1.000.000 di domande, 10 categorie e certificati di completamento. Cybersecurity (CISSP, CISM, OSCP), Compliance (ISO 27001, GDPR, NIS2, DORA), Business (Open Innovation, Bilancio) e Leadership.
+                CIRY combina certificazioni cybersecurity professionali (CISSP, CISM, ISO 27001) con AI per la prevenzione sanitaria. Oltre 1.000.000 di domande, corsi live, health reports personalizzati e assistente AI per la tua salute.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
                   size="lg"
                   className="bg-white text-secondary hover:bg-white/90 shadow-xl text-lg px-8 py-4 h-auto"
                   onClick={() => window.location.href = '/prevention'}
-                  data-testid="button-start-free"
+                  data-testid="button-ciry-chat"
                 >
-                  Prova AI Prohmed Gratis
+                  Chat CIRY
                 </Button>
                 <Button 
                   size="lg"

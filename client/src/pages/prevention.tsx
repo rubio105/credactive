@@ -65,12 +65,8 @@ export default function PreventionPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // Richiedi registrazione per accedere alla prevenzione AI
-  useEffect(() => {
-    if (!user) {
-      setLocation('/login');
-    }
-  }, [user, setLocation]);
+  // Prevention page is publicly accessible - both authenticated and anonymous users can use it
+  // Anonymous users have limited features, authenticated users see token limits and personalized features
 
   const { data: latestAssessment, isLoading: assessmentLoading } = useQuery<LatestAssessment>({
     queryKey: ["/api/prevention/assessment/latest"],
@@ -356,7 +352,7 @@ export default function PreventionPage() {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => setLocation('/home')}
+            onClick={() => setLocation('/')}
             className="gap-2"
             data-testid="button-back-home"
           >
@@ -375,8 +371,8 @@ export default function PreventionPage() {
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
             AI Assistente Prevenzione
           </h1>
-          <p className="text-muted-foreground text-xl max-w-3xl mx-auto">
-            Scopri strategie pratiche per la prevenzione con il nostro modello AI
+          <p className="text-muted-foreground text-lg max-w-4xl mx-auto leading-relaxed">
+            Guidati da esperti riconosciuti a livello nazionale e internazionale, offriamo una piattaforma interattiva dedicata ad aziende e professionisti che vogliono eccellere nelle certificazioni di Cybersecurity, Compliance, AI Security, Leadership e guida alla prevenzione medica intelligente con il supporto di AI avanzata.
           </p>
         </div>
 

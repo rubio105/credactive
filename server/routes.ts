@@ -2302,7 +2302,6 @@ Restituisci SOLO un JSON con:
         .select({
           id: liveCourseSessions.id,
           liveCourseId: liveCourseSessions.courseId,
-          title: liveCourseSessions.title,
           startDate: liveCourseSessions.startDate,
           endDate: liveCourseSessions.endDate,
           capacity: liveCourseSessions.capacity,

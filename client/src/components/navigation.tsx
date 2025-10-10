@@ -95,14 +95,14 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   return (
     <nav className="bg-card shadow-sm border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-24 py-2">
           {/* Logo */}
           <Link href="/">
             <div className="flex items-center cursor-pointer" data-testid="logo">
               <img 
                 src={logoImage} 
                 alt="CIRY" 
-                className="h-20 w-auto object-contain"
+                className="h-20 w-auto object-contain my-2"
               />
             </div>
           </Link>

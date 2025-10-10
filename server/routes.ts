@@ -6321,20 +6321,31 @@ Explicación de audio:`
   // Get all triage alerts (GET /api/triage/alerts) - ADMIN ONLY
   app.get('/api/triage/alerts', isAdmin, async (req, res) => {
     try {
-      const alerts = await storage.getAllTriageAlerts();
+      const alertsWithDetails = await storage.getAllTriageAlertsWithDetails();
       
-      // Map backend fields to frontend expectations
-      const mappedAlerts = alerts.map(alert => ({
-        id: alert.id,
-        sessionId: alert.sessionId,
-        urgencyLevel: alert.urgencyLevel,
-        suggestedAction: `${alert.alertType}: ${alert.reason}`, // Combine alertType + reason
-        isResolved: alert.isReviewed, // Map isReviewed → isResolved
-        resolvedAt: alert.reviewedAt,
-        createdAt: alert.createdAt,
-      }));
+      // Map to frontend format with all needed information
+      const enrichedAlerts = alertsWithDetails.map((alertData) => {
+        const user = alertData.user;
+        const userInfo = user ? {
+          userId: user.id,
+          userEmail: user.email,
+          userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+        } : { userId: null, userEmail: 'Utente Anonimo', userName: 'Anonimo' };
+
+        return {
+          id: alertData.id,
+          sessionId: alertData.sessionId,
+          urgencyLevel: alertData.urgencyLevel,
+          suggestedAction: `${alertData.alertType}: ${alertData.reason}`,
+          isResolved: alertData.isReviewed,
+          resolvedAt: alertData.reviewedAt,
+          createdAt: alertData.createdAt,
+          initialSymptom: alertData.session?.initialSymptom || 'N/A',
+          userInfo,
+        };
+      });
       
-      res.json(mappedAlerts);
+      res.json(enrichedAlerts);
     } catch (error: any) {
       console.error('Get all triage alerts error:', error);
       res.status(500).json({ message: error.message || 'Failed to fetch alerts' });

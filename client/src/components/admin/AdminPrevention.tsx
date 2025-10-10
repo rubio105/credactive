@@ -42,6 +42,12 @@ interface TriageAlert {
   isResolved: boolean;
   resolvedAt?: string;
   createdAt: string;
+  initialSymptom?: string;
+  userInfo?: {
+    userId: string | null;
+    userEmail: string;
+    userName: string;
+  };
 }
 
 export function AdminPrevention() {
@@ -232,32 +238,41 @@ export function AdminPrevention() {
             <CardDescription>Marca topics che richiedono referral medico</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome Topic</TableHead>
-                  <TableHead>Sensibile</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {topics?.map((topic) => (
-                  <TableRow key={topic.id} data-testid={`row-topic-${topic.id}`}>
-                    <TableCell className="font-medium">{topic.name}</TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={topic.isSensitive}
-                        onCheckedChange={(checked) => 
-                          toggleTopicSensitiveMutation.mutate({ id: topic.id, isSensitive: checked })
-                        }
-                        data-testid={`switch-sensitive-${topic.id}`}
-                      />
-                    </TableCell>
-                    <TableCell>{new Date(topic.createdAt).toLocaleDateString()}</TableCell>
+            {!topics || topics.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">Nessun topic trovato</p>
+                <p className="text-sm mt-2">I topics vengono creati automaticamente quando carichi documenti medici.</p>
+                <p className="text-sm">L'AI estrae i topics dai documenti e li aggiunge qui.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome Topic</TableHead>
+                    <TableHead>Sensibile</TableHead>
+                    <TableHead>Data Creazione</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {topics?.map((topic) => (
+                    <TableRow key={topic.id} data-testid={`row-topic-${topic.id}`}>
+                      <TableCell className="font-medium">{topic.name}</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={topic.isSensitive}
+                          onCheckedChange={(checked) => 
+                            toggleTopicSensitiveMutation.mutate({ id: topic.id, isSensitive: checked })
+                          }
+                          data-testid={`switch-sensitive-${topic.id}`}
+                        />
+                      </TableCell>
+                      <TableCell>{new Date(topic.createdAt).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </TabsContent>
@@ -269,47 +284,66 @@ export function AdminPrevention() {
             <CardDescription>Review situazioni che richiedono attenzione medica</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Urgenza</TableHead>
-                  <TableHead>Azione Suggerita</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {alerts?.map((alert) => (
-                  <TableRow key={alert.id} data-testid={`row-alert-${alert.id}`}>
-                    <TableCell>
-                      <Badge variant={alert.urgencyLevel === 'high' ? 'destructive' : 'default'}>
-                        {alert.urgencyLevel}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{alert.suggestedAction}</TableCell>
-                    <TableCell>
-                      <Badge variant={alert.isResolved ? 'secondary' : 'default'}>
-                        {alert.isResolved ? 'Risolto' : 'Aperto'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(alert.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      {!alert.isResolved && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => resolveAlertMutation.mutate(alert.id)}
-                          data-testid={`button-resolve-${alert.id}`}
-                        >
-                          Risolvi
-                        </Button>
-                      )}
-                    </TableCell>
+            {!alerts || alerts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">Nessun alert presente</p>
+                <p className="text-sm mt-2">Gli alert vengono generati quando l'AI identifica situazioni critiche nelle conversazioni.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Utente</TableHead>
+                    <TableHead>Sintomo Iniziale</TableHead>
+                    <TableHead>Urgenza</TableHead>
+                    <TableHead>Azione Suggerita</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Azioni</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {alerts?.map((alert) => (
+                    <TableRow key={alert.id} data-testid={`row-alert-${alert.id}`}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{alert.userInfo?.userName || 'Anonimo'}</span>
+                          <span className="text-xs text-muted-foreground">{alert.userInfo?.userEmail || 'N/A'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {alert.initialSymptom || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={alert.urgencyLevel === 'high' ? 'destructive' : 'default'}>
+                          {alert.urgencyLevel}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-sm">{alert.suggestedAction}</TableCell>
+                      <TableCell>
+                        <Badge variant={alert.isResolved ? 'secondary' : 'default'}>
+                          {alert.isResolved ? 'Risolto' : 'Aperto'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(alert.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {!alert.isResolved && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => resolveAlertMutation.mutate(alert.id)}
+                            data-testid={`button-resolve-${alert.id}`}
+                          >
+                            Risolvi
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </TabsContent>

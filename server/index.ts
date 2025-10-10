@@ -105,6 +105,11 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Start job worker for async document processing
+  const { jobWorker } = await import("./jobWorker");
+  jobWorker.start();
+  console.log('[Job Worker] Background processing started');
+
   // Webinar reminder system - Check every hour for sessions starting in 24 hours
   setInterval(async () => {
     try {

@@ -7681,7 +7681,7 @@ Le risposte DEVONO essere in italiano.`;
 
   // ========== HEALTH SCORE ROUTES ==========
 
-  // Upload and analyze medical report (POST /api/health-score/upload)
+  // Upload and analyze medical report (POST /api/health-score/upload) - Async with Job Queue
   app.post('/api/health-score/upload', isAuthenticated, uploadMedicalReport.single('report'), async (req, res) => {
     try {
       const user = req.user as any;
@@ -7710,67 +7710,29 @@ Le risposte DEVONO essere in italiano.`;
         });
       }
 
-      // Step 1: Extract text from medical report (OCR)
-      const ocrResult = await extractTextFromMedicalReport(filePath, fileType);
-
-      // Step 2: Anonymize extracted text (PII removal)
-      const anonymizationResult = await anonymizeMedicalText(ocrResult.extractedText);
-
-      // Step 3: Advanced radiological analysis for medical images (X-ray, MRI, CT, Ultrasound)
-      let radiologicalAnalysis = null;
-      const reportTypeLower = (ocrResult.reportType || '').toLowerCase();
-      const isRadiologicalImage = fileType.startsWith('image/') && 
-        (reportTypeLower.includes('radiol') || 
-         reportTypeLower.includes('imaging') ||
-         reportTypeLower.includes('xray') ||
-         reportTypeLower.includes('mri') ||
-         reportTypeLower.includes('ct') ||
-         reportTypeLower.includes('tac') ||
-         reportTypeLower.includes('ecografia') ||
-         reportTypeLower.includes('ultrasound'));
-
-      if (isRadiologicalImage) {
-        try {
-          console.log('[Health Score] Performing advanced radiological analysis...');
-          const radiologyResult = await analyzeRadiologicalImage(filePath, fileType);
-          radiologicalAnalysis = radiologyResult;
-          console.log('[Health Score] Radiological analysis completed:', radiologyResult.imageType, radiologyResult.bodyPart);
-        } catch (radiologyError) {
-          console.error('[Health Score] Radiological analysis failed:', radiologyError);
-          // Continue without radiological analysis if it fails
-        }
-      }
-
-      // Step 4: Create health report record
-      const healthReport = await storage.createHealthReport({
+      // Create async job for document analysis
+      const job = await storage.createJob({
         userId: user.id,
-        triageSessionId: triageSessionId || null,
-        reportType: ocrResult.reportType,
-        fileName: req.file.originalname,
-        fileType: fileType,
-        fileSize: req.file.size,
-        filePath: `medical-reports/${path.basename(filePath)}`,
-        originalText: ocrResult.extractedText,
-        anonymizedText: anonymizationResult.anonymizedText,
-        detectedLanguage: ocrResult.detectedLanguage,
-        medicalKeywords: ocrResult.medicalKeywords,
-        extractedValues: ocrResult.extractedValues,
-        radiologicalAnalysis: radiologicalAnalysis || undefined,
-        aiSummary: ocrResult.summary,
-        issuer: ocrResult.issuer || null,
-        reportDate: ocrResult.reportDate ? new Date(ocrResult.reportDate) : null,
-        isAnonymized: true,
-        removedPiiTypes: anonymizationResult.removedPiiTypes,
-        userConsent: true,
+        jobType: 'medical_report_analysis',
+        status: 'pending',
+        priority: 5,
+        inputData: {
+          filePath,
+          fileType,
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          triageSessionId: triageSessionId || null,
+          userConsent: true,
+        },
       });
+
+      console.log('[Health Score] Created async job:', job.id);
 
       res.json({
         success: true,
-        reportId: healthReport.id,
-        report: healthReport,
-        ocrConfidence: ocrResult.confidence,
-        piiRemoved: anonymizationResult.piiCount,
-        hasRadiologicalAnalysis: radiologicalAnalysis !== null,
+        jobId: job.id,
+        message: 'Document uploaded successfully. Processing in background...',
+        estimatedTime: '5-10 seconds',
       });
     } catch (error: any) {
       console.error('Upload medical report error:', error);
@@ -7779,6 +7741,39 @@ Le risposte DEVONO essere in italiano.`;
         fs.unlinkSync(req.file.path);
       }
       res.status(500).json({ message: error.message || 'Failed to upload medical report' });
+    }
+  });
+
+  // Get job status (GET /api/health-score/jobs/:id)
+  app.get('/api/health-score/jobs/:id', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const jobId = req.params.id;
+
+      const job = await storage.getJobById(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
+
+      // Verify job belongs to user (security)
+      if (job.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      res.json({
+        id: job.id,
+        status: job.status,
+        progress: job.progress,
+        currentStep: job.currentStep,
+        errorMessage: job.errorMessage,
+        outputData: job.outputData,
+        createdAt: job.createdAt,
+        completedAt: job.completedAt,
+      });
+    } catch (error: any) {
+      console.error('Get job status error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get job status' });
     }
   });
 

@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2 } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail } from "lucide-react";
 import logoImageSmall from "@assets/image_1760060236448.png";
 import logoImageFull from "@assets/image_1760065574290.png";
 
@@ -43,6 +43,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const { user, isAuthenticated, isLoading } = useAuth();
   const typedUser = user as User;
   const logoImage = useLandingLogo ? logoImageFull : logoImageSmall;
+  const [location, setLocation] = useLocation();
 
   const { data: headerPages = [] } = useQuery<ContentPage[]>({
     queryKey: ["/api/content-pages"],
@@ -69,6 +70,19 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const getUserInitials = () => {
     const name = getUserName();
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handlePlansClick = () => {
+    // If not on landing page, navigate to it first
+    if (location !== '/') {
+      setLocation('/#pricing');
+    } else {
+      // Already on landing, just scroll
+      const pricingSection = document.getElementById('pricing');
+      if (pricingSection) {
+        pricingSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   };
 
   return (
@@ -121,7 +135,20 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                   </Button>
                 </Link>
               </>
-            ) : null}
+            ) : (
+              <>
+                <Button variant="ghost" onClick={handlePlansClick} className="text-muted-foreground hover:text-foreground" data-testid="nav-plans">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  I Nostri Piani
+                </Button>
+                <Link href="/contatti">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-contact">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Contatti
+                  </Button>
+                </Link>
+              </>
+            )}
             {headerPages.map((page) => (
               <Link key={page.id} href={`/page/${page.slug}`}>
                 <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid={`nav-${page.slug}`}>

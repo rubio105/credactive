@@ -5,18 +5,23 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, MessageSquare, HelpCircle, Phone, MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Il nome deve contenere almeno 2 caratteri"),
   email: z.string().email("Email non valida"),
   subject: z.string().min(3, "L'oggetto deve contenere almeno 3 caratteri"),
   message: z.string().min(10, "Il messaggio deve contenere almeno 10 caratteri"),
+  privacy: z.boolean().refine(val => val === true, {
+    message: "Devi accettare la privacy policy per inviare il messaggio"
+  }),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
@@ -31,6 +36,7 @@ export default function Contatti() {
       email: "",
       subject: "",
       message: "",
+      privacy: false,
     },
   });
 
@@ -177,6 +183,36 @@ export default function Contatti() {
                         />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="privacy"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="checkbox-privacy"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Autorizzo il trattamento dei miei dati personali *
+                        </FormLabel>
+                        <FormDescription>
+                          Ho letto e accetto la{" "}
+                          <Link href="/page/privacy-policy">
+                            <span className="text-primary hover:underline cursor-pointer">
+                              Privacy Policy
+                            </span>
+                          </Link>
+                        </FormDescription>
+                        <FormMessage />
+                      </div>
                     </FormItem>
                   )}
                 />

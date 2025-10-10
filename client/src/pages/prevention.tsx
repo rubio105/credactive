@@ -10,6 +10,7 @@ import { Shield, Send, FileText, AlertTriangle, Download } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import PreventionAssessment from "@/components/PreventionAssessment";
 
 interface PreventionDocument {
   id: string;
@@ -32,16 +33,38 @@ interface TriageSession {
   hasAlert: boolean;
 }
 
+interface LatestAssessment {
+  id: string;
+  status: string;
+  score?: number;
+  riskLevel?: string;
+}
+
 export default function PreventionPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userInput, setUserInput] = useState("");
+  const [showAssessment, setShowAssessment] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { data: latestAssessment, isLoading: assessmentLoading } = useQuery<LatestAssessment>({
+    queryKey: ["/api/prevention/assessment/latest"],
+    retry: false,
+  });
 
   const { data: documents } = useQuery<PreventionDocument[]>({
     queryKey: ["/api/prevention/documents"],
   });
+
+  // Check if user needs to take assessment
+  useEffect(() => {
+    if (!assessmentLoading) {
+      if (!latestAssessment || latestAssessment.status !== 'completed') {
+        setShowAssessment(true);
+      }
+    }
+  }, [latestAssessment, assessmentLoading]);
 
   const { data: activeSession } = useQuery<TriageSession>({
     queryKey: ["/api/triage/session/active"],
@@ -100,6 +123,26 @@ export default function PreventionPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Show assessment if user hasn't completed it
+  if (showAssessment) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container py-8 max-w-7xl">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold mb-2">Hub Prevenzione Medica</h1>
+            <p className="text-muted-foreground">
+              Completa l'assessment per accedere alle risorse di prevenzione
+            </p>
+          </div>
+          <PreventionAssessment onComplete={() => {
+            setShowAssessment(false);
+            queryClient.invalidateQueries({ queryKey: ["/api/prevention/assessment/latest"] });
+          }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

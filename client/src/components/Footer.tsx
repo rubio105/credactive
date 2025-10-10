@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import logoImage from "@assets/image_1760068094229.png";
+import logoImage from "@assets/image_1760116137233.png";
 
 interface ContentPage {
   id: string;

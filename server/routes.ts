@@ -6346,8 +6346,8 @@ Explicación de audio:`
 
   // *** USER ENDPOINTS ***
   
-  // Start new triage session (POST /api/triage/start)
-  app.post('/api/triage/start', isAuthenticated, async (req, res) => {
+  // Start new triage session (POST /api/triage/start) - Public endpoint for educational access
+  app.post('/api/triage/start', async (req, res) => {
     try {
       const user = req.user as any;
       const { initialSymptom, language } = req.body;
@@ -6356,9 +6356,9 @@ Explicación de audio:`
         return res.status(400).json({ message: 'Initial symptom is required' });
       }
 
-      // Create triage session
+      // Create triage session (userId null for anonymous users)
       const session = await storage.createTriageSession({
-        userId: user.id,
+        userId: user?.id || null,
         status: 'active',
       });
 
@@ -6379,8 +6379,8 @@ Explicación de audio:`
         content: aiResponse.message,
       });
 
-      // Check for sensitive flags and create alerts
-      if (aiResponse.isSensitive || aiResponse.suggestDoctor) {
+      // Check for sensitive flags and create alerts (only for authenticated users)
+      if ((aiResponse.isSensitive || aiResponse.suggestDoctor) && user?.id) {
         await storage.createTriageAlert({
           userId: user.id,
           sessionId: session.id,
@@ -6418,8 +6418,8 @@ Explicación de audio:`
     }
   });
 
-  // Send message to triage session (POST /api/triage/:sessionId/message)
-  app.post('/api/triage/:sessionId/message', isAuthenticated, async (req, res) => {
+  // Send message to triage session (POST /api/triage/:sessionId/message) - Public endpoint for educational access
+  app.post('/api/triage/:sessionId/message', async (req, res) => {
     try {
       const user = req.user as any;
       const { content, language } = req.body;
@@ -6429,14 +6429,17 @@ Explicación de audio:`
         return res.status(400).json({ message: 'Message content is required' });
       }
 
-      // Verify session belongs to user
+      // Verify session exists
       const session = await storage.getTriageSessionById(sessionId);
       if (!session) {
         return res.status(404).json({ message: 'Session not found' });
       }
-      if (session.userId !== user.id) {
+      
+      // Verify session ownership (only for authenticated users with userId)
+      if (user?.id && session.userId && session.userId !== user.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
+      
       if (session.status === 'closed') {
         return res.status(400).json({ message: 'Session is closed' });
       }
@@ -6462,8 +6465,8 @@ Explicación de audio:`
         content: aiResponse.message,
       });
 
-      // Check for sensitive flags and create alerts
-      if (aiResponse.isSensitive || aiResponse.suggestDoctor) {
+      // Check for sensitive flags and create alerts (only for authenticated users)
+      if ((aiResponse.isSensitive || aiResponse.suggestDoctor) && user?.id) {
         await storage.createTriageAlert({
           userId: user.id,
           sessionId,

@@ -57,6 +57,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/corporate" component={CorporatePortal} />
       <Route path="/corporate/join/:token" component={CorporateJoin} />
+      <Route path="/prevention" component={Prevention} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
@@ -67,7 +68,6 @@ function Router() {
           <Route path="/corsi-on-demand" component={CorsiOnDemand} />
           <Route path="/corsi-on-demand/:courseId" component={CorsoOnDemand} />
           <Route path="/live-session/:sessionId" component={LiveSession} />
-          <Route path="/prevention" component={Prevention} />
         </>
       )}
       <Route path="/page/:slug" component={DynamicContentPage} />

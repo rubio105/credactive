@@ -74,10 +74,10 @@ export default function Landing() {
                 <Button 
                   size="lg"
                   className="bg-white text-secondary hover:bg-white/90 shadow-xl text-lg px-8 py-4 h-auto"
-                  onClick={() => window.location.href = '/register'}
+                  onClick={() => window.location.href = '/prevention'}
                   data-testid="button-start-free"
                 >
-                  Inizia Gratis
+                  Prova AI Prohmed Gratis
                 </Button>
                 <Button 
                   size="lg"

@@ -1245,7 +1245,7 @@ export type InsertPreventionTopic = z.infer<typeof insertPreventionTopicSchema>;
 // Medical Triage Sessions (conversational AI triage "Chiedi a Prohmed")
 export const triageSessions = pgTable("triage_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }), // Nullable for anonymous educational sessions
   
   // Session metadata
   title: varchar("title", { length: 200 }), // Auto-generated from first message

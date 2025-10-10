@@ -1406,11 +1406,11 @@ export const prohmedCodes = pgTable("prohmed_codes", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   code: varchar("code", { length: 50 }).notNull().unique(), // Generated access code
   
-  // User who earned/received the code
-  userId: varchar("user_id").notNull().references(() => users.id),
+  // User who earned/received the code (nullable until redeemed)
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
   
   // How the code was earned
-  source: varchar("source", { length: 50 }).notNull(), // full_plus_subscription, crossword_winner, prevention_completion
+  source: varchar("source", { length: 50 }).notNull().default("admin_bulk"), // full_plus_subscription, crossword_winner, admin_bulk
   sourceDetails: text("source_details"), // Additional context
   
   // Code status

@@ -471,6 +471,8 @@ export interface IStorage {
   
   // Prohmed code operations
   createProhmedCode(code: InsertProhmedCode): Promise<ProhmedCode>;
+  createProhmedCodesBulk(count: number, accessType: string, source?: string, expiresAt?: Date): Promise<ProhmedCode[]>;
+  getAllProhmedCodes(): Promise<ProhmedCode[]>;
   getProhmedCodeByCode(code: string): Promise<ProhmedCode | undefined>;
   getProhmedCodesByUser(userId: string): Promise<ProhmedCode[]>;
   updateProhmedCode(id: string, updates: Partial<ProhmedCode>): Promise<ProhmedCode>;
@@ -2903,6 +2905,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(prohmedCodes.code, code))
       .returning();
     return redeemedCode;
+  }
+
+  async createProhmedCodesBulk(count: number, accessType: string, source = 'admin_bulk', expiresAt?: Date): Promise<ProhmedCode[]> {
+    const codesToInsert = [];
+    for (let i = 0; i < count; i++) {
+      const code = `PROHMED-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      codesToInsert.push({
+        code,
+        userId: null, // No user assigned initially
+        source,
+        accessType,
+        status: 'active',
+        expiresAt: expiresAt || null,
+      });
+      // Small delay to ensure unique timestamps
+      await new Promise(resolve => setTimeout(resolve, 2));
+    }
+    
+    const newCodes = await db.insert(prohmedCodes).values(codesToInsert).returning();
+    return newCodes;
+  }
+
+  async getAllProhmedCodes(): Promise<ProhmedCode[]> {
+    return await db
+      .select()
+      .from(prohmedCodes)
+      .orderBy(desc(prohmedCodes.createdAt));
   }
 
   // ========== PREVENTION ASSESSMENT IMPLEMENTATIONS ==========

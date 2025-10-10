@@ -6684,6 +6684,45 @@ Explicación de audio:`
   });
 
   // ========== PROHMED CODES ROUTES ==========
+
+  // Get all Prohmed codes (GET /api/prohmed-codes) - ADMIN ONLY
+  app.get('/api/prohmed-codes', isAdmin, async (req, res) => {
+    try {
+      const codes = await storage.getAllProhmedCodes();
+      // Transform to match frontend expected format
+      const transformedCodes = codes.map(c => ({
+        id: c.id,
+        code: c.code,
+        type: c.accessType,
+        isRedeemed: c.status === 'redeemed',
+        redeemedById: c.userId,
+        redeemedAt: c.redeemedAt,
+        expiresAt: c.expiresAt,
+        createdAt: c.createdAt,
+      }));
+      res.json(transformedCodes);
+    } catch (error: any) {
+      console.error('Get all Prohmed codes error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get codes' });
+    }
+  });
+
+  // Generate Prohmed codes in bulk (POST /api/prohmed-codes/generate) - ADMIN ONLY
+  app.post('/api/prohmed-codes/generate', isAdmin, async (req, res) => {
+    try {
+      const { type, count } = req.body;
+
+      if (!type || !count || count < 1 || count > 100) {
+        return res.status(400).json({ message: 'Valid type and count (1-100) are required' });
+      }
+
+      const codes = await storage.createProhmedCodesBulk(count, type);
+      res.json({ success: true, count: codes.length, codes });
+    } catch (error: any) {
+      console.error('Generate Prohmed codes bulk error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate codes' });
+    }
+  });
   
   // Generate Prohmed code (POST /api/prohmed/codes/generate) - ADMIN ONLY
   app.post('/api/prohmed/codes/generate', isAdmin, async (req, res) => {

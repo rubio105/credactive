@@ -93,7 +93,7 @@ export default function PreventionPage() {
 
   const sendMessageMutation = useMutation({
     mutationFn: (message: string) =>
-      apiRequest(`/api/triage/${sessionId}/message`, "POST", { message }),
+      apiRequest(`/api/triage/${sessionId}/message`, "POST", { content: message }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/triage/session", sessionId] });

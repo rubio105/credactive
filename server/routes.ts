@@ -6347,7 +6347,7 @@ Explicación de audio:`
   // *** USER ENDPOINTS ***
   
   // Start new triage session (POST /api/triage/start) - Public endpoint for educational access
-  app.post('/api/triage/start', async (req, res) => {
+  app.post('/api/triage/start', aiGenerationLimiter, async (req, res) => {
     try {
       const user = req.user as any;
       const { initialSymptom, language } = req.body;
@@ -6419,7 +6419,7 @@ Explicación de audio:`
   });
 
   // Send message to triage session (POST /api/triage/:sessionId/message) - Public endpoint for educational access
-  app.post('/api/triage/:sessionId/message', async (req, res) => {
+  app.post('/api/triage/:sessionId/message', aiGenerationLimiter, async (req, res) => {
     try {
       const user = req.user as any;
       const { content, language } = req.body;

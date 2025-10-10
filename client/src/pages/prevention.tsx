@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +24,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface PreventionDocument {
   id: string;
@@ -62,6 +69,9 @@ export default function PreventionPage() {
   const [showAssessment, setShowAssessment] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
+  const [showAttentionPointsDialog, setShowAttentionPointsDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -717,6 +727,48 @@ export default function PreventionPage() {
                         </Button>
                       </div>
                     </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Strumenti di Prevenzione:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <Button
+                          variant="outline"
+                          className="border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-950 h-auto py-3"
+                          onClick={() => setShowUploadDialog(true)}
+                          data-testid="button-upload-documents"
+                        >
+                          <div className="flex flex-col items-center gap-1 w-full">
+                            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <span className="text-xs font-medium">Carica Documenti</span>
+                          </div>
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          className="border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-950 h-auto py-3"
+                          onClick={() => setShowPreventionPathDialog(true)}
+                          data-testid="button-generate-prevention-path"
+                        >
+                          <div className="flex flex-col items-center gap-1 w-full">
+                            <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            <span className="text-xs font-medium">Percorso Prevenzione</span>
+                          </div>
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          className="border-orange-200 hover:bg-orange-50 dark:border-orange-800 dark:hover:bg-orange-950 h-auto py-3"
+                          onClick={() => setShowAttentionPointsDialog(true)}
+                          data-testid="button-attention-points"
+                        >
+                          <div className="flex flex-col items-center gap-1 w-full">
+                            <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                            <span className="text-xs font-medium">Punti di Attenzione</span>
+                          </div>
+                        </Button>
+                      </div>
+                    </div>
                     
                     <div className="flex gap-2">
                       <div className="relative flex-1">
@@ -856,6 +908,131 @@ export default function PreventionPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Upload Documents Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              Carica Documenti Medici
+            </DialogTitle>
+            <DialogDescription>
+              Carica i tuoi referti medici per arricchire il tuo profilo di prevenzione
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-sm text-muted-foreground mb-2">
+                Trascina qui i tuoi file o clicca per selezionarli
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Formati supportati: PDF, JPG, PNG (max 10MB)
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => {
+                  if (!user) {
+                    toast({ title: "Accesso richiesto", description: "Effettua il login per caricare documenti", variant: "destructive" });
+                    return;
+                  }
+                  // TODO: implement file upload
+                  toast({ title: "Funzionalità in arrivo", description: "Upload documenti sarà disponibile a breve" });
+                }}
+                data-testid="button-select-files"
+              >
+                Seleziona File
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Prevention Path Dialog */}
+      <Dialog open={showPreventionPathDialog} onOpenChange={setShowPreventionPathDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+              Percorso di Prevenzione Personalizzato
+            </DialogTitle>
+            <DialogDescription>
+              Un piano di prevenzione su misura basato sul tuo profilo e le tue conversazioni
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {!user ? (
+              <Alert>
+                <AlertDescription>
+                  Effettua il login per generare il tuo percorso di prevenzione personalizzato
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="text-center py-8">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                  onClick={() => {
+                    // TODO: implement prevention path generation
+                    toast({ title: "Generazione in corso", description: "Il percorso personalizzato sarà disponibile a breve" });
+                  }}
+                  data-testid="button-generate-path"
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Genera Percorso
+                </Button>
+                <p className="text-sm text-muted-foreground mt-4">
+                  L'AI analizzerà il tuo profilo per creare un percorso di prevenzione personalizzato
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Attention Points Dialog */}
+      <Dialog open={showAttentionPointsDialog} onOpenChange={setShowAttentionPointsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              Analisi Punti di Attenzione
+            </DialogTitle>
+            <DialogDescription>
+              Scopri le aree di miglioramento e i punti su cui focalizzare la tua attenzione
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {!user ? (
+              <Alert>
+                <AlertDescription>
+                  Effettua il login per analizzare i tuoi punti di attenzione
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="text-center py-8">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                  onClick={() => {
+                    // TODO: implement attention points analysis
+                    toast({ title: "Analisi in corso", description: "L'analisi dei punti di attenzione sarà disponibile a breve" });
+                  }}
+                  data-testid="button-analyze-attention"
+                >
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Analizza Punti di Attenzione
+                </Button>
+                <p className="text-sm text-muted-foreground mt-4">
+                  L'AI identificherà le aree che richiedono maggiore attenzione nella tua prevenzione
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -204,6 +204,7 @@ export const liveCourses = pgTable("live_courses", {
   stripeProductId: varchar("stripe_product_id"),
   stripePriceId: varchar("stripe_price_id"),
   isActive: boolean("is_active").default(true),
+  isWebinarHealth: boolean("is_webinar_health").default(false), // Flag to identify Webinar Health courses
   visibilityType: varchar("visibility_type", { length: 20 }).default("public"), // public, corporate_exclusive
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

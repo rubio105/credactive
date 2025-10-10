@@ -202,8 +202,9 @@ export default function Home() {
       // Redirect to subscription page
       window.location.href = '/subscribe';
     } else {
-      // Start quiz directly with all questions configured by admin
-      const quiz = quizCategories.find(q => q.id === quizId);
+      // Search for quiz in ALL categories (featured + non-featured)
+      const allQuizzes = mapCategoriesToQuizCards(categoriesWithQuizzes);
+      const quiz = allQuizzes.find(q => q.id === quizId);
       if (quiz) {
         window.location.href = `/quiz/${quizId}?questions=${quiz.questionCount}`;
       } else {

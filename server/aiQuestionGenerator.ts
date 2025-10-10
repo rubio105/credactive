@@ -82,7 +82,9 @@ export async function generateQuestions(
   
   const languageName = languageNames[validatedLanguage];
   
-  const systemPrompt = certificationPrompts[category] || certificationPrompts['CISSP'];
+  // Use specific certification prompt if available, otherwise create a generic prompt based on quiz title
+  const systemPrompt = certificationPrompts[category] || 
+    `You are an expert educator and subject matter specialist in "${quizTitle}". Generate realistic, well-structured questions that accurately cover the key concepts, principles, and practical applications of this topic. Focus exclusively on the subject matter indicated by the quiz title and avoid introducing unrelated topics.`;
   
   const domainInstructions = category === 'CISSP' 
     ? '\n- For CISSP questions, include a "domain" field with one of the 8 CISSP domains: "Security and Risk Management", "Asset Security", "Security Architecture and Engineering", "Communication and Network Security", "Identity and Access Management", "Security Assessment and Testing", "Security Operations", or "Software Development Security"'

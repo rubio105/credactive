@@ -12,8 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import PreventionAssessment from "@/components/PreventionAssessment";
+import ciryFullLogo from "@assets/image_1760092804765.png";
 import prohmedLogo from "@assets/image_1760071152562.png";
-import ciryLogo from "@assets/image_1760068094229.png";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -363,10 +363,8 @@ export default function PreventionPage() {
 
         {/* Hero Section */}
         <div className="mb-8 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <img src={ciryLogo} alt="CIRY" className="h-16" />
-            <span className="text-2xl font-semibold text-muted-foreground">by</span>
-            <img src={prohmedLogo} alt="Prohmed" className="h-16 object-contain" />
+          <div className="flex justify-center mb-6">
+            <img src={ciryFullLogo} alt="CIRY - Power by Prohmed" className="h-24 object-contain" />
           </div>
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
             AI Assistente Prevenzione

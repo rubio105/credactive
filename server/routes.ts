@@ -44,6 +44,7 @@ import passport from "passport";
 import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
+import { generateAssessmentPDFBuffer } from "./assessmentPDFGenerator";
 import DOMPurify from "isomorphic-dompurify";
 import { 
   authLimiter, 
@@ -6203,6 +6204,52 @@ Explicación de audio:`
     } catch (error: any) {
       console.error('Get latest assessment error:', error);
       res.status(500).json({ message: error.message || 'Failed to get assessment' });
+    }
+  });
+
+  // Download assessment PDF report (GET /api/prevention/assessment/:id/pdf)
+  app.get('/api/prevention/assessment/:id/pdf', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const assessment = await storage.getPreventionAssessmentById(req.params.id);
+
+      if (!assessment) {
+        return res.status(404).json({ message: 'Assessment not found' });
+      }
+
+      // Check ownership
+      if (assessment.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized' });
+      }
+
+      // Assessment must be completed to generate PDF
+      if (assessment.status !== 'completed') {
+        return res.status(400).json({ message: 'Assessment not completed yet' });
+      }
+
+      // Generate PDF
+      const pdfBuffer = await generateAssessmentPDFBuffer({
+        userAge: assessment.userAge,
+        userGender: assessment.userGender,
+        userProfession: assessment.userProfession,
+        score: assessment.score || 0,
+        riskLevel: assessment.riskLevel || 'low',
+        recommendations: assessment.recommendations || [],
+        completedAt: assessment.completedAt || new Date(),
+      });
+
+      // Set headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="assessment-prevenzione-${assessment.id}.pdf"`
+      );
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error('Generate assessment PDF error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate PDF' });
     }
   });
 

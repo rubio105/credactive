@@ -17,7 +17,8 @@ import {
   Loader2,
   ClipboardCheck,
   User,
-  Briefcase
+  Briefcase,
+  FileText
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -429,6 +430,18 @@ export default function PreventionAssessment({ onComplete }: PreventionAssessmen
 
             {/* Actions */}
             <div className="flex gap-4 pt-4">
+              <Button 
+                onClick={() => {
+                  // Download PDF report
+                  window.open(`/api/prevention/assessment/${assessment.id}/pdf`, '_blank');
+                }}
+                variant="outline"
+                className="flex-1"
+                data-testid="button-download-pdf"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Scarica Report PDF
+              </Button>
               <Button 
                 onClick={onComplete}
                 className="flex-1"

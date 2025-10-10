@@ -80,6 +80,23 @@ export default function PreventionPage() {
     queryKey: ["/api/prevention/documents"],
   });
 
+  interface PreventionIndexData {
+    score: number;
+    tier: 'low' | 'medium' | 'high';
+    breakdown: {
+      frequencyScore: number;
+      depthScore: number;
+      documentScore: number;
+      alertScore: number;
+      insightScore: number;
+    };
+  }
+
+  const { data: preventionIndex } = useQuery<PreventionIndexData>({
+    queryKey: ["/api/prevention/index"],
+    enabled: !!user,
+  });
+
   // Assessment is optional - user can access directly without completing it
   // Educational focus: learn about prevention, not mandatory diagnostic assessment
 
@@ -332,23 +349,106 @@ export default function PreventionPage() {
               <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
                 <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                   <Activity className="w-5 h-5" />
-                  Indicatore Prevenzione
+                  Indice di Prevenzione
                 </CardTitle>
-                <CardDescription>Stato della tua conversazione</CardDescription>
+                <CardDescription>Il tuo engagement con la prevenzione</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-4">
+                  {/* Score e Tier */}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Messaggi</span>
-                    <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                      {messages?.filter(m => m.role === 'user').length || 0} / {user?.isPremium ? '∞' : '30'}
+                    <div>
+                      <div className="text-4xl font-bold text-emerald-600 dark:text-emerald-400" data-testid="text-prevention-score">
+                        {preventionIndex?.score || 0}
+                      </div>
+                      <div className="text-xs text-muted-foreground">su 100</div>
+                    </div>
+                    <Badge 
+                      variant="outline" 
+                      className={
+                        preventionIndex?.tier === 'high' 
+                          ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-300' 
+                          : preventionIndex?.tier === 'medium'
+                          ? 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-300'
+                          : 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-950 dark:text-gray-300'
+                      }
+                      data-testid="badge-prevention-tier"
+                    >
+                      {preventionIndex?.tier === 'high' ? 'Alto' : preventionIndex?.tier === 'medium' ? 'Medio' : 'Basso'}
                     </Badge>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Stato</span>
-                    <Badge variant={session?.status === 'active' ? 'default' : 'secondary'} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
-                      {session?.status === 'active' ? 'Attivo' : 'Inattivo'}
-                    </Badge>
+
+                  {/* Metriche Breakdown */}
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Frequenza consultazioni</span>
+                        <span className="font-medium">{preventionIndex?.breakdown.frequencyScore || 0}/30</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all"
+                          style={{ width: `${((preventionIndex?.breakdown.frequencyScore || 0) / 30) * 100}%` }}
+                          data-testid="bar-frequency"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Profondità conversazioni</span>
+                        <span className="font-medium">{preventionIndex?.breakdown.depthScore || 0}/20</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all"
+                          style={{ width: `${((preventionIndex?.breakdown.depthScore || 0) / 20) * 100}%` }}
+                          data-testid="bar-depth"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Documenti caricati</span>
+                        <span className="font-medium">{preventionIndex?.breakdown.documentScore || 0}/20</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
+                          style={{ width: `${((preventionIndex?.breakdown.documentScore || 0) / 20) * 100}%` }}
+                          data-testid="bar-documents"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Alert gestiti</span>
+                        <span className="font-medium">{preventionIndex?.breakdown.alertScore || 0}/15</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all"
+                          style={{ width: `${((preventionIndex?.breakdown.alertScore || 0) / 15) * 100}%` }}
+                          data-testid="bar-alerts"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Insights salute</span>
+                        <span className="font-medium">{preventionIndex?.breakdown.insightScore || 0}/15</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all"
+                          style={{ width: `${((preventionIndex?.breakdown.insightScore || 0) / 15) * 100}%` }}
+                          data-testid="bar-insights"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

@@ -187,9 +187,13 @@ export async function savePreventionIndex(userId: string): Promise<void> {
 }
 
 /**
- * Get prevention index for a user (calculate on-demand if not exists)
+ * Get prevention index for a user (always recalculate to ensure fresh data)
  */
 export async function getPreventionIndex(userId: string): Promise<PreventionIndexResult> {
+  // Always recalculate to reflect latest user activity
+  const indexData = await calculatePreventionIndex(userId);
+  
+  // Update or insert the cached value
   const existing = await db
     .select()
     .from(preventionIndices)
@@ -197,24 +201,25 @@ export async function getPreventionIndex(userId: string): Promise<PreventionInde
     .limit(1);
 
   if (existing.length > 0) {
-    const index = existing[0];
-    return {
-      score: index.score,
-      tier: index.tier as 'low' | 'medium' | 'high',
-      breakdown: index.breakdown as PreventionIndexBreakdown,
-    };
+    // Update existing record
+    await db
+      .update(preventionIndices)
+      .set({
+        score: indexData.score,
+        tier: indexData.tier,
+        breakdown: indexData.breakdown,
+        updatedAt: new Date(),
+      })
+      .where(eq(preventionIndices.userId, userId));
+  } else {
+    // Insert new record
+    await db.insert(preventionIndices).values({
+      userId,
+      score: indexData.score,
+      tier: indexData.tier,
+      breakdown: indexData.breakdown,
+    });
   }
-
-  // Calculate if not exists
-  const indexData = await calculatePreventionIndex(userId);
-  
-  // Save for future use
-  await db.insert(preventionIndices).values({
-    userId,
-    score: indexData.score,
-    tier: indexData.tier,
-    breakdown: indexData.breakdown,
-  });
 
   return indexData;
 }

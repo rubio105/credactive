@@ -6376,6 +6376,116 @@ Explicación de audio:`
     }
   });
 
+  // Generate Prevention Path (POST /api/prevention/generate-path) - AUTHENTICATED
+  app.post('/api/prevention/generate-path', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      // Get user's triage sessions to analyze conversation history
+      const sessions = await storage.getTriageSessionsByUser(user.id);
+      
+      if (sessions.length === 0) {
+        return res.status(400).json({ 
+          message: 'Nessuna conversazione trovata. Inizia una conversazione prima di generare il percorso.' 
+        });
+      }
+
+      // Get messages from all sessions for context
+      let allMessages: string[] = [];
+      for (const session of sessions.slice(0, 5)) { // Last 5 sessions for context
+        const messages = await storage.getTriageMessagesBySession(session.id);
+        allMessages = allMessages.concat(
+          messages.map(msg => `${msg.role === 'user' ? 'Utente' : 'AI'}: ${msg.content}`)
+        );
+      }
+
+      const conversationContext = allMessages.join('\n');
+
+      const prompt = `Sei un esperto di prevenzione sanitaria. Analizza il seguente storico di conversazioni dell'utente e crea un Percorso di Prevenzione personalizzato.
+
+STORICO CONVERSAZIONI:
+${conversationContext}
+
+COMPITO:
+Genera un percorso di prevenzione strutturato che includa:
+
+1. **Obiettivi Principali** (3-5 obiettivi prioritari basati sulle conversazioni)
+2. **Piano d'Azione Settimanale** (step concreti da seguire)
+3. **Screening e Controlli Consigliati** (esami e visite periodiche)
+4. **Modifiche dello Stile di Vita** (alimentazione, attività fisica, sonno)
+5. **Timeline** (quando fare cosa nei prossimi 3-6 mesi)
+
+Struttura la risposta in modo chiaro con titoli, bullet points e indicazioni pratiche.
+Le risposte DEVONO essere in italiano.`;
+
+      const preventionPath = await generateGeminiContent(prompt, "gemini-2.5-pro");
+
+      res.json({ 
+        preventionPath,
+        conversationCount: sessions.length,
+        generatedAt: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('Generate prevention path error:', error);
+      res.status(500).json({ message: error.message || 'Errore durante la generazione del percorso' });
+    }
+  });
+
+  // Generate Attention Points Analysis (POST /api/prevention/generate-attention-points) - AUTHENTICATED
+  app.post('/api/prevention/generate-attention-points', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      // Get user's triage sessions
+      const sessions = await storage.getTriageSessionsByUser(user.id);
+      
+      if (sessions.length === 0) {
+        return res.status(400).json({ 
+          message: 'Nessuna conversazione trovata. Inizia una conversazione prima di analizzare i punti di attenzione.' 
+        });
+      }
+
+      // Get messages from all sessions for context
+      let allMessages: string[] = [];
+      for (const session of sessions.slice(0, 5)) {
+        const messages = await storage.getTriageMessagesBySession(session.id);
+        allMessages = allMessages.concat(
+          messages.map(msg => `${msg.role === 'user' ? 'Utente' : 'AI'}: ${msg.content}`)
+        );
+      }
+
+      const conversationContext = allMessages.join('\n');
+
+      const prompt = `Sei un esperto di prevenzione sanitaria. Analizza il seguente storico di conversazioni dell'utente e identifica i Punti di Attenzione e le aree di miglioramento.
+
+STORICO CONVERSAZIONI:
+${conversationContext}
+
+COMPITO:
+Genera un'analisi dettagliata che includa:
+
+1. **⚠️ Punti di Attenzione Prioritari** (3-5 aspetti che richiedono attenzione immediata)
+2. **📊 Aree di Miglioramento** (comportamenti o abitudini da modificare)
+3. **🎯 Fattori di Rischio Identificati** (basati sulle conversazioni)
+4. **✅ Azioni Raccomandate** (step concreti per ogni punto di attenzione)
+5. **⏰ Urgenza** (quali aspetti affrontare subito e quali nel medio termine)
+
+Usa un tono empatico ma chiaro. Evidenzia i rischi senza allarmare, fornendo sempre soluzioni pratiche.
+Le risposte DEVONO essere in italiano.`;
+
+      const attentionPoints = await generateGeminiContent(prompt, "gemini-2.5-pro");
+
+      res.json({ 
+        attentionPoints,
+        conversationCount: sessions.length,
+        generatedAt: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('Generate attention points error:', error);
+      res.status(500).json({ message: error.message || 'Errore durante l\'analisi dei punti di attenzione' });
+    }
+  });
+
   // ========== TRIAGE CONVERSATION ROUTES ==========
   
   // *** ADMIN ENDPOINTS (must be before parametric routes) ***

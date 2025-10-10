@@ -72,6 +72,8 @@ export default function PreventionPage() {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
   const [showAttentionPointsDialog, setShowAttentionPointsDialog] = useState(false);
+  const [preventionPathData, setPreventionPathData] = useState<any>(null);
+  const [attentionPointsData, setAttentionPointsData] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -281,6 +283,44 @@ export default function PreventionPage() {
       closeSessionMutation.mutate(sessionId);
     }
   };
+
+  // Generate Prevention Path Mutation
+  const generatePreventionPathMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/prevention/generate-path", "POST", {});
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setPreventionPathData(data);
+      toast({ title: "Percorso generato con successo!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante la generazione del percorso",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Generate Attention Points Mutation
+  const generateAttentionPointsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/prevention/generate-attention-points", "POST", {});
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setAttentionPointsData(data);
+      toast({ title: "Analisi completata con successo!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante l'analisi",
+        variant: "destructive" 
+      });
+    },
+  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -922,6 +962,20 @@ export default function PreventionPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Privacy Notice */}
+            <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+              <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <AlertDescription className="ml-2">
+                <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                  🔒 Privacy e Anonimizzazione
+                </p>
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  I tuoi documenti medici vengono <strong>automaticamente anonimizzati</strong> prima dell'elaborazione. 
+                  Tutti i dati personali sensibili (nome, cognome, codice fiscale, ecc.) vengono rimossi per garantire la massima privacy e sicurezza.
+                </p>
+              </AlertDescription>
+            </Alert>
+
             <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
               <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p className="text-sm text-muted-foreground mb-2">
@@ -969,23 +1023,79 @@ export default function PreventionPage() {
                   Effettua il login per generare il tuo percorso di prevenzione personalizzato
                 </AlertDescription>
               </Alert>
-            ) : (
+            ) : !preventionPathData ? (
               <div className="text-center py-8">
                 <Button
                   size="lg"
+                  disabled={generatePreventionPathMutation.isPending}
                   className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                  onClick={() => {
-                    // TODO: implement prevention path generation
-                    toast({ title: "Generazione in corso", description: "Il percorso personalizzato sarà disponibile a breve" });
-                  }}
+                  onClick={() => generatePreventionPathMutation.mutate()}
                   data-testid="button-generate-path"
                 >
                   <TrendingUp className="w-4 h-4 mr-2" />
-                  Genera Percorso
+                  {generatePreventionPathMutation.isPending ? "Generazione in corso..." : "Genera Percorso"}
                 </Button>
                 <p className="text-sm text-muted-foreground mt-4">
                   L'AI analizzerà il tuo profilo per creare un percorso di prevenzione personalizzato
                 </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <div className="whitespace-pre-wrap">{preventionPathData.preventionPath}</div>
+                </div>
+                
+                {/* Prohmed App Invitation */}
+                <Alert className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
+                  <Smartphone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <AlertDescription className="ml-2">
+                    <p className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                      📱 Richiedi un Consulto Gratuito con Prohmed
+                    </p>
+                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                      Scarica l'app Prohmed e prenota un consulto gratuito con un medico specialista per discutere insieme il tuo percorso di prevenzione personalizzato.
+                    </p>
+                    <div className="flex gap-3 mt-3">
+                      <a 
+                        href="https://play.google.com/store/apps/details?id=com.prohmed.prohmedApp&pcampaignid=web_share" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-block"
+                      >
+                        <img 
+                          src="https://play.google.com/intl/en_us/badges/static/images/badges/it_badge_web_generic.png"
+                          alt="Disponibile su Google Play"
+                          className="h-12 w-auto hover:opacity-80 transition-opacity"
+                        />
+                      </a>
+                      <a 
+                        href="https://apps.apple.com/it/app/prohmed/id6449252498" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-block"
+                      >
+                        <img 
+                          src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/it-it?size=250x83&releaseDate=1280620800"
+                          alt="Scarica su App Store"
+                          className="h-12 w-auto hover:opacity-80 transition-opacity"
+                        />
+                      </a>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setPreventionPathData(null);
+                      setShowPreventionPathDialog(false);
+                    }}
+                    data-testid="button-close-path"
+                  >
+                    Chiudi
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -1011,23 +1121,40 @@ export default function PreventionPage() {
                   Effettua il login per analizzare i tuoi punti di attenzione
                 </AlertDescription>
               </Alert>
-            ) : (
+            ) : !attentionPointsData ? (
               <div className="text-center py-8">
                 <Button
                   size="lg"
+                  disabled={generateAttentionPointsMutation.isPending}
                   className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
-                  onClick={() => {
-                    // TODO: implement attention points analysis
-                    toast({ title: "Analisi in corso", description: "L'analisi dei punti di attenzione sarà disponibile a breve" });
-                  }}
+                  onClick={() => generateAttentionPointsMutation.mutate()}
                   data-testid="button-analyze-attention"
                 >
                   <AlertTriangle className="w-4 h-4 mr-2" />
-                  Analizza Punti di Attenzione
+                  {generateAttentionPointsMutation.isPending ? "Analisi in corso..." : "Analizza Punti di Attenzione"}
                 </Button>
                 <p className="text-sm text-muted-foreground mt-4">
                   L'AI identificherà le aree che richiedono maggiore attenzione nella tua prevenzione
                 </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <div className="whitespace-pre-wrap">{attentionPointsData.attentionPoints}</div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAttentionPointsData(null);
+                      setShowAttentionPointsDialog(false);
+                    }}
+                    data-testid="button-close-attention"
+                  >
+                    Chiudi
+                  </Button>
+                </div>
               </div>
             )}
           </div>

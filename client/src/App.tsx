@@ -34,6 +34,7 @@ import CorporatePortal from "@/pages/corporate-portal";
 import CorporateJoin from "@/pages/corporate-join";
 import LiveSession from "@/pages/live-session";
 import Prevention from "@/pages/prevention";
+import WebinarHealth from "@/pages/webinar-health";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/corporate" component={CorporatePortal} />
       <Route path="/corporate/join/:token" component={CorporateJoin} />
       <Route path="/prevention" component={Prevention} />
+      <Route path="/webinar-health" component={WebinarHealth} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

@@ -7646,6 +7646,152 @@ Format as JSON: {
       res.status(500).json({ message: error.message || 'Failed to delete health report' });
     }
   });
+
+  // ===========================
+  // Webinar Health Endpoints
+  // ===========================
+
+  // Get all webinar health courses (GET /api/webinar-health)
+  app.get('/api/webinar-health', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Get all active live courses
+      const courses = await storage.getAllLiveCourses(user.id);
+      
+      // Filter for webinar health courses (those with "webinar" in title or specific category)
+      const webinarCourses = courses.filter(course => 
+        course.title.toLowerCase().includes('webinar') || 
+        course.title.toLowerCase().includes('prevenzione')
+      );
+      
+      // Get sessions for each webinar with enrollment status
+      const webinarsWithSessions = await Promise.all(
+        webinarCourses.map(async (course) => {
+          const sessions = await storage.getSessionsByCourseId(course.id);
+          
+          // Check if user is enrolled in each session
+          const sessionsWithEnrollment = await Promise.all(
+            sessions.map(async (session) => {
+              const enrollment = await storage.getUserEnrollmentForSession(user.id, session.id);
+              return {
+                ...session,
+                enrolled: session.enrolled || 0,
+                isUserEnrolled: !!enrollment,
+              };
+            })
+          );
+          
+          return {
+            ...course,
+            sessions: sessionsWithEnrollment,
+          };
+        })
+      );
+      
+      res.json(webinarsWithSessions);
+    } catch (error: any) {
+      console.error('Get webinar health error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get webinar health courses' });
+    }
+  });
+
+  // Enroll in webinar (POST /api/webinar-health/enroll/:sessionId)
+  app.post('/api/webinar-health/enroll/:sessionId', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const sessionId = req.params.sessionId;
+      
+      // Get session details
+      const session = await storage.getSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+      
+      // Get course details
+      const course = await storage.getLiveCourseById(session.courseId);
+      if (!course) {
+        return res.status(404).json({ message: 'Course not found' });
+      }
+      
+      // Check if already enrolled
+      const existingEnrollment = await storage.getUserEnrollmentForSession(user.id, sessionId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: 'Already enrolled in this webinar' });
+      }
+      
+      // Check capacity
+      if (session.capacity && session.enrolled && session.enrolled >= session.capacity) {
+        return res.status(400).json({ message: 'Webinar is full' });
+      }
+      
+      // Check if session has already started
+      if (new Date(session.endDate) < new Date()) {
+        return res.status(400).json({ message: 'This webinar has already ended' });
+      }
+      
+      // Create enrollment (free for webinars)
+      const enrollment = await storage.createLiveCourseEnrollment({
+        userId: user.id,
+        courseId: course.id,
+        sessionId: session.id,
+        amountPaid: 0, // Free webinar
+        enrollmentDate: new Date(),
+        status: 'confirmed',
+      });
+      
+      // Update session enrolled count
+      await storage.updateLiveCourseSession(sessionId, {
+        enrolled: (session.enrolled || 0) + 1,
+      });
+      
+      // Send confirmation email with webinar details
+      try {
+        const emailSubject = `Conferma iscrizione: ${course.title}`;
+        const emailContent = `
+          <h2>Iscrizione Confermata!</h2>
+          <p>Ciao ${user.firstName || user.email},</p>
+          <p>La tua iscrizione al webinar è stata confermata con successo.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px;">
+            <h3 style="margin-top: 0;">${course.title}</h3>
+            <p><strong>Data:</strong> ${new Date(session.startDate).toLocaleDateString('it-IT', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</p>
+            <p><strong>Orario:</strong> ${new Date(session.startDate).toLocaleTimeString('it-IT', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })} - ${new Date(session.endDate).toLocaleTimeString('it-IT', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}</p>
+            ${course.instructor ? `<p><strong>Relatore:</strong> ${course.instructor}</p>` : ''}
+          </div>
+          
+          <p>Riceverai un'email con il link per partecipare 24 ore prima dell'inizio del webinar.</p>
+          
+          <p>A presto,<br>Il Team CIRY</p>
+        `;
+        
+        await sendEmail(user.email, emailSubject, emailContent);
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the enrollment if email fails
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Enrollment successful',
+        enrollment 
+      });
+    } catch (error: any) {
+      console.error('Webinar enrollment error:', error);
+      res.status(500).json({ message: error.message || 'Failed to enroll in webinar' });
+    }
+  });
   
   return httpServer;
 }

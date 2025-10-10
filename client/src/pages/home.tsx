@@ -189,63 +189,127 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* AI Prohmed Hero - Prevenzione Educativa */}
-        <Card className="mb-8 bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-none shadow-lg">
+        {/* AI Prohmed - Prevenzione e Salute */}
+        <Card className="mb-8 bg-gradient-to-r from-orange-500 to-orange-600 text-white border-none shadow-lg">
           <CardContent className="p-8">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <Shield className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Impara la Prevenzione con AI Prohmed</h2>
-                    <Badge className="mt-1 bg-white/30 text-white border-white/40">Intelligenza Artificiale</Badge>
-                  </div>
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <img 
+                  src="/attached_assets/image_1760060236448.png" 
+                  alt="AI Prohmed Logo" 
+                  className="w-16 h-16"
+                />
+                <div>
+                  <h2 className="text-2xl font-bold">AI Prohmed - Impara la Prevenzione</h2>
+                  <Badge className="mt-1 bg-white/30 text-white border-white/40">Intelligenza Artificiale per la Salute</Badge>
                 </div>
-                <p className="text-white/90 text-lg mb-4 max-w-2xl">
-                  Condividi il tuo caso personale e scopri strategie pratiche di prevenzione. 
-                  L'AI ti guida nell'apprendimento delle migliori pratiche per la tua salute.
-                </p>
-                <ul className="space-y-2 mb-6 text-white/90">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                    <span>Conversazione educativa personalizzata sul tuo caso</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                    <span>Consigli pratici di prevenzione basati su evidenze scientifiche</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                    <span>Risorse e documenti educativi personalizzati</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="hidden lg:flex items-center">
-                <Link href="/prevention">
-                  <Button 
-                    size="lg" 
-                    className="bg-white text-emerald-600 hover:bg-white/90 text-lg px-8 py-6 shadow-xl"
-                    data-testid="button-ai-prohmed"
-                  >
-                    <Shield className="w-5 h-5 mr-2" />
-                    Inizia Ora
-                  </Button>
-                </Link>
               </div>
             </div>
-            <div className="lg:hidden mt-6">
-              <Link href="/prevention">
+
+            <p className="text-white/90 text-base mb-6 max-w-3xl">
+              Il tuo assistente intelligente per la prevenzione sanitaria. Carica documenti medici, genera report personalizzati e scopri strategie di prevenzione basate su evidenze scientifiche.
+            </p>
+
+            {/* Dashboard Indicators */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white/70 text-sm">Documenti Caricati</p>
+                    <p className="text-2xl font-bold">0</p>
+                  </div>
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white/70 text-sm">Health Score</p>
+                    <p className="text-2xl font-bold">--</p>
+                  </div>
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white/70 text-sm">Report Generati</p>
+                    <p className="text-2xl font-bold">0</p>
+                  </div>
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Link href="/prevention" className="block">
                 <Button 
-                  size="lg" 
-                  className="w-full bg-white text-emerald-600 hover:bg-white/90 text-lg py-6"
-                  data-testid="button-ai-prohmed-mobile"
+                  className="w-full bg-white text-orange-600 hover:bg-white/90 font-semibold"
+                  data-testid="button-ai-chat"
                 >
-                  <Shield className="w-5 h-5 mr-2" />
-                  Inizia Ora
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                  Chat AI Prevenzione
                 </Button>
               </Link>
+
+              <Link href="/prevention" className="block">
+                <Button 
+                  variant="outline" 
+                  className="w-full bg-white/10 text-white border-white/30 hover:bg-white/20"
+                  data-testid="button-upload-document"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Carica Documento
+                </Button>
+              </Link>
+
+              <Link href="/prevention" className="block">
+                <Button 
+                  variant="outline" 
+                  className="w-full bg-white/10 text-white border-white/30 hover:bg-white/20"
+                  data-testid="button-generate-report"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Genera Report PDF
+                </Button>
+              </Link>
+            </div>
+
+            {/* Privacy Notice */}
+            <div className="mt-4 flex items-start gap-2 text-white/80 text-sm">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <div>
+                <p className="font-medium">Privacy e Anonimizzazione</p>
+                <p className="text-white/70 text-xs mt-1">
+                  Tutti i documenti caricati vengono automaticamente anonimizzati. I dati personali sensibili (nome, data di nascita, codice fiscale) vengono rimossi tramite AI prima dell'analisi. 
+                  <button className="underline ml-1 hover:text-white" data-testid="button-privacy-info">
+                    Scopri di più
+                  </button>
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

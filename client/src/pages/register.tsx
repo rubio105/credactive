@@ -82,7 +82,7 @@ export default function Register() {
       } else {
         toast({
           title: "Registrazione completata",
-          description: "Benvenuto su CREDACTIVE!",
+          description: "Benvenuto su CIRY!",
         });
         window.location.href = "/";
       }
@@ -164,7 +164,7 @@ export default function Register() {
       <Card className="w-full max-w-3xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={logoImage} alt="CREDACTIVE" className="h-12" />
+            <img src={logoImage} alt="CIRY" className="h-12" />
           </div>
           <CardTitle className="text-2xl">Crea il tuo account</CardTitle>
           <CardDescription>

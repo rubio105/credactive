@@ -76,7 +76,7 @@ export default function ForgotPassword() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={logoImage} alt="CREDACTIVE" className="h-12" />
+            <img src={logoImage} alt="CIRY" className="h-12" />
           </div>
           <CardTitle className="text-2xl">Recupera la password</CardTitle>
           <CardDescription>

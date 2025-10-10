@@ -169,7 +169,7 @@ export default function CorporateJoin({ params }: CorporateJoinProps) {
           </div>
           <CardTitle className="text-2xl">Unisciti a {inviteData.companyName}</CardTitle>
           <CardDescription>
-            Sei stato invitato ad accedere alla piattaforma aziendale CREDACTIVE Academy
+            Sei stato invitato ad accedere alla piattaforma aziendale CIRY
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -39,7 +39,7 @@ export default function Login() {
     onSuccess: () => {
       toast({
         title: "Accesso effettuato",
-        description: "Benvenuto su CREDACTIVE!",
+        description: "Benvenuto su CIRY!",
       });
       window.location.href = "/";
     },
@@ -81,7 +81,7 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={logoImage} alt="CREDACTIVE" className="h-12" />
+            <img src={logoImage} alt="CIRY" className="h-12" />
           </div>
           <CardTitle className="text-2xl">Accedi al tuo account</CardTitle>
           <CardDescription>

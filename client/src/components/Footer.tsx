@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import logoImage from "@assets/image_1760068094229.png";
 
 interface ContentPage {
   id: string;
@@ -21,6 +22,11 @@ export default function Footer() {
     <footer className="bg-card border-t border-border mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* Logo */}
+          <div className="flex items-center">
+            <img src={logoImage} alt="CIRY" className="h-8" />
+          </div>
+
           {/* Footer Links */}
           <div className="flex flex-wrap justify-center gap-6">
             {footerPages.map((page) => (
@@ -34,7 +40,7 @@ export default function Footer() {
 
           {/* Copyright */}
           <div className="text-sm text-muted-foreground">
-            © {currentYear} CREDACTIVE. Tutti i diritti riservati.
+            © {currentYear} CIRY. Tutti i diritti riservati.
           </div>
         </div>
       </div>

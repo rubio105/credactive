@@ -683,6 +683,128 @@ Rispondi con JSON in questo formato esatto:
   }
 }
 
+// ========== RADIOLOGICAL IMAGE ANALYSIS (X-RAY, MRI, CT, ULTRASOUND) ==========
+
+export interface RadiologyFinding {
+  category: 'normal' | 'attention' | 'urgent';
+  description: string;
+  location?: string;
+  confidence?: number;
+}
+
+export interface RadiologicalAnalysis {
+  imageType: 'xray' | 'mri' | 'ct' | 'ultrasound' | 'other';
+  bodyPart: string;
+  findings: RadiologyFinding[];
+  overallAssessment: string;
+  recommendations: string[];
+  confidence: number;
+}
+
+/**
+ * Analyze radiological images (X-ray, MRI, CT, Ultrasound) using Gemini Vision
+ * Provides detailed medical interpretation with categorized findings
+ */
+export async function analyzeRadiologicalImage(
+  filePath: string,
+  mimeType: string
+): Promise<RadiologicalAnalysis> {
+  try {
+    if (!mimeType.startsWith("image/")) {
+      throw new Error(`Unsupported file type for radiological analysis: ${mimeType}`);
+    }
+
+    const imageBytes = fs.readFileSync(filePath);
+    
+    const radiologyPrompt = `Sei un radiologo esperto. Analizza questa immagine medica radiologica e fornisci un referto dettagliato IN ITALIANO.
+
+IMPORTANTE: Questa è un'analisi AI di supporto, NON sostituisce un medico specialista. Fornisci solo osservazioni oggettive basate sull'immagine.
+
+Analizza e identifica:
+1. Tipo di imaging (xray, mri, ct, ultrasound, other)
+2. Parte del corpo visualizzata (es. "torace", "cranio", "ginocchio sinistro", "addome")
+3. Reperti radiologici (findings) categorizzati come:
+   - "normal": Reperti normali, fisiologici
+   - "attention": Reperti da monitorare, lievi alterazioni che richiedono attenzione
+   - "urgent": Reperti critici che richiedono valutazione medica urgente
+4. Valutazione complessiva (overall assessment) - sintesi professionale in italiano
+5. Raccomandazioni (recommendations) - suggerimenti pratici in italiano
+6. Livello di confidenza (0-100) basato sulla qualità dell'immagine
+
+ESEMPI DI FINDINGS:
+- category: "normal", description: "Parenchima polmonare normoespanso bilateralmente"
+- category: "attention", description: "Lieve ispessimento pleurico basale destro", location: "base polmonare destra"
+- category: "urgent", description: "Sospetta frattura costale con possibile pneumotorace", location: "costa 7^ destra"
+
+Rispondi SOLO con JSON in questo formato:
+{
+  "imageType": "xray",
+  "bodyPart": "torace",
+  "findings": [
+    {
+      "category": "normal",
+      "description": "Descrizione del reperto normale",
+      "location": "sede anatomica specifica (opzionale)",
+      "confidence": 90
+    },
+    {
+      "category": "attention", 
+      "description": "Descrizione del reperto da monitorare",
+      "location": "sede anatomica",
+      "confidence": 85
+    }
+  ],
+  "overallAssessment": "Sintesi professionale del referto radiologico in italiano",
+  "recommendations": [
+    "Prima raccomandazione pratica",
+    "Seconda raccomandazione se necessaria"
+  ],
+  "confidence": 85
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        responseMimeType: "application/json",
+      },
+      contents: [{
+        role: "user",
+        parts: [
+          {
+            inlineData: {
+              data: imageBytes.toString("base64"),
+              mimeType,
+            },
+          },
+          { text: radiologyPrompt }
+        ]
+      }],
+    });
+
+    const rawJson = response.text;
+    if (!rawJson) {
+      throw new Error("Empty radiological analysis response from Gemini");
+    }
+
+    const analysis = JSON.parse(rawJson);
+    
+    const result: RadiologicalAnalysis = {
+      imageType: analysis.imageType || 'other',
+      bodyPart: analysis.bodyPart || 'non identificato',
+      findings: analysis.findings || [],
+      overallAssessment: analysis.overallAssessment || '',
+      recommendations: analysis.recommendations || [],
+      confidence: analysis.confidence || 70,
+    };
+
+    console.log("[Gemini] Radiological analysis completed:", result.imageType, result.bodyPart, result.findings.length, "findings");
+    return result;
+  } catch (error) {
+    console.error("[Gemini] Failed to analyze radiological image:", error);
+    throw new Error(`Failed to analyze radiological image: ${error}`);
+  }
+}
+
 /**
  * Anonymize medical text by removing PII (Personal Identifiable Information)
  * Uses hybrid approach: regex patterns + Gemini AI for contextual PII detection

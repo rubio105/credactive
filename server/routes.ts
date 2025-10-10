@@ -16,7 +16,7 @@ import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
-import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent } from "./gemini";
+import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent, analyzeRadiologicalImage } from "./gemini";
 import { clearBrevoInstance } from "./email";
 import { 
   insertUserQuizAttemptSchema, 
@@ -7716,7 +7716,32 @@ Le risposte DEVONO essere in italiano.`;
       // Step 2: Anonymize extracted text (PII removal)
       const anonymizationResult = await anonymizeMedicalText(ocrResult.extractedText);
 
-      // Step 3: Create health report record
+      // Step 3: Advanced radiological analysis for medical images (X-ray, MRI, CT, Ultrasound)
+      let radiologicalAnalysis = null;
+      const reportTypeLower = (ocrResult.reportType || '').toLowerCase();
+      const isRadiologicalImage = fileType.startsWith('image/') && 
+        (reportTypeLower.includes('radiol') || 
+         reportTypeLower.includes('imaging') ||
+         reportTypeLower.includes('xray') ||
+         reportTypeLower.includes('mri') ||
+         reportTypeLower.includes('ct') ||
+         reportTypeLower.includes('tac') ||
+         reportTypeLower.includes('ecografia') ||
+         reportTypeLower.includes('ultrasound'));
+
+      if (isRadiologicalImage) {
+        try {
+          console.log('[Health Score] Performing advanced radiological analysis...');
+          const radiologyResult = await analyzeRadiologicalImage(filePath, fileType);
+          radiologicalAnalysis = radiologyResult;
+          console.log('[Health Score] Radiological analysis completed:', radiologyResult.imageType, radiologyResult.bodyPart);
+        } catch (radiologyError) {
+          console.error('[Health Score] Radiological analysis failed:', radiologyError);
+          // Continue without radiological analysis if it fails
+        }
+      }
+
+      // Step 4: Create health report record
       const healthReport = await storage.createHealthReport({
         userId: user.id,
         triageSessionId: triageSessionId || null,
@@ -7730,6 +7755,7 @@ Le risposte DEVONO essere in italiano.`;
         detectedLanguage: ocrResult.detectedLanguage,
         medicalKeywords: ocrResult.medicalKeywords,
         extractedValues: ocrResult.extractedValues,
+        radiologicalAnalysis: radiologicalAnalysis || undefined,
         aiSummary: ocrResult.summary,
         issuer: ocrResult.issuer || null,
         reportDate: ocrResult.reportDate ? new Date(ocrResult.reportDate) : null,
@@ -7744,6 +7770,7 @@ Le risposte DEVONO essere in italiano.`;
         report: healthReport,
         ocrConfidence: ocrResult.confidence,
         piiRemoved: anonymizationResult.piiCount,
+        hasRadiologicalAnalysis: radiologicalAnalysis !== null,
       });
     } catch (error: any) {
       console.error('Upload medical report error:', error);

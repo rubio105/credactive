@@ -1610,6 +1610,9 @@ export const userHealthReports = pgTable("user_health_reports", {
   medicalKeywords: text("medical_keywords").array(), // Keywords for semantic search
   detectedLanguage: varchar("detected_language", { length: 5 }), // it, en, es
   
+  // Radiological analysis (for X-ray, MRI, CT, Ultrasound images)
+  radiologicalAnalysis: jsonb("radiological_analysis"), // {imageType, bodyPart, findings[], overallAssessment, recommendations[], confidence}
+  
   // Context and analysis
   aiSummary: text("ai_summary"), // Brief summary by AI
   healthImpact: varchar("health_impact", { length: 20 }), // positive, neutral, concerning, critical

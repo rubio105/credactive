@@ -102,7 +102,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
               <img 
                 src={logoImage} 
                 alt="CIRY" 
-                className="h-20 w-auto object-contain my-2"
+                className="h-20 w-auto object-contain my-2 bg-white rounded-lg px-2"
               />
             </div>
           </Link>

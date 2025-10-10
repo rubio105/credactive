@@ -4,12 +4,33 @@ import { useEffect, useState } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
-import { CheckCircle, Crown, Shield, Star, ArrowLeft, Sparkles, Video, Calendar, Users, Headphones } from "lucide-react";
+import { CheckCircle, Crown, Shield, Star, ArrowLeft, Sparkles, Video, Calendar, Users, Headphones, Gift } from "lucide-react";
+
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  currency: string;
+  interval: string;
+  isActive: boolean;
+  sortOrder: number;
+  features: string[];
+  stripeEnabled: boolean;
+  stripeProductId: string | null;
+  stripePriceId: string | null;
+  maxCoursesPerMonth: number | null;
+  maxQuizGamingPerWeek: number | null;
+  aiTokensPerMonth: number | null;
+  includesWebinarHealth: boolean;
+  includesProhmedSupport: boolean;
+}
 
 // Stripe configuration - non-blocking check
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
@@ -21,14 +42,29 @@ const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 interface CheckoutFormProps {
   amount: number;
+  currency: string;
   tierName: string;
 }
 
-const CheckoutForm = ({ amount, tierName }: CheckoutFormProps) => {
+const CheckoutForm = ({ amount, currency, tierName }: CheckoutFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const formatPaymentAmount = (priceInCents: number, curr: string) => {
+    const amt = priceInCents / 100;
+    try {
+      return new Intl.NumberFormat('it-IT', {
+        style: 'currency',
+        currency: curr,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amt);
+    } catch (error) {
+      return `${amt.toFixed(0)} ${curr}`;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +108,7 @@ const CheckoutForm = ({ amount, tierName }: CheckoutFormProps) => {
         data-testid="button-pay"
       >
         <Shield className="w-5 h-5 mr-2" />
-        {isProcessing ? "Processando..." : `Paga €${amount}`}
+        {isProcessing ? "Processando..." : `Paga ${formatPaymentAmount(amount, currency)}`}
       </Button>
     </form>
   );
@@ -81,9 +117,13 @@ const CheckoutForm = ({ amount, tierName }: CheckoutFormProps) => {
 export default function Subscribe() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-  const [selectedTier, setSelectedTier] = useState<'premium' | 'premium_plus' | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [clientSecret, setClientSecret] = useState("");
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+
+  const { data: plans = [], isLoading: isLoadingPlans } = useQuery<SubscriptionPlan[]>({
+    queryKey: ["/api/subscription-plans"],
+  });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -99,13 +139,42 @@ export default function Subscribe() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const handleSelectTier = (tier: 'premium' | 'premium_plus') => {
+  const getPlanIcon = (planId: string) => {
+    if (planId === 'free') return Gift;
+    if (planId === 'premium') return Crown;
+    if (planId === 'premium_plus') return Sparkles;
+    return Crown;
+  };
+
+  const getPlanColor = (planId: string) => {
+    if (planId === 'free') return 'bg-green-500/10';
+    if (planId === 'premium') return 'bg-primary/10';
+    if (planId === 'premium_plus') return 'bg-gradient-to-br from-purple-500 to-pink-500';
+    return 'bg-primary/10';
+  };
+
+  const formatPrice = (priceInCents: number, currency: string) => {
+    const amount = priceInCents / 100;
+    try {
+      return new Intl.NumberFormat('it-IT', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch (error) {
+      // Fallback if currency is invalid
+      return `${amount.toFixed(0)} ${currency}`;
+    }
+  };
+
+  const handleSelectPlan = (plan: SubscriptionPlan) => {
     if (!isAuthenticated || !user) return;
     
-    setSelectedTier(tier);
+    setSelectedPlan(plan);
     setIsCreatingPayment(true);
     
-    apiRequest("/api/create-subscription", "POST", { tier })
+    apiRequest("/api/create-subscription", "POST", { tier: plan.id })
       .then((res) => res.json())
       .then((data) => {
         if (data.status === 'active') {
@@ -137,14 +206,14 @@ export default function Subscribe() {
           description: "Impossibile creare il pagamento. Riprova.",
           variant: "destructive",
         });
-        setSelectedTier(null);
+        setSelectedPlan(null);
       })
       .finally(() => {
         setIsCreatingPayment(false);
       });
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingPlans) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -172,9 +241,11 @@ export default function Subscribe() {
     );
   }
 
-  if (clientSecret && selectedTier) {
-    const tierAmount = selectedTier === 'premium_plus' ? 149 : 99;
-    const tierName = selectedTier === 'premium_plus' ? 'Premium Plus' : 'Premium';
+  if (clientSecret && selectedPlan) {
+    const tierName = selectedPlan.name;
+    const PlanIcon = getPlanIcon(selectedPlan.id);
+    const isPremiumPlus = selectedPlan.id === 'premium_plus';
+    const formattedPrice = formatPrice(selectedPlan.price, selectedPlan.currency);
 
     return (
       <div className="min-h-screen bg-background">
@@ -184,7 +255,7 @@ export default function Subscribe() {
           <Button 
             variant="ghost" 
             onClick={() => {
-              setSelectedTier(null);
+              setSelectedPlan(null);
               setClientSecret("");
             }}
             className="mb-6"
@@ -195,19 +266,19 @@ export default function Subscribe() {
           </Button>
 
           <div className="grid lg:grid-cols-2 gap-12 items-start">
-            <div className={`${selectedTier === 'premium_plus' ? 'gradient-premium-plus' : 'gradient-primary'} text-white rounded-2xl p-8`}>
+            <div className={`${isPremiumPlus ? 'gradient-premium-plus' : 'gradient-primary'} text-white rounded-2xl p-8`}>
               <div className="mb-6">
                 <div className="inline-block p-3 bg-white/20 rounded-lg mb-4">
-                  {selectedTier === 'premium_plus' ? <Sparkles className="w-8 h-8" /> : <Crown className="w-8 h-8" />}
+                  <PlanIcon className="w-8 h-8" />
                 </div>
                 <h3 className="text-2xl font-bold mb-2">Piano {tierName}</h3>
-                <p className="text-white/80">Il meglio per la tua formazione professionale</p>
+                <p className="text-white/80">{selectedPlan.description || 'Il meglio per la tua formazione professionale'}</p>
               </div>
 
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-8">
                 <CardContent className="p-6 text-center">
-                  <div className="text-5xl font-bold mb-2">€{tierAmount}</div>
-                  <p className="text-white/80">Abbonamento annuale • Rinnovo automatico</p>
+                  <div className="text-5xl font-bold mb-2">{formattedPrice}</div>
+                  <p className="text-white/80">Abbonamento {selectedPlan.interval === 'year' ? 'annuale' : 'mensile'} • Rinnovo automatico</p>
                 </CardContent>
               </Card>
 
@@ -237,7 +308,7 @@ export default function Subscribe() {
                 </div>
 
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm amount={tierAmount} tierName={tierName} />
+                  <CheckoutForm amount={selectedPlan.price} currency={selectedPlan.currency} tierName={tierName} />
                 </Elements>
 
                 <div className="mt-6 pt-6 border-t border-border">
@@ -290,120 +361,115 @@ export default function Subscribe() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {/* Premium Plan */}
-          <Card className="relative border-2 hover:border-primary transition-all">
-            <CardContent className="p-8">
-              <div className="mb-6">
-                <div className="inline-block p-3 bg-primary/10 rounded-lg mb-4">
-                  <Crown className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Premium</h3>
-                <div className="flex items-baseline mb-4">
-                  <span className="text-5xl font-bold">€99</span>
-                  <span className="text-muted-foreground ml-2">/anno</span>
-                </div>
-                <p className="text-muted-foreground">
-                  Accesso completo a tutti i quiz e contenuti
-                </p>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span>10 categorie di quiz professionali</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span>Oltre 2.000 domande aggiornate</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span>🏆 Sfide quotidiane e sistema gamificato</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span>📊 Classifica globale e badge</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span>Certificati di completamento</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span>Dashboard e statistiche avanzate</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span>Supporto via email</span>
-                </div>
-              </div>
-
-              <Button 
-                onClick={() => handleSelectTier('premium')}
-                className="w-full py-6 text-lg font-semibold"
-                data-testid="button-select-premium"
-              >
-                Scegli Premium
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Premium Plus Plan */}
-          <Card className="relative border-2 border-primary shadow-xl">
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <Badge className="px-4 py-1 bg-primary text-primary-foreground">
-                PIÙ POPOLARE
-              </Badge>
-            </div>
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {plans.map((plan) => {
+            const PlanIcon = getPlanIcon(plan.id);
+            const isPremiumPlus = plan.id === 'premium_plus';
+            const isFree = plan.id === 'free';
             
-            <CardContent className="p-8">
-              <div className="mb-6">
-                <div className="inline-block p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg mb-4">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Premium Plus</h3>
-                <div className="flex items-baseline mb-4">
-                  <span className="text-5xl font-bold">€149</span>
-                  <span className="text-muted-foreground ml-2">/anno</span>
-                </div>
-                <p className="text-muted-foreground">
-                  Tutto in Premium, più vantaggi esclusivi
-                </p>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="font-semibold">Tutto incluso in Premium</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Video className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                  <span><strong>Corsi On-Demand</strong> - Videocorsi completi con quiz interattivi</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Calendar className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                  <span><strong>Priorità Corsi Live</strong> - Accesso prioritario alle sessioni dal vivo</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Headphones className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                  <span><strong>Supporto Dedicato</strong> - Consulenza per certificazioni professionali</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Users className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                  <span><strong>Eventi Esclusivi</strong> - Inviti a webinar e networking events</span>
-                </div>
-              </div>
-
-              <Button 
-                onClick={() => handleSelectTier('premium_plus')}
-                className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                data-testid="button-select-premium-plus"
+            return (
+              <Card 
+                key={plan.id} 
+                className={`relative border-2 ${isPremiumPlus ? 'border-primary shadow-xl' : 'hover:border-primary'} transition-all`}
+                data-testid={`card-plan-${plan.id}`}
               >
-                Scegli Premium Plus
-              </Button>
-            </CardContent>
-          </Card>
+                {isPremiumPlus && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <Badge className="px-4 py-1 bg-primary text-primary-foreground">
+                      PIÙ POPOLARE
+                    </Badge>
+                  </div>
+                )}
+                
+                <CardContent className="p-8">
+                  <div className="mb-6">
+                    <div className={`inline-block p-3 ${isPremiumPlus ? 'bg-gradient-to-br from-purple-500 to-pink-500' : getPlanColor(plan.id)} rounded-lg mb-4`}>
+                      <PlanIcon className={`w-8 h-8 ${isPremiumPlus ? 'text-white' : isFree ? 'text-green-600' : 'text-primary'}`} />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                    <div className="flex items-baseline mb-4">
+                      <span className="text-5xl font-bold">{formatPrice(plan.price, plan.currency)}</span>
+                      <span className="text-muted-foreground ml-2">/{plan.interval === 'year' ? 'anno' : 'mese'}</span>
+                    </div>
+                    {plan.description && (
+                      <p className="text-muted-foreground">{plan.description}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-4 mb-8 min-h-[300px]">
+                    {/* Usage limits */}
+                    {plan.maxCoursesPerMonth !== null && (
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
+                        <span className="text-sm">
+                          {plan.maxCoursesPerMonth === -1 ? 'Corsi illimitati al mese' : `${plan.maxCoursesPerMonth} corsi base al mese`}
+                        </span>
+                      </div>
+                    )}
+                    {plan.maxQuizGamingPerWeek !== null && (
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
+                        <span className="text-sm">
+                          {plan.maxQuizGamingPerWeek === -1 ? 'Quiz gaming illimitati' : `${plan.maxQuizGamingPerWeek} quiz gaming a settimana`}
+                        </span>
+                      </div>
+                    )}
+                    {plan.aiTokensPerMonth !== null && (
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
+                        <span className="text-sm">
+                          {plan.aiTokensPerMonth === -1 ? 'Token AI CIRY illimitati' : `${plan.aiTokensPerMonth} token AI CIRY al mese`}
+                        </span>
+                      </div>
+                    )}
+                    {plan.includesWebinarHealth && (
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
+                        <span className="text-sm font-semibold">Webinar prevenzione gratuiti</span>
+                      </div>
+                    )}
+                    {plan.includesProhmedSupport && (
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
+                        <span className="text-sm font-semibold">Assistenza Prohmed full</span>
+                      </div>
+                    )}
+                    
+                    {/* Additional features from array */}
+                    {plan.features?.map((feature, index) => (
+                      <div key={index} className="flex items-start space-x-3">
+                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {!isFree && plan.stripeEnabled ? (
+                    <Button 
+                      onClick={() => handleSelectPlan(plan)}
+                      className={`w-full py-6 text-lg font-semibold ${
+                        isPremiumPlus 
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' 
+                          : ''
+                      }`}
+                      data-testid={`button-select-${plan.id}`}
+                    >
+                      Scegli {plan.name}
+                    </Button>
+                  ) : isFree ? (
+                    <Button 
+                      variant="outline"
+                      className="w-full py-6 text-lg font-semibold"
+                      disabled
+                      data-testid={`button-select-${plan.id}`}
+                    >
+                      Piano Attuale
+                    </Button>
+                  ) : null}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* FAQ Section */}

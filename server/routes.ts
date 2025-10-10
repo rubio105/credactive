@@ -3964,6 +3964,18 @@ Restituisci SOLO un JSON con:
     }
   });
 
+  // Public subscription plans route - for subscribe page
+  app.get('/api/subscription-plans', async (req, res) => {
+    try {
+      const plans = await storage.getAllSubscriptionPlans();
+      const activePlans = plans.filter(plan => plan.isActive);
+      res.json(activePlans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ message: "Failed to fetch subscription plans" });
+    }
+  });
+
   // Email template management routes
   app.get('/api/admin/email-templates', isAdmin, async (req, res) => {
     try {

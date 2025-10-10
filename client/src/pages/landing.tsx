@@ -11,7 +11,7 @@ import type { Category, QuizWithCount } from "@shared/schema";
 import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Calendar, Users, Video, Sparkles, Headphones } from "lucide-react";
 import { featuredImages } from "@/lib/stockImages";
 const logoImage = "/images/ciry-logo.png";
-import certificationsImage from "@assets/image_1759608591455.png";
+const certificationsImage = "/images/ciry-logo.png";
 
 export default function Landing() {
   const [activeFilter, setActiveFilter] = useState("all");

@@ -12,8 +12,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail } from "lucide-react";
-import logoImageSmall from "@assets/image_1760060236448.png";
-import logoImageFull from "@assets/image_1760065574290.png";
+const logoImageSmall = "/images/ciry-logo.png";
+const logoImageFull = "/images/ciry-logo.png";
 
 interface User {
   id: string;

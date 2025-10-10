@@ -15,7 +15,7 @@ import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
-import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle } from "./gemini";
+import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions } from "./gemini";
 import { clearBrevoInstance } from "./email";
 import { 
   insertUserQuizAttemptSchema, 
@@ -6055,9 +6055,32 @@ Explicación de audio:`
         userProfession: validatedData.userProfession,
       });
 
-      // TODO: Generate AI questions based on user demographics
-      // For now, return assessment without questions
-      res.json(assessment);
+      // Generate personalized AI questions based on user demographics
+      const aiQuestions = await generateAssessmentQuestions(
+        validatedData.userAge,
+        validatedData.userGender,
+        validatedData.userProfession
+      );
+
+      // Save generated questions to database
+      const savedQuestions = [];
+      for (let i = 0; i < aiQuestions.length; i++) {
+        const question = aiQuestions[i];
+        const savedQuestion = await storage.createPreventionAssessmentQuestion({
+          assessmentId: assessment.id,
+          questionText: question.text,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+          orderIndex: i,
+        });
+        savedQuestions.push(savedQuestion);
+      }
+
+      res.json({
+        ...assessment,
+        questions: savedQuestions,
+      });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Invalid request data', errors: error.errors });

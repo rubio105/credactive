@@ -211,6 +211,122 @@ Respond with JSON in this exact format:
 }
 
 /**
+ * Generate personalized prevention assessment questions
+ */
+export interface AssessmentQuestion {
+  text: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+}
+
+export async function generateAssessmentQuestions(
+  userAge: number,
+  userGender: string,
+  userProfession: string
+): Promise<AssessmentQuestion[]> {
+  try {
+    const systemPrompt = `You are a medical prevention expert creating personalized health assessment questions.
+
+Generate exactly 10 multiple-choice questions about health prevention and wellness, personalized for:
+- Age: ${userAge} years old
+- Gender: ${userGender}
+- Profession: ${userProfession}
+
+REQUIREMENTS:
+- Questions should cover: nutrition, exercise, mental health, disease prevention, workplace health
+- Each question has 4 options (A, B, C, D)
+- Questions must be appropriate for the user's age and profession
+- Include practical, actionable health advice
+- Mix difficulty levels (easy, medium, hard)
+- Use Italian language
+- Focus on prevention, not diagnosis
+
+Respond with JSON in this exact format:
+{
+  "questions": [
+    {
+      "text": "Question text in Italian",
+      "options": ["A) First option", "B) Second option", "C) Third option", "D) Fourth option"],
+      "correctAnswer": "A",
+      "explanation": "Brief explanation why this answer is correct (1-2 sentences)"
+    },
+    ... (exactly 10 questions)
+  ]
+}`;
+
+    const userPrompt = `Create 10 personalized health prevention questions for a ${userAge}-year-old ${userGender} working as ${userProfession}. Focus on relevant health risks and prevention strategies for this demographic.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            questions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  text: { type: "string" },
+                  options: { type: "array", items: { type: "string" } },
+                  correctAnswer: { type: "string" },
+                  explanation: { type: "string" },
+                },
+                required: ["text", "options", "correctAnswer", "explanation"],
+              },
+            },
+          },
+          required: ["questions"],
+        },
+      },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    });
+
+    const rawJson = response.text;
+    if (!rawJson) {
+      throw new Error("Empty response from Gemini");
+    }
+
+    const result = JSON.parse(rawJson);
+    console.log("[Gemini] Generated", result.questions.length, "assessment questions");
+    
+    // Validate we have exactly 10 questions
+    if (!result.questions || result.questions.length !== 10) {
+      throw new Error(`Invalid number of questions generated: ${result.questions?.length || 0}. Expected exactly 10 questions.`);
+    }
+
+    // Validate each question structure
+    for (let i = 0; i < result.questions.length; i++) {
+      const q = result.questions[i];
+      
+      // Validate required fields
+      if (!q.text || !q.options || !q.correctAnswer || !q.explanation) {
+        throw new Error(`Question ${i + 1} is missing required fields`);
+      }
+      
+      // Validate options array has exactly 4 items
+      if (!Array.isArray(q.options) || q.options.length !== 4) {
+        throw new Error(`Question ${i + 1} must have exactly 4 options, got ${q.options?.length || 0}`);
+      }
+      
+      // Validate correctAnswer is A, B, C, or D
+      const validAnswers = ['A', 'B', 'C', 'D'];
+      if (!validAnswers.includes(q.correctAnswer)) {
+        throw new Error(`Question ${i + 1} has invalid correctAnswer: "${q.correctAnswer}". Must be A, B, C, or D`);
+      }
+    }
+    
+    return result.questions;
+  } catch (error) {
+    console.error("[Gemini] Failed to generate assessment questions:", error);
+    throw new Error(`Failed to generate assessment questions: ${error}`);
+  }
+}
+
+/**
  * Generate medical triage response based on user symptoms
  */
 export interface TriageResponse {

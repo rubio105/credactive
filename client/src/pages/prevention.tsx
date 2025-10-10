@@ -547,105 +547,138 @@ export default function PreventionPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-1 space-y-6">
             {/* Indicatore Prevenzione */}
-            <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
-              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
-                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                  <Activity className="w-5 h-5" />
+            <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
+              <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-8">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <Activity className="w-6 h-6" />
+                  </div>
                   Indice di Prevenzione
                 </CardTitle>
-                <CardDescription>Il tuo engagement con la prevenzione</CardDescription>
+                <CardDescription className="text-white/90 text-base mt-2">
+                  Il tuo percorso verso la salute preventiva
+                </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {/* Score e Tier */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-4xl font-bold text-emerald-600 dark:text-emerald-400" data-testid="text-prevention-score">
-                        {preventionIndex?.score || 0}
+              <CardContent className="pt-6 pb-8">
+                <div className="space-y-6">
+                  {/* Score e Tier - Design circolare */}
+                  <div className="flex flex-col items-center justify-center py-4">
+                    <div className="relative">
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900 dark:to-teal-900 flex items-center justify-center border-4 border-emerald-200 dark:border-emerald-700 shadow-lg">
+                        <div className="text-center">
+                          <div className="text-5xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent" data-testid="text-prevention-score">
+                            {preventionIndex?.score || 0}
+                          </div>
+                          <div className="text-xs font-semibold text-muted-foreground -mt-1">/ 100</div>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">su 100</div>
+                      {/* Decorative ring */}
+                      <div className="absolute inset-0 -z-10">
+                        <div className={`w-36 h-36 rounded-full border-4 ${
+                          preventionIndex?.tier === 'high' 
+                            ? 'border-green-500 animate-pulse' 
+                            : preventionIndex?.tier === 'medium'
+                            ? 'border-yellow-500' 
+                            : 'border-gray-400'
+                        } -translate-x-2 -translate-y-2 opacity-30`}></div>
+                      </div>
                     </div>
                     <Badge 
                       variant="outline" 
-                      className={
+                      className={`mt-4 px-6 py-1.5 text-base font-bold ${
                         preventionIndex?.tier === 'high' 
-                          ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-300' 
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-md' 
                           : preventionIndex?.tier === 'medium'
-                          ? 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-300'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-950 dark:text-gray-300'
-                      }
+                          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-md'
+                          : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0 shadow-md'
+                      }`}
                       data-testid="badge-prevention-tier"
                     >
-                      {preventionIndex?.tier === 'high' ? 'Alto' : preventionIndex?.tier === 'medium' ? 'Medio' : 'Basso'}
+                      {preventionIndex?.tier === 'high' ? '🏆 Livello Alto' : preventionIndex?.tier === 'medium' ? '⭐ Livello Medio' : '🌱 Livello Base'}
                     </Badge>
                   </div>
 
                   {/* Metriche Breakdown */}
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Frequenza consultazioni</span>
-                        <span className="font-medium">{preventionIndex?.breakdown.frequencyScore || 0}/30</span>
+                  <div className="space-y-4">
+                    <div className="space-y-2 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                          Frequenza consultazioni
+                        </span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{preventionIndex?.breakdown.frequencyScore || 0}/30</span>
                       </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-3 bg-white/50 dark:bg-gray-800/50 rounded-full overflow-hidden shadow-inner">
                         <div 
-                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all"
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500 ease-out rounded-full shadow-sm"
                           style={{ width: `${((preventionIndex?.breakdown.frequencyScore || 0) / 30) * 100}%` }}
                           data-testid="bar-frequency"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Profondità conversazioni</span>
-                        <span className="font-medium">{preventionIndex?.breakdown.depthScore || 0}/20</span>
+                    <div className="space-y-2 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                          Profondità conversazioni
+                        </span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">{preventionIndex?.breakdown.depthScore || 0}/20</span>
                       </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-3 bg-white/50 dark:bg-gray-800/50 rounded-full overflow-hidden shadow-inner">
                         <div 
-                          className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all"
+                          className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500 ease-out rounded-full shadow-sm"
                           style={{ width: `${((preventionIndex?.breakdown.depthScore || 0) / 20) * 100}%` }}
                           data-testid="bar-depth"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Documenti caricati</span>
-                        <span className="font-medium">{preventionIndex?.breakdown.documentScore || 0}/20</span>
+                    <div className="space-y-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                          Documenti caricati
+                        </span>
+                        <span className="font-bold text-purple-600 dark:text-purple-400">{preventionIndex?.breakdown.documentScore || 0}/20</span>
                       </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-3 bg-white/50 dark:bg-gray-800/50 rounded-full overflow-hidden shadow-inner">
                         <div 
-                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 ease-out rounded-full shadow-sm"
                           style={{ width: `${((preventionIndex?.breakdown.documentScore || 0) / 20) * 100}%` }}
                           data-testid="bar-documents"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Alert gestiti</span>
-                        <span className="font-medium">{preventionIndex?.breakdown.alertScore || 0}/15</span>
+                    <div className="space-y-2 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                          Alert gestiti
+                        </span>
+                        <span className="font-bold text-orange-600 dark:text-orange-400">{preventionIndex?.breakdown.alertScore || 0}/15</span>
                       </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-3 bg-white/50 dark:bg-gray-800/50 rounded-full overflow-hidden shadow-inner">
                         <div 
-                          className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all"
+                          className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500 ease-out rounded-full shadow-sm"
                           style={{ width: `${((preventionIndex?.breakdown.alertScore || 0) / 15) * 100}%` }}
                           data-testid="bar-alerts"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Insights salute</span>
-                        <span className="font-medium">{preventionIndex?.breakdown.insightScore || 0}/15</span>
+                    <div className="space-y-2 p-3 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/30 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                          Insights salute
+                        </span>
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{preventionIndex?.breakdown.insightScore || 0}/15</span>
                       </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-3 bg-white/50 dark:bg-gray-800/50 rounded-full overflow-hidden shadow-inner">
                         <div 
-                          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all"
+                          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500 ease-out rounded-full shadow-sm"
                           style={{ width: `${((preventionIndex?.breakdown.insightScore || 0) / 15) * 100}%` }}
                           data-testid="bar-insights"
                         />

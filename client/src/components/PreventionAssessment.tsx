@@ -18,7 +18,8 @@ import {
   ClipboardCheck,
   User,
   Briefcase,
-  FileText
+  FileText,
+  Lightbulb
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -371,20 +372,27 @@ export default function PreventionAssessment({ onComplete }: PreventionAssessmen
   if (currentStep === 'results' && assessment) {
     const getRiskColor = (level?: string) => {
       switch (level) {
-        case 'low': return 'bg-green-500';
-        case 'medium': return 'bg-yellow-500';
-        case 'high': return 'bg-red-500';
-        default: return 'bg-gray-500';
+        case 'low': return 'bg-gradient-to-r from-green-500 to-emerald-500';
+        case 'medium': return 'bg-gradient-to-r from-yellow-500 to-orange-500';
+        case 'high': return 'bg-gradient-to-r from-red-500 to-rose-500';
+        default: return 'bg-gradient-to-r from-gray-500 to-slate-500';
       }
     };
 
     const getRiskLabel = (level?: string) => {
       switch (level) {
-        case 'low': return 'Rischio Basso';
-        case 'medium': return 'Rischio Moderato';
-        case 'high': return 'Rischio Alto';
+        case 'low': return '✅ Rischio Basso';
+        case 'medium': return '⚠️ Rischio Moderato';
+        case 'high': return '🚨 Rischio Alto';
         default: return 'Non valutato';
       }
+    };
+
+    const getScoreColor = () => {
+      const score = assessment.score || 0;
+      if (score >= 70) return 'from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400';
+      if (score >= 40) return 'from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400';
+      return 'from-red-600 to-rose-600 dark:from-red-400 dark:to-rose-400';
     };
 
     return (
@@ -393,63 +401,114 @@ export default function PreventionAssessment({ onComplete }: PreventionAssessmen
         animate={{ opacity: 1, scale: 1 }}
         className="max-w-4xl mx-auto space-y-6"
       >
-        <Card className="border-2">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <CheckCircle2 className="w-12 h-12 text-primary" />
-            </div>
-            <CardTitle className="text-3xl">Assessment Completato!</CardTitle>
-            <CardDescription>Ecco i tuoi risultati personalizzati</CardDescription>
+        <Card className="border-2 border-primary/20 shadow-2xl overflow-hidden">
+          <CardHeader className="text-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/50 dark:via-teal-950/50 dark:to-cyan-950/50 pb-8">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="mx-auto mb-4 w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg"
+            >
+              <CheckCircle2 className="w-14 h-14 text-white" />
+            </motion.div>
+            <CardTitle className="text-4xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+              Assessment Completato!
+            </CardTitle>
+            <CardDescription className="text-lg mt-2">
+              Ecco i tuoi risultati personalizzati
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Score */}
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">Punteggio</p>
-              <p className="text-6xl font-bold text-primary">{assessment.score}%</p>
+          <CardContent className="space-y-8 pt-8">
+            {/* Score - Design circolare migliorato */}
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative">
+                <motion.div 
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
+                  className="w-40 h-40 rounded-full bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center border-8 border-primary/20 shadow-2xl"
+                >
+                  <div className="text-center">
+                    <p className={`text-6xl font-black bg-gradient-to-r ${getScoreColor()} bg-clip-text text-transparent`}>
+                      {assessment.score}
+                    </p>
+                    <p className="text-sm font-semibold text-muted-foreground">su 100</p>
+                  </div>
+                </motion.div>
+                {/* Decorative rings */}
+                <div className="absolute inset-0 -z-10">
+                  <div className={`w-44 h-44 rounded-full border-4 ${assessment.riskLevel === 'low' ? 'border-green-400' : assessment.riskLevel === 'medium' ? 'border-yellow-400' : 'border-red-400'} -translate-x-2 -translate-y-2 opacity-20 animate-pulse`}></div>
+                </div>
+              </div>
             </div>
 
             {/* Risk Level */}
             <div className="flex justify-center">
-              <Badge className={`${getRiskColor(assessment.riskLevel)} text-white px-6 py-2 text-lg`}>
-                {getRiskLabel(assessment.riskLevel)}
-              </Badge>
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Badge className={`${getRiskColor(assessment.riskLevel)} text-white px-8 py-3 text-xl font-bold shadow-lg`}>
+                  {getRiskLabel(assessment.riskLevel)}
+                </Badge>
+              </motion.div>
             </div>
 
             {/* Recommendations */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-lg">Raccomandazioni Personalizzate:</h3>
-              <ul className="space-y-2">
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="space-y-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 p-6 rounded-xl"
+            >
+              <h3 className="font-bold text-xl flex items-center gap-2">
+                <Lightbulb className="w-6 h-6 text-yellow-500" />
+                Raccomandazioni Personalizzate
+              </h3>
+              <ul className="space-y-3">
                 {assessment.recommendations?.map((rec, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5" />
-                    <span className="text-muted-foreground">{rec}</span>
-                  </li>
+                  <motion.li 
+                    key={index} 
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
+                    className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg"
+                  >
+                    <CheckCircle2 className="w-6 h-6 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-foreground font-medium">{rec}</span>
+                  </motion.li>
                 ))}
               </ul>
-            </div>
+            </motion.div>
 
             {/* Actions */}
-            <div className="flex gap-4 pt-4">
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="flex gap-4 pt-4"
+            >
               <Button 
                 onClick={() => {
                   // Download PDF report
                   window.open(`/api/prevention/assessment/${assessment.id}/pdf`, '_blank');
                 }}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 h-12 text-base font-semibold border-2"
                 data-testid="button-download-pdf"
               >
-                <FileText className="w-4 h-4 mr-2" />
+                <FileText className="w-5 h-5 mr-2" />
                 Scarica Report PDF
               </Button>
               <Button 
                 onClick={onComplete}
-                className="flex-1"
+                className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
                 data-testid="button-back-to-hub"
               >
                 Torna al Hub Prevenzione
               </Button>
-            </div>
+            </motion.div>
           </CardContent>
         </Card>
 

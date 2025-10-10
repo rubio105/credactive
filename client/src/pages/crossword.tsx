@@ -120,6 +120,30 @@ export default function CrosswordPage() {
     return userAnswer === solution.answer;
   };
 
+  // Get letter for a specific cell (from correct answers only)
+  const getCellLetter = (rowIdx: number, colIdx: number): string | null => {
+    // Find clues that pass through this cell
+    for (const clue of puzzle.cluesData) {
+      const userAnswer = userAnswers[clue.number];
+      
+      // Only show letters if answer is correct
+      if (userAnswer && isCorrect(clue.number) === true) {
+        if (clue.direction === 'across') {
+          // Check if this cell is part of this across clue
+          if (clue.row === rowIdx && colIdx >= clue.col && colIdx < clue.col + userAnswer.length) {
+            return userAnswer[colIdx - clue.col];
+          }
+        } else if (clue.direction === 'down') {
+          // Check if this cell is part of this down clue
+          if (clue.col === colIdx && rowIdx >= clue.row && rowIdx < clue.row + userAnswer.length) {
+            return userAnswer[rowIdx - clue.row];
+          }
+        }
+      }
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -170,11 +194,13 @@ export default function CrosswordPage() {
                           (c: any) => c.row === rowIdx && c.col === colIdx
                         );
                         
+                        const letter = getCellLetter(rowIdx, colIdx);
+                        
                         return (
                           <div
                             key={`${rowIdx}-${colIdx}`}
                             className={`
-                              w-8 h-8 border flex items-center justify-center relative text-sm font-medium
+                              w-8 h-8 border flex items-center justify-center relative text-sm font-bold
                               ${cell ? 'bg-white dark:bg-slate-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900' : 'bg-slate-900 dark:bg-slate-950'}
                               ${selectedClue === clue?.number ? 'ring-2 ring-orange-500' : ''}
                             `}
@@ -183,6 +209,11 @@ export default function CrosswordPage() {
                             {clue && (
                               <span className="absolute top-0 left-0.5 text-[10px] text-orange-600 font-bold">
                                 {clue.number}
+                              </span>
+                            )}
+                            {letter && (
+                              <span className="text-green-600 dark:text-green-400 font-bold text-base">
+                                {letter}
                               </span>
                             )}
                           </div>

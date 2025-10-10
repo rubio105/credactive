@@ -206,6 +206,9 @@ export default function Home() {
       const quiz = quizCategories.find(q => q.id === quizId);
       if (quiz) {
         window.location.href = `/quiz/${quizId}?questions=${quiz.questionCount}`;
+      } else {
+        // Fallback: navigate to quiz without question count parameter
+        window.location.href = `/quiz/${quizId}`;
       }
     }
   };

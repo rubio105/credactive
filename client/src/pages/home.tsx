@@ -13,7 +13,7 @@ import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 
 interface User {
@@ -188,6 +188,67 @@ export default function Home() {
             </Button>
           </Link>
         </div>
+
+        {/* AI Prohmed Hero - Prevenzione Educativa */}
+        <Card className="mb-8 bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-none shadow-lg">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <Shield className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Impara la Prevenzione con AI Prohmed</h2>
+                    <Badge className="mt-1 bg-white/30 text-white border-white/40">Intelligenza Artificiale</Badge>
+                  </div>
+                </div>
+                <p className="text-white/90 text-lg mb-4 max-w-2xl">
+                  Condividi il tuo caso personale e scopri strategie pratiche di prevenzione. 
+                  L'AI ti guida nell'apprendimento delle migliori pratiche per la tua salute.
+                </p>
+                <ul className="space-y-2 mb-6 text-white/90">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                    <span>Conversazione educativa personalizzata sul tuo caso</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                    <span>Consigli pratici di prevenzione basati su evidenze scientifiche</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                    <span>Risorse e documenti educativi personalizzati</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="hidden lg:flex items-center">
+                <Link href="/prevention">
+                  <Button 
+                    size="lg" 
+                    className="bg-white text-emerald-600 hover:bg-white/90 text-lg px-8 py-6 shadow-xl"
+                    data-testid="button-ai-prohmed"
+                  >
+                    <Shield className="w-5 h-5 mr-2" />
+                    Inizia Ora
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="lg:hidden mt-6">
+              <Link href="/prevention">
+                <Button 
+                  size="lg" 
+                  className="w-full bg-white text-emerald-600 hover:bg-white/90 text-lg py-6"
+                  data-testid="button-ai-prohmed-mobile"
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  Inizia Ora
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Quick Stats */}
         {dashboardData && (

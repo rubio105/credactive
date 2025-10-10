@@ -544,8 +544,8 @@ export default function PreventionPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-1 space-y-6">
+        <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">
+          <div className="lg:col-span-1 space-y-6 order-2 lg:order-1 max-w-full">
             {/* Indicatore Prevenzione */}
             <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
               <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-8">
@@ -912,7 +912,7 @@ export default function PreventionPage() {
             </Card>
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-1 lg:order-2 max-w-full">
             <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
               <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
                 <div className="flex items-center justify-between">

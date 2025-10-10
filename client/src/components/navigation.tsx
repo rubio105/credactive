@@ -81,7 +81,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
               <img 
                 src={logoImage} 
                 alt="CIRY" 
-                className="h-12 w-auto object-contain"
+                className="h-16 w-auto object-contain"
               />
             </div>
           </Link>

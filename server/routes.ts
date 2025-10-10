@@ -5964,8 +5964,8 @@ Explicación de audio:`
 
   // ========== PREVENTION SYSTEM ROUTES ==========
   
-  // Get all prevention documents (GET /api/prevention/documents)
-  app.get('/api/prevention/documents', isAuthenticated, async (req, res) => {
+  // Get all prevention documents (GET /api/prevention/documents) - Public endpoint
+  app.get('/api/prevention/documents', async (req, res) => {
     try {
       const activeOnly = req.query.activeOnly === 'true';
       const documents = await storage.getAllPreventionDocuments(activeOnly);
@@ -6243,10 +6243,16 @@ Explicación de audio:`
     }
   });
 
-  // Get latest assessment for user (GET /api/prevention/assessment/latest)
-  app.get('/api/prevention/assessment/latest', isAuthenticated, async (req, res) => {
+  // Get latest assessment for user (GET /api/prevention/assessment/latest) - Optional auth
+  app.get('/api/prevention/assessment/latest', async (req, res) => {
     try {
       const user = req.user as any;
+      
+      // If not authenticated, return 404 (no assessment for anonymous)
+      if (!user) {
+        return res.status(404).json({ message: 'No assessment found' });
+      }
+      
       const assessment = await storage.getLatestPreventionAssessment(user.id);
       
       if (!assessment) {

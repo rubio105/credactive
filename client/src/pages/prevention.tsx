@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -86,8 +86,19 @@ export default function PreventionPage() {
       apiRequest("/api/triage/start", "POST", { initialSymptom: symptom }),
     onSuccess: (data: any) => {
       setSessionId(data.session.id);
-      queryClient.invalidateQueries({ queryKey: ["/api/triage/session", data.session.id] });
-      queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", data.session.id] });
+      // Set data directly in cache instead of invalidating to avoid race conditions
+      queryClient.setQueryData(["/api/triage/session", data.session.id], data.session);
+      queryClient.setQueryData(["/api/triage/messages", data.session.id], data.messages);
+    },
+    onError: (error: any) => {
+      const message = error?.message || "Errore durante l'avvio della conversazione";
+      toast({ 
+        title: "Errore", 
+        description: message.includes("quota") || message.includes("429") 
+          ? "Il servizio AI ha raggiunto il limite giornaliero. Riprova più tardi." 
+          : message,
+        variant: "destructive" 
+      });
     },
   });
 
@@ -98,6 +109,16 @@ export default function PreventionPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/triage/session", sessionId] });
       setUserInput("");
+    },
+    onError: (error: any) => {
+      const message = error?.message || "Errore durante l'invio del messaggio";
+      toast({ 
+        title: "Errore", 
+        description: message.includes("quota") || message.includes("429") 
+          ? "Il servizio AI ha raggiunto il limite giornaliero. Riprova più tardi." 
+          : message,
+        variant: "destructive" 
+      });
     },
   });
 
@@ -112,6 +133,31 @@ export default function PreventionPage() {
   const handleSend = () => {
     if (!userInput.trim() || !sessionId) return;
     sendMessageMutation.mutate(userInput);
+  };
+
+  const closeSessionMutation = useMutation({
+    mutationFn: (sessionId: string) =>
+      apiRequest(`/api/triage/${sessionId}/close`, "POST", {}),
+    onSuccess: () => {
+      // Clear cached active session BEFORE clearing local state to prevent useEffect from restoring it
+      queryClient.setQueryData(["/api/triage/session/active"], null);
+      setSessionId(null);
+      setUserInput("");
+      toast({ title: "Conversazione terminata" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: "Errore durante la chiusura della conversazione",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const handleCloseSession = () => {
+    if (sessionId) {
+      closeSessionMutation.mutate(sessionId);
+    }
   };
 
   useEffect(() => {
@@ -188,6 +234,17 @@ export default function PreventionPage() {
                       Conversazione educativa personalizzata sulla prevenzione
                     </CardDescription>
                   </div>
+                  {sessionId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCloseSession}
+                      data-testid="button-close-session"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Nuova Conversazione
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

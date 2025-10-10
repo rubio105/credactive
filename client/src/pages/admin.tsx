@@ -36,7 +36,7 @@ const menuItems = [
   { id: "on-demand-courses", icon: Video, label: "Corsi On-Demand", testId: "tab-on-demand-courses" },
   { id: "pages", icon: FileText, label: "Pagine", testId: "tab-pages" },
   { id: "corporate", icon: Building2, label: "Aziende", testId: "tab-corporate" },
-  { id: "prevention", icon: Shield, label: "Prevenzione", testId: "tab-prevention" },
+  { id: "prevention", icon: Shield, label: "AI Prohmed", testId: "tab-prevention" },
   { id: "prohmed-codes", icon: Gift, label: "Codici Prohmed", testId: "tab-prohmed-codes" },
   { id: "email", icon: Mail, label: "Email", testId: "tab-email" },
   { id: "api", icon: Key, label: "API Keys", testId: "tab-api" },

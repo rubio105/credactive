@@ -6288,6 +6288,64 @@ Explicación de audio:`
 
   // ========== TRIAGE CONVERSATION ROUTES ==========
   
+  // *** ADMIN ENDPOINTS (must be before parametric routes) ***
+  
+  // Get all triage alerts (GET /api/triage/alerts) - ADMIN ONLY
+  app.get('/api/triage/alerts', isAdmin, async (req, res) => {
+    try {
+      const alerts = await storage.getAllTriageAlerts();
+      
+      // Map backend fields to frontend expectations
+      const mappedAlerts = alerts.map(alert => ({
+        id: alert.id,
+        sessionId: alert.sessionId,
+        urgencyLevel: alert.urgencyLevel,
+        suggestedAction: `${alert.alertType}: ${alert.reason}`, // Combine alertType + reason
+        isResolved: alert.isReviewed, // Map isReviewed → isResolved
+        resolvedAt: alert.reviewedAt,
+        createdAt: alert.createdAt,
+      }));
+      
+      res.json(mappedAlerts);
+    } catch (error: any) {
+      console.error('Get all triage alerts error:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch alerts' });
+    }
+  });
+
+  // Resolve triage alert (POST /api/triage/alerts/:id/resolve) - ADMIN ONLY
+  app.post('/api/triage/alerts/:id/resolve', isAdmin, async (req, res) => {
+    try {
+      const alertId = req.params.id;
+      const admin = req.user as any;
+      
+      const updatedAlert = await storage.updateTriageAlert(alertId, {
+        isReviewed: true, // Backend uses isReviewed
+        reviewedById: admin.id,
+        reviewedAt: new Date(),
+        reviewNotes: 'Resolved by admin',
+      });
+      
+      // Map backend → frontend
+      const mappedAlert = {
+        id: updatedAlert.id,
+        sessionId: updatedAlert.sessionId,
+        urgencyLevel: updatedAlert.urgencyLevel,
+        suggestedAction: `${updatedAlert.alertType}: ${updatedAlert.reason}`,
+        isResolved: updatedAlert.isReviewed,
+        resolvedAt: updatedAlert.reviewedAt,
+        createdAt: updatedAlert.createdAt,
+      };
+      
+      res.json(mappedAlert);
+    } catch (error: any) {
+      console.error('Resolve triage alert error:', error);
+      res.status(500).json({ message: error.message || 'Failed to resolve alert' });
+    }
+  });
+
+  // *** USER ENDPOINTS ***
+  
   // Start new triage session (POST /api/triage/start)
   app.post('/api/triage/start', isAuthenticated, async (req, res) => {
     try {

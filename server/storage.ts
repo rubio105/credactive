@@ -465,6 +465,7 @@ export interface IStorage {
   createTriageAlert(alert: InsertTriageAlert): Promise<TriageAlert>;
   getTriageAlertsBySession(sessionId: string): Promise<TriageAlert[]>;
   getUnreviewedTriageAlerts(): Promise<TriageAlert[]>;
+  getAllTriageAlerts(): Promise<TriageAlert[]>; // Admin: fetch all alerts
   updateTriageAlert(id: string, updates: Partial<TriageAlert>): Promise<TriageAlert>;
   
   // Prohmed code operations
@@ -2828,6 +2829,13 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(triageAlerts)
       .where(eq(triageAlerts.isReviewed, false))
+      .orderBy(desc(triageAlerts.createdAt));
+  }
+
+  async getAllTriageAlerts(): Promise<TriageAlert[]> {
+    return await db
+      .select()
+      .from(triageAlerts)
       .orderBy(desc(triageAlerts.createdAt));
   }
 

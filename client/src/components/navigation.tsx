@@ -12,7 +12,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2 } from "lucide-react";
-import logoImage from "@assets/image_1760060236448.png";
+import logoImageSmall from "@assets/image_1760060236448.png";
+import logoImageFull from "@assets/image_1760065574290.png";
 
 interface User {
   id: string;
@@ -34,9 +35,14 @@ interface ContentPage {
   isPublished: boolean;
 }
 
-export default function Navigation() {
+interface NavigationProps {
+  useLandingLogo?: boolean;
+}
+
+export default function Navigation({ useLandingLogo = false }: NavigationProps = {}) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const typedUser = user as User;
+  const logoImage = useLandingLogo ? logoImageFull : logoImageSmall;
 
   const { data: headerPages = [] } = useQuery<ContentPage[]>({
     queryKey: ["/api/content-pages"],

@@ -44,7 +44,7 @@ export default function Landing() {
         keywords="CIRY, cybersecurity certificazioni, CISSP online, CISM training, ISO 27001, prevenzione sanitaria AI, health report, medical AI, GDPR, NIS2, DORA, sicurezza informatica, intelligenza artificiale salute"
         canonicalUrl="https://credactive.academy"
       />
-      <Navigation />
+      <Navigation useLandingLogo={true} />
 
       {/* Hero Section */}
       <section className="relative gradient-secondary text-white overflow-hidden">

@@ -351,25 +351,35 @@ export interface TriageResponse {
 export async function generateTriageResponse(
   userMessage: string,
   conversationHistory: Array<{ role: string; content: string }>,
-  documentContext?: string
+  documentContext?: string,
+  userName?: string
 ): Promise<TriageResponse> {
   try {
     const contextInfo = documentContext 
       ? `\n\nRelevant medical documentation:\n${documentContext}`
       : "";
+    
+    const userGreeting = userName 
+      ? `\n\nUSER CONTEXT: The user's name is ${userName}. When appropriate, address them by name to personalize the conversation (e.g., "Ciao ${userName}, capisco la tua preoccupazione...").`
+      : "\n\nUSER CONTEXT: This is an anonymous user. Use general greetings without names.";
 
     const systemPrompt = `You are "AI Prohmed", an educational assistant specialized in teaching prevention strategies.
 Your mission is to help users LEARN how to prevent health issues through their personal cases.
 
-EDUCATIONAL APPROACH:
-- Be empathetic, encouraging, and educational
-- Ask about their personal case/situation to personalize the learning
-- TEACH prevention strategies based on scientific evidence
-- Guide users through practical steps they can implement
-- Use real-life examples and analogies to explain concepts
-- Focus on EMPOWERING users with knowledge, not diagnosing
+CONVERSATIONAL & EXPLORATORY APPROACH:
+- Be empathetic, encouraging, and naturally conversational
+- ALWAYS ask clarifying follow-up questions before giving advice
+- When user mentions a symptom/concern, explore it deeply with 2-3 specific questions:
+  * TIMING: "Da quanto tempo?" "Quando è iniziato?" "È costante o intermittente?"
+  * LOCATION: "In che zona esatta?" "Si irradia altrove?" "È localizzato o diffuso?"
+  * INTENSITY: "Quanto è forte da 1 a 10?" "Interferisce con le attività quotidiane?"
+  * CONTEXT: "Cosa stavi facendo quando è iniziato?" "Hai notato fattori scatenanti?"
+  * ASSOCIATED SYMPTOMS: "Hai altri sintomi?" "C'è qualcos'altro che hai notato?"
+- Make the conversation feel natural, like talking to a caring health educator
+- Build on previous answers to go deeper into their case
 
 PREVENTION EDUCATION FOCUS:
+- ONLY after understanding their specific case, TEACH personalized prevention strategies
 - Explain WHY certain practices prevent diseases (mechanism of action)
 - Provide actionable steps: diet, exercise, lifestyle, screening schedules
 - Discuss risk factors specific to their case (age, family history, profession)
@@ -391,6 +401,7 @@ LANGUAGE & TONE:
 - Be motivating and positive about prevention benefits
 - Avoid medical jargon - explain in simple terms
 - Celebrate small steps toward healthier habits
+- Ask questions one at a time, don't overwhelm with too many questions at once
 
 Respond with JSON in this exact format:
 {
@@ -400,7 +411,7 @@ Respond with JSON in this exact format:
   "urgencyLevel": "low" | "medium" | "high" | "emergency",
   "relatedTopics": ["prevention topic1", "prevention topic2", ...],
   "needsReportUpload": boolean (true if user wants to share medical reports for personalized learning)
-}${contextInfo}`;
+}${contextInfo}${userGreeting}`;
 
     // Build contents array with proper message structure
     const contents = conversationHistory.map(msg => ({

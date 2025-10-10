@@ -6414,8 +6414,13 @@ Explicación de audio:`
         content: initialSymptom,
       });
 
-      // Get AI response
-      const aiResponse = await generateTriageResponse(initialSymptom, []);
+      // Get AI response (pass user's first name for personalization if available)
+      const aiResponse = await generateTriageResponse(
+        initialSymptom, 
+        [], 
+        undefined, 
+        user?.firstName
+      );
 
       // Save AI response
       const aiMessage = await storage.createTriageMessage({
@@ -6489,6 +6494,22 @@ Explicación de audio:`
         return res.status(400).json({ message: 'Session is closed' });
       }
 
+      // Check message limit for free/anonymous users (30 messages per session)
+      const existingMessages = await storage.getTriageMessagesBySession(sessionId);
+      const userMessageCount = existingMessages.filter(m => m.role === 'user').length;
+      
+      const isFreeUser = !user || !user.isPremium;
+      const MESSAGE_LIMIT = 30;
+      
+      if (isFreeUser && userMessageCount >= MESSAGE_LIMIT) {
+        return res.status(403).json({ 
+          message: 'Limite messaggi raggiunto. Abbonati per continuare la conversazione.',
+          requiresUpgrade: true,
+          messageLimit: MESSAGE_LIMIT,
+          messagesUsed: userMessageCount
+        });
+      }
+
       // Create user message
       const userMessage = await storage.createTriageMessage({
         sessionId,
@@ -6500,8 +6521,13 @@ Explicación de audio:`
       const messages = await storage.getTriageMessagesBySession(sessionId);
       const history = messages.map(m => ({ role: m.role, content: m.content }));
 
-      // Get AI response
-      const aiResponse = await generateTriageResponse(content, history);
+      // Get AI response (pass user's first name for personalization if available)
+      const aiResponse = await generateTriageResponse(
+        content, 
+        history, 
+        undefined, 
+        user?.firstName
+      );
 
       // Save AI response
       const aiMessage = await storage.createTriageMessage({

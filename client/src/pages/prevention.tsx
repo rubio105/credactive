@@ -6,11 +6,23 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 import PreventionAssessment from "@/components/PreventionAssessment";
+import prohmedLogo from "@assets/image_1760071152562.png";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PreventionDocument {
   id: string;
@@ -43,10 +55,14 @@ interface LatestAssessment {
 export default function PreventionPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userInput, setUserInput] = useState("");
   const [showAssessment, setShowAssessment] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   const { data: latestAssessment, isLoading: assessmentLoading } = useQuery<LatestAssessment>({
     queryKey: ["/api/prevention/assessment/latest"],
@@ -101,6 +117,8 @@ export default function PreventionPage() {
       // Set data directly in cache instead of invalidating to avoid race conditions
       queryClient.setQueryData(["/api/triage/session", data.session.id], data.session);
       queryClient.setQueryData(["/api/triage/messages", data.session.id], data.messages);
+      // Clear input field after starting conversation
+      setUserInput("");
     },
     onError: (error: any) => {
       const message = error?.message || "Errore durante l'avvio della conversazione";
@@ -116,8 +134,27 @@ export default function PreventionPage() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest(`/api/triage/${sessionId}/message`, "POST", { content: message });
-      return response.json();
+      // Use fetch directly to check status before throwing
+      const response = await fetch(`/api/triage/${sessionId}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: message }),
+        credentials: "include",
+      });
+      
+      const data = await response.json();
+      
+      // Check if upgrade is required before throwing error
+      if (response.status === 403 && data.requiresUpgrade) {
+        throw { requiresUpgrade: true, ...data };
+      }
+      
+      // Throw for other errors
+      if (!response.ok) {
+        throw new Error(data.message || "Errore durante l'invio del messaggio");
+      }
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
@@ -125,6 +162,12 @@ export default function PreventionPage() {
       setUserInput("");
     },
     onError: (error: any) => {
+      // Check if this is an upgrade requirement
+      if (error?.requiresUpgrade) {
+        setShowUpgradeDialog(true);
+        return;
+      }
+      
       const message = error?.message || "Errore durante l'invio del messaggio";
       toast({ 
         title: "Errore", 
@@ -145,7 +188,17 @@ export default function PreventionPage() {
   };
 
   const handleSend = () => {
-    if (!userInput.trim() || !sessionId) return;
+    if (!userInput.trim()) return;
+    
+    if (!sessionId) {
+      toast({ 
+        title: "Nessuna sessione attiva", 
+        description: "Inizia una conversazione prima di inviare messaggi.",
+        variant: "destructive" 
+      });
+      return;
+    }
+    
     sendMessageMutation.mutate(userInput);
   };
 
@@ -180,6 +233,75 @@ export default function PreventionPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Initialize speech recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = 'it-IT';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setUserInput(transcript);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          toast({ 
+            title: "Microfono non autorizzato", 
+            description: "Consenti l'accesso al microfono per usare l'input vocale.",
+            variant: "destructive" 
+          });
+        } else if (event.error === 'no-speech') {
+          toast({ 
+            title: "Nessun audio rilevato", 
+            description: "Prova a parlare più vicino al microfono.",
+            variant: "destructive" 
+          });
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [toast]);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      toast({ 
+        title: "Browser non supportato", 
+        description: "L'input vocale non è supportato da questo browser. Usa Chrome o Safari.",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container py-8 max-w-7xl">
@@ -197,50 +319,92 @@ export default function PreventionPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Indicatore Prevenzione */}
             <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
               <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
                 <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                  <FileText className="w-5 h-5" />
-                  Documenti Prevenzione
+                  <Activity className="w-5 h-5" />
+                  Indicatore Prevenzione
                 </CardTitle>
-                <CardDescription>Guide educative verificate</CardDescription>
+                <CardDescription>Stato della tua conversazione</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 pt-6">
-                {documents && documents.length > 0 ? (
-                  documents.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="p-4 border border-emerald-100 dark:border-emerald-800 rounded-lg hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-600 transition-all duration-200 bg-white dark:bg-gray-950"
-                      data-testid={`doc-card-${doc.id}`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-sm mb-1">{doc.title}</h4>
-                          {doc.summary && (
-                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                              {doc.summary}
-                            </p>
-                          )}
-                          <div className="flex flex-wrap gap-1">
-                            {doc.extractedTopics?.slice(0, 2).map((topic, i) => (
-                              <Badge key={i} variant="outline" className="text-xs bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                                {topic}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                          <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950" data-testid={`button-view-${doc.id}`}>
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </a>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">Nessun documento disponibile</p>
-                )}
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Messaggi</span>
+                    <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                      {messages?.filter(m => m.role === 'user').length || 0} / {user?.isPremium ? '∞' : '30'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Stato</span>
+                    <Badge variant={session?.status === 'active' ? 'default' : 'secondary'} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+                      {session?.status === 'active' ? 'Attivo' : 'Inattivo'}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Reportistica */}
+            <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
+                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                  <BarChart3 className="w-5 h-5" />
+                  Reportistica
+                </CardTitle>
+                <CardDescription>I tuoi report personalizzati</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950"
+                  onClick={() => setLocation('/dashboard')}
+                  data-testid="button-view-reports"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Vai al Profilo
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* App Prohmed */}
+            <Card className="shadow-lg border-blue-100 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <img src={prohmedLogo} alt="Prohmed" className="w-12 h-12 object-contain" />
+                  <div>
+                    <CardTitle className="text-blue-900 dark:text-blue-100 text-lg">Prohmed App</CardTitle>
+                    <CardDescription className="text-blue-700 dark:text-blue-300">Telemedicina sempre con te</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <a 
+                  href="https://play.google.com/store/apps/details?id=com.prohmed" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                  data-testid="link-android-app"
+                >
+                  <Button variant="outline" className="w-full justify-start border-blue-200 hover:bg-blue-100 dark:border-blue-800 dark:hover:bg-blue-900">
+                    <Smartphone className="w-4 h-4 mr-2" />
+                    Scarica per Android
+                  </Button>
+                </a>
+                <a 
+                  href="https://apps.apple.com/app/prohmed/id123456789" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                  data-testid="link-ios-app"
+                >
+                  <Button variant="outline" className="w-full justify-start border-blue-200 hover:bg-blue-100 dark:border-blue-800 dark:hover:bg-blue-900">
+                    <Smartphone className="w-4 h-4 mr-2" />
+                    Scarica per iOS
+                  </Button>
+                </a>
               </CardContent>
             </Card>
           </div>
@@ -317,14 +481,26 @@ export default function PreventionPage() {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Input
-                        placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                        className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
-                        data-testid="input-triage-start"
-                      />
+                      <div className="relative flex-1">
+                        <Input
+                          placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
+                          value={userInput}
+                          onChange={(e) => setUserInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+                          className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800 pr-12"
+                          data-testid="input-triage-start"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={toggleVoiceInput}
+                          className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}
+                          data-testid="button-voice-input-start"
+                        >
+                          {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                        </Button>
+                      </div>
                       <Button
                         onClick={handleStart}
                         disabled={startTriageMutation.isPending}
@@ -363,14 +539,26 @@ export default function PreventionPage() {
 
                     {session?.status === 'active' && (
                       <div className="flex gap-2">
-                        <Input
-                          placeholder="Scrivi un messaggio..."
-                          value={userInput}
-                          onChange={(e) => setUserInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                          className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
-                          data-testid="input-triage-message"
-                        />
+                        <div className="relative flex-1">
+                          <Input
+                            placeholder="Scrivi un messaggio..."
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                            className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800 pr-12"
+                            data-testid="input-triage-message"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={toggleVoiceInput}
+                            className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}
+                            data-testid="button-voice-input-message"
+                          >
+                            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                          </Button>
+                        </div>
                         <Button
                           onClick={handleSend}
                           disabled={sendMessageMutation.isPending}
@@ -388,6 +576,48 @@ export default function PreventionPage() {
           </div>
         </div>
       </div>
+
+      {/* Upgrade Dialog */}
+      <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <AlertDialogContent className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-2xl">
+              <Crown className="w-6 h-6 text-amber-500" />
+              Limite Messaggi Gratuiti Raggiunto
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base space-y-3">
+              <p>
+                Hai raggiunto il limite di <strong>30 messaggi gratuiti</strong> per questa conversazione.
+              </p>
+              <p>
+                Abbonati per continuare a usare l'AI Prohmed senza limiti e accedere a tutte le funzionalità premium:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Conversazioni illimitate con l'AI</li>
+                <li>Caricamento documenti medici</li>
+                <li>Report personalizzati</li>
+                <li>Accesso completo alla piattaforma</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-upgrade">
+              Chiudi
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowUpgradeDialog(false);
+                setLocation('/subscribe');
+              }}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              data-testid="button-upgrade-now"
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              Abbonati Ora
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

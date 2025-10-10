@@ -142,6 +142,16 @@ import {
   type InsertTriageAlert,
   type ProhmedCode,
   type InsertProhmedCode,
+  // Prevention assessments
+  preventionAssessments,
+  preventionAssessmentQuestions,
+  preventionUserResponses,
+  type PreventionAssessment,
+  type InsertPreventionAssessment,
+  type PreventionAssessmentQuestion,
+  type InsertPreventionAssessmentQuestion,
+  type PreventionUserResponse,
+  type InsertPreventionUserResponse,
   // Crossword game
   crosswordPuzzles,
   crosswordAttempts,
@@ -453,6 +463,25 @@ export interface IStorage {
   getProhmedCodesByUser(userId: string): Promise<ProhmedCode[]>;
   updateProhmedCode(id: string, updates: Partial<ProhmedCode>): Promise<ProhmedCode>;
   redeemProhmedCode(code: string): Promise<ProhmedCode>;
+
+  // ========== PREVENTION ASSESSMENT SYSTEM ==========
+  
+  // Prevention assessment operations
+  createPreventionAssessment(assessment: InsertPreventionAssessment): Promise<PreventionAssessment>;
+  getPreventionAssessmentById(id: string): Promise<PreventionAssessment | undefined>;
+  getPreventionAssessmentsByUser(userId: string): Promise<PreventionAssessment[]>;
+  getLatestPreventionAssessment(userId: string): Promise<PreventionAssessment | undefined>;
+  updatePreventionAssessment(id: string, updates: Partial<PreventionAssessment>): Promise<PreventionAssessment>;
+  completePreventionAssessment(id: string, score: number, riskLevel: string, recommendations: string[], reportPdfUrl?: string): Promise<PreventionAssessment>;
+  
+  // Prevention assessment question operations
+  createPreventionAssessmentQuestion(question: InsertPreventionAssessmentQuestion): Promise<PreventionAssessmentQuestion>;
+  getPreventionAssessmentQuestions(assessmentId: string): Promise<PreventionAssessmentQuestion[]>;
+  
+  // Prevention user response operations
+  createPreventionUserResponse(response: InsertPreventionUserResponse): Promise<PreventionUserResponse>;
+  getPreventionUserResponses(assessmentId: string): Promise<PreventionUserResponse[]>;
+  getUserResponsesByQuestion(questionId: string): Promise<PreventionUserResponse[]>;
 
   // ========== CROSSWORD GAME ==========
   
@@ -2813,6 +2842,105 @@ export class DatabaseStorage implements IStorage {
       .where(eq(prohmedCodes.code, code))
       .returning();
     return redeemedCode;
+  }
+
+  // ========== PREVENTION ASSESSMENT IMPLEMENTATIONS ==========
+  
+  // Prevention assessment operations
+  async createPreventionAssessment(assessment: InsertPreventionAssessment): Promise<PreventionAssessment> {
+    const [newAssessment] = await db.insert(preventionAssessments).values(assessment).returning();
+    return newAssessment;
+  }
+
+  async getPreventionAssessmentById(id: string): Promise<PreventionAssessment | undefined> {
+    const [assessment] = await db.select().from(preventionAssessments).where(eq(preventionAssessments.id, id));
+    return assessment;
+  }
+
+  async getPreventionAssessmentsByUser(userId: string): Promise<PreventionAssessment[]> {
+    return await db
+      .select()
+      .from(preventionAssessments)
+      .where(eq(preventionAssessments.userId, userId))
+      .orderBy(desc(preventionAssessments.createdAt));
+  }
+
+  async getLatestPreventionAssessment(userId: string): Promise<PreventionAssessment | undefined> {
+    const [assessment] = await db
+      .select()
+      .from(preventionAssessments)
+      .where(eq(preventionAssessments.userId, userId))
+      .orderBy(desc(preventionAssessments.createdAt))
+      .limit(1);
+    return assessment;
+  }
+
+  async updatePreventionAssessment(id: string, updates: Partial<PreventionAssessment>): Promise<PreventionAssessment> {
+    const [assessment] = await db
+      .update(preventionAssessments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(preventionAssessments.id, id))
+      .returning();
+    return assessment;
+  }
+
+  async completePreventionAssessment(
+    id: string, 
+    score: number, 
+    riskLevel: string, 
+    recommendations: string[], 
+    reportPdfUrl?: string
+  ): Promise<PreventionAssessment> {
+    const [assessment] = await db
+      .update(preventionAssessments)
+      .set({
+        status: 'completed',
+        score,
+        riskLevel,
+        recommendations,
+        reportPdfUrl,
+        completedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(preventionAssessments.id, id))
+      .returning();
+    return assessment;
+  }
+
+  // Prevention assessment question operations
+  async createPreventionAssessmentQuestion(question: InsertPreventionAssessmentQuestion): Promise<PreventionAssessmentQuestion> {
+    const [newQuestion] = await db.insert(preventionAssessmentQuestions).values(question).returning();
+    return newQuestion;
+  }
+
+  async getPreventionAssessmentQuestions(assessmentId: string): Promise<PreventionAssessmentQuestion[]> {
+    return await db
+      .select()
+      .from(preventionAssessmentQuestions)
+      .where(eq(preventionAssessmentQuestions.assessmentId, assessmentId))
+      .orderBy(preventionAssessmentQuestions.orderIndex);
+  }
+
+  // Prevention user response operations
+  async createPreventionUserResponse(response: InsertPreventionUserResponse): Promise<PreventionUserResponse> {
+    const [newResponse] = await db.insert(preventionUserResponses).values(response).returning();
+    return newResponse;
+  }
+
+  async getPreventionUserResponses(assessmentId: string): Promise<PreventionUserResponse[]> {
+    return await db
+      .select()
+      .from(preventionUserResponses)
+      .where(eq(preventionUserResponses.assessmentId, assessmentId))
+      .orderBy(preventionUserResponses.createdAt);
+  }
+
+  async getUserResponsesByQuestion(questionId: string): Promise<PreventionUserResponse[]> {
+    return await db
+      .select()
+      .from(preventionUserResponses)
+      .where(eq(preventionUserResponses.questionId, questionId))
+      .orderBy(preventionUserResponses.createdAt);
   }
 
   // ========== CROSSWORD GAME IMPLEMENTATIONS ==========

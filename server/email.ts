@@ -100,7 +100,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
   const senderEmail = options.senderEmail || await getApiKey('BREVO_SENDER_EMAIL') || "noreply@credactive.academy";
   
   sendSmtpEmail.sender = {
-    name: options.senderName || "CREDACTIVE",
+    name: options.senderName || "CIRY",
     email: senderEmail,
   };
 
@@ -178,11 +178,24 @@ export async function sendWelcomeEmail(
     <body>
       <div class="container">
         <div class="header">
-          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
-            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          <svg class="logo" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shield with heartbeat -->
+            <path d="M 30 15 Q 30 10, 35 10 L 55 10 Q 60 10, 60 15 L 60 35 Q 60 45, 45 50 Q 30 45, 30 35 Z" 
+                  fill="none" stroke="#F47820" stroke-width="2.5"/>
+            <polyline points="35,28 40,28 42,22 44,34 46,28 51,28" 
+                      fill="none" stroke="#F47820" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="52" cy="40" r="3" fill="#6B7280"/>
+            <!-- CIRY text -->
+            <text x="75" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">CIRY</text>
+            <!-- Subtitle -->
+            <text x="75" y="52" font-family="Arial, sans-serif" font-size="8" fill="rgba(255,255,255,0.9)">
+              <tspan fill="#9CA3AF">Care &amp; </tspan>
+              <tspan fill="#F47820">Intelligence</tspan>
+              <tspan fill="#9CA3AF"> Ready for </tspan>
+              <tspan fill="#F47820">You</tspan>
+            </text>
           </svg>
-          <h1>🎉 Benvenuto su CREDACTIVE!</h1>
+          <h1>🎉 Benvenuto su CIRY!</h1>
         </div>
         <div class="content">
           <p style="font-size: 18px;">Ciao <strong>${name}</strong>,</p>
@@ -253,7 +266,7 @@ export async function sendWelcomeEmail(
             <p style="margin: 0; font-size: 14px; color: #667eea;"><strong>💡 Consiglio:</strong> Inizia con un quiz di valutazione per scoprire il tuo livello!</p>
           </div>
 
-          <p style="margin-top: 30px;">Buono studio e buona preparazione!<br><strong>Il Team CREDACTIVE</strong></p>
+          <p style="margin-top: 30px;">Buono studio e buona preparazione!<br><strong>Il Team CIRY</strong></p>
         </div>
         <div class="footer">
           <div class="footer-links">
@@ -262,7 +275,7 @@ export async function sendWelcomeEmail(
             <a href="https://credactive.com/privacy">Privacy</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
           <p style="color: #999; font-size: 11px;">
             Questa email è stata inviata a ${sanitizeUserInput(email)}
@@ -274,7 +287,7 @@ export async function sendWelcomeEmail(
   `;
 
   const textContent = `
-CREDACTIVE - Benvenuto!
+CIRY - Benvenuto!
 
 Ciao ${rawName},
 
@@ -290,12 +303,12 @@ Con CREDACTIVE hai accesso a:
 Inizia ora: ${loginUrl}
 
 Buono studio e buona preparazione!
-Il Team CREDACTIVE
+Il Team CIRY
   `;
 
   await sendEmail({
     to: email,
-    subject: "🎉 Benvenuto su CREDACTIVE!",
+    subject: "🎉 Benvenuto su CIRY!",
     htmlContent,
     textContent,
   });
@@ -349,15 +362,28 @@ export async function sendVerificationCodeEmail(
     <body>
       <div class="container">
         <div class="header">
-          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
-            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          <svg class="logo" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shield with heartbeat -->
+            <path d="M 30 15 Q 30 10, 35 10 L 55 10 Q 60 10, 60 15 L 60 35 Q 60 45, 45 50 Q 30 45, 30 35 Z" 
+                  fill="none" stroke="#F47820" stroke-width="2.5"/>
+            <polyline points="35,28 40,28 42,22 44,34 46,28 51,28" 
+                      fill="none" stroke="#F47820" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="52" cy="40" r="3" fill="#6B7280"/>
+            <!-- CIRY text -->
+            <text x="75" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">CIRY</text>
+            <!-- Subtitle -->
+            <text x="75" y="52" font-family="Arial, sans-serif" font-size="8" fill="rgba(255,255,255,0.9)">
+              <tspan fill="#9CA3AF">Care &amp; </tspan>
+              <tspan fill="#F47820">Intelligence</tspan>
+              <tspan fill="#9CA3AF"> Ready for </tspan>
+              <tspan fill="#F47820">You</tspan>
+            </text>
           </svg>
           <h1>🔐 Verifica il tuo Account</h1>
         </div>
         <div class="content">
           <p style="font-size: 18px;">Ciao <strong>${name}</strong>,</p>
-          <p>Benvenuto su CREDACTIVE! Per completare la registrazione e attivare il tuo account, inserisci questo codice di verifica:</p>
+          <p>Benvenuto su CIRY! Per completare la registrazione e attivare il tuo account, inserisci questo codice di verifica:</p>
           
           <div class="code-box">
             <p style="margin: 0; font-size: 14px; color: #666; margin-bottom: 15px;">Il tuo codice di verifica è:</p>
@@ -379,7 +405,7 @@ export async function sendVerificationCodeEmail(
             <a href="https://credactive.com/privacy">Privacy</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
           <p style="color: #999; font-size: 11px;">
             Questa email è stata inviata a ${sanitizeUserInput(email)}
@@ -391,11 +417,11 @@ export async function sendVerificationCodeEmail(
   `;
 
   const textContent = `
-CREDACTIVE - Verifica il tuo Account
+CIRY - Verifica il tuo Account
 
 Ciao ${rawName},
 
-Benvenuto su CREDACTIVE! Per completare la registrazione, utilizza questo codice di verifica:
+Benvenuto su CIRY! Per completare la registrazione, utilizza questo codice di verifica:
 
 CODICE: ${verificationCode}
 
@@ -403,7 +429,7 @@ Questo codice è valido per 15 minuti.
 
 Se non hai richiesto questa registrazione, ignora questa email.
 
-Il Team CREDACTIVE
+Il Team CIRY
   `;
 
   await sendEmail({
@@ -464,9 +490,22 @@ export async function sendPasswordResetEmail(
     <body>
       <div class="container">
         <div class="header">
-          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
-            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          <svg class="logo" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shield with heartbeat -->
+            <path d="M 30 15 Q 30 10, 35 10 L 55 10 Q 60 10, 60 15 L 60 35 Q 60 45, 45 50 Q 30 45, 30 35 Z" 
+                  fill="none" stroke="#F47820" stroke-width="2.5"/>
+            <polyline points="35,28 40,28 42,22 44,34 46,28 51,28" 
+                      fill="none" stroke="#F47820" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="52" cy="40" r="3" fill="#6B7280"/>
+            <!-- CIRY text -->
+            <text x="75" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">CIRY</text>
+            <!-- Subtitle -->
+            <text x="75" y="52" font-family="Arial, sans-serif" font-size="8" fill="rgba(255,255,255,0.9)">
+              <tspan fill="#9CA3AF">Care &amp; </tspan>
+              <tspan fill="#F47820">Intelligence</tspan>
+              <tspan fill="#9CA3AF"> Ready for </tspan>
+              <tspan fill="#F47820">You</tspan>
+            </text>
           </svg>
           <h1>🔐 Recupero Password</h1>
         </div>
@@ -498,7 +537,7 @@ export async function sendPasswordResetEmail(
             </p>
           </div>
 
-          <p style="margin-top: 30px;">Cordiali saluti,<br><strong>Il Team CREDACTIVE</strong></p>
+          <p style="margin-top: 30px;">Cordiali saluti,<br><strong>Il Team CIRY</strong></p>
         </div>
         <div class="footer">
           <div class="footer-links">
@@ -507,7 +546,7 @@ export async function sendPasswordResetEmail(
             <a href="https://credactive.com/privacy">Privacy</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
           <p style="color: #999; font-size: 11px;">
             Questa email è stata inviata a ${sanitizeUserInput(email)}
@@ -519,7 +558,7 @@ export async function sendPasswordResetEmail(
   `;
 
   const textContent = `
-CREDACTIVE - Recupero Password
+CIRY - Recupero Password
 
 Ciao,
 
@@ -532,7 +571,7 @@ ${resetUrl}
 Se non hai richiesto questa operazione, ignora questa email. La tua password rimarrà invariata.
 
 Cordiali saluti,
-Il Team CREDACTIVE
+Il Team CIRY
   `;
 
   await sendEmail({
@@ -662,9 +701,22 @@ export async function sendBadgeEarnedEmail(
     <body>
       <div class="container">
         <div class="header">
-          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
-            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          <svg class="logo" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shield with heartbeat -->
+            <path d="M 30 15 Q 30 10, 35 10 L 55 10 Q 60 10, 60 15 L 60 35 Q 60 45, 45 50 Q 30 45, 30 35 Z" 
+                  fill="none" stroke="#F47820" stroke-width="2.5"/>
+            <polyline points="35,28 40,28 42,22 44,34 46,28 51,28" 
+                      fill="none" stroke="#F47820" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="52" cy="40" r="3" fill="#6B7280"/>
+            <!-- CIRY text -->
+            <text x="75" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">CIRY</text>
+            <!-- Subtitle -->
+            <text x="75" y="52" font-family="Arial, sans-serif" font-size="8" fill="rgba(255,255,255,0.9)">
+              <tspan fill="#9CA3AF">Care &amp; </tspan>
+              <tspan fill="#F47820">Intelligence</tspan>
+              <tspan fill="#9CA3AF"> Ready for </tspan>
+              <tspan fill="#F47820">You</tspan>
+            </text>
           </svg>
           <h1>🏆 Nuovo Badge Sbloccato!</h1>
         </div>
@@ -678,7 +730,7 @@ export async function sendBadgeEarnedEmail(
           <p>Hai guadagnato un nuovo badge per i tuoi eccezionali risultati nella piattaforma!</p>
           <p>Continua così per sbloccare altri badge e riconoscimenti.</p>
           <a href="${baseUrl}/dashboard" class="cta-button">Vedi i Tuoi Badge</a>
-          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CIRY</strong></p>
         </div>
         <div class="footer">
           <div class="footer-links">
@@ -687,7 +739,7 @@ export async function sendBadgeEarnedEmail(
             <a href="${baseUrl}/certificates">Certificati</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
         </div>
       </div>
@@ -696,7 +748,7 @@ export async function sendBadgeEarnedEmail(
   `;
 
   const textContent = `
-CREDACTIVE - Nuovo Badge Sbloccato!
+CIRY - Nuovo Badge Sbloccato!
 
 Congratulazioni ${rawName}!
 
@@ -708,7 +760,7 @@ Continua così per sbloccare altri badge e riconoscimenti.
 Vedi i tuoi badge su: ${baseUrl}/dashboard
 
 A presto,
-Il Team CREDACTIVE
+Il Team CIRY
   `;
 
   await sendEmail({
@@ -756,9 +808,22 @@ export async function sendLevelUpEmail(
     <body>
       <div class="container">
         <div class="header">
-          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
-            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          <svg class="logo" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shield with heartbeat -->
+            <path d="M 30 15 Q 30 10, 35 10 L 55 10 Q 60 10, 60 15 L 60 35 Q 60 45, 45 50 Q 30 45, 30 35 Z" 
+                  fill="none" stroke="#F47820" stroke-width="2.5"/>
+            <polyline points="35,28 40,28 42,22 44,34 46,28 51,28" 
+                      fill="none" stroke="#F47820" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="52" cy="40" r="3" fill="#6B7280"/>
+            <!-- CIRY text -->
+            <text x="75" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">CIRY</text>
+            <!-- Subtitle -->
+            <text x="75" y="52" font-family="Arial, sans-serif" font-size="8" fill="rgba(255,255,255,0.9)">
+              <tspan fill="#9CA3AF">Care &amp; </tspan>
+              <tspan fill="#F47820">Intelligence</tspan>
+              <tspan fill="#9CA3AF"> Ready for </tspan>
+              <tspan fill="#F47820">You</tspan>
+            </text>
           </svg>
           <h1>⭐ Complimenti! Sei Salito di Livello!</h1>
         </div>
@@ -778,7 +843,7 @@ export async function sendLevelUpEmail(
           </div>
           <p>Il tuo impegno e la tua dedizione stanno dando i loro frutti! Continua così per raggiungere nuovi traguardi.</p>
           <a href="${baseUrl}/leaderboard" class="cta-button">Vedi Classifica</a>
-          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CIRY</strong></p>
         </div>
         <div class="footer">
           <div class="footer-links">
@@ -787,7 +852,7 @@ export async function sendLevelUpEmail(
             <a href="${baseUrl}/leaderboard">Classifica</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
         </div>
       </div>
@@ -796,7 +861,7 @@ export async function sendLevelUpEmail(
   `;
 
   const textContent = `
-CREDACTIVE - Sei Salito di Livello!
+CIRY - Sei Salito di Livello!
 
 Fantastico ${rawName}!
 
@@ -810,7 +875,7 @@ Il tuo impegno sta dando i suoi frutti! Continua così per raggiungere nuovi tra
 Vedi la classifica: ${baseUrl}/leaderboard
 
 A presto,
-Il Team CREDACTIVE
+Il Team CIRY
   `;
 
   await sendEmail({
@@ -860,9 +925,22 @@ export async function sendCertificateEarnedEmail(
     <body>
       <div class="container">
         <div class="header">
-          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
-            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          <svg class="logo" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shield with heartbeat -->
+            <path d="M 30 15 Q 30 10, 35 10 L 55 10 Q 60 10, 60 15 L 60 35 Q 60 45, 45 50 Q 30 45, 30 35 Z" 
+                  fill="none" stroke="#F47820" stroke-width="2.5"/>
+            <polyline points="35,28 40,28 42,22 44,34 46,28 51,28" 
+                      fill="none" stroke="#F47820" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="52" cy="40" r="3" fill="#6B7280"/>
+            <!-- CIRY text -->
+            <text x="75" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">CIRY</text>
+            <!-- Subtitle -->
+            <text x="75" y="52" font-family="Arial, sans-serif" font-size="8" fill="rgba(255,255,255,0.9)">
+              <tspan fill="#9CA3AF">Care &amp; </tspan>
+              <tspan fill="#F47820">Intelligence</tspan>
+              <tspan fill="#9CA3AF"> Ready for </tspan>
+              <tspan fill="#F47820">You</tspan>
+            </text>
           </svg>
           <h1>📜 Certificato Ottenuto!</h1>
         </div>
@@ -878,7 +956,7 @@ export async function sendCertificateEarnedEmail(
           <p>Scaricalo in PDF e condividilo con la tua rete professionale.</p>
           <a href="${baseUrl}/certificates" class="cta-button">Vedi Certificati</a>
           <a href="${baseUrl}/api/certificates/download/${certificateId}" class="cta-button" style="background: #667eea;">Scarica PDF</a>
-          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+          <p style="margin-top: 30px; color: #666;">A presto,<br><strong>Il Team CIRY</strong></p>
         </div>
         <div class="footer">
           <div class="footer-links">
@@ -887,7 +965,7 @@ export async function sendCertificateEarnedEmail(
             <a href="${baseUrl}/dashboard">Dashboard</a>
           </div>
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
         </div>
       </div>
@@ -896,7 +974,7 @@ export async function sendCertificateEarnedEmail(
   `;
 
   const textContent = `
-CREDACTIVE - Certificato Ottenuto!
+CIRY - Certificato Ottenuto!
 
 Eccellente lavoro ${rawName}!
 
@@ -909,7 +987,7 @@ Scarica il PDF: ${baseUrl}/api/certificates/download/${certificateId}
 Vedi tutti i certificati: ${baseUrl}/certificates
 
 A presto,
-Il Team CREDACTIVE
+Il Team CIRY
   `;
 
   await sendEmail({
@@ -992,12 +1070,12 @@ export async function sendCorporateInviteEmail(
           
           <p style="margin-top: 30px; color: #666;">
             A presto,<br>
-            <strong>Il Team CREDACTIVE</strong>
+            <strong>Il Team CIRY</strong>
           </p>
         </div>
         <div class="footer">
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
         </div>
       </div>
@@ -1031,7 +1109,7 @@ ${inviteUrl}
 Nota: Questo invito scadrà tra 7 giorni.
 
 A presto,
-Il Team CREDACTIVE
+Il Team CIRY
   `;
 
   await sendEmail({
@@ -1142,12 +1220,12 @@ export async function sendPreventionInviteEmail(
           
           <p style="margin-top: 30px; color: #666;">
             Buona prevenzione,<br>
-            <strong>Il Team CREDACTIVE & Prohmed</strong>
+            <strong>Il Team CIRY & Prohmed</strong>
           </p>
         </div>
         <div class="footer">
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
         </div>
       </div>
@@ -1184,7 +1262,7 @@ ${preventionUrl}
 Nota: Il servizio è completamente gratuito e non richiede registrazione.
 
 Buona prevenzione,
-Il Team CREDACTIVE & Prohmed
+Il Team CIRY & Prohmed
   `;
 
   await sendEmail({
@@ -1233,9 +1311,22 @@ export async function sendPremiumUpgradeEmail(
     <body>
       <div class="container">
         <div class="header">
-          <svg class="logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-            <text x="100" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">CREDACTIVE</text>
-            <text x="100" y="50" font-family="Arial, sans-serif" font-size="10" fill="rgba(255,255,255,0.8)" text-anchor="middle">ACADEMY</text>
+          <svg class="logo" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shield with heartbeat -->
+            <path d="M 30 15 Q 30 10, 35 10 L 55 10 Q 60 10, 60 15 L 60 35 Q 60 45, 45 50 Q 30 45, 30 35 Z" 
+                  fill="none" stroke="#F47820" stroke-width="2.5"/>
+            <polyline points="35,28 40,28 42,22 44,34 46,28 51,28" 
+                      fill="none" stroke="#F47820" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="52" cy="40" r="3" fill="#6B7280"/>
+            <!-- CIRY text -->
+            <text x="75" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">CIRY</text>
+            <!-- Subtitle -->
+            <text x="75" y="52" font-family="Arial, sans-serif" font-size="8" fill="rgba(255,255,255,0.9)">
+              <tspan fill="#9CA3AF">Care &amp; </tspan>
+              <tspan fill="#F47820">Intelligence</tspan>
+              <tspan fill="#9CA3AF"> Ready for </tspan>
+              <tspan fill="#F47820">You</tspan>
+            </text>
           </svg>
           <h1>🎉 Benvenuto in ${tierName}!</h1>
           <div class="tier-badge">✨ ${tierName.toUpperCase()} ATTIVO</div>
@@ -1310,12 +1401,12 @@ export async function sendPremiumUpgradeEmail(
           
           <p style="margin-top: 30px; color: #666;">
             Grazie per aver scelto CREDACTIVE Academy!<br>
-            <strong>Il Team CREDACTIVE</strong>
+            <strong>Il Team CIRY</strong>
           </p>
         </div>
         <div class="footer">
           <p style="color: #999; font-size: 12px; margin: 15px 0;">
-            © ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.
+            © ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.
           </p>
           <p style="color: #999; font-size: 12px;">
             Hai bisogno di aiuto? Contattaci: <a href="mailto:support@credactive.academy" style="color: #667eea;">support@credactive.academy</a>
@@ -1347,7 +1438,7 @@ Inizia subito: ${baseUrl}/dashboard
 💡 Suggerimento: Inizia dai quiz introduttivi, poi passa alle certificazioni avanzate!
 
 Grazie per aver scelto CREDACTIVE Academy!
-Il Team CREDACTIVE
+Il Team CIRY
 
 ---
 Hai bisogno di aiuto? support@credactive.academy

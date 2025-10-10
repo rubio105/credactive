@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import logoImage from "@assets/image_1759658677025.png";
+import logoImage from "@assets/image_1760068094229.png";
 import { Link } from "wouter";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";

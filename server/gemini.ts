@@ -345,6 +345,7 @@ export interface TriageResponse {
   suggestDoctor: boolean;
   urgencyLevel: "low" | "medium" | "high" | "emergency";
   relatedTopics: string[];
+  needsReportUpload: boolean; // True if user wants to share medical reports
 }
 
 export async function generateTriageResponse(
@@ -370,13 +371,19 @@ IMPORTANT GUIDELINES:
 - Suggest relevant prevention topics for further learning
 - Use Italian language naturally and conversationally
 
+MEDICAL REPORTS DETECTION:
+- If user mentions wanting to share medical reports, test results, lab results, or medical documents, set needsReportUpload=true
+- Common phrases: "ho degli esami", "vorrei mostrarti le analisi", "ho fatto degli esami del sangue", "posso caricare i referti?", "ti mando i risultati", etc.
+- When needsReportUpload=true, inform user they can upload their reports for AI analysis
+
 Respond with JSON in this exact format:
 {
   "message": "your conversational response in Italian",
   "isSensitive": boolean (mental health, chronic conditions, or private topics),
   "suggestDoctor": boolean (should user contact a real doctor?),
   "urgencyLevel": "low" | "medium" | "high" | "emergency",
-  "relatedTopics": ["topic1", "topic2", ...]
+  "relatedTopics": ["topic1", "topic2", ...],
+  "needsReportUpload": boolean (true if user wants to share medical reports/tests)
 }${contextInfo}`;
 
     // Build contents array with proper message structure
@@ -404,8 +411,9 @@ Respond with JSON in this exact format:
             suggestDoctor: { type: "boolean" },
             urgencyLevel: { type: "string", enum: ["low", "medium", "high", "emergency"] },
             relatedTopics: { type: "array", items: { type: "string" } },
+            needsReportUpload: { type: "boolean" },
           },
-          required: ["message", "isSensitive", "suggestDoctor", "urgencyLevel", "relatedTopics"],
+          required: ["message", "isSensitive", "suggestDoctor", "urgencyLevel", "relatedTopics", "needsReportUpload"],
         },
       },
       contents,

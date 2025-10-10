@@ -6333,12 +6333,27 @@ Explicación de audio:`
         });
       }
 
-      res.json({
+      // Build response with upload instructions if needed
+      const response: any = {
         session,
         messages: [userMessage, aiMessage],
         suggestDoctor: aiResponse.suggestDoctor,
         urgencyLevel: aiResponse.urgencyLevel,
-      });
+        needsReportUpload: aiResponse.needsReportUpload,
+      };
+
+      // If user wants to upload reports, include upload endpoint info
+      if (aiResponse.needsReportUpload) {
+        response.uploadInfo = {
+          endpoint: '/api/health-score/upload',
+          sessionId: session.id, // Link upload to this triage session
+          instructions: 'Puoi caricare i tuoi referti medici (PDF o immagini) per un\'analisi AI personalizzata. I dati saranno anonimizzati automaticamente per garantire la tua privacy.',
+          acceptedFormats: ['PDF', 'JPEG', 'PNG'],
+          maxSize: '10MB',
+        };
+      }
+
+      res.json(response);
     } catch (error: any) {
       console.error('Start triage error:', error);
       res.status(500).json({ message: error.message || 'Failed to start triage session' });
@@ -6401,12 +6416,27 @@ Explicación de audio:`
         });
       }
 
-      res.json({
+      // Build response with upload instructions if needed
+      const response: any = {
         userMessage,
         aiMessage,
         suggestDoctor: aiResponse.suggestDoctor,
         urgencyLevel: aiResponse.urgencyLevel,
-      });
+        needsReportUpload: aiResponse.needsReportUpload,
+      };
+
+      // If user wants to upload reports, include upload endpoint info
+      if (aiResponse.needsReportUpload) {
+        response.uploadInfo = {
+          endpoint: '/api/health-score/upload',
+          sessionId: sessionId, // Link upload to this triage session
+          instructions: 'Puoi caricare i tuoi referti medici (PDF o immagini) per un\'analisi AI personalizzata. I dati saranno anonimizzati automaticamente per garantire la tua privacy.',
+          acceptedFormats: ['PDF', 'JPEG', 'PNG'],
+          maxSize: '10MB',
+        };
+      }
+
+      res.json(response);
     } catch (error: any) {
       console.error('Send triage message error:', error);
       res.status(500).json({ message: error.message || 'Failed to send message' });

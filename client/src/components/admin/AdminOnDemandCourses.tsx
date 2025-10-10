@@ -961,7 +961,7 @@ export function AdminOnDemandCourses() {
               Inserisci i dettagli del corso on-demand
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
             <div>
               <Label htmlFor="title">Titolo *</Label>
               <Input

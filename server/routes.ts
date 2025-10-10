@@ -33,7 +33,10 @@ import {
   insertPreventionDocumentSchema,
   insertTriageSessionSchema,
   insertProhmedCodeSchema,
-  insertCrosswordPuzzleSchema
+  insertCrosswordPuzzleSchema,
+  insertPreventionAssessmentSchema,
+  insertPreventionAssessmentQuestionSchema,
+  insertPreventionUserResponseSchema
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -6023,6 +6026,160 @@ Explicación de audio:`
     } catch (error: any) {
       console.error('Update prevention topic error:', error);
       res.status(500).json({ message: error.message || 'Failed to update topic' });
+    }
+  });
+
+  // ========== PREVENTION ASSESSMENT ROUTES ==========
+
+  // Start new prevention assessment (POST /api/prevention/assessment/start)
+  app.post('/api/prevention/assessment/start', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      // Validate request body
+      const startAssessmentSchema = z.object({
+        userAge: z.number().int().min(1).max(120),
+        userGender: z.string().min(1),
+        userProfession: z.string().min(1),
+      });
+
+      const validatedData = startAssessmentSchema.parse(req.body);
+
+      // Create assessment
+      const assessment = await storage.createPreventionAssessment({
+        userId: user.id,
+        title: `Assessment Prevenzione - ${new Date().toLocaleDateString('it-IT')}`,
+        status: 'in_progress',
+        userAge: validatedData.userAge,
+        userGender: validatedData.userGender,
+        userProfession: validatedData.userProfession,
+      });
+
+      // TODO: Generate AI questions based on user demographics
+      // For now, return assessment without questions
+      res.json(assessment);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
+      }
+      console.error('Start assessment error:', error);
+      res.status(500).json({ message: error.message || 'Failed to start assessment' });
+    }
+  });
+
+  // Save user response to assessment question (POST /api/prevention/assessment/:id/response)
+  app.post('/api/prevention/assessment/:id/response', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      // Validate request body
+      const saveResponseSchema = z.object({
+        questionId: z.string().uuid(),
+        selectedAnswer: z.string().min(1),
+        isCorrect: z.boolean().optional(),
+      });
+
+      const validatedData = saveResponseSchema.parse(req.body);
+
+      // Verify assessment belongs to user
+      const assessment = await storage.getPreventionAssessmentById(req.params.id);
+      if (!assessment || assessment.userId !== user.id) {
+        return res.status(404).json({ message: 'Assessment not found' });
+      }
+
+      // Save response
+      const response = await storage.createPreventionUserResponse({
+        assessmentId: req.params.id,
+        questionId: validatedData.questionId,
+        selectedAnswer: validatedData.selectedAnswer,
+        isCorrect: validatedData.isCorrect ?? false,
+      });
+
+      res.json(response);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
+      }
+      console.error('Save response error:', error);
+      res.status(500).json({ message: error.message || 'Failed to save response' });
+    }
+  });
+
+  // Complete assessment and generate report (POST /api/prevention/assessment/:id/complete)
+  app.post('/api/prevention/assessment/:id/complete', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      // Verify assessment belongs to user
+      const assessment = await storage.getPreventionAssessmentById(req.params.id);
+      if (!assessment || assessment.userId !== user.id) {
+        return res.status(404).json({ message: 'Assessment not found' });
+      }
+
+      // Get all responses
+      const responses = await storage.getPreventionUserResponses(req.params.id);
+      
+      // Calculate score
+      const correctAnswers = responses.filter(r => r.isCorrect).length;
+      const totalQuestions = responses.length;
+      const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+
+      // Determine risk level
+      let riskLevel = 'low';
+      if (score < 50) {
+        riskLevel = 'high';
+      } else if (score < 70) {
+        riskLevel = 'medium';
+      }
+
+      // TODO: Generate personalized recommendations using AI
+      const recommendations = [
+        'Consultare il medico per approfondimenti',
+        'Mantenere uno stile di vita sano',
+        'Effettuare controlli periodici',
+      ];
+
+      // TODO: Generate PDF report
+      const reportPdfUrl = undefined;
+
+      // Complete assessment
+      const completedAssessment = await storage.completePreventionAssessment(
+        req.params.id,
+        score,
+        riskLevel,
+        recommendations,
+        reportPdfUrl
+      );
+
+      res.json(completedAssessment);
+    } catch (error: any) {
+      console.error('Complete assessment error:', error);
+      res.status(500).json({ message: error.message || 'Failed to complete assessment' });
+    }
+  });
+
+  // Get latest assessment for user (GET /api/prevention/assessment/latest)
+  app.get('/api/prevention/assessment/latest', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const assessment = await storage.getLatestPreventionAssessment(user.id);
+      
+      if (!assessment) {
+        return res.status(404).json({ message: 'No assessment found' });
+      }
+
+      // Get questions and responses if assessment exists
+      const questions = await storage.getPreventionAssessmentQuestions(assessment.id);
+      const responses = await storage.getPreventionUserResponses(assessment.id);
+
+      res.json({
+        ...assessment,
+        questions,
+        responses,
+      });
+    } catch (error: any) {
+      console.error('Get latest assessment error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get assessment' });
     }
   });
 

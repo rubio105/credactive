@@ -6505,7 +6505,7 @@ Explicación de audio:`
   });
 
   // Get triage session (GET /api/triage/:sessionId)
-  app.get('/api/triage/:sessionId', isAuthenticated, async (req, res) => {
+  app.get('/api/triage/:sessionId', async (req, res) => {
     try {
       const user = req.user as any;
       const sessionId = req.params.sessionId;
@@ -6514,7 +6514,9 @@ Explicación de audio:`
       if (!session) {
         return res.status(404).json({ message: 'Session not found' });
       }
-      if (session.userId !== user.id) {
+      
+      // Check ownership only if user is authenticated
+      if (user && session.userId && session.userId !== user.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
 
@@ -6525,6 +6527,30 @@ Explicación de audio:`
     } catch (error: any) {
       console.error('Get triage session error:', error);
       res.status(500).json({ message: error.message || 'Failed to get session' });
+    }
+  });
+
+  // Get triage messages (GET /api/triage/messages/:sessionId)
+  app.get('/api/triage/messages/:sessionId', async (req, res) => {
+    try {
+      const user = req.user as any;
+      const sessionId = req.params.sessionId;
+
+      const session = await storage.getTriageSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+      
+      // Check ownership only if user is authenticated
+      if (user && session.userId && session.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const messages = await storage.getTriageMessagesBySession(sessionId);
+      res.json(messages);
+    } catch (error: any) {
+      console.error('Get triage messages error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get messages' });
     }
   });
 
@@ -6541,9 +6567,15 @@ Explicación de audio:`
   });
 
   // Get active triage session (GET /api/triage/session/active)
-  app.get('/api/triage/session/active', isAuthenticated, async (req, res) => {
+  app.get('/api/triage/session/active', async (req, res) => {
     try {
       const user = req.user as any;
+      
+      // Anonymous users don't have saved sessions
+      if (!user) {
+        return res.json(null);
+      }
+      
       const sessions = await storage.getTriageSessionsByUser(user.id);
       const activeSession = sessions.find(s => s.status === 'active');
       res.json(activeSession || null);
@@ -6554,7 +6586,7 @@ Explicación de audio:`
   });
 
   // Close triage session (POST /api/triage/:sessionId/close)
-  app.post('/api/triage/:sessionId/close', isAuthenticated, async (req, res) => {
+  app.post('/api/triage/:sessionId/close', async (req, res) => {
     try {
       const user = req.user as any;
       const sessionId = req.params.sessionId;
@@ -6563,7 +6595,9 @@ Explicación de audio:`
       if (!session) {
         return res.status(404).json({ message: 'Session not found' });
       }
-      if (session.userId !== user.id) {
+      
+      // Check ownership only if user is authenticated
+      if (user && session.userId && session.userId !== user.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
 

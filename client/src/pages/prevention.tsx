@@ -62,7 +62,7 @@ export default function PreventionPage() {
 
   const { data: activeSession } = useQuery<TriageSession>({
     queryKey: ["/api/triage/session/active"],
-    enabled: !sessionId,
+    enabled: !sessionId && !!user, // Only check for active sessions if user is authenticated
   });
 
   const { data: session } = useQuery<TriageSession>({

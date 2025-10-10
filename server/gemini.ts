@@ -613,30 +613,35 @@ Respond ONLY with the extracted text, no additional commentary.`;
     }
 
     // Analyze extracted text with Gemini to structure medical data
-    const analysisPrompt = `Analyze this medical report text and extract structured information.
+    const analysisPrompt = `Analizza questo referto medico ed estrai informazioni strutturate IN ITALIANO.
 
-Medical Report Text:
+Testo del Referto Medico:
 ${extractedText}
 
-Extract the following information:
-1. Report type (blood_test, radiology, cardiology, ultrasound, mri, ct_scan, ecg, urinalysis, general, other)
-2. Detected language (it, en, es)
-3. Hospital/lab name if visible
-4. Report date if visible (ISO format YYYY-MM-DD)
-5. Medical values as key-value pairs (e.g., glucose: 95, cholesterol: 180)
-6. Medical keywords for search (max 15 keywords)
-7. Brief summary (2-3 sentences in Italian)
-8. OCR confidence (0-100 based on text clarity)
+Estrai le seguenti informazioni (TUTTO IN ITALIANO):
+1. Tipo di referto (esame_sangue, radiologia, cardiologia, ecografia, risonanza, tac, ecg, esame_urine, generale, altro)
+2. Lingua rilevata (it, en, es)
+3. Nome ospedale/laboratorio se visibile
+4. Data del referto se visibile (formato ISO YYYY-MM-DD)
+5. Valori medici come coppie chiave-valore IN ITALIANO (es. glucosio: 95, colesterolo: 180, emoglobina: 14.5)
+   - Usa SEMPRE nomi italiani per i parametri medici
+   - Esempi: "glucosio" (non "glucose"), "colesterolo totale" (non "total cholesterol"), "emoglobina" (non "hemoglobin")
+6. Parole chiave mediche per ricerca IN ITALIANO (max 15 keywords)
+   - Esempi: "diabete", "pressione arteriosa", "funzionalità renale" (non in inglese)
+7. Breve riassunto (2-3 frasi in italiano)
+8. Confidenza OCR (0-100 basata sulla chiarezza del testo)
 
-Respond with JSON in this exact format:
+IMPORTANTE: Tutti i nomi dei parametri medici devono essere in ITALIANO, non in inglese.
+
+Rispondi con JSON in questo formato esatto:
 {
-  "reportType": "blood_test",
+  "reportType": "esame_sangue",
   "detectedLanguage": "it",
-  "issuer": "Hospital/Lab Name or null",
-  "reportDate": "2024-03-15 or null",
-  "extractedValues": {"param1": value1, "param2": value2},
-  "medicalKeywords": ["keyword1", "keyword2", ...],
-  "summary": "brief summary in Italian",
+  "issuer": "Nome Ospedale/Lab o null",
+  "reportDate": "2024-03-15 o null",
+  "extractedValues": {"glucosio": 95, "colesterolo totale": 180, "emoglobina": 14.5},
+  "medicalKeywords": ["parola1", "parola2", ...],
+  "summary": "breve riassunto in italiano",
   "confidence": 85
 }`;
 

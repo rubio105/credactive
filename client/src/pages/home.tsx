@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import LanguageSelector from "@/components/language-selector";
@@ -11,9 +14,10 @@ import { LiveCourseModal } from "@/components/LiveCourseModal";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 import prohmedLogo from "@assets/image_1760071152562.png";
 
@@ -48,10 +52,14 @@ interface DashboardData {
 
 export default function Home() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [selectedLiveCourseQuiz, setSelectedLiveCourseQuiz] = useState<{ id: string; title: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [categoryPage, setCategoryPage] = useState(0);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [userConsent, setUserConsent] = useState(false);
   const CATEGORIES_PER_PAGE = 12;
   
   const userLanguage = (user as UserType)?.language;
@@ -68,6 +76,56 @@ export default function Home() {
   const { data: categoriesWithQuizzes = [] } = useQuery<Array<Category & { quizzes: QuizWithCount[] }>>({
     queryKey: ["/api/categories-with-quizzes"],
   });
+
+  // Upload medical report mutation
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('report', file);
+      formData.append('userConsent', userConsent.toString());
+      
+      const response = await fetch('/api/health-score/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload fallito');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Referto caricato!",
+        description: "Il tuo referto è stato analizzato con successo.",
+      });
+      setShowUploadDialog(false);
+      setSelectedFile(null);
+      setUserConsent(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUpload = () => {
+    if (!selectedFile) {
+      toast({
+        title: "Nessun file selezionato",
+        description: "Seleziona un referto da caricare",
+        variant: "destructive",
+      });
+      return;
+    }
+    uploadMutation.mutate(selectedFile);
+  };
 
   // Check if user needs to select a language
   useEffect(() => {
@@ -277,18 +335,15 @@ export default function Home() {
                 </Button>
               </Link>
 
-              <Link href="/prevention" className="block">
-                <Button 
-                  variant="outline" 
-                  className="w-full bg-white/10 text-white border-white/30 hover:bg-white/20"
-                  data-testid="button-upload-medical"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Carica Referto
-                </Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                className="w-full bg-white/10 text-white border-white/30 hover:bg-white/20"
+                data-testid="button-upload-medical"
+                onClick={() => setShowUploadDialog(true)}
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Carica Referto
+              </Button>
 
               <Link href="/prevention" className="block">
                 <Button 
@@ -679,6 +734,86 @@ export default function Home() {
       </div>
 
       <Footer />
+
+      {/* Medical Report Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Carica Referto Medico</DialogTitle>
+            <DialogDescription>
+              Carica un referto medico (PDF o immagine) per l'analisi AI. I tuoi dati personali verranno automaticamente anonimizzati.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="report-file">File Referto (PDF o Immagine)</Label>
+              <input
+                id="report-file"
+                type="file"
+                accept=".pdf,image/jpeg,image/jpg,image/png"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                data-testid="input-report-file"
+              />
+              {selectedFile && (
+                <p className="text-sm text-muted-foreground">
+                  File selezionato: {selectedFile.name}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="consent"
+                checked={userConsent}
+                onCheckedChange={(checked) => setUserConsent(checked as boolean)}
+                data-testid="checkbox-consent"
+              />
+              <Label
+                htmlFor="consent"
+                className="text-sm font-normal leading-normal cursor-pointer"
+              >
+                Acconsento al trattamento dei dati medici per l'analisi AI e il calcolo dello Health Score
+              </Label>
+            </div>
+
+            <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-800 dark:text-amber-200">
+                  <p className="font-medium mb-1">Privacy e Sicurezza</p>
+                  <p className="text-xs">
+                    I dati personali (nome, CF, telefono) vengono automaticamente rimossi prima dell'analisi AI. 
+                    Il documento viene elaborato in modo sicuro e conforme al GDPR.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUploadDialog(false);
+                setSelectedFile(null);
+                setUserConsent(false);
+              }}
+              data-testid="button-cancel-upload"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleUpload}
+              disabled={!selectedFile || !userConsent || uploadMutation.isPending}
+              data-testid="button-confirm-upload"
+            >
+              {uploadMutation.isPending ? "Caricamento..." : "Carica e Analizza"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

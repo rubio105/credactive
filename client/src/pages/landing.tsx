@@ -140,17 +140,24 @@ export default function Landing() {
       <section className="py-16 bg-gradient-to-b from-background to-secondary/5">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
+            <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+              La piattaforma che unisce formazione e prevenzione
+            </h3>
             <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-              Un <span className="font-bold text-foreground">metodo innovativo di apprendimento continuo</span> che 
-              unisce teoria e pratica attraverso <span className="font-semibold text-primary">quiz interattivi</span>, 
-              <span className="font-semibold text-primary"> corsi live</span> e <span className="font-semibold text-primary">contenuti on-demand</span>.
+              Offriamo un <span className="font-bold text-foreground">metodo innovativo di apprendimento continuo</span> che 
+              integra <span className="font-semibold text-primary">corsi</span>, <span className="font-semibold text-primary">webinar con specialisti</span>, 
+              <span className="font-semibold text-primary">quiz interattivi</span> e <span className="font-semibold text-primary">dinamiche di gaming</span> per 
+              rendere la formazione coinvolgente e pratica.
+            </p>
+            <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+              La nostra missione è <span className="font-bold text-foreground">diffondere una cultura della prevenzione digitale e medica</span>, 
+              aiutando <span className="font-bold text-primary">aziende e professionisti</span> a crescere con competenze certificate in 
+              Cybersecurity, Compliance, AI Security, Leadership e <span className="font-bold text-orange-600">prevenzione sanitaria intelligente</span>.
             </p>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Guidati da <span className="font-bold text-foreground">esperti riconosciuti a livello nazionale e internazionale</span>, 
-              offriamo una <span className="font-semibold text-foreground">piattaforma interattiva</span> dedicata ad 
-              <span className="font-bold text-primary"> aziende e professionisti</span> che vogliono eccellere nelle certificazioni di 
-              Cybersecurity, Compliance, AI Security, Leadership e <span className="font-bold text-orange-600">prevenzione sanitaria intelligente</span> 
-              con il supporto di AI avanzata.
+              Guidati da <span className="font-bold text-foreground">esperti riconosciuti a livello nazionale e internazionale</span> e 
+              supportati da un <span className="font-semibold text-foreground">modello AI avanzato</span>, trasformiamo l'apprendimento in 
+              un'esperienza <span className="font-semibold text-primary">interattiva, utile e orientata al futuro</span>.
             </p>
           </div>
         </div>

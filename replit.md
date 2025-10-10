@@ -6,6 +6,14 @@ CIRY (Care & Intelligence Ready for You) is an innovative B2B platform that unit
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Technical Fixes (October 2025)
+
+## PDF Upload & Schema Fixes
+-   **Prevention Index Schema**: Fixed `preventionIndices` table schema by removing duplicate `updatedAt` column that was causing database insert failures. Schema now correctly uses only `calculatedAt` timestamp, matching database structure.
+-   **PDF-Parse CommonJS Import**: Resolved "pdfParse is not a function" error in admin PDF upload by implementing `createRequire` from Node.js 'module' package. Changed from dynamic ESM import to CommonJS require for compatibility with pdf-parse library.
+-   **Admin Authentication**: Updated admin credentials for testing purposes (email: admin@ciry.it, password: Admin2025!).
+-   **Testing**: End-to-end tests confirm PDF upload, Gemini AI analysis, and document list display all function correctly.
+
 # System Architecture
 
 ## Frontend

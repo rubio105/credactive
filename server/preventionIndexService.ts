@@ -172,7 +172,7 @@ export async function savePreventionIndex(userId: string): Promise<void> {
         score: indexData.score,
         tier: indexData.tier,
         breakdown: indexData.breakdown,
-        updatedAt: new Date(),
+        calculatedAt: new Date(),
       })
       .where(eq(preventionIndices.userId, userId));
   } else {
@@ -208,7 +208,7 @@ export async function getPreventionIndex(userId: string): Promise<PreventionInde
         score: indexData.score,
         tier: indexData.tier,
         breakdown: indexData.breakdown,
-        updatedAt: new Date(),
+        calculatedAt: new Date(),
       })
       .where(eq(preventionIndices.userId, userId));
   } else {

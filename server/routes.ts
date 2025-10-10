@@ -7,6 +7,7 @@ import OpenAI from "openai";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { createRequire } from "module";
 import { storage } from "./storage";
 import { db } from "./db";
 import { liveCourseSessions, liveCourses, liveStreamingSessions } from "@shared/schema";
@@ -55,8 +56,9 @@ import {
 import { registerGamificationRoutes } from "./gamificationRoutes";
 import { processQuizCompletion } from "./gamification";
 
-// Dynamic import for pdf-parse (CommonJS module)
-// Note: pdf-parse doesn't have a .default export in ESM context
+// pdf-parse (CommonJS module) - use createRequire for compatibility
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
 // Stripe instance - initialized lazily to support database-stored keys
 let stripeInstance: Stripe | null = null;
@@ -2108,7 +2110,6 @@ Restituisci SOLO un JSON con:
       
       // Read and parse the PDF to validate page count
       const pdfBuffer = fs.readFileSync(req.file.path);
-      const pdfParse = (await import('pdf-parse')) as any;
       const pdfData = await pdfParse(pdfBuffer);
       
       // Validate max 600 pages

@@ -1420,14 +1420,12 @@ export const preventionIndices = pgTable("prevention_indices", {
   }),
   
   calculatedAt: timestamp("calculated_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export type PreventionIndex = typeof preventionIndices.$inferSelect;
 export const insertPreventionIndexSchema = createInsertSchema(preventionIndices).omit({
   id: true,
   calculatedAt: true,
-  updatedAt: true,
 });
 export type InsertPreventionIndex = z.infer<typeof insertPreventionIndexSchema>;
 

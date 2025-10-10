@@ -316,7 +316,7 @@ export default function Dashboard() {
                           #{gamificationData.leaderboardPosition.rank}
                         </p>
                         <p className="text-sm text-muted-foreground mb-4">
-                          {gamificationData.leaderboardPosition.totalPoints.toLocaleString()} punti totali
+                          {(gamificationData.leaderboardPosition.totalPoints || 0).toLocaleString()} punti totali
                         </p>
                       </>
                     ) : (

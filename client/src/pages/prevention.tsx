@@ -183,7 +183,15 @@ export default function PreventionPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/triage/session", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/prevention/index"] });
       setUserInput("");
+      
+      // Riattiva automaticamente il microfono se era attivo (conversazione continua)
+      if (isListening && recognitionRef.current) {
+        setTimeout(() => {
+          recognitionRef.current?.start();
+        }, 1000); // Aspetta 1 sec per la risposta AI
+      }
     },
     onError: (error: any) => {
       // Check if this is an upgrade requirement

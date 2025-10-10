@@ -643,3 +643,150 @@ Respond with JSON in this exact format:
     throw new Error(`Failed to extract text from medical report: ${error}`);
   }
 }
+
+/**
+ * Anonymize medical text by removing PII (Personal Identifiable Information)
+ * Uses hybrid approach: regex patterns + Gemini AI for contextual PII detection
+ */
+export interface AnonymizationResult {
+  anonymizedText: string;
+  removedPiiTypes: string[]; // Types of PII found: cf, name, phone, email, address, etc
+  piiCount: number; // Total number of PII items removed
+}
+
+export async function anonymizeMedicalText(
+  originalText: string
+): Promise<AnonymizationResult> {
+  try {
+    const removedPiiTypes = new Set<string>();
+    let anonymizedText = originalText;
+    let piiCount = 0;
+
+    // Step 1: Regex-based PII removal for common Italian patterns
+    
+    // Italian Codice Fiscale (CF): 16 characters alphanumeric
+    const cfRegex = /\b[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]\b/gi;
+    if (cfRegex.test(anonymizedText)) {
+      anonymizedText = anonymizedText.replace(cfRegex, '[CF_REDATTO]');
+      removedPiiTypes.add('codice_fiscale');
+      piiCount += (originalText.match(cfRegex) || []).length;
+    }
+
+    // Phone numbers (Italian formats: +39, 0039, landline, mobile)
+    const phoneRegex = /(\+39|0039)?\s*\d{2,4}[\s-]?\d{5,8}|\b\d{10}\b/gi;
+    if (phoneRegex.test(anonymizedText)) {
+      anonymizedText = anonymizedText.replace(phoneRegex, '[TELEFONO_REDATTO]');
+      removedPiiTypes.add('phone');
+      piiCount += (originalText.match(phoneRegex) || []).length;
+    }
+
+    // Email addresses
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/gi;
+    if (emailRegex.test(anonymizedText)) {
+      anonymizedText = anonymizedText.replace(emailRegex, '[EMAIL_REDATTO]');
+      removedPiiTypes.add('email');
+      piiCount += (originalText.match(emailRegex) || []).length;
+    }
+
+    // Italian addresses (patterns: Via, Viale, Piazza, Corso + street number)
+    const addressRegex = /\b(Via|Viale|Piazza|Corso|Vicolo|Largo)\s+[A-Za-zàèéìòù\s]+\s*,?\s*\d+/gi;
+    if (addressRegex.test(anonymizedText)) {
+      anonymizedText = anonymizedText.replace(addressRegex, '[INDIRIZZO_REDATTO]');
+      removedPiiTypes.add('address');
+      piiCount += (originalText.match(addressRegex) || []).length;
+    }
+
+    // Italian postal codes (5 digits)
+    const postalCodeRegex = /\b\d{5}\b/g;
+    if (postalCodeRegex.test(anonymizedText)) {
+      anonymizedText = anonymizedText.replace(postalCodeRegex, '[CAP_REDATTO]');
+      removedPiiTypes.add('postal_code');
+      piiCount += (originalText.match(postalCodeRegex) || []).length;
+    }
+
+    // Step 2: AI-based contextual PII detection with Gemini
+    const aiPrompt = `Analyze this medical report text and identify ALL personally identifiable information (PII) that needs to be anonymized.
+
+Medical Report Text:
+${anonymizedText}
+
+IMPORTANT:
+- Identify: patient names, doctor names, relative names, dates of birth, national ID numbers not caught by regex, addresses, any other personal identifiers
+- DO NOT include: medical values, test results, diagnoses, symptoms, medications
+- Be thorough: check for names in signatures, headers, footers, patient data sections
+
+Respond with JSON in this exact format:
+{
+  "piiItems": [
+    {
+      "type": "name" | "date_of_birth" | "national_id" | "doctor_name" | "relative_name" | "address" | "other",
+      "value": "the exact PII text found",
+      "context": "brief context where found"
+    },
+    ...
+  ]
+}
+
+If no additional PII found beyond regex patterns, return empty piiItems array.`;
+
+    const aiResponse = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            piiItems: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  type: { type: "string" },
+                  value: { type: "string" },
+                  context: { type: "string" },
+                },
+                required: ["type", "value"],
+              },
+            },
+          },
+          required: ["piiItems"],
+        },
+      },
+      contents: [{ role: "user", parts: [{ text: aiPrompt }] }],
+    });
+
+    const aiJson = aiResponse.text;
+    if (aiJson) {
+      const aiResult = JSON.parse(aiJson);
+      
+      // Replace AI-identified PII with redacted placeholders
+      if (aiResult.piiItems && aiResult.piiItems.length > 0) {
+        for (const pii of aiResult.piiItems) {
+          // Create case-insensitive replacement
+          const escapedValue = pii.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(escapedValue, 'gi');
+          
+          const placeholder = `[${pii.type.toUpperCase()}_REDATTO]`;
+          anonymizedText = anonymizedText.replace(regex, placeholder);
+          
+          removedPiiTypes.add(pii.type);
+          piiCount++;
+        }
+        
+        console.log(`[Gemini] AI detected ${aiResult.piiItems.length} additional PII items`);
+      }
+    }
+
+    const result: AnonymizationResult = {
+      anonymizedText,
+      removedPiiTypes: Array.from(removedPiiTypes),
+      piiCount,
+    };
+
+    console.log("[Gemini] Anonymization completed:", piiCount, "PII items removed, types:", result.removedPiiTypes.join(', '));
+    return result;
+  } catch (error) {
+    console.error("[Gemini] Failed to anonymize medical text:", error);
+    throw new Error(`Failed to anonymize medical text: ${error}`);
+  }
+}

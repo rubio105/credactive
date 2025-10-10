@@ -97,6 +97,20 @@ export default function PreventionPage() {
     enabled: !!user,
   });
 
+  interface TokenUsageData {
+    tokensUsed: number;
+    tokenLimit: number;
+    messageCount: number;
+    tier: string;
+    hasUnlimitedTokens: boolean;
+    tokensRemaining: number;
+  }
+
+  const { data: tokenUsage } = useQuery<TokenUsageData>({
+    queryKey: ["/api/user/token-usage"],
+    enabled: !!user,
+  });
+
   // Assessment is optional - user can access directly without completing it
   // Educational focus: learn about prevention, not mandatory diagnostic assessment
 
@@ -472,6 +486,103 @@ export default function PreventionPage() {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Token Usage & Upgrade */}
+            <Card className="shadow-lg border-orange-100 dark:border-orange-900">
+              <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950">
+                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                  <Crown className="w-5 h-5" />
+                  {tokenUsage?.tier === 'free' ? 'Limiti Token Mensili' : 'Il Tuo Piano'}
+                </CardTitle>
+                <CardDescription>
+                  {tokenUsage?.tier === 'free' 
+                    ? 'Piano Free - 30 token al mese'
+                    : tokenUsage?.tier === 'premium' 
+                    ? 'Piano Premium - 1000 token/mese'
+                    : 'Piano Premium Plus - Token Illimitati'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                {/* Token Usage Display */}
+                {!tokenUsage?.hasUnlimitedTokens && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Token usati</span>
+                      <span className="font-medium">{tokenUsage?.tokensUsed || 0}/{tokenUsage?.tokenLimit || 30}</span>
+                    </div>
+                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all ${
+                          (tokenUsage?.tokensUsed || 0) / (tokenUsage?.tokenLimit || 30) > 0.8
+                            ? 'bg-red-500'
+                            : (tokenUsage?.tokensUsed || 0) / (tokenUsage?.tokenLimit || 30) > 0.5
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(100, ((tokenUsage?.tokensUsed || 0) / (tokenUsage?.tokenLimit || 30)) * 100)}%` }}
+                        data-testid="bar-token-usage"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {tokenUsage?.tokensRemaining || 0} token rimanenti questo mese
+                    </p>
+                  </div>
+                )}
+
+                {tokenUsage?.hasUnlimitedTokens && (
+                  <div className="text-center py-4">
+                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">∞</div>
+                    <p className="text-sm text-muted-foreground mt-1">Token Illimitati</p>
+                  </div>
+                )}
+
+                {/* Upgrade Buttons */}
+                {tokenUsage?.tier === 'free' && (
+                  <div className="space-y-2">
+                    <Button
+                      className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+                      onClick={() => setLocation('/subscribe')}
+                      data-testid="button-upgrade-premium"
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      Passa a Premium
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Strumento AI disponibile • 1000 token/mese
+                    </p>
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full border-orange-200 hover:bg-orange-50 dark:border-orange-800 dark:hover:bg-orange-950"
+                      onClick={() => setLocation('/subscribe')}
+                      data-testid="button-upgrade-premium-plus"
+                    >
+                      <Shield className="w-4 h-4 mr-2" />
+                      Premium Plus
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Token illimitati • Assistenza medica Prohmed
+                    </p>
+                  </div>
+                )}
+
+                {tokenUsage?.tier === 'premium' && (
+                  <div className="space-y-2">
+                    <Button
+                      className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+                      onClick={() => setLocation('/subscribe')}
+                      data-testid="button-upgrade-premium-plus"
+                    >
+                      <Shield className="w-4 h-4 mr-2" />
+                      Passa a Premium Plus
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Token illimitati • Assistenza medica Prohmed
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

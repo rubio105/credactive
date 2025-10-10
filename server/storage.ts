@@ -172,6 +172,10 @@ import {
   type InsertHealthScoreHistory,
   type HealthInsight,
   type InsertHealthInsight,
+  // Token Usage System
+  userTokenUsage,
+  type UserTokenUsage,
+  type InsertUserTokenUsage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
@@ -541,6 +545,13 @@ export interface IStorage {
   acknowledgeHealthInsight(id: string): Promise<HealthInsight>;
   resolveHealthInsight(id: string): Promise<HealthInsight>;
   deleteHealthInsight(id: string): Promise<void>;
+
+  // ========== USER TOKEN USAGE SYSTEM ==========
+  
+  // Token usage operations
+  getUserTokenUsage(userId: string, monthYear: string): Promise<UserTokenUsage | undefined>;
+  upsertUserTokenUsage(userId: string, monthYear: string, tokensToAdd: number): Promise<UserTokenUsage>;
+  getOrCreateTokenUsage(userId: string): Promise<UserTokenUsage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3299,6 +3310,68 @@ export class DatabaseStorage implements IStorage {
 
   async deleteHealthInsight(id: string): Promise<void> {
     await db.delete(healthInsights).where(eq(healthInsights.id, id));
+  }
+
+  // ========== USER TOKEN USAGE SYSTEM ==========
+  
+  async getUserTokenUsage(userId: string, monthYear: string): Promise<UserTokenUsage | undefined> {
+    const [usage] = await db
+      .select()
+      .from(userTokenUsage)
+      .where(and(
+        eq(userTokenUsage.userId, userId),
+        eq(userTokenUsage.monthYear, monthYear)
+      ));
+    return usage;
+  }
+
+  async upsertUserTokenUsage(userId: string, monthYear: string, tokensToAdd: number): Promise<UserTokenUsage> {
+    const existing = await this.getUserTokenUsage(userId, monthYear);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(userTokenUsage)
+        .set({
+          tokensUsed: existing.tokensUsed + tokensToAdd,
+          messageCount: existing.messageCount + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(userTokenUsage.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(userTokenUsage)
+        .values({
+          userId,
+          monthYear,
+          tokensUsed: tokensToAdd,
+          messageCount: 1,
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async getOrCreateTokenUsage(userId: string): Promise<UserTokenUsage> {
+    const now = new Date();
+    const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    const existing = await this.getUserTokenUsage(userId, monthYear);
+    if (existing) {
+      return existing;
+    }
+    
+    const [created] = await db
+      .insert(userTokenUsage)
+      .values({
+        userId,
+        monthYear,
+        tokensUsed: 0,
+        messageCount: 0,
+      })
+      .returning();
+    return created;
   }
 }
 

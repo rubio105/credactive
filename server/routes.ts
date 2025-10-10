@@ -997,6 +997,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user token usage (GET /api/user/token-usage) - Shows monthly token limits
+  app.get('/api/user/token-usage', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get or create token usage for current month
+      const tokenUsage = await storage.getOrCreateTokenUsage(userId);
+
+      // Define token limits based on subscription tier
+      const TOKEN_LIMITS = {
+        free: 30,
+        premium: 1000, // High limit for premium
+        premium_plus: -1, // Unlimited (-1 means no limit)
+      };
+
+      const userTier = user.subscriptionTier || 'free';
+      const limit = TOKEN_LIMITS[userTier as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
+
+      res.json({
+        tokensUsed: tokenUsage.tokensUsed,
+        tokenLimit: limit,
+        messageCount: tokenUsage.messageCount,
+        tier: userTier,
+        hasUnlimitedTokens: limit === -1,
+        tokensRemaining: limit === -1 ? -1 : Math.max(0, limit - tokenUsage.tokensUsed),
+      });
+    } catch (error) {
+      console.error("Error fetching token usage:", error);
+      res.status(500).json({ message: "Failed to fetch token usage" });
+    }
+  });
+
   // Analytics endpoints
   app.get('/api/analytics/category/:categoryId', isAuthenticated, async (req: any, res) => {
     try {
@@ -6510,6 +6550,36 @@ Explicación de audio:`
         return res.status(400).json({ message: 'Session is closed' });
       }
 
+      // Check token usage for authenticated users (monthly limits)
+      if (user?.id) {
+        const tokenUsage = await storage.getOrCreateTokenUsage(user.id);
+        const TOKEN_LIMITS = {
+          free: 30,
+          premium: 1000,
+          premium_plus: -1, // Unlimited
+        };
+        
+        const userTier = user.subscriptionTier || 'free';
+        const limit = TOKEN_LIMITS[userTier as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
+        
+        // Estimate tokens: user message + expected AI response (assume AI response is 2x user message)
+        // This prevents token overrun since we track both user and assistant tokens
+        const estimatedUserTokens = Math.ceil(content.length / 4);
+        const estimatedAiTokens = estimatedUserTokens * 2; // Conservative estimate
+        const estimatedTotalTokens = estimatedUserTokens + estimatedAiTokens;
+        
+        if (limit !== -1 && tokenUsage.tokensUsed + estimatedTotalTokens > limit) {
+          return res.status(403).json({ 
+            message: `Hai raggiunto il limite mensile di ${limit} token. Passa a Premium per continuare.`,
+            requiresUpgrade: true,
+            tokenLimit: limit,
+            tokensUsed: tokenUsage.tokensUsed,
+            tokensRemaining: Math.max(0, limit - tokenUsage.tokensUsed),
+            tier: userTier
+          });
+        }
+      }
+
       // Check message limit for free/anonymous users (30 messages per session)
       const existingMessages = await storage.getTriageMessagesBySession(sessionId);
       const userMessageCount = existingMessages.filter(m => m.role === 'user').length;
@@ -6545,6 +6615,30 @@ Explicación de audio:`
         user?.firstName
       );
 
+      // Final token check AFTER AI generation (for authenticated users)
+      if (user?.id) {
+        const actualTokens = Math.ceil((content.length + aiResponse.message.length) / 4);
+        const tokenUsage = await storage.getOrCreateTokenUsage(user.id);
+        const TOKEN_LIMITS = {
+          free: 30,
+          premium: 1000,
+          premium_plus: -1,
+        };
+        const userTier = user.subscriptionTier || 'free';
+        const limit = TOKEN_LIMITS[userTier as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
+        
+        if (limit !== -1 && tokenUsage.tokensUsed + actualTokens > limit) {
+          return res.status(403).json({ 
+            message: `Hai raggiunto il limite mensile di ${limit} token. Passa a Premium per continuare.`,
+            requiresUpgrade: true,
+            tokenLimit: limit,
+            tokensUsed: tokenUsage.tokensUsed,
+            tokensRemaining: Math.max(0, limit - tokenUsage.tokensUsed),
+            tier: userTier
+          });
+        }
+      }
+
       // Save AI response
       const aiMessage = await storage.createTriageMessage({
         sessionId,
@@ -6562,6 +6656,20 @@ Explicación de audio:`
           reason: `Urgency: ${aiResponse.urgencyLevel}. Related topics: ${aiResponse.relatedTopics.join(', ')}`,
           isReviewed: false,
         });
+      }
+
+      // Track token usage for authenticated users
+      if (user?.id) {
+        const estimatedTokens = Math.ceil((content.length + aiResponse.message.length) / 4);
+        const now = new Date();
+        const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        try {
+          await storage.upsertUserTokenUsage(user.id, monthYear, estimatedTokens);
+        } catch (tokenError) {
+          console.error('Error tracking token usage:', tokenError);
+          // Don't fail the request if token tracking fails
+        }
       }
 
       // Build response with upload instructions if needed

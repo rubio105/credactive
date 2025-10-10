@@ -1696,5 +1696,26 @@ export const insertHealthInsightSchema = createInsertSchema(healthInsights).omit
 });
 export type InsertHealthInsight = z.infer<typeof insertHealthInsightSchema>;
 
+// User Token Usage (for AI conversation limits)
+export const userTokenUsage = pgTable("user_token_usage", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  monthYear: varchar("month_year", { length: 7 }).notNull(), // Format: YYYY-MM
+  tokensUsed: integer("tokens_used").default(0).notNull(),
+  messageCount: integer("message_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueUserMonth: unique().on(table.userId, table.monthYear),
+}));
+
+export type UserTokenUsage = typeof userTokenUsage.$inferSelect;
+export const insertUserTokenUsageSchema = createInsertSchema(userTokenUsage).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUserTokenUsage = z.infer<typeof insertUserTokenUsageSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number };

@@ -1886,7 +1886,7 @@ ${JSON.stringify(questionsToTranslate)}`;
       }
       const openai = new OpenAI({ apiKey });
       
-      const prompt = `Crea un'email marketing professionale in italiano per CREDACTIVE ACADEMY.
+      const prompt = `Crea un'email marketing professionale in italiano per CIRY.
 
 TARGET: ${profession || 'Tutti i professionisti'}
 SCOPO: ${purpose || 'Promozione corsi'}
@@ -1906,12 +1906,12 @@ ISTRUZIONI:
 5. Mantieni un tono ${tone || 'professionale'}
 6. Evidenzia i benefici specifici per la loro professione
 7. Formato HTML con stile inline (no CSS esterni)
-8. OBBLIGATORIO: Includi sempre un header/logo all'inizio dell'email con il testo "CREDACTIVE ACADEMY" in stile professionale e visibile (es. con testo grande, grassetto, colori brand come blu scuro/arancione)
+8. OBBLIGATORIO: Includi sempre un header/logo all'inizio dell'email con il testo "CIRY" in stile professionale e visibile (es. con testo grande, grassetto, colori brand come blu scuro/arancione)
 
 STRUTTURA RICHIESTA:
 - Oggetto email (max 60 caratteri)
 - Corpo email in HTML con sezioni: 
-  * HEADER con logo/branding "CREDACTIVE ACADEMY" (testo stilizzato professionale con background o bordo elegante)
+  * HEADER con logo/branding "CIRY" (testo stilizzato professionale con background o bordo elegante)
   * Saluto personalizzato con {{firstName}}
   * Introduzione value proposition menzionando {{profession}} se rilevante
   * Corsi raccomandati con descrizione e benefici
@@ -1920,7 +1920,7 @@ STRUTTURA RICHIESTA:
 
 ESEMPIO HEADER HTML:
 <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; text-align: center; margin-bottom: 30px;">
-  <h1 style="color: white; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 1px;">CREDACTIVE ACADEMY</h1>
+  <h1 style="color: white; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 1px;">CIRY</h1>
   <p style="color: #e0e7ff; margin: 8px 0 0 0; font-size: 14px;">Formazione Professionale per l'Eccellenza</p>
 </div>
 
@@ -3077,7 +3077,7 @@ Restituisci SOLO un JSON con:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Report Quiz - CREDACTIVE ACADEMY</title>
+  <title>Report Quiz - CIRY</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -3178,7 +3178,7 @@ Restituisci SOLO un JSON con:
 </head>
 <body>
   <div class="header">
-    <h1>🎓 CREDACTIVE ACADEMY</h1>
+    <h1>🎓 CIRY</h1>
     <p>Report Quiz Dettagliato</p>
   </div>
 
@@ -3294,7 +3294,7 @@ Restituisci SOLO un JSON con:
 
       htmlContent += `
   <div class="footer">
-    <p>Report generato da CREDACTIVE ACADEMY - Piattaforma #1 per Certificazioni Professionali</p>
+    <p>Report generato da CIRY - Piattaforma #1 per Certificazioni Professionali</p>
     <p>${reportDate}</p>
   </div>
 </body>
@@ -3946,7 +3946,7 @@ Restituisci SOLO un JSON con:
         {
           code: 'welcome',
           name: 'Email di Benvenuto',
-          subject: '🎉 Benvenuto su CREDACTIVE Academy!',
+          subject: '🎉 Benvenuto su CIRY Academy!',
           description: 'Email inviata dopo la verifica dell\'account',
           variables: ['firstName', 'email'],
           htmlContent: `<!DOCTYPE html>
@@ -3970,7 +3970,7 @@ Restituisci SOLO un JSON con:
     </div>
     <div class="content">
       <div style="font-size: 18px;">🎉 Ciao <strong>{{firstName}}</strong>,</div>
-      <p>Benvenuto su <span class="highlight">CREDACTIVE ACADEMY</span>!</p>
+      <p>Benvenuto su <span class="highlight">CIRY</span>!</p>
       <p>La tua email è stata verificata con successo. Ora puoi accedere alla nostra piattaforma e iniziare il tuo percorso di eccellenza professionale.</p>
       <div style="background: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px;">
         <p style="margin: 0;"><strong>💡 Prossimi Passi:</strong></p>
@@ -3981,22 +3981,22 @@ Restituisci SOLO un JSON con:
         </ul>
       </div>
       <p>Se hai domande, il nostro team è sempre disponibile.</p>
-      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CIRY</strong></p>
     </div>
     <div class="footer">
-      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CREDACTIVE ACADEMY. Tutti i diritti riservati.</p>
+      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CIRY. Tutti i diritti riservati.</p>
       <p style="color: #999; font-size: 11px;">Email inviata a {{email}}</p>
     </div>
   </div>
 </body>
 </html>`,
-          textContent: `Benvenuto su CREDACTIVE Academy!\n\nCiao {{firstName}},\n\nLa tua email è stata verificata con successo. Ora puoi accedere alla piattaforma e iniziare il tuo percorso di preparazione professionale.\n\nA presto,\nIl Team CREDACTIVE`,
+          textContent: `Benvenuto su CIRY Academy!\n\nCiao {{firstName}},\n\nLa tua email è stata verificata con successo. Ora puoi accedere alla piattaforma e iniziare il tuo percorso di preparazione professionale.\n\nA presto,\nIl Team CIRY`,
           isActive: true,
         },
         {
           code: 'verification',
           name: 'Codice di Verifica Email',
-          subject: '🔐 Il tuo codice di verifica CREDACTIVE',
+          subject: '🔐 Il tuo codice di verifica CIRY',
           description: 'Email con codice di verifica a 6 cifre',
           variables: ['firstName', 'verificationCode'],
           htmlContent: `<!DOCTYPE html>
@@ -4021,28 +4021,28 @@ Restituisci SOLO un JSON con:
     </div>
     <div class="content">
       <p style="font-size: 18px;">Ciao <strong>{{firstName}}</strong>,</p>
-      <p>Grazie per esserti registrato su CREDACTIVE Academy!</p>
+      <p>Grazie per esserti registrato su CIRY Academy!</p>
       <p>Utilizza il codice qui sotto per verificare il tuo account:</p>
       <div class="code-box">
         <div class="code">{{verificationCode}}</div>
       </div>
       <p>⏰ <strong>Importante:</strong> Questo codice è valido per 15 minuti.</p>
       <p>Se non hai richiesto questa verifica, ignora questa email.</p>
-      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CIRY</strong></p>
     </div>
     <div class="footer">
-      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CREDACTIVE ACADEMY.</p>
+      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CIRY.</p>
     </div>
   </div>
 </body>
 </html>`,
-          textContent: `Verifica la tua email CREDACTIVE\n\nCiao {{firstName}},\n\nIl tuo codice di verifica è: {{verificationCode}}\n\nQuesto codice è valido per 15 minuti.\n\nIl Team CREDACTIVE`,
+          textContent: `Verifica la tua email CIRY\n\nCiao {{firstName}},\n\nIl tuo codice di verifica è: {{verificationCode}}\n\nQuesto codice è valido per 15 minuti.\n\nIl Team CIRY`,
           isActive: true,
         },
         {
           code: 'password_reset',
           name: 'Reset Password',
-          subject: '🔑 Reset della tua password CREDACTIVE',
+          subject: '🔑 Reset della tua password CIRY',
           description: 'Email per il reset della password',
           variables: ['firstName', 'resetLink'],
           htmlContent: `<!DOCTYPE html>
@@ -4066,22 +4066,22 @@ Restituisci SOLO un JSON con:
     </div>
     <div class="content">
       <p style="font-size: 18px;">Ciao <strong>{{firstName}}</strong>,</p>
-      <p>Hai richiesto il reset della tua password per CREDACTIVE Academy.</p>
+      <p>Hai richiesto il reset della tua password per CIRY Academy.</p>
       <p>Clicca sul pulsante qui sotto per reimpostare la tua password:</p>
       <div style="text-align: center;">
         <a href="{{resetLink}}" class="button">Reimposta Password</a>
       </div>
       <p>⏰ <strong>Importante:</strong> Questo link è valido per 1 ora.</p>
       <p>Se non hai richiesto questo reset, ignora questa email e la tua password rimarrà invariata.</p>
-      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CREDACTIVE</strong></p>
+      <p style="margin-top: 30px;">A presto,<br><strong>Il Team CIRY</strong></p>
     </div>
     <div class="footer">
-      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CREDACTIVE ACADEMY.</p>
+      <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} CIRY.</p>
     </div>
   </div>
 </body>
 </html>`,
-          textContent: `Reset Password CREDACTIVE\n\nCiao {{firstName}},\n\nHai richiesto il reset della password.\n\nClicca su questo link per reimpostare la password:\n{{resetLink}}\n\nQuesto link è valido per 1 ora.\n\nIl Team CREDACTIVE`,
+          textContent: `Reset Password CIRY\n\nCiao {{firstName}},\n\nHai richiesto il reset della password.\n\nClicca su questo link per reimpostare la password:\n{{resetLink}}\n\nQuesto link è valido per 1 ora.\n\nIl Team CIRY`,
           isActive: true,
         },
       ];

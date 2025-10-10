@@ -293,7 +293,7 @@ Ciao ${rawName},
 
 Benvenuto nella piattaforma professionale per la preparazione alle certificazioni!
 
-Con CREDACTIVE hai accesso a:
+Con CIRY hai accesso a:
 - Quiz professionali su Cybersecurity, Compliance e Business
 - Report dettagliati con analisi delle performance
 - Contenuti multilingua (IT, EN, ES, FR)
@@ -434,7 +434,7 @@ Il Team CIRY
 
   await sendEmail({
     to: email,
-    subject: "🔐 Verifica il tuo Account - CREDACTIVE",
+    subject: "🔐 Verifica il tuo Account - CIRY",
     htmlContent,
     textContent,
   });
@@ -576,7 +576,7 @@ Il Team CIRY
 
   await sendEmail({
     to: email,
-    subject: "🔐 Recupero Password - CREDACTIVE",
+    subject: "🔐 Recupero Password - CIRY",
     htmlContent,
     textContent,
   });
@@ -1044,8 +1044,8 @@ export async function sendCorporateInviteEmail(
           <h1>🎓 Invito Aziendale</h1>
         </div>
         <div class="content">
-          <h2>Benvenuto in CREDACTIVE Academy!</h2>
-          <p>Sei stato invitato da <span class="company">${sanitizeUserInput(companyName)}</span> ad accedere alla piattaforma professionale di certificazione CREDACTIVE Academy.</p>
+          <h2>Benvenuto in CIRY!</h2>
+          <p>Sei stato invitato da <span class="company">${sanitizeUserInput(companyName)}</span> ad accedere alla piattaforma professionale di certificazione CIRY.</p>
           
           ${courseSection}
           
@@ -1091,11 +1091,11 @@ Questo invito include l'accesso a questo corso specifico.
 ` : '';
 
   const textContent = `
-CREDACTIVE Academy - Invito Aziendale
+CIRY - Invito Aziendale
 
 Benvenuto!
 
-Sei stato invitato da ${companyName} ad accedere alla piattaforma CREDACTIVE Academy.
+Sei stato invitato da ${companyName} ad accedere alla piattaforma CIRY.
 ${courseTextSection}
 Account Aziendale - Benefici:
 - Tutti i contenuti premium inclusi
@@ -1115,8 +1115,8 @@ Il Team CIRY
   await sendEmail({
     to: email,
     subject: courseName 
-      ? `🎓 Invito da ${companyName}: ${courseName} - CREDACTIVE Academy`
-      : `🎓 Invito da ${companyName} - CREDACTIVE Academy`,
+      ? `🎓 Invito da ${companyName}: ${courseName} - CIRY`
+      : `🎓 Invito da ${companyName} - CIRY`,
     htmlContent,
     textContent,
   });
@@ -1400,7 +1400,7 @@ export async function sendPremiumUpgradeEmail(
           </p>
           
           <p style="margin-top: 30px; color: #666;">
-            Grazie per aver scelto CREDACTIVE Academy!<br>
+            Grazie per aver scelto CIRY!<br>
             <strong>Il Team CIRY</strong>
           </p>
         </div>
@@ -1418,7 +1418,7 @@ export async function sendPremiumUpgradeEmail(
   `;
 
   const textContent = `
-CREDACTIVE Academy - Benvenuto in ${tierName}!
+CIRY - Benvenuto in ${tierName}!
 
 Ciao ${rawName},
 
@@ -1437,7 +1437,7 @@ Inizia subito: ${baseUrl}/dashboard
 
 💡 Suggerimento: Inizia dai quiz introduttivi, poi passa alle certificazioni avanzate!
 
-Grazie per aver scelto CREDACTIVE Academy!
+Grazie per aver scelto CIRY!
 Il Team CIRY
 
 ---
@@ -1446,7 +1446,7 @@ Hai bisogno di aiuto? support@credactive.academy
 
   await sendEmail({
     to: email,
-    subject: `🎉 Benvenuto in ${tierName} - CREDACTIVE Academy`,
+    subject: `🎉 Benvenuto in ${tierName} - CIRY`,
     htmlContent,
     textContent,
   });

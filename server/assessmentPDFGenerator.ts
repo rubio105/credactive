@@ -31,7 +31,7 @@ export function generateAssessmentPDF(data: AssessmentPDFData): typeof PDFDocume
   doc.fontSize(28)
      .fillColor(primaryColor)
      .font('Helvetica-Bold')
-     .text('CREDACTIVE', 0, 50, { align: 'center' });
+     .text('CIRY', 0, 50, { align: 'center' });
   
   doc.fontSize(14)
      .fillColor(secondaryColor)

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare, Book, Shield, Gift } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare, Book, Shield, Gift, CreditCard } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { AdminUsers } from "@/components/admin/AdminUsers";
@@ -23,12 +23,14 @@ import { AdminDocumentation } from "@/components/admin/AdminDocumentation";
 import { AdminPrevention } from "@/components/admin/AdminPrevention";
 import { AdminProhmedCodes } from "@/components/admin/AdminProhmedCodes";
 import { AdminWebinarHealth } from "@/components/admin/AdminWebinarHealth";
+import { AdminSubscriptionPlans } from "@/components/admin/AdminSubscriptionPlans";
 
 const menuItems = [
   { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
   { id: "feedback", icon: MessageSquare, label: "Feedback", testId: "tab-feedback" },
   { id: "marketing", icon: Mail, label: "Marketing", testId: "tab-marketing" },
   { id: "users", icon: Users, label: "Utenti", testId: "tab-users" },
+  { id: "subscription-plans", icon: CreditCard, label: "Piani", testId: "tab-subscription-plans" },
   { id: "categories", icon: BookOpen, label: "Categorie", testId: "tab-categories" },
   { id: "quizzes", icon: BookOpen, label: "Quiz", testId: "tab-quizzes" },
   { id: "questions", icon: HelpCircle, label: "Domande", testId: "tab-questions" },
@@ -130,6 +132,7 @@ export default function AdminPage() {
           {activeTab === "feedback" && <AdminFeedback />}
           {activeTab === "marketing" && <AdminMarketing />}
           {activeTab === "users" && <AdminUsers />}
+          {activeTab === "subscription-plans" && <AdminSubscriptionPlans />}
           {activeTab === "categories" && <AdminCategories />}
           {activeTab === "quizzes" && <AdminQuizzes />}
           {activeTab === "questions" && <AdminQuestions />}

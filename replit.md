@@ -18,7 +18,7 @@ The backend is built with Express.js, Node.js, and TypeScript, featuring a RESTf
 
 ## Data Storage
 
-PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. The schema includes tables for Users (with Stripe data), Categories, Quizzes, Questions, Quiz Generation Jobs, User progress, Reports, Sessions, Live Courses, Static Content Pages, Email Templates, Settings, Prevention Documents, Prevention Topics, Triage Sessions/Messages/Alerts, Prohmed Codes, and Crossword Puzzles/Attempts/Leaderboard. It supports category images, audio explanations, and Gemini AI integration.
+PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. The schema includes tables for Users (with Stripe data), Subscription Plans (with configurable usage limits), Categories, Quizzes, Questions, Quiz Generation Jobs, User progress, Reports, Sessions, Live Courses, Static Content Pages, Email Templates, Settings, Prevention Documents, Prevention Topics, Triage Sessions/Messages/Alerts, Prohmed Codes, and Crossword Puzzles/Attempts/Leaderboard. It supports category images, audio explanations, and Gemini AI integration.
 
 ## Key Features
 
@@ -30,7 +30,7 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 -   **Content Management System (CMS)**: Manages static content pages with rich text editing and dynamic navigation.
 -   **Internationalization**: Multi-language support with in-quiz language selector (IT/EN/ES) offering real-time AI-powered translation via OpenAI GPT-4o.
 -   **Email Template & Configuration Management**: Database-backed systems for admin customization of transactional emails and secure API key management.
--   **Subscription Plans & User Data Management**: Admin panel for managing subscription plans with AI-powered descriptions and Stripe integration, and CSV export/import for bulk user operations.
+-   **Database-Driven Subscription Plans System**: Fully dynamic subscription management with plans stored in database (subscription_plans table) including configurable limits (maxCoursesPerMonth, maxQuizGamingPerWeek, aiTokensPerMonth), boolean features (includesWebinarHealth, includesProhmedSupport), and Stripe integration fields. Subscribe page dynamically fetches and displays all plans with real-time limit rendering and currency-aware price formatting via Intl.NumberFormat. Admin panel provides autonomous CRUD operations for subscription plans with AI-powered feature formatting using OpenAI GPT-4o-mini, support for unlimited values (-1), and comprehensive form covering all plan attributes (pricing, limits, Stripe IDs, active status). Three default plans: FREE (€0, 2 courses/month, 2 quiz-gaming/week, 120 AI tokens/month), PREMIUM (€99/year, unlimited courses/quiz, 1000 AI tokens/month, webinar access), PREMIUM PLUS (€149/year, unlimited everything, full Prohmed support). Admin can modify plans in database and changes reflect instantly in UI without code changes.
 -   **Analytics Dashboard**: Comprehensive business intelligence displaying key metrics.
 -   **AI Email Marketing System**: Intelligent email campaign management using OpenAI GPT-4o for personalized content generation and Brevo integration.
 -   **SEO Optimization**: Comprehensive search engine optimization including dynamic meta tags and sitemap generation.

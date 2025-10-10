@@ -19,7 +19,7 @@ import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
 import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
-import prohmedLogo from "@assets/image_1760116137233.png";
+const prohmedLogo = "/images/ciry-logo.png";
 
 interface User {
   id: string;

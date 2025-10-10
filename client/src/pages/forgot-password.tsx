@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import logoImage from "@assets/image_1760116137233.png";
+const logoImage = "/images/ciry-logo.png";
 import { Link } from "wouter";
 import { CheckCircle } from "lucide-react";
 

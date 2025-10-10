@@ -10,7 +10,7 @@ import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount } from "@shared/schema";
 import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Calendar, Users, Video, Sparkles, Headphones } from "lucide-react";
 import { featuredImages } from "@/lib/stockImages";
-import logoImage from "@assets/image_1760116137233.png";
+const logoImage = "/images/ciry-logo.png";
 import certificationsImage from "@assets/image_1759608591455.png";
 
 export default function Landing() {

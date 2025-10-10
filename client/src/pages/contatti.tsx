@@ -66,53 +66,6 @@ export default function Contatti() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 mb-12">
-          <Card>
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Mail className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>Email</CardTitle>
-              <CardDescription>Scrivici una mail</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <a href="mailto:info@credactive.it" className="text-primary hover:underline" data-testid="email-link">
-                info@credactive.it
-              </a>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Phone className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>Telefono</CardTitle>
-              <CardDescription>Chiamaci direttamente</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <a href="tel:+390123456789" className="text-primary hover:underline" data-testid="phone-link">
-                +39 012 345 6789
-              </a>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <HelpCircle className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>Supporto</CardTitle>
-              <CardDescription>Assistenza clienti</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Lun-Ven: 9:00 - 18:00
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

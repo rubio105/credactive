@@ -6,10 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, Activity, Mic, MicOff, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, Send, FileText, Activity, Mic, MicOff, X, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import { MedicalReportCard } from "@/components/MedicalReportCard";
+import { MedicalTimeline } from "@/components/MedicalTimeline";
+import { MedicalImageAnalysis } from "@/components/MedicalImageAnalysis";
 
 const ciryLogo = "/images/ciry-full-logo.png";
 
@@ -24,6 +28,31 @@ interface TriageSession {
   id: string;
   status: string;
   hasAlert: boolean;
+}
+
+interface HealthReport {
+  id: string;
+  reportType: string;
+  fileName: string;
+  fileType: string;
+  reportDate: string | null;
+  issuer: string | null;
+  aiSummary: string;
+  extractedValues: Record<string, any>;
+  radiologicalAnalysis: {
+    imageType: string;
+    bodyPart: string;
+    findings: Array<{
+      category: 'normal' | 'attention' | 'urgent';
+      description: string;
+      location?: string;
+      confidence?: number;
+    }>;
+    overallAssessment: string;
+    recommendations: string[];
+    confidence: number;
+  } | null;
+  createdAt: string;
 }
 
 export default function PatientAIPage() {
@@ -55,6 +84,12 @@ export default function PatientAIPage() {
   const { data: messages } = useQuery<TriageMessage[]>({
     queryKey: ["/api/triage/messages", sessionId],
     enabled: !!sessionId,
+  });
+
+  // Query per i referti del paziente
+  const { data: healthReports = [] } = useQuery<HealthReport[]>({
+    queryKey: ["/api/health-score/reports/my"],
+    enabled: !!user,
   });
 
   useEffect(() => {
@@ -260,115 +295,216 @@ export default function PatientAIPage() {
             </Button>
           </div>
 
-          <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
-            <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
-              <div className="flex items-center justify-between">
-                <div>
+          <Tabs defaultValue="chat" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-emerald-50 dark:bg-emerald-950/50">
+              <TabsTrigger 
+                value="chat" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white"
+                data-testid="tab-chat"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Chat AI
+              </TabsTrigger>
+              <TabsTrigger 
+                value="reports"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white"
+                data-testid="tab-reports"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                I Miei Referti
+                {healthReports.length > 0 && (
+                  <span className="ml-2 bg-emerald-600 text-white rounded-full px-2 py-0.5 text-xs">
+                    {healthReports.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="chat" className="mt-4">
+              <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
+                <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                        <Shield className="w-5 h-5" />
+                        Conversazione Prevenzione
+                      </CardTitle>
+                      <CardDescription>
+                        L'AI ti guida nell'apprendimento di strategie preventive
+                      </CardDescription>
+                    </div>
+                    {sessionId && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCloseSession}
+                        className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900"
+                        data-testid="button-close-session"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Nuova Conversazione
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-4">
+                  {!sessionId ? (
+                    <div className="space-y-4">
+                      <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
+                        <AlertDescription className="text-sm text-emerald-800 dark:text-emerald-200">
+                          <p className="font-semibold mb-2">💡 Come funziona?</p>
+                          <ul className="space-y-1">
+                            <li>• Condividi il tuo caso personale o interesse</li>
+                            <li>• L'AI ti guida nell'apprendimento di strategie preventive</li>
+                            <li>• Ricevi consigli pratici basati su evidenze scientifiche</li>
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
+                          value={userInput}
+                          onChange={(e) => setUserInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+                          className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
+                          data-testid="input-start-chat"
+                        />
+                        <Button
+                          onClick={handleStart}
+                          disabled={startTriageMutation.isPending}
+                          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                          data-testid="button-start-chat"
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          {startTriageMutation.isPending ? "Avvio..." : "Inizia"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <ScrollArea className="h-[500px] border border-emerald-100 dark:border-emerald-800 rounded-lg p-4 bg-gradient-to-b from-white to-emerald-50/30 dark:from-gray-950 dark:to-emerald-950/30">
+                        <div className="space-y-4">
+                          {messages?.map((msg) => (
+                            <div
+                              key={msg.id}
+                              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                              data-testid={`message-${msg.id}`}
+                            >
+                              <div
+                                className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
+                                  msg.role === 'user'
+                                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
+                                    : 'bg-white dark:bg-gray-900 border border-emerald-100 dark:border-emerald-800'
+                                }`}
+                              >
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                          <div ref={messagesEndRef} />
+                        </div>
+                      </ScrollArea>
+
+                      {session?.status === 'active' && (
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Scrivi un messaggio..."
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                            className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
+                            data-testid="input-message"
+                          />
+                          <Button
+                            onClick={handleSend}
+                            disabled={sendMessageMutation.isPending}
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                            data-testid="button-send"
+                          >
+                            <Send className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reports" className="mt-4">
+              <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
+                <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
                   <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                    <Shield className="w-5 h-5" />
-                    Conversazione Prevenzione
+                    <FileText className="w-5 h-5" />
+                    I Miei Referti Medici
                   </CardTitle>
                   <CardDescription>
-                    L'AI ti guida nell'apprendimento di strategie preventive
+                    Visualizza i tuoi referti anonimizzati caricati nel sistema
                   </CardDescription>
-                </div>
-                {sessionId && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCloseSession}
-                    className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900"
-                    data-testid="button-close-session"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Nuova Conversazione
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              {!sessionId ? (
-                <div className="space-y-4">
-                  <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
-                    <AlertDescription className="text-sm text-emerald-800 dark:text-emerald-200">
-                      <p className="font-semibold mb-2">💡 Come funziona?</p>
-                      <ul className="space-y-1">
-                        <li>• Condividi il tuo caso personale o interesse</li>
-                        <li>• L'AI ti guida nell'apprendimento di strategie preventive</li>
-                        <li>• Ricevi consigli pratici basati su evidenze scientifiche</li>
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
-                      value={userInput}
-                      onChange={(e) => setUserInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                      className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
-                      data-testid="input-start-chat"
-                    />
-                    <Button
-                      onClick={handleStart}
-                      disabled={startTriageMutation.isPending}
-                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                      data-testid="button-start-chat"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      {startTriageMutation.isPending ? "Avvio..." : "Inizia"}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <ScrollArea className="h-[500px] border border-emerald-100 dark:border-emerald-800 rounded-lg p-4 bg-gradient-to-b from-white to-emerald-50/30 dark:from-gray-950 dark:to-emerald-950/30">
-                    <div className="space-y-4">
-                      {messages?.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                          data-testid={`message-${msg.id}`}
-                        >
-                          <div
-                            className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
-                              msg.role === 'user'
-                                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
-                                : 'bg-white dark:bg-gray-900 border border-emerald-100 dark:border-emerald-800'
-                            }`}
-                          >
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                          </div>
-                        </div>
-                      ))}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  </ScrollArea>
-
-                  {session?.status === 'active' && (
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Scrivi un messaggio..."
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
-                        data-testid="input-message"
+                </CardHeader>
+                <CardContent className="pt-6">
+                  {healthReports.length === 0 ? (
+                    <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
+                      <FileUp className="w-5 h-5 text-emerald-600" />
+                      <AlertDescription className="ml-2 text-emerald-800 dark:text-emerald-200">
+                        <p className="font-semibold mb-1">Nessun referto caricato</p>
+                        <p className="text-sm">I referti che caricherai tramite l'AI appariranno qui, completamente anonimizzati per la tua privacy.</p>
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-6">
+                      <MedicalTimeline 
+                        reports={healthReports.map(r => ({
+                          id: r.id,
+                          title: r.fileName,
+                          reportType: r.reportType,
+                          uploadDate: r.createdAt,
+                          summary: r.aiSummary
+                        }))}
                       />
-                      <Button
-                        onClick={handleSend}
-                        disabled={sendMessageMutation.isPending}
-                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                        data-testid="button-send"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
+                      
+                      <div className="space-y-4">
+                        {healthReports.map((report) => (
+                          <div key={report.id} className="space-y-4">
+                            <MedicalReportCard 
+                              report={{
+                                id: report.id,
+                                title: report.fileName,
+                                reportType: report.reportType,
+                                uploadDate: report.createdAt,
+                                aiSummary: report.aiSummary,
+                                medicalValues: Object.entries(report.extractedValues || {}).map(([name, value]) => ({
+                                  name,
+                                  value: String(value)
+                                })),
+                                hospitalName: report.issuer || undefined
+                              }}
+                            />
+                            
+                            {report.radiologicalAnalysis && (
+                              <MedicalImageAnalysis 
+                                analysis={{
+                                  id: report.id,
+                                  uploadDate: report.createdAt,
+                                  imageType: report.radiologicalAnalysis.imageType as 'xray' | 'mri' | 'ct' | 'ultrasound' | 'general',
+                                  bodyPart: report.radiologicalAnalysis.bodyPart,
+                                  findings: report.radiologicalAnalysis.findings,
+                                  overallAssessment: report.radiologicalAnalysis.overallAssessment,
+                                  recommendations: report.radiologicalAnalysis.recommendations,
+                                  confidence: report.radiologicalAnalysis.confidence
+                                }}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

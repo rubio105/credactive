@@ -2,7 +2,7 @@ export const translations = {
   it: {
     home: {
       welcome: "Benvenuto",
-      subtitle: "Continua il tuo percorso di apprendimento in cybersecurity",
+      subtitle: "La formazione che unisce salute e sicurezza digitale. Preparati con quiz interattivi, corsi live e on-demand arricchiti dal gaming: un nuovo modo per studiare e allenarti alle certificazioni più richieste, come CISSP, CISM, ISO 27001, OSCP, CEH e molte altre. Con il nostro modello AI Prohmed impari a fare prevenzione attiva, con reportistiche dedicate e suggerimenti personalizzati.",
       viewDashboard: "Vedi Dashboard",
       stats: {
         completed: "Quiz Completati",
@@ -42,7 +42,7 @@ export const translations = {
   en: {
     home: {
       welcome: "Welcome",
-      subtitle: "Continue your cybersecurity learning journey",
+      subtitle: "Training that combines health and digital security. Prepare with interactive quizzes, live and on-demand courses enriched with gamification: a new way to study and train for the most sought-after certifications, such as CISSP, CISM, ISO 27001, OSCP, CEH and many others. With our AI Prohmed model you learn active prevention, with dedicated reports and personalized recommendations.",
       viewDashboard: "View Dashboard",
       stats: {
         completed: "Quizzes Completed",
@@ -82,7 +82,7 @@ export const translations = {
   es: {
     home: {
       welcome: "Bienvenido",
-      subtitle: "Continúa tu camino de aprendizaje en ciberseguridad",
+      subtitle: "La formación que une salud y seguridad digital. Prepárate con cuestionarios interactivos, cursos en vivo y bajo demanda enriquecidos con gamificación: una nueva forma de estudiar y entrenarte para las certificaciones más solicitadas, como CISSP, CISM, ISO 27001, OSCP, CEH y muchas otras. Con nuestro modelo AI Prohmed aprendes prevención activa, con informes dedicados y sugerencias personalizadas.",
       viewDashboard: "Ver Panel",
       stats: {
         completed: "Cuestionarios Completados",

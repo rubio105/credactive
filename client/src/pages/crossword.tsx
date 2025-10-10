@@ -201,7 +201,8 @@ export default function CrosswordPage() {
                             key={`${rowIdx}-${colIdx}`}
                             className={`
                               w-8 h-8 border flex items-center justify-center relative text-sm font-bold
-                              ${cell ? 'bg-white dark:bg-slate-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900' : 'bg-slate-900 dark:bg-slate-950'}
+                              ${cell ? (letter ? 'bg-green-100 dark:bg-green-900' : 'bg-white dark:bg-slate-800') : 'bg-slate-900 dark:bg-slate-950'}
+                              ${cell ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900' : ''}
                               ${selectedClue === clue?.number ? 'ring-2 ring-orange-500' : ''}
                             `}
                             onClick={() => clue && handleCellClick(clue.number)}
@@ -212,7 +213,7 @@ export default function CrosswordPage() {
                               </span>
                             )}
                             {letter && (
-                              <span className="text-green-600 dark:text-green-400 font-bold text-base">
+                              <span className="text-slate-900 dark:text-slate-100 font-bold text-lg">
                                 {letter}
                               </span>
                             )}

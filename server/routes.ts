@@ -7677,11 +7677,8 @@ Format as JSON: {
       // Get all active live courses
       const courses = await storage.getAllLiveCourses(user.id);
       
-      // Filter for webinar health courses (those with "webinar" in title or specific category)
-      const webinarCourses = courses.filter(course => 
-        course.title.toLowerCase().includes('webinar') || 
-        course.title.toLowerCase().includes('prevenzione')
-      );
+      // Filter for webinar health courses (using isWebinarHealth flag)
+      const webinarCourses = courses.filter(course => course.isWebinarHealth === true);
       
       // Get sessions for each webinar with enrollment status
       const webinarsWithSessions = await Promise.all(
@@ -7821,11 +7818,8 @@ Format as JSON: {
       // Get all active live courses (admin override to see all courses)
       const courses = await storage.getAllLiveCourses(undefined, true);
       
-      // Filter for webinar health courses
-      const webinarCourses = courses.filter(course => 
-        course.title.toLowerCase().includes('webinar') || 
-        course.title.toLowerCase().includes('prevenzione')
-      );
+      // Filter for webinar health courses (using isWebinarHealth flag)
+      const webinarCourses = courses.filter(course => course.isWebinarHealth === true);
       
       // Get sessions for each webinar
       const webinarsWithSessions = await Promise.all(

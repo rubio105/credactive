@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileImage, AlertTriangle, CheckCircle, Info, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RadiologicalImageViewer } from "./RadiologicalImageViewer";
+import { useState } from "react";
 
 interface Finding {
   category: 'normal' | 'attention' | 'urgent';
@@ -22,6 +24,8 @@ interface ImageAnalysisResult {
 }
 
 export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResult }) {
+  const [showImageViewer, setShowImageViewer] = useState(false);
+
   const getImageTypeName = (type: string) => {
     const names: Record<string, string> = {
       xray: "Radiografia",
@@ -64,14 +68,28 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
   const normalFindings = analysis.findings.filter(f => f.category === 'normal');
 
   return (
-    <Card className="shadow-lg border-l-4 border-l-indigo-500 dark:border-l-indigo-400" data-testid={`image-analysis-${analysis.id}`}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <FileImage className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <CardTitle className="text-xl">Refertazione Immagine Medica</CardTitle>
-            </div>
+    <>
+      {/* Image Viewer (if requested) */}
+      {showImageViewer && (
+        <div className="mb-6">
+          <RadiologicalImageViewer 
+            reportId={analysis.id}
+            findings={analysis.findings}
+            imageType={analysis.imageType}
+            bodyPart={analysis.bodyPart}
+          />
+        </div>
+      )}
+
+      {/* Findings Report */}
+      <Card className="shadow-lg border-l-4 border-l-indigo-500 dark:border-l-indigo-400" data-testid={`image-analysis-${analysis.id}`}>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <FileImage className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <CardTitle className="text-xl">Analisi Immagine Radiologica</CardTitle>
+              </div>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-200 dark:border-indigo-700" data-testid="badge-image-type">
                 {getImageTypeName(analysis.imageType)}
@@ -207,15 +225,22 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" size="sm" className="flex-1" data-testid="button-view-image">
+          <Button 
+            variant={showImageViewer ? "default" : "outline"} 
+            size="sm" 
+            className="flex-1" 
+            onClick={() => setShowImageViewer(!showImageViewer)}
+            data-testid="button-view-image"
+          >
             <FileImage className="w-4 h-4 mr-2" />
-            Vedi Immagine Originale
+            {showImageViewer ? 'Nascondi' : 'Vedi'} Immagine con Marcatori
           </Button>
           <Button variant="outline" size="sm" className="flex-1" data-testid="button-export-refertazione">
-            Esporta Referto PDF
+            Esporta Analisi PDF
           </Button>
         </div>
       </CardContent>
     </Card>
+    </>
   );
 }

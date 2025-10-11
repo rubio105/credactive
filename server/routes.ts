@@ -7928,6 +7928,49 @@ Le risposte DEVONO essere in italiano.`;
 
   // ========== HEALTH SCORE ROUTES ==========
 
+  // Serve medical report image securely (GET /api/health-score/reports/:id/image)
+  app.get('/api/health-score/reports/:id/image', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const reportId = req.params.id;
+
+      // Get report and verify ownership
+      const report = await storage.getHealthReportById(reportId);
+      if (!report) {
+        return res.status(404).json({ message: 'Report not found' });
+      }
+
+      if (report.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      // Check if file exists and is an image
+      if (!report.filePath) {
+        return res.status(404).json({ message: 'No image file found for this report' });
+      }
+
+      const fileType = report.fileType || '';
+      if (!fileType.startsWith('image/')) {
+        return res.status(400).json({ message: 'This report does not contain an image' });
+      }
+
+      const filePath = path.resolve(report.filePath);
+      
+      // Verify file exists
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'Image file not found on server' });
+      }
+
+      // Serve the image
+      res.setHeader('Content-Type', fileType);
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+      return res.sendFile(filePath);
+    } catch (error: any) {
+      console.error('Serve medical report image error:', error);
+      res.status(500).json({ message: error.message || 'Failed to serve image' });
+    }
+  });
+
   // Upload and analyze medical report (POST /api/health-score/upload) - Async with Job Queue
   app.post('/api/health-score/upload', isAuthenticated, uploadMedicalReport.single('report'), async (req, res) => {
     try {

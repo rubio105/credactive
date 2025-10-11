@@ -1,6 +1,6 @@
 # Overview
 
-CIRY (Care & Intelligence Ready for You) is a B2B platform that integrates health prevention and cybersecurity education. It offers professional certification prep (quizzes, progress tracking, premium content via Stripe) and AI-powered health prevention. The platform aims to be a leader in dual-domain education, utilizing AI to generate over 1,000,000 quiz questions across Cybersecurity, Compliance & Governance, and providing comprehensive health prevention through conversational AI and medical document analysis.
+CIRY (Care & Intelligence Ready for You) is a B2B platform focused on integrating health prevention and cybersecurity education. It offers professional certification preparation, including quizzes and progress tracking, alongside AI-powered health prevention tools. The platform aims to be a leader in dual-domain education, leveraging AI for generating vast numbers of quiz questions and providing comprehensive health prevention through conversational AI and medical document analysis. Key ambitions include expanding market reach in both cybersecurity and health education, and continuously innovating with AI to enhance user learning and well-being.
 
 # User Preferences
 
@@ -10,61 +10,49 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend
 
-The frontend uses React with TypeScript, Vite, shadcn/ui (Radix UI + Tailwind CSS), TanStack Query for server state, Wouter for routing, and React Hook Form with Zod for forms. It provides a modern, consistent interface with features like a professional color wheel visualization for personality reports.
+The frontend uses React with TypeScript, Vite, shadcn/ui (Radix UI + Tailwind CSS), TanStack Query, Wouter for routing, and React Hook Form with Zod. It provides a modern, consistent interface with features like a professional color wheel visualization for personality reports.
 
 ## Backend
 
-The backend is built with Express.js, Node.js, and TypeScript, featuring a RESTful API. Authentication uses Passport.js (local strategy with bcrypt and Google OAuth 2.0) with persistent sessions. Drizzle ORM provides type-safe database access to PostgreSQL. Security measures include rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.
+The backend is built with Express.js, Node.js, and TypeScript, providing a RESTful API. Authentication uses Passport.js (local strategy with bcrypt and Google OAuth 2.0) with persistent sessions. Drizzle ORM provides type-safe database access to PostgreSQL. Security measures include rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.
 
 ## Data Storage
 
-PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. The schema includes tables for Users (with Stripe data), Subscription Plans (with configurable usage limits), Categories, Quizzes, Questions, Quiz Generation Jobs, User progress, Reports, Sessions, Live Courses, Static Content Pages, Email Templates, Settings, Prevention Documents, Prevention Topics, Triage Sessions/Messages/Alerts, Prohmed Codes, and Crossword Puzzles/Attempts/Leaderboard. It supports category images, audio explanations, and Gemini AI integration.
+PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. The schema supports various features including Users (with Stripe data), Subscription Plans, Quizzes, Questions, User Progress, Reports, Live Courses, Static Content, Email Templates, Settings, Prevention Documents, Prevention Topics, Triage Sessions, Prohmed Codes, and Crossword Puzzles.
 
 ## Key Features
 
--   **Quiz System**: Hierarchical structure with categories, quizzes, and questions, randomized order, admin controls, timed quizzes, and detailed reports.
--   **Insight Discovery Personality Reports**: A 72-type personality assessment system based on Jung/Hippocrates color theory, offering granular classification and comprehensive professional reports.
--   **Premium Features**: Content accessible via Stripe subscription.
--   **AI Question Generation**: Admin functionality using OpenAI GPT-4o for bulk, context-aware question generation, including document-based generation from PDF uploads.
--   **Live Courses & Streaming**: System for purchasing and tracking one-time live courses and real-time interactive learning via WebSockets with chat, polls, and admin controls.
--   **Content Management System (CMS)**: Manages static content pages with rich text editing and dynamic navigation.
--   **Internationalization**: Multi-language support with in-quiz language selector (IT/EN/ES) offering real-time AI-powered translation via OpenAI GPT-4o.
--   **Email Template & Configuration Management**: Database-backed systems for admin customization of transactional emails and secure API key management.
--   **Database-Driven Subscription Plans System**: Fully dynamic subscription management with plans stored in database (subscription_plans table) including configurable limits (maxCoursesPerMonth, maxQuizGamingPerWeek, aiTokensPerMonth), boolean features (includesWebinarHealth, includesProhmedSupport), and Stripe integration fields. Subscribe page dynamically fetches and displays all plans with real-time limit rendering and currency-aware price formatting via Intl.NumberFormat. Admin panel provides autonomous CRUD operations for subscription plans with AI-powered feature formatting using OpenAI GPT-4o-mini, support for unlimited values (-1), and comprehensive form covering all plan attributes (pricing, limits, Stripe IDs, active status). Three default plans: FREE (€0, 2 courses/month, 2 quiz-gaming/week, 120 AI tokens/month), PREMIUM (€99/year, unlimited courses/quiz, 1000 AI tokens/month, webinar access), PREMIUM PLUS (€149/year, unlimited everything, full Prohmed support). Admin can modify plans in database and changes reflect instantly in UI without code changes.
--   **Analytics Dashboard**: Comprehensive business intelligence displaying key metrics.
--   **AI Email Marketing System**: Intelligent email campaign management using OpenAI GPT-4o for personalized content generation and Brevo integration.
--   **SEO Optimization**: Comprehensive search engine optimization including dynamic meta tags and sitemap generation.
--   **Admin Panel**: Comprehensive interface for user management, quiz rotation, content, settings, and analytics.
--   **Corporate B2B Licensing System**: Enterprise solution for bulk license sales, corporate accounts, professional dashboards, and email-based invitation system.
--   **Company-Wide Course Assignments**: Corporate admins can assign courses to their entire company.
--   **Leaderboard System**: Gamification features including optional user nicknames, global and corporate-exclusive leaderboards.
--   **Corporate Content Visibility System**: Granular access control for quizzes and courses based on user type.
--   **AI Conversational Assistant**: Context-aware AI coaching system using OpenAI GPT-4o for scenario-based learning after quiz responses and personal development coaching.
--   **Admin Documentation System**: In-platform documentation covering technical aspects, server commands, and user guides.
--   **Medical Prevention System (Prohmed Partnership)**: Comprehensive health prevention module powered by Google Gemini AI, featuring medical document upload/analysis, prevention topic taxonomy, AI-powered educational prevention assistant ("AI Prohmed - Impara la Prevenzione") publicly accessible, medical alert system, and Prohmed telemedicine app access code generation. **UI Enhancement**: Prevention Index card features circular gradient score display (0-100), emoji badges (🏆 >80 "Champion", ⭐ 50-80 "Engaged", 🌱 <50 "Beginner"), animated rotating score visualization, and 5 color-coded progress bars for engagement metrics (documents uploaded, AI chats, alerts received, webinar enrollments, assessments). Assessment results display gradient headers and emoji-enhanced risk badges for improved UX. **Advanced Medical Reports UI** (October 2025): Professional medical report visualization with MedicalReportCard component (color-coded badges for report types, medical value cards with abnormal/normal indicators, structured data display), MedicalTimeline component (chronological visualization with timeline dots, trend indicators, interactive history), MedicalTrendChart component (Recharts-based line/area charts with reference ranges, abnormal value highlighting, trend analysis), and MedicalImageAnalysis component (enhanced refertazione for X-ray/MRI/CT/Ultrasound with categorized findings - normal/attention/urgent, AI confidence scoring, clinical recommendations, detailed location tracking). All components support dark mode and include export functionality. **Advanced Radiological Image Analysis** (October 2025): Gemini Vision-powered deep analysis for radiological images (X-ray, MRI, CT, Ultrasound) with `analyzeRadiologicalImage` function providing structured findings categorization (normal/attention/urgent), body part identification, overall medical assessment, clinical recommendations, and AI confidence scoring. Backend automatically detects radiological images via reportType keywords and performs dual analysis (OCR + advanced radiology interpretation) saving results in `radiologicalAnalysis` JSONB field for rich medical report visualization via MedicalImageAnalysis UI component.
--   **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI, with difficulty levels, weekly challenges, leaderboard, and gamification rewards. **Quiz Gaming Integration** - admins can enable crossword gaming for any quiz via the admin panel, generating AI-powered crossword puzzles linked to quiz topics with customizable solution counts (5-30). Crossword puzzles are stored with quiz_id reference, and quizzes track gaming_enabled status and crossword_solutions_count. **Gaming Features** - Orange "Gaming" button appears in quiz cards when gaming is enabled, linking directly to crossword puzzle via SPA navigation. Crossword page includes real-time timer (MM:SS format) that auto-starts on load, stops on submission, and tracks elapsed time. Solutions are hidden from grid - users solve via input fields under clues to prevent cheating. **Real-Time Feedback System** - Answer fields provide instant visual feedback (green border/background for correct answers, red for incorrect) as users type, with solutions stored separately from grid for validation. **Daily Generation Limits** - Users can generate up to 3 crossword puzzles per quiz per day via user-friendly endpoint `/api/quizzes/:quizId/generate-crossword` with 24-hour rolling window tracking; returns HTTP 429 with Italian message and remaining attempts when limit reached.
--   **Prohmed Code Management System**: Admin bulk code generation system for Prohmed telemedicine access with status tracking and distribution management.
--   **Health Score System**: AI-powered personal health scoring system featuring medical report upload/analysis (PDF and images), Gemini Vision OCR, automatic PII anonymization, structured medical data extraction, health score calculation, AI-generated personalized health insights, and conversational AI integration.
--   **Token Usage System**: Implemented tiered monthly token limits for AI interactions (FREE, PREMIUM, PREMIUM_PLUS) with a dual-check system and database tracking. UI elements show token usage and upgrade CTAs.
--   **Webinar Health System**: Free webinar platform for prevention education with medical experts. Features include dedicated webinar page with session calendar, free user enrollment with automatic confirmation emails, streaming URL management for Zoom/Teams/Google Meet integration, admin panel for webinar management and attendee tracking, integration with live course infrastructure for robust session handling, smart webinar display in AI prevention page with direct enrollment capability, and automated 24h reminder email system with duplicate prevention via reminderSentAt tracking (runs hourly). **NEW:** Boolean flag `isWebinarHealth` in live_courses table enables precise webinar identification - admin checkbox in Corsi Live form controls visibility in Webinar Health section. Public API endpoint `/api/webinar-health` allows anonymous users to view webinars (enrollment requires login with toast notification + redirect).
--   **Patient-Only AI Access System** (October 2025): Dedicated `/patient-ai` route for Prohmed code-based authentication enabling patient-only access to AI prevention features. Backend endpoint `POST /api/patient-ai/login` verifies Prohmed codes, creates temporary patient accounts, and auto-authenticates users. **UI Features**: Tab navigation with "Chat AI" (AI prevention conversation) and "I Miei Referti" (medical reports visualization using MedicalTimeline, MedicalReportCard, and MedicalImageAnalysis components for professional report display with radiological analysis). Patients authenticate using Prohmed codes (format: PROHMED-XXXXX-XXXXX), system creates patient accounts with authProvider='prohmed', and maintains session persistence. Logout redirects to landing page. Perfect for embedding in external healthcare applications or providing standalone AI prevention access to patients.
--   **Job Queue System** (October 2025): Asynchronous processing infrastructure for heavy tasks like medical document analysis (OCR, PII removal, radiological imaging analysis). Database table `job_queue` tracks job status (pending/processing/completed/failed), progress (0-100), retry logic (max 3 retries), and timing metadata. Storage interface provides createJob, getJobById, getJobsByUser, getPendingJobs, updateJob, updateJobProgress, completeJob, failJob. **Integration**: Modified `POST /api/health-score/upload` to create async jobs instead of synchronous processing, returns jobId immediately. New endpoint `GET /api/health-score/jobs/:id` for job status polling. Background worker (`jobWorker.ts`) polls pending jobs every 3s, processes medical reports through 5 steps (OCR 20%, PII 40%, Radiology 60%, Report 80%, Complete 100%), auto-starts with server. Enables non-blocking document uploads with background processing and progress tracking for improved UX (users don't wait 3-8s for synchronous analysis).
+*   **Comprehensive Quiz System**: Hierarchical structure, randomized questions, timed quizzes, and detailed reports.
+*   **Insight Discovery Personality Reports**: A 72-type assessment system based on Jung/Hippocrates color theory.
+*   **Premium Features**: Content access via Stripe subscription.
+*   **AI Question Generation**: Admin functionality using OpenAI GPT-4o for bulk, context-aware question generation from documents.
+*   **Live Courses & Streaming**: System for purchasing and tracking live courses with real-time interactive learning via WebSockets.
+*   **Content Management System (CMS)**: Manages static content pages and dynamic navigation.
+*   **Internationalization**: Multi-language support with in-quiz language selection and real-time AI translation via OpenAI GPT-4o.
+*   **Database-Driven Subscription Plans**: Dynamic subscription management with configurable limits and Stripe integration.
+*   **Analytics Dashboard**: Comprehensive business intelligence metrics.
+*   **AI Email Marketing System**: Intelligent campaign management using OpenAI GPT-4o and Brevo integration.
+*   **SEO Optimization**: Dynamic meta tags and sitemap generation.
+*   **Admin Panel**: User management, quiz rotation, content, settings, and analytics.
+*   **Corporate B2B Licensing System**: Enterprise solution for bulk license sales, corporate accounts, and course assignments.
+*   **Leaderboard System**: Gamification features with global and corporate-exclusive leaderboards.
+*   **AI Conversational Assistant**: Context-aware AI coaching using OpenAI GPT-4o for scenario-based learning.
+*   **Medical Prevention System (Prohmed Partnership)**: Comprehensive health prevention module powered by Google Gemini AI, featuring medical document upload/analysis, an AI educational assistant ("AI Prohmed - Impara la Prevenzione"), and a medical alert system. Includes advanced UI for Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring.
+*   **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI, integrated with quizzes, leaderboards, and daily generation limits.
+*   **Health Score System**: AI-powered personal health scoring based on medical report analysis (PDF and images), PII anonymization, and conversational AI.
+*   **Token Usage System**: Tiered monthly token limits for AI interactions with database tracking and UI indicators.
+*   **Webinar Health System**: Free webinar platform for prevention education with expert speakers, automated reminders, and admin management.
+*   **Patient-Only AI Access System**: Dedicated access for Prohmed code-based authentication, allowing patients to interact with AI prevention features and view medical reports.
+*   **Job Queue System**: Asynchronous processing infrastructure for heavy tasks like medical document analysis (OCR, PII removal, radiological imaging analysis) with progress tracking and retry logic.
 
 ## Deployment Architecture
 
--   **Production Domain**: ciry.app
--   **Development Environment**: Replit with auto-reload.
--   **Version Control**: GitHub.
--   **Production Server**: Hetzner VPS with PM2.
--   **Database**: Neon PostgreSQL.
--   **Build System**: esbuild (backend) + Vite (frontend).
--   **Deployment Workflow**: Manual Git-based workflow.
--   **Test Accounts for Production Validation**: admin@ciry.app (AdminTest123!, premium_plus tier), user@ciry.app (UserTest123!, free tier) - rotate/remove after initial deployment testing.
+The production environment runs on ciry.app using a Hetzner VPS with PM2. Development is on Replit. Version control is GitHub. The database is Neon PostgreSQL. Build systems are esbuild (backend) and Vite (frontend).
 
 # External Dependencies
 
--   **Stripe**: Payment processing and subscription management.
--   **Brevo (Sendinblue)**: Transactional email service.
--   **Neon Database**: Serverless PostgreSQL.
--   **OpenAI**: GPT-4o and GPT-4o-mini for AI question generation and text-to-speech.
--   **Google Gemini AI**: Gemini-2.5-pro and Gemini-2.5-flash for medical document analysis, conversational triage, and crossword puzzle generation.
+*   **Stripe**: Payment processing and subscription management.
+*   **Brevo (Sendinblue)**: Transactional email service.
+*   **Neon Database**: Serverless PostgreSQL.
+*   **OpenAI**: GPT-4o and GPT-4o-mini for AI question generation and text-to-speech.
+*   **Google Gemini AI**: Gemini-2.5-pro and Gemini-2.5-flash for medical document analysis, conversational triage, and crossword puzzle generation.

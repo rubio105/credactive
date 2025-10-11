@@ -76,6 +76,7 @@ export default function PreventionPage() {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
   const [showAttentionPointsDialog, setShowAttentionPointsDialog] = useState(false);
+  const [showMedicalContactDialog, setShowMedicalContactDialog] = useState(false);
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
   const [attentionPointsData, setAttentionPointsData] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -1041,7 +1042,7 @@ export default function PreventionPage() {
                               {msg.role === 'assistant' && msg.aiSuggestDoctor && (
                                 <div className="mt-3 pt-3 border-t border-emerald-100 dark:border-emerald-800">
                                   <Button
-                                    onClick={() => window.open('mailto:info@prohmed.it?subject=Richiesta Contatto Medico - CIRY AI', '_blank')}
+                                    onClick={() => setShowMedicalContactDialog(true)}
                                     className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm"
                                     data-testid="button-request-medical-contact"
                                   >
@@ -1207,6 +1208,55 @@ export default function PreventionPage() {
             >
               <Crown className="w-4 h-4 mr-2" />
               Abbonati Ora
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Medical Contact Confirmation Dialog */}
+      <AlertDialog open={showMedicalContactDialog} onOpenChange={setShowMedicalContactDialog}>
+        <AlertDialogContent className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-2xl">
+              <Stethoscope className="w-6 h-6 text-blue-600" />
+              Contattare il Team Medico?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base space-y-3">
+              <p>
+                L'AI suggerisce di consultare un medico per questa situazione.
+              </p>
+              <p className="font-semibold text-blue-900 dark:text-blue-100">
+                Vuoi che il team medico Prohmed ti contatti?
+              </p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  ✓ <strong>Sì</strong> - Ti invieremo una richiesta di contatto via email<br/>
+                  ✓ <strong>No</strong> - Continua la conversazione con l'AI
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => setShowMedicalContactDialog(false)}
+              data-testid="button-cancel-medical-contact"
+            >
+              No, Continuiamo
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowMedicalContactDialog(false);
+                window.open('mailto:info@prohmed.it?subject=Richiesta Contatto Medico - CIRY AI&body=Richiedo di essere ricontattato dal team medico Prohmed per una consulenza.', '_blank');
+                toast({
+                  title: "Richiesta inviata",
+                  description: "Il team medico Prohmed ti contatterà a breve.",
+                });
+              }}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+              data-testid="button-confirm-medical-contact"
+            >
+              <Stethoscope className="w-4 h-4 mr-2" />
+              Sì, Contattatemi
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

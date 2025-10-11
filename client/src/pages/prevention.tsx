@@ -542,9 +542,6 @@ export default function PreventionPage() {
           <div className="flex justify-center mb-6">
             <img src={ciryMainLogo} alt="CIRY - Care & Intelligence Ready for You" className="h-32 object-contain" />
           </div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-            AI Assistente Prevenzione
-          </h1>
           <p className="text-muted-foreground text-lg max-w-4xl mx-auto leading-relaxed">
             Condividi il tuo caso personale a Ciry e scopri strategie pratiche per la prevenzione con l'intelligenza artificiale
           </p>

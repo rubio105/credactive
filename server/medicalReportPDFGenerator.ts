@@ -31,7 +31,8 @@ export function generateMedicalReportPDF(data: MedicalReportPDFData): typeof PDF
   const logoPath = path.join(process.cwd(), 'public', 'images', 'prohmed-logo.jpg');
   if (fs.existsSync(logoPath)) {
     try {
-      doc.image(logoPath, 50, 40, { width: 120, height: 40 });
+      // Use fit to maintain aspect ratio instead of forcing dimensions
+      doc.image(logoPath, 50, 40, { fit: [120, 60] });
     } catch (error) {
       console.error('Error loading Prohmed logo:', error);
     }
@@ -113,24 +114,44 @@ export function generateMedicalReportPDF(data: MedicalReportPDFData): typeof PDF
         
         doc.image(imagePath, 50, yPos, { width: imageWidth, height: imageHeight, fit: [imageWidth, imageHeight] });
         
-        // Add findings markers overlay description (if available)
+        // Add findings markers with color-coded categories (if available)
         if (radiologicalAnalysis.findings && radiologicalAnalysis.findings.length > 0) {
           let markersY = yPos;
           const markersX = 50 + imageWidth + 20;
           
-          doc.fontSize(10)
+          doc.fontSize(11)
              .fillColor(secondaryColor)
              .font('Helvetica-Bold')
              .text(t.findings, markersX, markersY);
           
-          markersY += 20;
+          markersY += 25;
           
           radiologicalAnalysis.findings.slice(0, 5).forEach((finding: any, index: number) => {
-            doc.fontSize(8)
+            // Color-coded marker based on category
+            const categoryColors: Record<string, string> = {
+              normal: '#10b981',    // Green
+              attention: '#f59e0b', // Amber/Yellow
+              urgent: '#ef4444'     // Red
+            };
+            const markerColor = categoryColors[finding.category] || '#6b7280'; // Default gray
+            
+            // Draw circular marker with number
+            doc.circle(markersX + 10, markersY + 6, 10)
+               .fillAndStroke(markerColor, markerColor);
+            
+            doc.fontSize(9)
+               .fillColor('white')
+               .font('Helvetica-Bold')
+               .text(`${index + 1}`, markersX + 6, markersY + 2, { width: 8, align: 'center' });
+            
+            // Finding description with patient-friendly text if available
+            const findingText = finding.patientDescription || finding.description || finding.finding;
+            doc.fontSize(9)
                .fillColor(textColor)
                .font('Helvetica')
-               .text(`${index + 1}. ${finding.description || finding.finding}`, markersX, markersY, { width: doc.page.width - markersX - 50 });
-            markersY += 25;
+               .text(findingText, markersX + 25, markersY, { width: doc.page.width - markersX - 75 });
+            
+            markersY += doc.heightOfString(findingText, { width: doc.page.width - markersX - 75 }) + 15;
           });
         }
         
@@ -261,34 +282,113 @@ export function generateMedicalReportPDF(data: MedicalReportPDFData): typeof PDF
   }
 
   // Radiological Analysis Details (if available)
-  if (radiologicalAnalysis && radiologicalAnalysis.overallAssessment) {
-    if (yPos > doc.page.height - 200) {
-      doc.addPage();
-      yPos = 50;
+  if (radiologicalAnalysis) {
+    // Use patient-friendly assessment if available, fallback to overall assessment
+    const assessmentText = radiologicalAnalysis.patientAssessment || radiologicalAnalysis.overallAssessment;
+    
+    if (assessmentText) {
+      if (yPos > doc.page.height - 200) {
+        doc.addPage();
+        yPos = 50;
+      }
+
+      doc.fontSize(14)
+         .fillColor(primaryColor)
+         .font('Helvetica-Bold')
+         .text(t.detailedExplanation, 50, yPos);
+
+      yPos += 25;
+
+      doc.fontSize(10)
+         .fillColor(textColor)
+         .font('Helvetica')
+         .text(assessmentText, 50, yPos, { width: doc.page.width - 100, align: 'justify' });
+
+      yPos += doc.heightOfString(assessmentText, { width: doc.page.width - 100 }) + 20;
+
+      // Confidence Score
+      if (radiologicalAnalysis.confidence) {
+        doc.fontSize(9)
+           .fillColor('#6b7280')
+           .font('Helvetica-Oblique')
+           .text(`${t.confidence}: ${radiologicalAnalysis.confidence}%`, 50, yPos);
+        
+        yPos += 20;
+      }
     }
+    
+    // Technical Assessment for medical professionals (if different from patient version)
+    if (radiologicalAnalysis.technicalAssessment && 
+        radiologicalAnalysis.technicalAssessment !== radiologicalAnalysis.patientAssessment) {
+      if (yPos > doc.page.height - 200) {
+        doc.addPage();
+        yPos = 50;
+      }
 
-    doc.fontSize(14)
-       .fillColor(primaryColor)
-       .font('Helvetica-Bold')
-       .text(t.radiologicalAssessment, 50, yPos);
+      doc.fontSize(12)
+         .fillColor(secondaryColor)
+         .font('Helvetica-Bold')
+         .text(t.technicalAssessment, 50, yPos);
 
-    yPos += 25;
+      yPos += 20;
 
-    doc.fontSize(10)
-       .fillColor(textColor)
-       .font('Helvetica')
-       .text(radiologicalAnalysis.overallAssessment, 50, yPos, { width: doc.page.width - 100, align: 'justify' });
-
-    yPos += doc.heightOfString(radiologicalAnalysis.overallAssessment, { width: doc.page.width - 100 }) + 20;
-
-    // Confidence Score
-    if (radiologicalAnalysis.confidence) {
       doc.fontSize(9)
          .fillColor('#6b7280')
          .font('Helvetica-Oblique')
-         .text(`${t.confidence}: ${radiologicalAnalysis.confidence}%`, 50, yPos);
-      
+         .text(t.forProfessionals, 50, yPos);
+
       yPos += 20;
+
+      doc.fontSize(9)
+         .fillColor(textColor)
+         .font('Helvetica')
+         .text(radiologicalAnalysis.technicalAssessment, 50, yPos, { width: doc.page.width - 100, align: 'justify' });
+
+      yPos += doc.heightOfString(radiologicalAnalysis.technicalAssessment, { width: doc.page.width - 100 }) + 20;
+    }
+    
+    // Therapeutic Recommendations Section
+    if (radiologicalAnalysis.recommendations && radiologicalAnalysis.recommendations.length > 0) {
+      if (yPos > doc.page.height - 250) {
+        doc.addPage();
+        yPos = 50;
+      }
+
+      doc.fontSize(14)
+         .fillColor(primaryColor)
+         .font('Helvetica-Bold')
+         .text(t.recommendations, 50, yPos);
+
+      yPos += 25;
+
+      // Display recommendations as numbered list
+      radiologicalAnalysis.recommendations.forEach((recommendation: string, index: number) => {
+        // Check if we need a new page
+        const recommendationHeight = doc.heightOfString(recommendation, { width: doc.page.width - 130 }) + 15;
+        if (yPos + recommendationHeight > doc.page.height - 100) {
+          doc.addPage();
+          yPos = 50;
+        }
+
+        // Number circle
+        doc.circle(60, yPos + 6, 8)
+           .fillAndStroke(accentColor, primaryColor);
+        
+        doc.fontSize(9)
+           .fillColor('white')
+           .font('Helvetica-Bold')
+           .text(`${index + 1}`, 56, yPos + 2, { width: 8, align: 'center' });
+
+        // Recommendation text
+        doc.fontSize(10)
+           .fillColor(textColor)
+           .font('Helvetica')
+           .text(recommendation, 80, yPos, { width: doc.page.width - 130, align: 'justify' });
+
+        yPos += recommendationHeight;
+      });
+
+      yPos += 10;
     }
   }
 
@@ -378,13 +478,17 @@ function getTranslations(language: string) {
       radiologicalImage: "Immagine Radiologica",
       findings: "Reperti:",
       patientSummary: "Riepilogo per il Paziente",
+      detailedExplanation: "Spiegazione Dettagliata del Referto",
       medicalValues: "Valori Medici Rilevati",
       parameter: "Parametro",
       value: "Valore",
       range: "Range di Riferimento",
       technicalSection: "Sezione Tecnica - Per Professionisti Sanitari",
       technicalNote: "Questa sezione contiene informazioni tecniche destinate ai professionisti sanitari.",
+      technicalAssessment: "Valutazione Tecnica (Per Medici)",
+      forProfessionals: "Questa sezione utilizza terminologia medico-scientifica professionale",
       radiologicalAssessment: "Valutazione Radiologica",
+      recommendations: "Raccomandazioni Terapeutiche e Follow-up",
       confidence: "Affidabilità AI",
       privacyTitle: "🔒 Privacy & Sicurezza:",
       privacyNote: "Tutti i dati personali sono stati anonimizzati secondo le normative GDPR. Questo referto è generato tramite AI per scopi informativi. Consultare sempre un medico professionista.",
@@ -401,13 +505,17 @@ function getTranslations(language: string) {
       radiologicalImage: "Radiological Image",
       findings: "Findings:",
       patientSummary: "Patient Summary",
+      detailedExplanation: "Detailed Report Explanation",
       medicalValues: "Detected Medical Values",
       parameter: "Parameter",
       value: "Value",
       range: "Reference Range",
       technicalSection: "Technical Section - For Healthcare Professionals",
       technicalNote: "This section contains technical information intended for healthcare professionals.",
+      technicalAssessment: "Technical Assessment (For Physicians)",
+      forProfessionals: "This section uses professional medical-scientific terminology",
       radiologicalAssessment: "Radiological Assessment",
+      recommendations: "Therapeutic Recommendations and Follow-up",
       confidence: "AI Confidence",
       privacyTitle: "🔒 Privacy & Security:",
       privacyNote: "All personal data has been anonymized according to GDPR regulations. This report is AI-generated for informational purposes. Always consult a professional physician.",

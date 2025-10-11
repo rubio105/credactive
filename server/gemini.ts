@@ -675,7 +675,11 @@ Estrai le seguenti informazioni (TUTTO IN ITALIANO):
    - Esempi: "glucosio" (non "glucose"), "colesterolo totale" (non "total cholesterol"), "emoglobina" (non "hemoglobin")
 6. Parole chiave mediche per ricerca IN ITALIANO (max 15 keywords)
    - Esempi: "diabete", "pressione arteriosa", "funzionalità renale" (non in inglese)
-7. Breve riassunto (2-3 frasi in italiano)
+7. Riassunto dettagliato e informativo (4-6 frasi in italiano) che includa:
+   - Cosa mostra il referto (tipo di esame e scopo)
+   - Principali risultati e valori rilevati
+   - Eventuali valori anomali o reperti significativi
+   - Significato clinico generale in linguaggio comprensibile
 8. Confidenza OCR (0-100 basata sulla chiarezza del testo)
 
 IMPORTANTE: Tutti i nomi dei parametri medici devono essere in ITALIANO, non in inglese.

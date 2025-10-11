@@ -14,10 +14,10 @@ export default function ChiSiamo() {
             Chi siamo
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            CREDACTIVE ACADEMY
+            CIRY
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            La piattaforma leader per la preparazione alle certificazioni professionali in Cybersecurity, Compliance, Business Innovation e Leadership
+            Care & Intelligence Ready for You - La piattaforma B2B leader per prevenzione sanitaria e formazione cybersecurity
           </p>
         </div>
 
@@ -31,9 +31,9 @@ export default function ChiSiamo() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                CREDACTIVE ACADEMY nasce con l'obiettivo di rendere accessibile e di qualità la formazione professionale. 
-                Aiutiamo professionisti e aziende a raggiungere le certificazioni più importanti del settore attraverso 
-                un metodo di apprendimento interattivo, pratico e sempre aggiornato.
+                CIRY nasce con l'obiettivo di integrare prevenzione sanitaria e formazione cybersecurity in un'unica piattaforma B2B innovativa. 
+                Aiutiamo professionisti e aziende con AI-powered health prevention, certificazioni professionali e soluzioni corporate 
+                attraverso un metodo di apprendimento interattivo, pratico e sempre aggiornato.
               </p>
             </CardContent>
           </Card>
@@ -98,9 +98,9 @@ export default function ChiSiamo() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              CREDACTIVE ACADEMY è composta da un team di esperti certificati nei diversi domini di competenza. 
-              I nostri autori hanno esperienza diretta nelle certificazioni che insegnano e lavorano quotidianamente 
-              per mantenere i contenuti aggiornati con le ultime evoluzioni del settore.
+              CIRY è composta da un team di esperti in prevenzione sanitaria e cybersecurity certificati nei diversi domini di competenza. 
+              I nostri professionisti hanno esperienza diretta nelle certificazioni e nella medicina preventiva, lavorando quotidianamente 
+              per mantenere i contenuti aggiornati con le ultime evoluzioni del settore sanitario e della sicurezza informatica.
             </p>
             <p className="text-muted-foreground">
               Ogni domanda, ogni quiz, ogni percorso formativo è stato progettato con cura per massimizzare 

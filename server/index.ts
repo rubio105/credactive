@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import helmet from "helmet";
 import cors from "cors";
+import path from "path";
 
 const app = express();
 
@@ -209,6 +210,12 @@ app.use((req, res, next) => {
       console.error('Webinar reminder system error:', error);
     }
   }, 60 * 60 * 1000); // Run every hour
+
+  // Serve static files BEFORE Vite catch-all in development
+  if (app.get("env") === "development") {
+    const publicPath = path.resolve(import.meta.dirname, "..", "public");
+    app.use(express.static(publicPath));
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

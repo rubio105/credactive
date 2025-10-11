@@ -67,6 +67,29 @@ export default function Home() {
   const userLanguage = (user as UserType)?.language;
   const t = getTranslation(userLanguage).home;
   
+  // Generate user-friendly title for medical reports
+  const generateReportTitle = (report: HealthReport): string => {
+    const reportTypeMap: Record<string, string> = {
+      'blood_test': 'Esami del Sangue',
+      'radiology': 'Radiografia',
+      'cardiology': 'Esame Cardiologico',
+      'general': 'Referto Medico',
+      'imaging': 'Diagnostica per Immagini',
+      'laboratory': 'Analisi di Laboratorio',
+      'xray': 'Radiografia',
+      'mri': 'Risonanza Magnetica',
+      'ct': 'TAC',
+      'ultrasound': 'Ecografia',
+    };
+
+    const typeLabel = reportTypeMap[report.reportType.toLowerCase()] || 'Referto Medico';
+    const date = report.reportDate 
+      ? new Date(report.reportDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+      : new Date(report.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+    
+    return `${typeLabel} - ${date}`;
+  };
+  
   const { data: dashboardData } = useQuery<DashboardData>({
     queryKey: ["/api/user/dashboard"],
   });
@@ -476,7 +499,7 @@ export default function Home() {
                     key={report.id}
                     report={{
                       id: report.id,
-                      title: report.fileName,
+                      title: generateReportTitle(report),
                       reportType: report.reportType,
                       uploadDate: report.createdAt,
                       ocrConfidence: undefined,

@@ -5547,10 +5547,7 @@ Explicación de audio:`
           });
           
           // Send email
-          const baseUrl = process.env.BASE_URL || 
-                          (process.env.REPLIT_DOMAINS?.split(',')[0] 
-                            ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-                            : 'http://localhost:5000');
+          const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
           const inviteUrl = `${baseUrl}/accept-invite/${token}`;
           
           await sendCorporateInviteEmail(
@@ -5916,10 +5913,7 @@ Explicación de audio:`
 
           const enrollments = await storage.getLiveCourseEnrollmentsByCourseId(session.courseId);
           
-          const baseUrl = process.env.BASE_URL || 
-            (process.env.REPLIT_DOMAINS?.split(',')[0] 
-              ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-              : 'http://localhost:5000');
+          const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
           const sessionUrl = `${baseUrl}/live-session/${session.id}`;
           const startDate = new Date(session.startDate).toLocaleString('it-IT', {
             day: 'numeric',

@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import PreventionAssessment from "@/components/PreventionAssessment";
+import { MedicalTimeline } from "@/components/MedicalTimeline";
+import { MedicalReportCard } from "@/components/MedicalReportCard";
 const ciryFullLogo = "/images/ciry-full-logo.png";
 const prohmedLogo = "/images/ciry-logo.png";
 import {
@@ -91,6 +93,21 @@ export default function PreventionPage() {
 
   const { data: documents } = useQuery<PreventionDocument[]>({
     queryKey: ["/api/prevention/documents"],
+  });
+
+  interface HealthReport {
+    id: string;
+    fileName: string;
+    reportType: string;
+    aiSummary: string;
+    createdAt: string;
+    medicalValues?: any[];
+    radiologicalAnalysis?: any;
+  }
+
+  const { data: healthReports = [] } = useQuery<HealthReport[]>({
+    queryKey: ["/api/health-score/reports"],
+    enabled: !!user,
   });
 
   interface PreventionIndexData {
@@ -1157,6 +1174,64 @@ export default function PreventionPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* My Medical Documents Section */}
+            {user && (
+              <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
+                <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
+                  <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                    <FileText className="w-5 h-5" />
+                    I Miei Documenti Medici
+                  </CardTitle>
+                  <CardDescription>
+                    Visualizza i tuoi referti e analisi caricati nel sistema
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  {healthReports.length === 0 ? (
+                    <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
+                      <FileUp className="w-5 h-5 text-emerald-600" />
+                      <AlertDescription className="ml-2 text-emerald-800 dark:text-emerald-200">
+                        <p className="font-semibold mb-1">Nessun documento caricato</p>
+                        <p className="text-sm">
+                          Carica i tuoi referti medici usando il pulsante "Carica Referto/Analisi" nella chat AI. 
+                          Tutti i documenti vengono automaticamente anonimizzati per la tua privacy.
+                        </p>
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-6">
+                      <MedicalTimeline 
+                        reports={healthReports.map(r => ({
+                          id: r.id,
+                          title: r.fileName,
+                          reportType: r.reportType,
+                          uploadDate: r.createdAt,
+                          summary: r.aiSummary
+                        }))}
+                      />
+                      
+                      <div className="grid gap-4">
+                        {healthReports.map((report) => (
+                          <MedicalReportCard
+                            key={report.id}
+                            report={{
+                              id: report.id,
+                              fileName: report.fileName,
+                              reportType: report.reportType,
+                              uploadDate: report.createdAt,
+                              aiSummary: report.aiSummary,
+                              medicalValues: report.medicalValues,
+                              radiologicalAnalysis: report.radiologicalAnalysis
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

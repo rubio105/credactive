@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Stethoscope, Filter, Search, SortAsc, User } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Stethoscope, Filter, Search, SortAsc, User, ChevronUp, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -87,6 +87,7 @@ export default function PreventionPage() {
   const [reportSort, setReportSort] = useState<'recent' | 'oldest' | 'type'>('recent');
   const [reportSearch, setReportSearch] = useState<string>('');
   const [userRole, setUserRole] = useState<'patient' | 'doctor'>('patient');
+  const [showArchive, setShowArchive] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -144,6 +145,16 @@ export default function PreventionPage() {
       if (reportSort === 'type') return (a.reportType ?? '').localeCompare(b.reportType ?? '');
       return 0;
     });
+
+  // Always get the latest 3 reports (by date) for "Documenti Recenti", regardless of user sort
+  const recentReports = [...filteredReports]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
+  
+  // Archived reports are the rest (also by date descending)
+  const archivedReports = [...filteredReports]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(3);
 
   interface PreventionIndexData {
     score: number;
@@ -1384,7 +1395,7 @@ export default function PreventionPage() {
 
                       {/* Timeline */}
                       <MedicalTimeline 
-                        reports={filteredReports.map(r => ({
+                        reports={recentReports.map(r => ({
                           id: r.id,
                           title: r.fileName ?? 'Documento senza titolo',
                           reportType: r.reportType ?? '',
@@ -1393,22 +1404,60 @@ export default function PreventionPage() {
                         }))}
                       />
                       
-                      {/* Report Cards */}
-                      <div className="grid gap-4">
-                        {filteredReports.map((report) => (
-                          <MedicalReportCard
-                            key={report.id}
-                            report={{
-                              id: report.id,
-                              title: report.fileName ?? 'Documento senza titolo',
-                              reportType: report.reportType ?? '',
-                              uploadDate: report.createdAt,
-                              aiSummary: report.aiSummary ?? undefined,
-                              medicalValues: report.medicalValues ?? undefined
-                            }}
-                          />
-                        ))}
+                      {/* Recent Report Cards (Latest 3) */}
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">Documenti Recenti</h3>
+                        <div className="grid gap-4">
+                          {recentReports.map((report) => (
+                            <MedicalReportCard
+                              key={report.id}
+                              report={{
+                                id: report.id,
+                                title: report.fileName ?? 'Documento senza titolo',
+                                reportType: report.reportType ?? '',
+                                uploadDate: report.createdAt,
+                                aiSummary: report.aiSummary ?? undefined,
+                                medicalValues: report.medicalValues ?? undefined
+                              }}
+                            />
+                          ))}
+                        </div>
                       </div>
+
+                      {/* Archived Reports (Rest) */}
+                      {archivedReports.length > 0 && (
+                        <div className="mt-6 space-y-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowArchive(!showArchive)}
+                            className="w-full flex items-center justify-between"
+                            data-testid="button-toggle-archive"
+                          >
+                            <span className="text-base font-medium">
+                              Archivio Documenti ({archivedReports.length})
+                            </span>
+                            {showArchive ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </Button>
+                          
+                          {showArchive && (
+                            <div className="grid gap-4 mt-3">
+                              {archivedReports.map((report) => (
+                                <MedicalReportCard
+                                  key={report.id}
+                                  report={{
+                                    id: report.id,
+                                    title: report.fileName ?? 'Documento senza titolo',
+                                    reportType: report.reportType ?? '',
+                                    uploadDate: report.createdAt,
+                                    aiSummary: report.aiSummary ?? undefined,
+                                    medicalValues: report.medicalValues ?? undefined
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* No results message */}
                       {filteredReports.length === 0 && (

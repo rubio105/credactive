@@ -1799,9 +1799,61 @@ export default function PreventionPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <div className="whitespace-pre-wrap">{preventionPathData.preventionPath}</div>
-                </div>
+                {/* Parse and display prevention path graphically */}
+                {(() => {
+                  const text = preventionPathData.preventionPath;
+                  // Extract sections using regex - match all numbered sections
+                  const sections = text.split(/\n(?=\d+\.\s\*\*)/).filter((s: string) => /^\d+\.\s\*\*/.test(s.trim()));
+                  
+                  return (
+                    <div className="grid gap-4">
+                      {sections.map((section: string, index: number) => {
+                        const titleMatch = section.match(/\d+\.\s\*\*(.+?)\*\*/);
+                        const title = titleMatch ? titleMatch[1] : `Sezione ${index + 1}`;
+                        const content = section.replace(/\d+\.\s\*\*.+?\*\*/, '').trim();
+                        
+                        // Extract emoji and clean title
+                        const emojiMatch = title.match(/([\u1F300-\u1F9FF])/);
+                        const emoji = emojiMatch ? emojiMatch[1] : ['🎯', '📋', '🏥', '🍎', '📅'][index] || '📌';
+                        const cleanTitle = title.replace(/([\u1F300-\u1F9FF])/g, '').trim();
+                        
+                        const colors = [
+                          'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800',
+                          'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800',
+                          'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800',
+                          'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800',
+                          'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800',
+                        ];
+                        
+                        return (
+                          <Card key={index} className={`${colors[index]} border-2`}>
+                            <CardHeader className="pb-3">
+                              <CardTitle className="flex items-center gap-2 text-lg">
+                                <span className="text-2xl">{emoji}</span>
+                                {cleanTitle}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="prose prose-sm max-w-none dark:prose-invert text-sm">
+                                {content.split('\n').map((line: string, i: number) => {
+                                  if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
+                                    return (
+                                      <div key={i} className="flex items-start gap-2 my-1">
+                                        <span className="text-primary mt-1">▪</span>
+                                        <span>{line.replace(/^[-•]\s*/, '')}</span>
+                                      </div>
+                                    );
+                                  }
+                                  return line && <p key={i} className="mb-2">{line}</p>;
+                                })}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 
                 {/* Prohmed App Invitation */}
                 <Alert className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
@@ -1897,9 +1949,68 @@ export default function PreventionPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <div className="whitespace-pre-wrap">{attentionPointsData.attentionPoints}</div>
-                </div>
+                {/* Parse and display attention points graphically */}
+                {(() => {
+                  const text = attentionPointsData.attentionPoints;
+                  // Extract sections using regex - match all numbered sections
+                  const sections = text.split(/\n(?=\d+\.\s)/).filter((s: string) => /^\d+\.\s/.test(s.trim()));
+                  
+                  return (
+                    <div className="grid gap-4">
+                      {sections.map((section: string, index: number) => {
+                        const titleMatch = section.match(/\d+\.\s\*?\*?(.+?)\*?\*?(?:\n|$)/);
+                        const title = titleMatch ? titleMatch[1] : `Sezione ${index + 1}`;
+                        const content = section.replace(/\d+\.\s\*?\*?.+?\*?\*?(?:\n|$)/, '').trim();
+                        
+                        // Extract emoji and clean title
+                        const emojiMatch = title.match(/([\u1F300-\u1F9FF⚠️📊🎯✅⏰])/);
+                        const emoji = emojiMatch ? emojiMatch[1] : ['⚠️', '📊', '🎯', '✅', '⏰'][index] || '📌';
+                        const cleanTitle = title.replace(/([\u1F300-\u1F9FF⚠️📊🎯✅⏰])/g, '').trim();
+                        
+                        // Determine urgency badge and color
+                        const urgencyColors = [
+                          { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-800', badge: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300', label: 'Urgente' },
+                          { bg: 'bg-orange-50 dark:bg-orange-950/20', border: 'border-orange-200 dark:border-orange-800', badge: 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300', label: 'Attenzione' },
+                          { bg: 'bg-yellow-50 dark:bg-yellow-950/20', border: 'border-yellow-200 dark:border-yellow-800', badge: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300', label: 'Monitorare' },
+                          { bg: 'bg-green-50 dark:bg-green-950/20', border: 'border-green-200 dark:border-green-800', badge: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300', label: 'Azioni' },
+                          { bg: 'bg-blue-50 dark:bg-blue-950/20', border: 'border-blue-200 dark:border-blue-800', badge: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300', label: 'Pianifica' },
+                        ];
+                        const colorScheme = urgencyColors[index] || urgencyColors[0];
+                        
+                        return (
+                          <Card key={index} className={`${colorScheme.bg} border-2 ${colorScheme.border}`}>
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                  <span className="text-2xl">{emoji}</span>
+                                  {cleanTitle}
+                                </CardTitle>
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${colorScheme.badge}`}>
+                                  {colorScheme.label}
+                                </span>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="prose prose-sm max-w-none dark:prose-invert text-sm">
+                                {content.split('\n').map((line: string, i: number) => {
+                                  if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
+                                    return (
+                                      <div key={i} className="flex items-start gap-2 my-1">
+                                        <span className="text-primary mt-1">▪</span>
+                                        <span>{line.replace(/^[-•]\s*/, '')}</span>
+                                      </div>
+                                    );
+                                  }
+                                  return line && <p key={i} className="mb-2">{line}</p>;
+                                })}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
                 <div className="flex justify-end gap-2">
                   <Button

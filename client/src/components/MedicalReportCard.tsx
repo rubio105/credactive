@@ -1,13 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { FileText, Download, TrendingUp, Calendar, Activity } from "lucide-react";
+import { FileText, Download, Calendar, Activity, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { MedicalTrendChart } from "./MedicalTrendChart";
+import { MedicalReportViewerDialog } from "./MedicalReportViewerDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface MedicalValue {
@@ -28,32 +26,13 @@ interface MedicalReport {
   medicalValues?: MedicalValue[];
   language?: string;
   hospitalName?: string;
+  fileType?: string;
+  radiologicalAnalysis?: any;
 }
 
 export function MedicalReportCard({ report }: { report: MedicalReport }) {
-  const [showTrendDialog, setShowTrendDialog] = useState(false);
-  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+  const [showViewerDialog, setShowViewerDialog] = useState(false);
   const { toast } = useToast();
-
-  // Get trend data when a value is selected
-  const { data: trendData } = useQuery({
-    queryKey: ['/api/health-score/trends', selectedValue],
-    queryFn: async () => {
-      if (!selectedValue) return null;
-      const response = await fetch(`/api/health-score/trends/${encodeURIComponent(selectedValue)}`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch trend data');
-      return response.json();
-    },
-    enabled: !!selectedValue && showTrendDialog,
-  });
-
-  const handleViewTrend = (valueName: string) => {
-    // Use exact value name without lowercasing to match extractedValues keys
-    setSelectedValue(valueName);
-    setShowTrendDialog(true);
-  };
 
   const handleDownloadPDF = async () => {
     try {
@@ -149,7 +128,13 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
               )}
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300" data-testid="button-download-report">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300" 
+            onClick={handleDownloadPDF}
+            data-testid="button-download-report"
+          >
             <Download className="w-4 h-4" />
           </Button>
         </div>
@@ -168,10 +153,10 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
         {report.aiSummary && (
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3" data-testid="ai-summary">
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
+              <Activity className="w-4 h-4" />
               Riepilogo AI
             </p>
-            <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
+            <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed line-clamp-2">
               {report.aiSummary}
             </p>
           </div>
@@ -217,18 +202,16 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          {report.medicalValues && report.medicalValues.length > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-              onClick={() => handleViewTrend(report.medicalValues![0].name)}
-              data-testid="button-view-trend"
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Vedi Trend
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={() => setShowViewerDialog(true)}
+            data-testid="button-view-report"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Visualizza Dettagli
+          </Button>
           <Button 
             variant="outline" 
             size="sm" 
@@ -242,27 +225,12 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
         </div>
       </CardContent>
 
-      {/* Trend Dialog */}
-      <Dialog open={showTrendDialog} onOpenChange={setShowTrendDialog}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Analisi Trend</DialogTitle>
-            <DialogDescription>
-              Visualizza l'evoluzione dei valori medici nel tempo
-            </DialogDescription>
-          </DialogHeader>
-          {trendData && trendData.dataPoints && (
-            <MedicalTrendChart 
-              title={trendData.valueName.charAt(0).toUpperCase() + trendData.valueName.slice(1)}
-              unit="" 
-              data={trendData.dataPoints.map((d: any) => ({
-                date: d.date,
-                value: d.value
-              }))}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Medical Report Viewer Dialog */}
+      <MedicalReportViewerDialog 
+        report={report}
+        open={showViewerDialog}
+        onOpenChange={setShowViewerDialog}
+      />
     </Card>
   );
 }

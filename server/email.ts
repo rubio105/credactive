@@ -120,9 +120,13 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
     const api = await getBrevoApi();
     await api.sendTransacEmail(sendSmtpEmail);
     console.log(`Email sent successfully to ${options.to}`);
-  } catch (error) {
-    console.error("Error sending email via Brevo:", error);
-    throw new Error("Failed to send email");
+  } catch (error: any) {
+    console.error("Error sending email via Brevo:");
+    console.error("Status:", error?.response?.status);
+    console.error("Status Text:", error?.response?.statusText);
+    console.error("Body:", error?.response?.body || error?.response?.data);
+    console.error("Full error:", error);
+    throw new Error(`Failed to send email: ${error?.response?.status || error.message}`);
   }
 }
 

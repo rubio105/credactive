@@ -15,7 +15,7 @@ import PreventionAssessment from "@/components/PreventionAssessment";
 import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import Navigation from "@/components/navigation";
-const ciryFullLogo = "/images/ciry-full-logo.png";
+const ciryMainLogo = "/images/ciry-main-logo.png";
 const prohmedLogo = "/images/ciry-logo.png";
 import {
   AlertDialog,
@@ -541,7 +541,7 @@ export default function PreventionPage() {
         {/* Hero Section */}
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-6">
-            <img src={ciryFullLogo} alt="CIRY - Power by Prohmed" className="h-24 object-contain" />
+            <img src={ciryMainLogo} alt="CIRY - Care & Intelligence Ready for You" className="h-32 object-contain" />
           </div>
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
             AI Assistente Prevenzione

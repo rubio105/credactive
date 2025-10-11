@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-const logoImage = "/images/ciry-logo.png";
+const logoImage = "/images/ciry-main-logo.png";
 
 interface ContentPage {
   id: string;

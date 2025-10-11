@@ -7417,6 +7417,42 @@ Le risposte DEVONO essere in italiano.`;
     }
   });
 
+  // Get pending alert for user (GET /api/triage/pending-alert)
+  app.get('/api/triage/pending-alert', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const pendingAlert = await storage.getPendingAlertForUser(user.id);
+      res.json(pendingAlert || null);
+    } catch (error: any) {
+      console.error('Get pending alert error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get pending alert' });
+    }
+  });
+
+  // Resolve user alert (POST /api/triage/resolve-alert)
+  app.post('/api/triage/resolve-alert', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { alertId, response } = req.body;
+
+      if (!alertId || !response) {
+        return res.status(400).json({ message: 'Alert ID and response are required' });
+      }
+
+      // Verify alert belongs to user
+      const alert = await storage.getTriageAlertsBySession(alertId);
+      if (!alert || alert.length === 0) {
+        return res.status(404).json({ message: 'Alert not found' });
+      }
+
+      const resolvedAlert = await storage.resolveUserAlert(alertId, response);
+      res.json(resolvedAlert);
+    } catch (error: any) {
+      console.error('Resolve alert error:', error);
+      res.status(500).json({ message: error.message || 'Failed to resolve alert' });
+    }
+  });
+
   // Close triage session (POST /api/triage/:sessionId/close)
   app.post('/api/triage/:sessionId/close', async (req, res) => {
     try {

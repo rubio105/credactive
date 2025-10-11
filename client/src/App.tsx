@@ -85,7 +85,7 @@ function Router() {
       <Route path="/webinar-health" component={WebinarHealth} />
       <Route path="/pacchetto-prohmed" component={PacchettoProhmed} />
       {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+        <Route path="/" component={Login} />
       ) : (
         <>
           <Route path="/">

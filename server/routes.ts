@@ -552,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/login', (req, res, next) => {
+  app.post('/api/auth/login', authLimiter, (req, res, next) => {
     console.log('=== LOGIN ATTEMPT ===');
     console.log('Email:', req.body.email);
     console.log('Password provided:', !!req.body.password);

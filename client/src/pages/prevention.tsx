@@ -1199,17 +1199,6 @@ export default function PreventionPage() {
                       </Alert>
                     )}
                     
-                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-                      <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
-                        💡 Come funziona l'educazione alla prevenzione?
-                      </p>
-                      <ul className="text-sm text-emerald-800 dark:text-emerald-200 space-y-1">
-                        <li>• Condividi il tuo caso personale o interesse</li>
-                        <li>• L'AI ti guida nell'apprendimento di strategie preventive</li>
-                        <li>• Ricevi consigli pratici basati su evidenze scientifiche</li>
-                      </ul>
-                    </div>
-                    
                     {/* User Role Selection */}
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-center">Seleziona il tuo ruolo:</p>

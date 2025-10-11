@@ -333,21 +333,7 @@ export default function Home() {
 
         {/* CIRY - Care & Intelligence Ready for You */}
         <Card className="mb-8 bg-gradient-to-r from-orange-500 to-orange-600 text-white border-none shadow-lg">
-          <CardContent className="p-8">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <img 
-                  src="/attached_assets/image_1760060153729.png" 
-                  alt="CIRY Logo" 
-                  className="h-20"
-                />
-              </div>
-            </div>
-
-            <p className="text-white/90 text-base mb-6 max-w-3xl">
-              Care & Intelligence Ready for You. Il tuo assistente intelligente per la prevenzione sanitaria. Carica documenti medici, genera report personalizzati e scopri strategie di prevenzione basate su evidenze scientifiche.
-            </p>
-
+          <CardContent className="p-6">
             {/* Dashboard Indicators */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">

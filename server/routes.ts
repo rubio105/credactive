@@ -6918,7 +6918,7 @@ Le risposte DEVONO essere in italiano.`;
   app.post('/api/triage/start', aiGenerationLimiter, async (req, res) => {
     try {
       const user = req.user as any;
-      const { initialSymptom, language } = req.body;
+      const { initialSymptom, language, userRole } = req.body;
 
       if (!initialSymptom) {
         return res.status(400).json({ message: 'Initial symptom is required' });
@@ -6928,6 +6928,7 @@ Le risposte DEVONO essere in italiano.`;
       const session = await storage.createTriageSession({
         userId: user?.id || null,
         status: 'active',
+        userRole: userRole || 'patient', // Default to patient if not specified
       });
 
       // Create initial message
@@ -6960,7 +6961,8 @@ Le risposte DEVONO essere in italiano.`;
         [], 
         undefined, 
         user?.firstName,
-        scientificContext
+        scientificContext,
+        session.userRole as 'patient' | 'doctor' // Pass user role to customize response style
       );
 
       // Save AI response
@@ -7118,7 +7120,8 @@ Le risposte DEVONO essere in italiano.`;
         history, 
         undefined, 
         user?.firstName,
-        scientificContext
+        scientificContext,
+        session.userRole as 'patient' | 'doctor' // Pass user role to customize response style
       );
 
       // Save AI response

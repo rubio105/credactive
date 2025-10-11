@@ -358,7 +358,8 @@ export async function generateTriageResponse(
   conversationHistory: Array<{ role: string; content: string }>,
   documentContext?: string,
   userName?: string,
-  scientificContext?: string
+  scientificContext?: string,
+  userRole?: 'patient' | 'doctor'
 ): Promise<TriageResponse> {
   try {
     const contextInfo = documentContext 
@@ -372,6 +373,21 @@ export async function generateTriageResponse(
     const userGreeting = userName 
       ? `\n\nUSER CONTEXT: The user's name is ${userName}. When appropriate, address them by name to personalize the conversation (e.g., "Ciao ${userName}, capisco la tua preoccupazione...").`
       : "\n\nUSER CONTEXT: This is an anonymous user. Use general greetings without names.";
+
+    const roleContext = userRole === 'doctor' 
+      ? `\n\nUSER ROLE: This user is a MEDICAL PROFESSIONAL. Adapt your language:
+- Use appropriate medical terminology and technical language
+- Reference clinical guidelines and evidence-based practices
+- Discuss pathophysiology and mechanisms when relevant
+- Provide detailed, scientifically rigorous explanations
+- Focus on prevention strategies they can recommend to their patients
+- Still maintain a conversational tone, but with professional depth`
+      : `\n\nUSER ROLE: This user is a PATIENT or general public. Adapt your language:
+- Use simple, everyday language and avoid medical jargon
+- Explain concepts in accessible terms
+- Focus on practical, actionable advice
+- Be empathetic and supportive
+- Translate medical terms into plain Italian`;
 
     const systemPrompt = `You are "AI Prohmed", an educational assistant specialized in teaching prevention strategies.
 Your mission is to help users LEARN how to prevent health issues through their personal cases.
@@ -424,7 +440,7 @@ Respond with JSON in this exact format:
   "urgencyLevel": "low" | "medium" | "high" | "emergency",
   "relatedTopics": ["prevention topic1", "prevention topic2", ...],
   "needsReportUpload": boolean (true if user wants to share medical reports for personalized learning)
-}${scientificInfo}${contextInfo}${userGreeting}`;
+}${scientificInfo}${contextInfo}${userGreeting}${roleContext}`;
 
     // Build contents array with proper message structure
     const contents = conversationHistory.map(msg => ({

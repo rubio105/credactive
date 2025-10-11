@@ -88,12 +88,22 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
 
       {/* Findings Report */}
       <Card className="shadow-lg border-l-4 border-l-indigo-500 dark:border-l-indigo-400" data-testid={`image-analysis-${analysis.id}`}>
+        {/* Prohmed Header */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 flex items-center justify-between">
+          <img 
+            src="/images/prohmed-logo.jpg" 
+            alt="Prohmed" 
+            className="h-8 object-contain bg-white rounded px-2"
+          />
+          <span className="text-white text-sm font-medium">Refertazione Radiologica</span>
+        </div>
+        
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <FileImage className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <CardTitle className="text-xl">Refertazione Radiologica</CardTitle>
+                <CardTitle className="text-xl">Analisi Immagine Medica</CardTitle>
               </div>
               <div className="flex flex-wrap items-center gap-2 mt-3 mb-2">
                 <Button

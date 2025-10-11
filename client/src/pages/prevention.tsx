@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Stethoscope, Filter, Search, SortAsc } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Stethoscope, Filter, Search, SortAsc, User } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -86,6 +86,7 @@ export default function PreventionPage() {
   const [reportFilter, setReportFilter] = useState<string>('all');
   const [reportSort, setReportSort] = useState<'recent' | 'oldest' | 'type'>('recent');
   const [reportSearch, setReportSearch] = useState<string>('');
+  const [userRole, setUserRole] = useState<'patient' | 'doctor'>('patient');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -200,8 +201,11 @@ export default function PreventionPage() {
   }, [activeSession, sessionId]);
 
   const startTriageMutation = useMutation({
-    mutationFn: async (symptom: string) => {
-      const response = await apiRequest("/api/triage/start", "POST", { initialSymptom: symptom });
+    mutationFn: async (data: { symptom: string; role: 'patient' | 'doctor' }) => {
+      const response = await apiRequest("/api/triage/start", "POST", { 
+        initialSymptom: data.symptom,
+        userRole: data.role
+      });
       return response.json();
     },
     onSuccess: (data: any) => {
@@ -294,7 +298,7 @@ export default function PreventionPage() {
       toast({ title: "Inserisci un sintomo o domanda", variant: "destructive" });
       return;
     }
-    startTriageMutation.mutate(userInput);
+    startTriageMutation.mutate({ symptom: userInput, role: userRole });
   };
 
   const handleSend = () => {
@@ -1055,6 +1059,33 @@ export default function PreventionPage() {
                       </ul>
                     </div>
                     
+                    {/* User Role Selection */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-center">Seleziona il tuo ruolo:</p>
+                      <div className="flex gap-2 justify-center">
+                        <Button
+                          variant={userRole === 'patient' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setUserRole('patient')}
+                          className={userRole === 'patient' ? 'bg-gradient-to-r from-emerald-600 to-teal-600' : ''}
+                          data-testid="button-role-patient"
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          Sono un Paziente
+                        </Button>
+                        <Button
+                          variant={userRole === 'doctor' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setUserRole('doctor')}
+                          className={userRole === 'doctor' ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : ''}
+                          data-testid="button-role-doctor"
+                        >
+                          <Stethoscope className="w-4 h-4 mr-2" />
+                          Sono un Medico
+                        </Button>
+                      </div>
+                    </div>
+                    
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Esempi di casi pratici:</p>
                       <div className="grid grid-cols-1 gap-2">
@@ -1489,12 +1520,22 @@ export default function PreventionPage() {
               <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
               <AlertDescription className="ml-2">
                 <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                  🔒 Privacy e Anonimizzazione
+                  🔒 Privacy e Anonimizzazione Automatica
                 </p>
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  I tuoi documenti medici vengono <strong>automaticamente anonimizzati</strong> prima dell'elaborazione. 
-                  Tutti i dati personali sensibili (nome, cognome, codice fiscale, ecc.) vengono rimossi per garantire la massima privacy e sicurezza.
-                </p>
+                <div className="text-sm text-green-800 dark:text-green-200 space-y-2">
+                  <p>
+                    I tuoi documenti medici sono protetti da <strong>algoritmi avanzati di anonimizzazione</strong> che rimuovono automaticamente:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Dati anagrafici (nome, cognome, indirizzo)</li>
+                    <li>Codice fiscale e numeri identificativi</li>
+                    <li>Date di nascita e contatti personali</li>
+                    <li>Qualsiasi informazione che possa identificarti</li>
+                  </ul>
+                  <p className="pt-1">
+                    I documenti vengono elaborati in modo <strong>completamente anonimo</strong>, garantendo la tua privacy e la conformità al GDPR.
+                  </p>
+                </div>
               </AlertDescription>
             </Alert>
 

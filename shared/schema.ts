@@ -1277,6 +1277,7 @@ export const triageSessions = pgTable("triage_sessions", {
   // Session metadata
   title: varchar("title", { length: 200 }), // Auto-generated from first message
   status: varchar("status", { length: 20 }).default("active"), // active, closed, escalated
+  userRole: varchar("user_role", { length: 20 }).default("patient"), // patient, doctor - determines response style
   
   // Medical flags
   isSensitive: boolean("is_sensitive").default(false),

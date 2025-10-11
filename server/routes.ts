@@ -7049,19 +7049,18 @@ Le risposte DEVONO essere in italiano.`;
         const userTier = user.subscriptionTier || 'free';
         const limit = TOKEN_LIMITS[userTier as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
         
-        // Estimate tokens: user message + expected AI response (assume AI response is 2x user message)
-        // This prevents token overrun since we track both user and assistant tokens
-        const estimatedUserTokens = Math.ceil(content.length / 4);
-        const estimatedAiTokens = estimatedUserTokens * 2; // Conservative estimate
-        const estimatedTotalTokens = estimatedUserTokens + estimatedAiTokens;
+        // Check if user has enough tokens remaining
+        // We require a minimum buffer to allow for a complete exchange
+        const MINIMUM_BUFFER = 30; // Minimum tokens needed for a message + AI response
+        const tokensRemaining = limit - tokenUsage.tokensUsed;
         
-        if (limit !== -1 && tokenUsage.tokensUsed + estimatedTotalTokens > limit) {
+        if (limit !== -1 && tokensRemaining < MINIMUM_BUFFER) {
           return res.status(403).json({ 
             message: `Hai raggiunto il limite mensile di ${limit} token. Passa a Premium per continuare.`,
             requiresUpgrade: true,
             tokenLimit: limit,
             tokensUsed: tokenUsage.tokensUsed,
-            tokensRemaining: Math.max(0, limit - tokenUsage.tokensUsed),
+            tokensRemaining: Math.max(0, tokensRemaining),
             tier: userTier
           });
         }
@@ -7120,30 +7119,6 @@ Le risposte DEVONO essere in italiano.`;
         user?.firstName,
         scientificContext
       );
-
-      // Final token check AFTER AI generation (for authenticated users)
-      if (user?.id) {
-        const actualTokens = Math.ceil((content.length + aiResponse.message.length) / 4);
-        const tokenUsage = await storage.getOrCreateTokenUsage(user.id);
-        const TOKEN_LIMITS = {
-          free: 120,
-          premium: 1000,
-          premium_plus: -1,
-        };
-        const userTier = user.subscriptionTier || 'free';
-        const limit = TOKEN_LIMITS[userTier as keyof typeof TOKEN_LIMITS] || TOKEN_LIMITS.free;
-        
-        if (limit !== -1 && tokenUsage.tokensUsed + actualTokens > limit) {
-          return res.status(403).json({ 
-            message: `Hai raggiunto il limite mensile di ${limit} token. Passa a Premium per continuare.`,
-            requiresUpgrade: true,
-            tokenLimit: limit,
-            tokensUsed: tokenUsage.tokensUsed,
-            tokensRemaining: Math.max(0, limit - tokenUsage.tokensUsed),
-            tier: userTier
-          });
-        }
-      }
 
       // Save AI response
       const aiMessage = await storage.createTriageMessage({

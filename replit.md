@@ -43,6 +43,7 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 *   **Token Usage System**: Tiered monthly token limits for AI interactions with database tracking and UI indicators.
 *   **Webinar Health System**: Free webinar platform for prevention education with expert speakers, automated reminders, and admin management.
 *   **Patient-Only AI Access System**: Dedicated access for Prohmed code-based authentication, allowing patients to interact with AI prevention features and view medical reports.
+*   **AI-Only Access User Management**: Admin capability to create dedicated AI-only users (aiOnlyAccess flag) who can access ONLY the AI Prevention features, with restricted navigation hiding all quiz/course/analytics sections for focused medical consultation use cases.
 *   **Job Queue System**: Asynchronous processing infrastructure for heavy tasks like medical document analysis (OCR, PII removal, radiological imaging analysis) with progress tracking and retry logic.
 *   **RAG Knowledge Base System**: PostgreSQL + pgvector-based semantic search for medical AI specialization. Gemini text-embedding-004 (768 dimensions) generates embeddings for scientific documents chunked at 500 tokens with 50-token overlap. HNSW indexing enables fast similarity search, enriching AI triage responses with evidence-based medical context automatically retrieved from uploaded scientific literature.
 

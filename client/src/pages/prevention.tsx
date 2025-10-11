@@ -1175,19 +1175,20 @@ export default function PreventionPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-2xl">
               <Crown className="w-6 h-6 text-amber-500" />
-              Limite Messaggi Gratuiti Raggiunto
+              Limite Token AI Raggiunto
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base space-y-3">
               <p>
-                Hai raggiunto il limite di <strong>30 messaggi gratuiti</strong> per questa conversazione.
+                Hai raggiunto il <strong>limite mensile di token</strong> per l'AI di Prevenzione.
               </p>
               <p>
-                Abbonati per continuare a usare l'AI Prohmed senza limiti e accedere a tutte le funzionalità premium:
+                Passa a Premium per continuare a usare l'AI Prohmed senza limiti e accedere a tutte le funzionalità:
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>1000 token mensili (8x rispetto al piano Free)</li>
                 <li>Conversazioni illimitate con l'AI</li>
                 <li>Caricamento documenti medici</li>
-                <li>Report personalizzati</li>
+                <li>Report personalizzati e analisi avanzate</li>
                 <li>Accesso completo alla piattaforma</li>
               </ul>
             </AlertDialogDescription>

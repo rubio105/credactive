@@ -7067,20 +7067,21 @@ Le risposte DEVONO essere in italiano.`;
         }
       }
 
-      // Check message limit for free/anonymous users (30 messages per session)
-      const existingMessages = await storage.getTriageMessagesBySession(sessionId);
-      const userMessageCount = existingMessages.filter(m => m.role === 'user').length;
-      
-      const isFreeUser = !user || !user.isPremium;
-      const MESSAGE_LIMIT = 30;
-      
-      if (isFreeUser && userMessageCount >= MESSAGE_LIMIT) {
-        return res.status(403).json({ 
-          message: 'Limite messaggi raggiunto. Abbonati per continuare la conversazione.',
-          requiresUpgrade: true,
-          messageLimit: MESSAGE_LIMIT,
-          messagesUsed: userMessageCount
-        });
+      // Check message limit ONLY for anonymous/unauthenticated users (30 messages per session)
+      // Authenticated users (even free tier) use the token-based system instead
+      if (!user?.id) {
+        const existingMessages = await storage.getTriageMessagesBySession(sessionId);
+        const userMessageCount = existingMessages.filter(m => m.role === 'user').length;
+        const MESSAGE_LIMIT = 30;
+        
+        if (userMessageCount >= MESSAGE_LIMIT) {
+          return res.status(403).json({ 
+            message: 'Limite messaggi raggiunto per utenti anonimi. Accedi o registrati per continuare.',
+            requiresUpgrade: true,
+            messageLimit: MESSAGE_LIMIT,
+            messagesUsed: userMessageCount
+          });
+        }
       }
 
       // Create user message

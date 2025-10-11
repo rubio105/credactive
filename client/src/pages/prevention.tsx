@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Stethoscope } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Stethoscope, Filter, Search, SortAsc } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -83,6 +83,9 @@ export default function PreventionPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadQueue, setUploadQueue] = useState<Array<{ file: File; status: 'pending' | 'uploading' | 'completed' | 'error'; error?: string; result?: any }>>([]);
   const [uploadResult, setUploadResult] = useState<any>(null);
+  const [reportFilter, setReportFilter] = useState<string>('all');
+  const [reportSort, setReportSort] = useState<'recent' | 'oldest' | 'type'>('recent');
+  const [reportSearch, setReportSearch] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -114,6 +117,32 @@ export default function PreventionPage() {
     queryKey: ["/api/health-score/reports"],
     enabled: !!user,
   });
+
+  // Apply filters and sorting to reports
+  const filteredReports = healthReports
+    .filter(r => {
+      // Filter by type
+      if (reportFilter !== 'all' && r.reportType !== reportFilter) return false;
+      // Filter by search (case-insensitive) - search in name, summary, and medical values
+      if (reportSearch) {
+        const searchLower = reportSearch.toLowerCase();
+        const matchesFileName = r.fileName?.toLowerCase().includes(searchLower);
+        const matchesSummary = r.aiSummary?.toLowerCase().includes(searchLower);
+        const matchesMedicalValues = r.medicalValues?.some(v => {
+          const nameMatch = v.name?.toLowerCase().includes(searchLower);
+          const valueMatch = String(v.value ?? '').toLowerCase().includes(searchLower);
+          return nameMatch || valueMatch;
+        });
+        if (!matchesFileName && !matchesSummary && !matchesMedicalValues) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (reportSort === 'recent') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (reportSort === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (reportSort === 'type') return (a.reportType ?? '').localeCompare(b.reportType ?? '');
+      return 0;
+    });
 
   interface PreventionIndexData {
     score: number;
@@ -1247,8 +1276,53 @@ export default function PreventionPage() {
                     </Alert>
                   ) : (
                     <div className="space-y-6">
+                      {/* Filters and Search */}
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <Input
+                              placeholder="Cerca per nome, contenuto o valori medici..."
+                              value={reportSearch}
+                              onChange={(e) => setReportSearch(e.target.value)}
+                              className="pl-10"
+                              data-testid="input-search-reports"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <select
+                            value={reportFilter}
+                            onChange={(e) => setReportFilter(e.target.value)}
+                            className="px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-sm"
+                            data-testid="select-filter-type"
+                          >
+                            <option value="all">Tutti i tipi</option>
+                            <option value="esame_sangue">Esami del Sangue</option>
+                            <option value="radiologia">Radiologia</option>
+                            <option value="cardiologia">Cardiologia</option>
+                            <option value="ecografia">Ecografia</option>
+                            <option value="risonanza">Risonanza Magnetica</option>
+                            <option value="tac">TAC</option>
+                            <option value="ecg">Elettrocardiogramma</option>
+                            <option value="esame_urine">Esami delle Urine</option>
+                          </select>
+                          <select
+                            value={reportSort}
+                            onChange={(e) => setReportSort(e.target.value as any)}
+                            className="px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-sm"
+                            data-testid="select-sort-order"
+                          >
+                            <option value="recent">Più recenti</option>
+                            <option value="oldest">Più vecchi</option>
+                            <option value="type">Per tipo</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Timeline */}
                       <MedicalTimeline 
-                        reports={healthReports.map(r => ({
+                        reports={filteredReports.map(r => ({
                           id: r.id,
                           title: r.fileName ?? 'Documento senza titolo',
                           reportType: r.reportType ?? '',
@@ -1257,8 +1331,9 @@ export default function PreventionPage() {
                         }))}
                       />
                       
+                      {/* Report Cards */}
                       <div className="grid gap-4">
-                        {healthReports.map((report) => (
+                        {filteredReports.map((report) => (
                           <MedicalReportCard
                             key={report.id}
                             report={{
@@ -1272,6 +1347,15 @@ export default function PreventionPage() {
                           />
                         ))}
                       </div>
+
+                      {/* No results message */}
+                      {filteredReports.length === 0 && (
+                        <Alert>
+                          <AlertDescription>
+                            Nessun referto trovato con i filtri selezionati.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
                   )}
                 </CardContent>

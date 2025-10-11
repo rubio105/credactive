@@ -47,8 +47,8 @@ export async function setupAuth(app: Express) {
   // Setup local email/password authentication
   setupPassportAuth();
   
-  // Setup Google OAuth authentication
-  setupGoogleAuth(app);
+  // Setup Google OAuth authentication - DISABLED
+  // setupGoogleAuth(app);
 
   // Unified serialization - store only user ID
   passport.serializeUser((user: any, done) => {

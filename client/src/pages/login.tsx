@@ -9,7 +9,6 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 const logoImage = "/images/ciry-main-logo.png";
 import { Link } from "wouter";
-import { FcGoogle } from "react-icons/fc";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -182,26 +181,6 @@ export default function Login() {
               {loginMutation.isPending ? "Accesso in corso..." : requiresMfa ? "Verifica e Accedi" : "Accedi"}
             </Button>
           </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">O continua con</span>
-            </div>
-          </div>
-
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => window.location.href = "/api/auth/google"}
-            data-testid="button-google-login"
-            className="w-full"
-          >
-            <FcGoogle className="mr-2 h-5 w-5" />
-            Continua con Google
-          </Button>
 
           <div className="mt-6 text-center text-sm">
             Non hai un account?{" "}

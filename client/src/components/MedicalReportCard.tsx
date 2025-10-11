@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Calendar, Activity, Eye } from "lucide-react";
+import { FileText, Calendar, Activity, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { MedicalReportViewerDialog } from "./MedicalReportViewerDialog";
-import { useToast } from "@/hooks/use-toast";
 
 interface MedicalValue {
   name: string;
@@ -32,40 +31,6 @@ interface MedicalReport {
 
 export function MedicalReportCard({ report }: { report: MedicalReport }) {
   const [showViewerDialog, setShowViewerDialog] = useState(false);
-  const { toast } = useToast();
-
-  const handleDownloadPDF = async () => {
-    try {
-      const response = await fetch(`/api/health-score/reports/${report.id}/pdf`, {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Errore durante il download');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `referto-${report.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast({
-        title: "Download completato",
-        description: "Il referto è stato scaricato con successo",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.message || "Impossibile scaricare il referto",
-        variant: "destructive",
-      });
-    }
-  };
 
   const getReportTypeColor = (type: string) => {
     const colors: Record<string, string> = {
@@ -128,15 +93,6 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
               )}
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300" 
-            onClick={handleDownloadPDF}
-            data-testid="button-download-report"
-          >
-            <Download className="w-4 h-4" />
-          </Button>
         </div>
       </CardHeader>
       
@@ -149,12 +105,12 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
           </span>
         </div>
 
-        {/* AI Summary */}
+        {/* Riepilogo */}
         {report.aiSummary && (
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3" data-testid="ai-summary">
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
               <Activity className="w-4 h-4" />
-              Riepilogo AI
+              Riepilogo
             </p>
             <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed line-clamp-2">
               {report.aiSummary}
@@ -162,11 +118,11 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
           </div>
         )}
 
-        {/* Medical Values */}
+        {/* Valori Medici */}
         {report.medicalValues && report.medicalValues.length > 0 && (
           <div className="space-y-2" data-testid="medical-values-section">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Valori Rilevati:
+              Valori Medici:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {report.medicalValues.map((value, index) => (
@@ -201,26 +157,16 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
         )}
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="pt-2">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1"
+            className="w-full"
             onClick={() => setShowViewerDialog(true)}
             data-testid="button-view-report"
           >
             <Eye className="w-4 h-4 mr-2" />
             Visualizza Dettagli
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1"
-            onClick={handleDownloadPDF}
-            data-testid="button-export-pdf"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Scarica PDF
           </Button>
         </div>
       </CardContent>

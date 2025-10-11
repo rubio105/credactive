@@ -1,12 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileText, Calendar, Activity, TrendingUp, Hospital } from "lucide-react";
+import { FileText, Calendar, Activity, TrendingUp, Hospital } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { RadiologicalImageViewer } from "./RadiologicalImageViewer";
-import { useToast } from "@/hooks/use-toast";
 
 interface MedicalValue {
   name: string;
@@ -58,42 +56,7 @@ export function MedicalReportViewerDialog({
   open, 
   onOpenChange 
 }: MedicalReportViewerDialogProps) {
-  const { toast } = useToast();
-
   if (!report) return null;
-
-  const handleDownloadPDF = async () => {
-    try {
-      const response = await fetch(`/api/health-score/reports/${report.id}/pdf`, {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Errore durante il download');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `referto-${report.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast({
-        title: "Download completato",
-        description: "Il referto è stato scaricato con successo",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.message || "Impossibile scaricare il referto",
-        variant: "destructive",
-      });
-    }
-  };
 
   const getReportTypeColor = (type: string) => {
     const colors: Record<string, string> = {
@@ -160,28 +123,20 @@ export function MedicalReportViewerDialog({
                 </Badge>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={handleDownloadPDF}
-              data-testid="dialog-button-download-pdf"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Scarica PDF
-            </Button>
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue={hasRadiologicalImage ? "image" : "summary"} className="mt-4">
+        <Tabs defaultValue={hasRadiologicalImage ? "image" : "riepilogo"} className="mt-4">
           <TabsList className="grid w-full" style={{ gridTemplateColumns: hasRadiologicalImage ? "repeat(3, 1fr)" : "repeat(2, 1fr)" }}>
             {hasRadiologicalImage && (
               <TabsTrigger value="image" data-testid="tab-radiological-image">
                 Immagine Radiologica
               </TabsTrigger>
             )}
-            <TabsTrigger value="summary" data-testid="tab-summary">
+            <TabsTrigger value="riepilogo" data-testid="tab-summary">
               Riepilogo
             </TabsTrigger>
-            <TabsTrigger value="values" data-testid="tab-values">
+            <TabsTrigger value="valori" data-testid="tab-values">
               Valori Medici
             </TabsTrigger>
           </TabsList>
@@ -230,13 +185,13 @@ export function MedicalReportViewerDialog({
             </TabsContent>
           )}
 
-          {/* Summary Tab */}
-          <TabsContent value="summary" className="mt-4" data-testid="content-summary">
+          {/* Riepilogo Tab */}
+          <TabsContent value="riepilogo" className="mt-4" data-testid="content-summary">
             {report.aiSummary ? (
               <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
-                  Riepilogo AI
+                  Riepilogo
                 </p>
                 <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
                   {report.aiSummary}
@@ -250,8 +205,8 @@ export function MedicalReportViewerDialog({
             )}
           </TabsContent>
 
-          {/* Medical Values Tab */}
-          <TabsContent value="values" className="mt-4" data-testid="content-medical-values">
+          {/* Valori Medici Tab */}
+          <TabsContent value="valori" className="mt-4" data-testid="content-medical-values">
             {report.medicalValues && report.medicalValues.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {report.medicalValues.map((value, index) => (

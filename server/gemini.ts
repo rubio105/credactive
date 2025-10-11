@@ -431,7 +431,7 @@ Respond with JSON in this exact format:
     });
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
+      model: "gemini-2.5-flash",
       config: {
         systemInstruction: systemPrompt,
         responseMimeType: "application/json",
@@ -457,7 +457,7 @@ Respond with JSON in this exact format:
     }
 
     const result = JSON.parse(rawJson);
-    console.log("[Gemini] Triage response generated, urgency:", result.urgencyLevel);
+    console.log("[Gemini] Triage response generated (Flash), urgency:", result.urgencyLevel);
     return result;
   } catch (error) {
     console.error("[Gemini] Failed to generate triage response:", error);

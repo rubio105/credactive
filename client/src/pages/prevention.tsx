@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Stethoscope } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,6 +48,8 @@ interface TriageMessage {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  aiSuggestDoctor?: boolean;
+  aiUrgencyLevel?: 'low' | 'medium' | 'high' | 'emergency';
 }
 
 interface TriageSession {
@@ -1038,6 +1040,23 @@ export default function PreventionPage() {
                               }`}
                             >
                               <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                              
+                              {/* Pulsante Richiedi Contatto Medico - Solo per messaggi AI con aiSuggestDoctor */}
+                              {msg.role === 'assistant' && msg.aiSuggestDoctor && (
+                                <div className="mt-3 pt-3 border-t border-emerald-100 dark:border-emerald-800">
+                                  <Button
+                                    onClick={() => window.open('mailto:info@prohmed.it?subject=Richiesta Contatto Medico - CIRY AI', '_blank')}
+                                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm"
+                                    data-testid="button-request-medical-contact"
+                                  >
+                                    <Stethoscope className="w-4 h-4 mr-2" />
+                                    Richiedi Contatto Medico
+                                  </Button>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                                    Sarai ricontattato dal team medico Prohmed
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}

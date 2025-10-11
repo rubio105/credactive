@@ -6968,6 +6968,8 @@ Le risposte DEVONO essere in italiano.`;
         sessionId: session.id,
         role: 'assistant',
         content: aiResponse.message,
+        aiSuggestDoctor: aiResponse.suggestDoctor,
+        aiUrgencyLevel: aiResponse.urgencyLevel,
       });
 
       // Check for sensitive flags and create alerts (only for authenticated users)
@@ -7147,6 +7149,8 @@ Le risposte DEVONO essere in italiano.`;
         sessionId,
         role: 'assistant',
         content: aiResponse.message,
+        aiSuggestDoctor: aiResponse.suggestDoctor,
+        aiUrgencyLevel: aiResponse.urgencyLevel,
       });
 
       // Check for sensitive flags and create alerts (only for authenticated users)

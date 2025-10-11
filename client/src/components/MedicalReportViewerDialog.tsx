@@ -1,10 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Calendar, Activity, TrendingUp, Hospital } from "lucide-react";
+import { FileText, Calendar, Activity, TrendingUp, Hospital, CheckCircle, AlertTriangle, AlertCircle, Stethoscope, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { RadiologicalImageViewer } from "./RadiologicalImageViewer";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MedicalValue {
   name: string;
@@ -31,6 +32,14 @@ interface RadiologicalAnalysis {
   confidence: number;
 }
 
+interface AiAnalysis {
+  patientSummary?: string;
+  doctorSummary?: string;
+  diagnosis?: string;
+  prevention?: string;
+  severity?: "normal" | "moderate" | "urgent";
+}
+
 interface MedicalReport {
   id: string;
   title: string;
@@ -38,6 +47,7 @@ interface MedicalReport {
   uploadDate: string;
   ocrConfidence?: number;
   aiSummary?: string;
+  aiAnalysis?: AiAnalysis;
   medicalValues?: MedicalValue[];
   language?: string;
   hospitalName?: string;
@@ -56,6 +66,9 @@ export function MedicalReportViewerDialog({
   open, 
   onOpenChange 
 }: MedicalReportViewerDialogProps) {
+  const { user } = useAuth();
+  const isDoctor = user?.isDoctor;
+  
   if (!report) return null;
 
   const getReportTypeColor = (type: string) => {
@@ -88,6 +101,38 @@ export function MedicalReportViewerDialog({
     return names[type] || "Referto Medico";
   };
 
+  const getSeverityBadge = (severity?: "normal" | "moderate" | "urgent") => {
+    if (!severity) return null;
+    
+    const severityConfig = {
+      normal: {
+        icon: CheckCircle,
+        text: "Nella Norma",
+        className: "bg-green-100 text-green-800 border-green-200 dark:bg-green-950/40 dark:text-green-200 dark:border-green-800"
+      },
+      moderate: {
+        icon: AlertTriangle,
+        text: "Richiede Attenzione",
+        className: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950/40 dark:text-yellow-200 dark:border-yellow-800"
+      },
+      urgent: {
+        icon: AlertCircle,
+        text: "Urgente",
+        className: "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-200 dark:border-red-800"
+      }
+    };
+
+    const config = severityConfig[severity];
+    const Icon = config.icon;
+
+    return (
+      <Badge className={config.className} data-testid="dialog-badge-severity">
+        <Icon className="w-3 h-3 mr-1" />
+        {config.text}
+      </Badge>
+    );
+  };
+
   const hasRadiologicalImage = report.radiologicalAnalysis && 
     report.fileType?.startsWith('image/');
 
@@ -105,6 +150,7 @@ export function MedicalReportViewerDialog({
                 <Badge className={getReportTypeColor(report.reportType)} data-testid="dialog-badge-report-type">
                   {getReportTypeName(report.reportType)}
                 </Badge>
+                {getSeverityBadge(report.aiAnalysis?.severity)}
                 {report.ocrConfidence !== undefined && (
                   <Badge variant="outline" className="text-xs" data-testid="dialog-badge-ocr-confidence">
                     <Activity className="w-3 h-3 mr-1" />
@@ -127,7 +173,7 @@ export function MedicalReportViewerDialog({
         </DialogHeader>
 
         <Tabs defaultValue={hasRadiologicalImage ? "image" : "riepilogo"} className="mt-4">
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: hasRadiologicalImage ? "repeat(3, 1fr)" : "repeat(2, 1fr)" }}>
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: hasRadiologicalImage ? "repeat(5, 1fr)" : "repeat(4, 1fr)" }}>
             {hasRadiologicalImage && (
               <TabsTrigger value="image" data-testid="tab-radiological-image">
                 Immagine Radiologica
@@ -135,6 +181,12 @@ export function MedicalReportViewerDialog({
             )}
             <TabsTrigger value="riepilogo" data-testid="tab-summary">
               Riepilogo
+            </TabsTrigger>
+            <TabsTrigger value="diagnosi" data-testid="tab-diagnosis">
+              Diagnosi
+            </TabsTrigger>
+            <TabsTrigger value="prevenzione" data-testid="tab-prevention">
+              Prevenzione
             </TabsTrigger>
             <TabsTrigger value="valori" data-testid="tab-values">
               Valori Medici
@@ -187,20 +239,63 @@ export function MedicalReportViewerDialog({
 
           {/* Riepilogo Tab */}
           <TabsContent value="riepilogo" className="mt-4" data-testid="content-summary">
-            {report.aiSummary ? (
+            {(report.aiAnalysis?.patientSummary || report.aiAnalysis?.doctorSummary || report.aiSummary) ? (
               <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Riepilogo
+                  {isDoctor ? <Stethoscope className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
+                  {isDoctor ? "Riepilogo Medico" : "Riepilogo"}
                 </p>
-                <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
-                  {report.aiSummary}
+                <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed whitespace-pre-wrap">
+                  {isDoctor 
+                    ? (report.aiAnalysis?.doctorSummary || report.aiSummary)
+                    : (report.aiAnalysis?.patientSummary || report.aiSummary)
+                  }
                 </p>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>Nessun riepilogo disponibile</p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Diagnosi Tab */}
+          <TabsContent value="diagnosi" className="mt-4" data-testid="content-diagnosis">
+            {report.aiAnalysis?.diagnosis ? (
+              <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <p className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+                  <Stethoscope className="w-4 h-4" />
+                  Diagnosi
+                </p>
+                <p className="text-sm text-purple-800 dark:text-purple-200 leading-relaxed whitespace-pre-wrap">
+                  {report.aiAnalysis.diagnosis}
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <Stethoscope className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nessuna diagnosi disponibile</p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Prevenzione Tab */}
+          <TabsContent value="prevenzione" className="mt-4" data-testid="content-prevention">
+            {report.aiAnalysis?.prevention ? (
+              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <p className="text-sm font-medium text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Consigli di Prevenzione
+                </p>
+                <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed whitespace-pre-wrap">
+                  {report.aiAnalysis.prevention}
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <Shield className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nessun consiglio di prevenzione disponibile</p>
               </div>
             )}
           </TabsContent>

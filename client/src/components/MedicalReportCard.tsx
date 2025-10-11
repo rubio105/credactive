@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Calendar, Activity, Eye } from "lucide-react";
+import { FileText, Calendar, Activity, Eye, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { MedicalReportViewerDialog } from "./MedicalReportViewerDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MedicalValue {
   name: string;
@@ -15,6 +16,14 @@ interface MedicalValue {
   isAbnormal?: boolean;
 }
 
+interface AiAnalysis {
+  patientSummary?: string;
+  doctorSummary?: string;
+  diagnosis?: string;
+  prevention?: string;
+  severity?: "normal" | "moderate" | "urgent";
+}
+
 interface MedicalReport {
   id: string;
   title: string;
@@ -22,6 +31,7 @@ interface MedicalReport {
   uploadDate: string;
   ocrConfidence?: number;
   aiSummary?: string;
+  aiAnalysis?: AiAnalysis;
   medicalValues?: MedicalValue[];
   language?: string;
   hospitalName?: string;
@@ -31,6 +41,8 @@ interface MedicalReport {
 
 export function MedicalReportCard({ report }: { report: MedicalReport }) {
   const [showViewerDialog, setShowViewerDialog] = useState(false);
+  const { user } = useAuth();
+  const isDoctor = user?.isDoctor;
 
   const getReportTypeColor = (type: string) => {
     const colors: Record<string, string> = {
@@ -62,6 +74,38 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
     return names[type] || "Referto Medico";
   };
 
+  const getSeverityBadge = (severity?: "normal" | "moderate" | "urgent") => {
+    if (!severity) return null;
+    
+    const severityConfig = {
+      normal: {
+        icon: CheckCircle,
+        text: "Nella Norma",
+        className: "bg-green-100 text-green-800 border-green-200 dark:bg-green-950/40 dark:text-green-200 dark:border-green-800"
+      },
+      moderate: {
+        icon: AlertTriangle,
+        text: "Richiede Attenzione",
+        className: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950/40 dark:text-yellow-200 dark:border-yellow-800"
+      },
+      urgent: {
+        icon: AlertCircle,
+        text: "Urgente",
+        className: "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-200 dark:border-red-800"
+      }
+    };
+
+    const config = severityConfig[severity];
+    const Icon = config.icon;
+
+    return (
+      <Badge className={config.className} data-testid="badge-severity">
+        <Icon className="w-3 h-3 mr-1" />
+        {config.text}
+      </Badge>
+    );
+  };
+
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow border-l-4 border-l-blue-500 dark:border-l-blue-400" data-testid={`medical-report-${report.id}`}>
       {/* Header */}
@@ -80,6 +124,7 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
               <Badge className={getReportTypeColor(report.reportType)} data-testid="badge-report-type">
                 {getReportTypeName(report.reportType)}
               </Badge>
+              {getSeverityBadge(report.aiAnalysis?.severity)}
               {report.ocrConfidence !== undefined && (
                 <Badge variant="outline" className="text-xs" data-testid="badge-ocr-confidence">
                   <Activity className="w-3 h-3 mr-1" />
@@ -106,14 +151,17 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
         </div>
 
         {/* Riepilogo */}
-        {report.aiSummary && (
+        {(report.aiAnalysis?.patientSummary || report.aiAnalysis?.doctorSummary || report.aiSummary) && (
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3" data-testid="ai-summary">
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
               <Activity className="w-4 h-4" />
               Riepilogo
             </p>
             <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed line-clamp-2">
-              {report.aiSummary}
+              {isDoctor 
+                ? (report.aiAnalysis?.doctorSummary || report.aiSummary)
+                : (report.aiAnalysis?.patientSummary || report.aiSummary)
+              }
             </p>
           </div>
         )}

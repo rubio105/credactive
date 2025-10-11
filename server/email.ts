@@ -52,6 +52,11 @@ function sanitizeUserInput(input: string | undefined): string {
   return escapeHtml(input.trim());
 }
 
+// Helper function to get base URL for emails
+function getBaseUrl(): string {
+  return process.env.BASE_URL || 'http://localhost:5000';
+}
+
 // Process template with variables
 export function processTemplate(template: string, variables: Record<string, string>): string {
   let processed = template;
@@ -125,10 +130,7 @@ export async function sendWelcomeEmail(
   email: string,
   firstName?: string
 ): Promise<void> {
-  const baseUrl = process.env.BASE_URL || 
-                  (process.env.REPLIT_DOMAINS?.split(',')[0] 
-                    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-                    : 'http://localhost:5000');
+  const baseUrl = getBaseUrl();
   const loginUrl = `${baseUrl}/login`;
   
   const rawName = firstName || email.split('@')[0];
@@ -586,10 +588,7 @@ export async function sendPasswordResetEmail(
   email: string,
   resetToken: string
 ): Promise<void> {
-  const baseUrl = process.env.BASE_URL || 
-                  (process.env.REPLIT_DOMAINS?.split(',')[0] 
-                    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-                    : 'http://localhost:5000');
+  const baseUrl = getBaseUrl();
   const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
   // Try to use database template first
@@ -814,10 +813,7 @@ export async function sendBadgeEarnedEmail(
   const name = sanitizeUserInput(rawName);
   const safeBadgeName = sanitizeUserInput(badgeName);
   const safeBadgeDescription = sanitizeUserInput(badgeDescription);
-  const baseUrl = process.env.BASE_URL || 
-    (process.env.REPLIT_DOMAINS?.split(',')[0] 
-      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-      : 'http://localhost:5000');
+  const baseUrl = getBaseUrl();
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -920,10 +916,7 @@ export async function sendLevelUpEmail(
 ): Promise<void> {
   const rawName = firstName || email.split('@')[0];
   const name = sanitizeUserInput(rawName);
-  const baseUrl = process.env.BASE_URL || 
-    (process.env.REPLIT_DOMAINS?.split(',')[0] 
-      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-      : 'http://localhost:5000');
+  const baseUrl = getBaseUrl();
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -1037,10 +1030,7 @@ export async function sendCertificateEarnedEmail(
   const rawName = firstName || email.split('@')[0];
   const name = sanitizeUserInput(rawName);
   const safeQuizTitle = sanitizeUserInput(quizTitle);
-  const baseUrl = process.env.BASE_URL || 
-    (process.env.REPLIT_DOMAINS?.split(',')[0] 
-      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-      : 'http://localhost:5000');
+  const baseUrl = getBaseUrl();
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -1267,10 +1257,7 @@ export async function sendPreventionInviteEmail(
   email: string,
   firstName?: string
 ): Promise<void> {
-  const baseUrl = process.env.BASE_URL || 
-                  (process.env.REPLIT_DOMAINS?.split(',')[0] 
-                    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-                    : 'http://localhost:5000');
+  const baseUrl = getBaseUrl();
   const preventionUrl = `${baseUrl}/prevention`;
   
   const rawName = firstName || email.split('@')[0];
@@ -1419,10 +1406,7 @@ export async function sendPremiumUpgradeEmail(
   firstName?: string,
   tier: string = 'premium'
 ): Promise<void> {
-  const baseUrl = process.env.BASE_URL || 
-                  (process.env.REPLIT_DOMAINS?.split(',')[0] 
-                    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-                    : 'http://localhost:5000');
+  const baseUrl = getBaseUrl();
   
   const rawName = firstName || email.split('@')[0];
   const name = sanitizeUserInput(rawName);

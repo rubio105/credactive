@@ -41,7 +41,7 @@ app.use(helmet({
 
 const allowedOrigins = isDevelopment 
   ? ['http://localhost:5000', 'http://127.0.0.1:5000']
-  : (process.env.ALLOWED_DOMAINS || process.env.REPLIT_DOMAINS || '')
+  : (process.env.ALLOWED_DOMAINS || '')
       .split(',')
       .filter(Boolean)
       .flatMap(domain => [`http://${domain.trim()}`, `https://${domain.trim()}`]);

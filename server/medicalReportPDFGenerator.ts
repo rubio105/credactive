@@ -309,13 +309,13 @@ export function generateMedicalReportPDF(data: MedicalReportPDFData): typeof PDF
      .text(t.privacyNote, 60, footerY + 25, { width: doc.page.width - 120 });
 
   // Page number
-  const pageCount = doc.bufferedPageRange().count;
-  for (let i = 0; i < pageCount; i++) {
-    doc.switchToPage(i);
+  const range = doc.bufferedPageRange();
+  for (let i = 0; i < range.count; i++) {
+    doc.switchToPage(range.start + i);
     doc.fontSize(8)
        .fillColor('#9ca3af')
        .font('Helvetica')
-       .text(`${t.page} ${i + 1} ${t.of} ${pageCount}`, 0, doc.page.height - 30, { align: 'center' });
+       .text(`${t.page} ${i + 1} ${t.of} ${range.count}`, 0, doc.page.height - 30, { align: 'center' });
   }
 
   return doc;

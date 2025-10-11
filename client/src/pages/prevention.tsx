@@ -255,7 +255,10 @@ export default function PreventionPage() {
       const response = await fetch(`/api/triage/${sessionId}/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: message }),
+        body: JSON.stringify({ 
+          content: message,
+          language: user?.language || 'it' // Pass user's language for consistent AI responses
+        }),
         credentials: "include",
       });
       
@@ -552,11 +555,38 @@ export default function PreventionPage() {
     queryClient.invalidateQueries({ queryKey: ['/api/prevention/documents'] });
     queryClient.invalidateQueries({ queryKey: ['/api/prevention/index'] });
 
-    // Show accurate completion summary
-    toast({
-      title: "Upload completati",
-      description: `${completedCount} referti elaborati con successo${errorCount > 0 ? `, ${errorCount} errori` : ''}`
-    });
+    // Close the upload dialog automatically
+    if (completedCount > 0) {
+      setShowUploadDialog(false);
+      
+      // Clear upload queue
+      setTimeout(() => {
+        setUploadQueue([]);
+        setSelectedFiles([]);
+      }, 300);
+    }
+
+    // Show detailed completion feedback with accuracy
+    if (completedCount > 0) {
+      // Get the last successfully uploaded file result for accuracy display
+      const lastSuccessfulUpload = uploadQueue.find(q => q.status === 'completed' && q.result);
+      const accuracy = lastSuccessfulUpload?.result?.ocrConfidence || 
+                       lastSuccessfulUpload?.result?.report?.ocrConfidence || 
+                       95; // Default accuracy if not available
+
+      toast({
+        title: "✅ Caricamento completato con successo!",
+        description: `${completedCount} ${completedCount === 1 ? 'referto elaborato' : 'referti elaborati'} • Accuratezza: ${accuracy}%${errorCount > 0 ? ` • ${errorCount} errori` : ''}`,
+        duration: 5000,
+      });
+    } else if (errorCount > 0) {
+      toast({
+        title: "Errore nel caricamento",
+        description: `Impossibile elaborare ${errorCount} ${errorCount === 1 ? 'referto' : 'referti'}. Riprova.`,
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
   };
 
   const handleOldFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -359,7 +359,8 @@ export async function generateTriageResponse(
   documentContext?: string,
   userName?: string,
   scientificContext?: string,
-  userRole?: 'patient' | 'doctor'
+  userRole?: 'patient' | 'doctor',
+  language?: string
 ): Promise<TriageResponse> {
   try {
     const contextInfo = documentContext 
@@ -426,7 +427,7 @@ MEDICAL REPORTS FOR PERSONALIZATION:
 - Use reports to tailor prevention education to their specific health profile
 
 LANGUAGE & TONE:
-- Use Italian naturally and conversationally
+- Respond in ${language === 'en' ? 'English' : language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : 'Italian'} naturally and conversationally
 - Be motivating and positive about prevention benefits
 - Avoid medical jargon - explain in simple terms
 - Celebrate small steps toward healthier habits
@@ -434,7 +435,7 @@ LANGUAGE & TONE:
 
 Respond with JSON in this exact format:
 {
-  "message": "your educational response in Italian, teaching prevention strategies",
+  "message": "your educational response in ${language === 'en' ? 'English' : language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : 'Italian'}, teaching prevention strategies",
   "isSensitive": boolean (mental health, chronic conditions, or private topics),
   "suggestDoctor": boolean (if immediate medical attention recommended),
   "urgencyLevel": "low" | "medium" | "high" | "emergency",

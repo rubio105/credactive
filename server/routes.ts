@@ -318,8 +318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateOfBirth,
         gender,
         phone,
-        profession,
-        education,
+        profession, // Deprecated - kept for backward compatibility
+        education, // Deprecated - kept for backward compatibility
+        specialization, // New field
         company,
         addressStreet,
         addressCity,
@@ -331,9 +332,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newsletterConsent
       } = req.body;
 
-      // Validate required fields
+      // Validate required fields (profession/education no longer required)
       if (!email || !password || !firstName || !lastName || !dateOfBirth || 
-          !gender || !profession || !education || !addressStreet || 
+          !gender || !addressStreet || 
           !addressCity || !addressPostalCode || !addressProvince || !addressCountry) {
         return res.status(400).json({ message: "Tutti i campi obbligatori devono essere compilati" });
       }
@@ -389,8 +390,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dateOfBirth: new Date(dateOfBirth),
           gender,
           phone: phone || null,
-          profession,
-          education,
+          profession: profession || null, // Deprecated - optional for backward compatibility
+          education: education || null, // Deprecated - optional for backward compatibility
+          specialization: specialization || null, // New field
           company: company || null,
           addressStreet,
           addressCity,
@@ -7122,7 +7124,8 @@ Le risposte DEVONO essere in italiano.`;
         undefined, 
         user?.firstName,
         scientificContext,
-        session.userRole as 'patient' | 'doctor' // Pass user role to customize response style
+        session.userRole as 'patient' | 'doctor', // Pass user role to customize response style
+        language || 'it' // Pass user's language for consistent AI responses
       );
 
       // Save AI response
@@ -8284,69 +8287,23 @@ Format as JSON: {
         return res.status(403).json({ message: 'Access denied' });
       }
       
-      // If it's a PDF file, serve it directly
-      if (report.fileType === 'application/pdf' && report.filePath) {
-        const filePath = path.join(process.cwd(), 'public', report.filePath);
-        if (fs.existsSync(filePath)) {
-          res.setHeader('Content-Type', 'application/pdf');
-          res.setHeader('Content-Disposition', `attachment; filename="${report.fileName}"`);
-          return res.sendFile(filePath);
-        }
-      }
+      // Generate professional PDF using the new generator
+      const { generateMedicalReportPDF } = await import('./medicalReportPDFGenerator');
       
-      // Otherwise, generate a PDF from the report data
-      let PDFDocument;
-      try {
-        PDFDocument = (await import('pdfkit')).default;
-      } catch (error) {
-        console.error('PDFKit import failed:', error);
-        return res.status(500).json({ message: 'PDF generation not available' });
-      }
-
-      const doc = new PDFDocument();
+      const userName = user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}` 
+        : user.email;
+      
+      const doc = generateMedicalReportPDF({
+        report,
+        userName,
+        userLanguage: user.language || 'it',
+      });
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="referto-${report.id}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="referto-medico-${report.id}.pdf"`);
       
       doc.pipe(res);
-      
-      // PDF Header
-      doc.fontSize(20).text('Referto Medico', { align: 'center' });
-      doc.moveDown();
-      
-      // Report info
-      doc.fontSize(12).text(`Tipo: ${report.reportType}`);
-      doc.text(`Data caricamento: ${new Date(report.createdAt || new Date()).toLocaleDateString('it-IT')}`);
-      if (report.reportDate) {
-        doc.text(`Data referto: ${new Date(report.reportDate).toLocaleDateString('it-IT')}`);
-      }
-      doc.moveDown();
-      
-      // AI Summary
-      if (report.aiSummary) {
-        doc.fontSize(14).text('Riepilogo AI:', { underline: true });
-        doc.fontSize(10).text(report.aiSummary);
-        doc.moveDown();
-      }
-      
-      // Extracted Values
-      const values = report.extractedValues as Record<string, any> || {};
-      if (Object.keys(values).length > 0) {
-        doc.fontSize(14).text('Valori Rilevati:', { underline: true });
-        doc.fontSize(10);
-        Object.entries(values).forEach(([key, value]) => {
-          doc.text(`${key}: ${value}`);
-        });
-        doc.moveDown();
-      }
-      
-      // Anonymized Text
-      if (report.anonymizedText) {
-        doc.fontSize(14).text('Testo Referto (Anonimizzato):', { underline: true });
-        doc.fontSize(9).text(report.anonymizedText);
-      }
-      
-      // CRITICAL: Close the PDF document stream
       doc.end();
     } catch (error: any) {
       console.error('Download medical report PDF error:', error);

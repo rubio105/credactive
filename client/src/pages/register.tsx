@@ -26,8 +26,7 @@ export default function Register() {
     dateOfBirth: "",
     gender: "",
     phone: "",
-    profession: "",
-    education: "",
+    specialization: "", // Replaces profession/education
     company: "",
     addressStreet: "",
     addressCity: "",
@@ -126,7 +125,7 @@ export default function Register() {
       return;
     }
 
-    if (!formData.gender || !formData.profession || !formData.education || !formData.addressCountry) {
+    if (!formData.gender || !formData.addressCountry) {
       toast({
         title: "Selezioni mancanti",
         description: "Seleziona tutti i campi obbligatori dai menu a tendina",
@@ -143,8 +142,7 @@ export default function Register() {
       dateOfBirth: formData.dateOfBirth,
       gender: formData.gender,
       phone: formData.phone || null,
-      profession: formData.profession,
-      education: formData.education,
+      specialization: formData.specialization || null, // New field
       company: formData.company || null,
       addressStreet: formData.addressStreet,
       addressCity: formData.addressCity,
@@ -291,57 +289,35 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Dati Professionali */}
+            {/* Specializzazione (Opzionale) */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg border-b pb-2">Dati Professionali</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="profession">Professione *</Label>
-                  <Select
-                    value={formData.profession}
-                    onValueChange={(value) => setFormData({ ...formData, profession: value })}
-                    required
-                  >
-                    <SelectTrigger data-testid="select-profession">
-                      <SelectValue placeholder="Seleziona..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="it_security">IT Security Specialist</SelectItem>
-                      <SelectItem value="cybersecurity">Cybersecurity Analyst</SelectItem>
-                      <SelectItem value="compliance">Compliance Officer</SelectItem>
-                      <SelectItem value="risk_manager">Risk Manager</SelectItem>
-                      <SelectItem value="it_manager">IT Manager</SelectItem>
-                      <SelectItem value="consultant">Consulente</SelectItem>
-                      <SelectItem value="developer">Sviluppatore</SelectItem>
-                      <SelectItem value="system_admin">System Administrator</SelectItem>
-                      <SelectItem value="data_protection">Data Protection Officer</SelectItem>
-                      <SelectItem value="auditor">Auditor</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="student">Studente</SelectItem>
-                      <SelectItem value="other">Altro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="education">Livello di Istruzione *</Label>
-                  <Select
-                    value={formData.education}
-                    onValueChange={(value) => setFormData({ ...formData, education: value })}
-                    required
-                  >
-                    <SelectTrigger data-testid="select-education">
-                      <SelectValue placeholder="Seleziona..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="high_school">Diploma</SelectItem>
-                      <SelectItem value="bachelor">Laurea Triennale</SelectItem>
-                      <SelectItem value="master">Laurea Magistrale</SelectItem>
-                      <SelectItem value="phd">Dottorato</SelectItem>
-                      <SelectItem value="certification">Certificazioni Professionali</SelectItem>
-                      <SelectItem value="other">Altro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <h3 className="font-semibold text-lg border-b pb-2">Informazioni Aggiuntive (Opzionale)</h3>
+              <div className="space-y-2">
+                <Label htmlFor="specialization">Specializzazione</Label>
+                <Select
+                  value={formData.specialization}
+                  onValueChange={(value) => setFormData({ ...formData, specialization: value })}
+                >
+                  <SelectTrigger data-testid="select-specialization">
+                    <SelectValue placeholder="Seleziona la tua specializzazione (opzionale)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="medico_base">Medico di Base</SelectItem>
+                    <SelectItem value="cardiologo">Cardiologo</SelectItem>
+                    <SelectItem value="dermatologo">Dermatologo</SelectItem>
+                    <SelectItem value="pediatra">Pediatra</SelectItem>
+                    <SelectItem value="ginecologo">Ginecologo</SelectItem>
+                    <SelectItem value="ortopedico">Ortopedico</SelectItem>
+                    <SelectItem value="neurologo">Neurologo</SelectItem>
+                    <SelectItem value="psichiatra">Psichiatra</SelectItem>
+                    <SelectItem value="oculista">Oculista</SelectItem>
+                    <SelectItem value="otorinolaringoiatra">Otorinolaringoiatra</SelectItem>
+                    <SelectItem value="radiologo">Radiologo</SelectItem>
+                    <SelectItem value="oncologo">Oncologo</SelectItem>
+                    <SelectItem value="endocrinologo">Endocrinologo</SelectItem>
+                    <SelectItem value="altro">Altro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Azienda/Organizzazione</Label>

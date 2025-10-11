@@ -56,9 +56,10 @@ export const users = pgTable("users", {
   dateOfBirth: timestamp("date_of_birth"),
   gender: varchar("gender", { length: 50 }), // male, female, other, prefer_not_to_say
   phone: varchar("phone", { length: 50 }),
-  profession: varchar("profession", { length: 100 }),
-  education: varchar("education", { length: 100 }),
+  profession: varchar("profession", { length: 100 }), // Deprecated - kept for backward compatibility
+  education: varchar("education", { length: 100 }), // Deprecated - kept for backward compatibility
   company: varchar("company", { length: 200 }),
+  specialization: varchar("specialization", { length: 150 }), // Medical specialization (replaces profession/education)
   addressStreet: varchar("address_street", { length: 200 }),
   addressCity: varchar("address_city", { length: 100 }),
   addressPostalCode: varchar("address_postal_code", { length: 20 }),

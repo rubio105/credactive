@@ -16,7 +16,7 @@ export default function PacchettoProhmed() {
             <Card className="shadow-lg">
               <CardContent className="p-6 text-center">
                 <img 
-                  src="/images/prohmed-logo.png"
+                  src="/images/prohmed-logo.jpg"
                   alt="Prohmed - Medical Intelligence Prevention"
                   className="h-24 w-auto mx-auto mb-4"
                 />

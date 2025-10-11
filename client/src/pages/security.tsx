@@ -27,7 +27,7 @@ export default function Security() {
   const [showMfaSetup, setShowMfaSetup] = useState(false);
 
   // Query MFA status
-  const { data: mfaStatus } = useQuery({
+  const { data: mfaStatus } = useQuery<{ enabled: boolean }>({
     queryKey: ["/api/auth/mfa/status"],
     enabled: !!user,
   });

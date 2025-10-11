@@ -199,74 +199,74 @@ export async function sendWelcomeEmail(
         </div>
         <div class="content">
           <p style="font-size: 18px;">Ciao <strong>${name}</strong>,</p>
-          <p style="font-size: 16px;">Benvenuto nella piattaforma professionale per l'eccellenza nelle certificazioni!</p>
+          <p style="font-size: 16px;">Benvenuto in CIRY - la tua piattaforma di intelligenza artificiale per la prevenzione della salute!</p>
           
           <div class="stats">
             <div class="stat">
-              <div class="stat-number">2000+</div>
-              <div class="stat-label">Domande</div>
+              <div class="stat-number">24/7</div>
+              <div class="stat-label">AI Disponibile</div>
             </div>
             <div class="stat">
-              <div class="stat-number">10+</div>
-              <div class="stat-label">Categorie</div>
+              <div class="stat-number">100%</div>
+              <div class="stat-label">Privacy Garantita</div>
             </div>
             <div class="stat">
-              <div class="stat-number">4</div>
-              <div class="stat-label">Lingue</div>
+              <div class="stat-number">∞</div>
+              <div class="stat-label">Consulti AI</div>
             </div>
           </div>
 
-          <h3 style="color: #667eea; margin-top: 30px;">🚀 Cosa ti aspetta:</h3>
-          
-          <div class="feature">
-            <div class="feature-icon">🎯</div>
-            <div>
-              <strong>Quiz Professionali</strong><br>
-              <span style="color: #666; font-size: 14px;">Cybersecurity, Compliance, Business e Leadership</span>
-            </div>
-          </div>
-          
-          <div class="feature">
-            <div class="feature-icon">📊</div>
-            <div>
-              <strong>Report Dettagliati</strong><br>
-              <span style="color: #666; font-size: 14px;">Analisi approfondite delle tue performance</span>
-            </div>
-          </div>
-          
-          <div class="feature">
-            <div class="feature-icon">🌍</div>
-            <div>
-              <strong>Contenuti Multilingua</strong><br>
-              <span style="color: #666; font-size: 14px;">Italiano, Inglese, Spagnolo, Francese</span>
-            </div>
-          </div>
+          <h3 style="color: #10b981; margin-top: 30px;">🩺 La tua salute, sempre protetta:</h3>
           
           <div class="feature">
             <div class="feature-icon">🤖</div>
             <div>
-              <strong>AI-Powered</strong><br>
-              <span style="color: #666; font-size: 14px;">Domande generate con intelligenza artificiale avanzata</span>
+              <strong>AI Prevention Assistant</strong><br>
+              <span style="color: #666; font-size: 14px;">Conversazioni intelligenti per la prevenzione della salute</span>
             </div>
           </div>
           
           <div class="feature">
-            <div class="feature-icon">🎓</div>
+            <div class="feature-icon">📄</div>
             <div>
-              <strong>Corsi Esclusivi</strong><br>
-              <span style="color: #666; font-size: 14px;">On-demand e live con esperti del settore</span>
+              <strong>Analisi Documenti Medici</strong><br>
+              <span style="color: #666; font-size: 14px;">Carica referti ed esami per un'analisi AI completa</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🔒</div>
+            <div>
+              <strong>Privacy & Sicurezza</strong><br>
+              <span style="color: #666; font-size: 14px;">I tuoi dati sono anonimizzati e protetti (GDPR compliant)</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🏥</div>
+            <div>
+              <strong>Partnership Prohmed</strong><br>
+              <span style="color: #666; font-size: 14px;">Tecnologia medica certificata per la tua prevenzione</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">⚕️</div>
+            <div>
+              <strong>Supporto Medico Specializzato</strong><br>
+              <span style="color: #666; font-size: 14px;">Contatto diretto con team medico quando necessario</span>
             </div>
           </div>
 
           <p style="text-align: center; margin-top: 30px;">
-            <a href="${loginUrl}" class="button">🚀 Inizia il Tuo Percorso</a>
+            <a href="${loginUrl}" class="button">🩺 Inizia la Tua Prevenzione</a>
           </p>
 
-          <div style="background: linear-gradient(135deg, #f0f7ff 0%, #e8f0fe 100%); padding: 20px; border-radius: 8px; margin-top: 30px; text-align: center;">
-            <p style="margin: 0; font-size: 14px; color: #667eea;"><strong>💡 Consiglio:</strong> Inizia con un quiz di valutazione per scoprire il tuo livello!</p>
+          <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 20px; border-radius: 8px; margin-top: 30px; text-align: center;">
+            <p style="margin: 0; font-size: 14px; color: #10b981;"><strong>💡 Consiglio:</strong> Inizia con una conversazione AI per scoprire come prevenire i rischi per la tua salute!</p>
           </div>
 
-          <p style="margin-top: 30px;">Buono studio e buona preparazione!<br><strong>Il Team CIRY</strong></p>
+          <p style="margin-top: 30px;">La tua salute è la nostra priorità!<br><strong>Il Team CIRY & Prohmed</strong></p>
         </div>
         <div class="footer">
           <div class="footer-links">
@@ -290,19 +290,19 @@ CIRY - Benvenuto!
 
 Ciao ${rawName},
 
-Benvenuto nella piattaforma professionale per la preparazione alle certificazioni!
+Benvenuto in CIRY - la tua piattaforma di intelligenza artificiale per la prevenzione della salute!
 
 Con CIRY hai accesso a:
-- Quiz professionali su Cybersecurity, Compliance e Business
-- Report dettagliati con analisi delle performance
-- Contenuti multilingua (IT, EN, ES, FR)
-- Domande generate con AI di ultima generazione
-- Corsi on-demand e live per approfondire
+- AI Prevention Assistant - Conversazioni intelligenti 24/7
+- Analisi documenti medici con AI avanzata
+- Privacy e sicurezza GDPR compliant
+- Partnership Prohmed per tecnologia medica certificata
+- Supporto medico specializzato quando necessario
 
-Inizia ora: ${loginUrl}
+Inizia la tua prevenzione: ${loginUrl}
 
-Buono studio e buona preparazione!
-Il Team CIRY
+La tua salute è la nostra priorità!
+Il Team CIRY & Prohmed
   `;
 
   await sendEmail({

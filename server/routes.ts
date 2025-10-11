@@ -7104,14 +7104,22 @@ Le risposte DEVONO essere in italiano.`;
         // Continue without RAG if it fails
       }
 
-      // Get AI response (pass user's first name for personalization if available)
+      // Calculate user age from date of birth
+      const userAge = user?.dateOfBirth 
+        ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        : undefined;
+
+      // Get AI response (pass user's first name, age, and gender for personalization if available)
       const aiResponse = await generateTriageResponse(
         initialSymptom, 
         [], 
         undefined, 
         user?.firstName,
         scientificContext,
-        session.userRole as 'patient' | 'doctor' // Pass user role to customize response style
+        session.userRole as 'patient' | 'doctor', // Pass user role to customize response style
+        language || 'it',
+        userAge,
+        user?.gender
       );
 
       // Save AI response
@@ -7263,7 +7271,12 @@ Le risposte DEVONO essere in italiano.`;
         // Continue without RAG if it fails
       }
 
-      // Get AI response (pass user's first name for personalization if available)
+      // Calculate user age from date of birth
+      const userAge = user?.dateOfBirth 
+        ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        : undefined;
+
+      // Get AI response (pass user's first name, age, and gender for personalization if available)
       const aiResponse = await generateTriageResponse(
         content, 
         history, 
@@ -7271,7 +7284,9 @@ Le risposte DEVONO essere in italiano.`;
         user?.firstName,
         scientificContext,
         session.userRole as 'patient' | 'doctor', // Pass user role to customize response style
-        language || 'it' // Pass user's language for consistent AI responses
+        language || 'it', // Pass user's language for consistent AI responses
+        userAge,
+        user?.gender
       );
 
       // Save AI response

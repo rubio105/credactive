@@ -360,7 +360,9 @@ export async function generateTriageResponse(
   userName?: string,
   scientificContext?: string,
   userRole?: 'patient' | 'doctor',
-  language?: string
+  language?: string,
+  userAge?: number,
+  userGender?: string
 ): Promise<TriageResponse> {
   try {
     const contextInfo = documentContext 
@@ -374,6 +376,17 @@ export async function generateTriageResponse(
     const userGreeting = userName 
       ? `\n\nUSER CONTEXT: The user's name is ${userName}. When appropriate, address them by name to personalize the conversation (e.g., "Ciao ${userName}, capisco la tua preoccupazione...").`
       : "\n\nUSER CONTEXT: This is an anonymous user. Use general greetings without names.";
+
+    // Build demographic context for patients
+    const demographicContext = userRole !== 'doctor' && (userAge || userGender)
+      ? `\n\nPATIENT DEMOGRAPHICS:${userAge ? `\n- Age: ${userAge} years old` : ''}${userGender ? `\n- Gender: ${userGender}` : ''}
+IMPORTANT: Consider age and gender when:
+- Assessing risk factors (age-specific conditions, gender-specific health concerns)
+- Recommending screening schedules (mammography, prostate, colonoscopy based on age/gender)
+- Discussing prevention strategies (menopause, andropause, age-related concerns)
+- Evaluating symptoms (pediatric vs adult vs elderly considerations)
+- Providing personalized health education tailored to their demographic profile`
+      : '';
 
     const roleContext = userRole === 'doctor' 
       ? `\n\nUSER ROLE: This user is a MEDICAL PROFESSIONAL. Adapt your language:
@@ -447,7 +460,7 @@ Respond with JSON in this exact format:
   "urgencyLevel": "low" | "medium" | "high" | "emergency",
   "relatedTopics": ["prevention topic1", "prevention topic2", ...],
   "needsReportUpload": boolean (true if user wants to share medical reports for personalized learning)
-}${scientificInfo}${contextInfo}${userGreeting}${roleContext}`;
+}${scientificInfo}${contextInfo}${userGreeting}${demographicContext}${roleContext}`;
 
     // Build contents array with proper message structure
     const contents = conversationHistory.map(msg => ({

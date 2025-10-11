@@ -40,6 +40,8 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 *   **Medical Prevention System (Prohmed Partnership)**: Comprehensive health prevention module powered by Google Gemini AI, featuring medical document upload/analysis, an AI educational assistant ("AI Prohmed - Impara la Prevenzione"), and a medical alert system. Includes advanced UI for Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring. Enhanced with GDPR-compliant privacy disclaimers detailing anonymization algorithms, professional Prohmed branding on all reports, and role-based AI responses (doctor vs. patient) for personalized medical communication. Interactive radiological image viewer displays findings with visual markers on medical images.
     *   **Medical Report Popup Viewer**: Comprehensive dialog system (`MedicalReportViewerDialog`) displaying full medical report details with tabbed interface for radiological images (with markers), AI summary, and medical values. Supports PDF download on-demand and integrates seamlessly with `RadiologicalImageViewer` for imaging studies.
     *   **Recent Documents Home Display**: Home page shows 3 most recent medical documents with "View All" link to full repository in prevention section, providing quick access to latest health data without cluttering the interface.
+    *   **Demographic-Aware AI Responses**: AI system considers user's age (calculated from date of birth) and gender for personalized health recommendations. For patients (non-doctors), AI adapts screening schedules (mammography, prostate, colonoscopy), risk factor assessment, and prevention strategies based on demographic profile. Age-specific considerations include pediatric vs adult vs elderly evaluations, while gender-specific factors include menopause, andropause, and gender-related health concerns.
+    *   **Alert Follow-up System**: Intelligent medical alert tracking with user confirmation workflow. When AI detects concerning symptoms, system creates alerts with status tracking (pending → monitoring → user_resolved). Users receive contextual welcome messages asking about alert resolution. "Yes, resolved" closes the alert; "No" keeps it in monitoring status and prompts AI conversation. Alerts persist across sessions until user confirms resolution, with response history tracking (userResolved, userResolvedAt, followupResponse fields).
 *   **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI, integrated with quizzes, leaderboards, and daily generation limits.
 *   **Health Score System**: AI-powered personal health scoring based on medical report analysis (PDF and images), PII anonymization, and conversational AI.
 *   **Token Usage System**: Tiered monthly token limits for AI interactions with database tracking and UI indicators.
@@ -51,9 +53,9 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 
 ## Deployment Architecture
 
-The production environment runs on ciry.app using a Hetzner VPS with PM2. Development is on Replit. Version control is GitHub. The database is Neon PostgreSQL. Build systems are esbuild (backend) and Vite (frontend).
+The production environment runs on **ciry.app** using a Hetzner VPS with PM2 process manager. Version control is managed through GitHub. The database is Neon PostgreSQL (serverless). Build systems are esbuild (backend) and Vite (frontend).
 
-**Production Independence**: Platform uses BASE_URL environment variable for all URL construction (emails, OAuth callbacks, CORS), completely independent from Replit infrastructure. No Replit/GitHub references in production code paths.
+**Production Independence**: Platform uses BASE_URL environment variable for all URL construction (emails, OAuth callbacks, CORS), ensuring complete deployment flexibility across any hosting provider.
 
 # External Dependencies
 

@@ -1244,13 +1244,27 @@ export default function PreventionPage() {
               No, Continuiamo
             </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={() => {
+              onClick={async () => {
                 setShowMedicalContactDialog(false);
-                window.open('mailto:info@prohmed.it?subject=Richiesta Contatto Medico - CIRY AI&body=Richiedo di essere ricontattato dal team medico Prohmed per una consulenza.', '_blank');
-                toast({
-                  title: "Richiesta inviata",
-                  description: "Il team medico Prohmed ti contatterà a breve.",
-                });
+                try {
+                  const response = await apiRequest('/api/triage/request-medical-contact', 'POST', {});
+                  const data = await response.json();
+                  
+                  if (response.ok) {
+                    toast({
+                      title: "🎁 Email inviata!",
+                      description: `Abbiamo inviato un codice promozionale (${data.promoCode}) per un consulto gratuito con Prohmed.`,
+                    });
+                  } else {
+                    throw new Error(data.message);
+                  }
+                } catch (error: any) {
+                  toast({
+                    title: "Errore",
+                    description: error.message || "Impossibile inviare l'email",
+                    variant: "destructive"
+                  });
+                }
               }}
               className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
               data-testid="button-confirm-medical-contact"

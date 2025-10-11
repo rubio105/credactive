@@ -42,7 +42,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import { generateAssessmentPDFBuffer } from "./assessmentPDFGenerator";
@@ -7285,6 +7285,31 @@ Le risposte DEVONO essere in italiano.`;
     } catch (error: any) {
       console.error('Close triage session error:', error);
       res.status(500).json({ message: error.message || 'Failed to close session' });
+    }
+  });
+
+  // Request medical contact - Send Prohmed invite email (POST /api/triage/request-medical-contact)
+  app.post('/api/triage/request-medical-contact', async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (!user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Send Prohmed invite email with promo code
+      await sendProhmedInviteEmail(user.email, user.firstName);
+      
+      console.log(`[Medical Contact] Prohmed invite email sent to ${user.email}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Email inviata con successo',
+        promoCode: 'PROHMED2025'
+      });
+    } catch (error: any) {
+      console.error('Send medical contact email error:', error);
+      res.status(500).json({ message: error.message || 'Failed to send email' });
     }
   });
 

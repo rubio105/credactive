@@ -438,6 +438,150 @@ Il Team CIRY
   });
 }
 
+export async function sendProhmedInviteEmail(
+  email: string,
+  firstName?: string
+): Promise<void> {
+  const PROMO_CODE = "PROHMED2025"; // Codice uguale per tutti
+  const rawName = firstName || email.split('@')[0];
+  const name = sanitizeUserInput(rawName);
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #0066CC 0%, #0052A3 100%); color: white; padding: 40px 30px; text-align: center; }
+        .logo { width: 200px; height: 60px; margin-bottom: 20px; }
+        .content { background: white; padding: 40px 30px; }
+        .button { display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #0066CC 0%, #0052A3 100%); color: white !important; text-decoration: none; border-radius: 8px; margin: 25px 0; font-weight: 600; box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3); }
+        .promo-box { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #0066CC; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center; }
+        .promo-code { font-size: 36px; font-weight: bold; letter-spacing: 4px; color: #0066CC; font-family: 'Courier New', monospace; margin: 15px 0; }
+        .feature { margin: 15px 0; padding: 15px; background: #f8f9ff; border-radius: 8px; display: flex; align-items: center; }
+        .feature-icon { font-size: 24px; margin-right: 15px; }
+        .footer { background: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; }
+        h1 { margin: 0; font-size: 28px; font-weight: 700; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🏥 Benvenuto in Prohmed!</h1>
+        </div>
+        <div class="content">
+          <p style="font-size: 18px;">Ciao <strong>${name}</strong>,</p>
+          <p style="font-size: 16px;">L'AI di prevenzione CIRY suggerisce di consultare un medico specialista.</p>
+          
+          <p style="font-size: 16px; margin-top: 25px;"><strong>Hai un regalo esclusivo!</strong></p>
+
+          <div class="promo-box">
+            <p style="font-size: 16px; margin: 0;"><strong>🎁 PRIMO CONSULTO GRATUITO</strong></p>
+            <p style="font-size: 14px; color: #0066CC; margin: 10px 0;">Scarica l'App Prohmed e usa questo codice:</p>
+            <div class="promo-code">${PROMO_CODE}</div>
+            <p style="font-size: 12px; color: #666; margin: 10px 0;">Codice valido per un consulto specialistico gratuito</p>
+          </div>
+
+          <h3 style="color: #0066CC; margin-top: 30px;">🏥 Cosa include:</h3>
+          
+          <div class="feature">
+            <div class="feature-icon">👨‍⚕️</div>
+            <div>
+              <strong>Consulto Specialistico</strong><br>
+              <span style="color: #666; font-size: 14px;">Parla direttamente con un medico esperto</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">📱</div>
+            <div>
+              <strong>Telemedicina 24/7</strong><br>
+              <span style="color: #666; font-size: 14px;">Accedi ai servizi quando ne hai bisogno</span>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🔒</div>
+            <div>
+              <strong>Privacy Garantita</strong><br>
+              <span style="color: #666; font-size: 14px;">Dati protetti e comunicazioni sicure</span>
+            </div>
+          </div>
+
+          <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-top: 30px; border-left: 4px solid #4caf50;">
+            <p style="margin: 0; font-size: 16px;"><strong>📲 Come iniziare:</strong></p>
+            <ol style="margin: 15px 0; padding-left: 20px; font-size: 14px;">
+              <li>Scarica l'App <strong>Prohmed</strong> da App Store o Google Play</li>
+              <li>Registrati con questa email: <strong>${sanitizeUserInput(email)}</strong></li>
+              <li>Inserisci il codice <strong>${PROMO_CODE}</strong></li>
+              <li>Richiedi il tuo primo consulto gratuito!</li>
+            </ol>
+          </div>
+
+          <p style="text-align: center; margin-top: 30px;">
+            <a href="https://prohmed.it/app" class="button">📱 Scarica l'App Prohmed</a>
+          </p>
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            Il team medico Prohmed è pronto ad aiutarti con professionisti qualificati e certificati.
+          </p>
+
+          <p style="margin-top: 30px;">Con attenzione alla tua salute,<br><strong>Il Team Prohmed & CIRY</strong></p>
+        </div>
+        <div class="footer">
+          <p style="color: #999; font-size: 12px; margin: 15px 0;">
+            © ${new Date().getFullYear()} Prohmed. Tutti i diritti riservati.
+          </p>
+          <p style="color: #999; font-size: 11px;">
+            Questa email è stata inviata a ${sanitizeUserInput(email)}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+Prohmed - Primo Consulto Gratuito
+
+Ciao ${rawName},
+
+L'AI di prevenzione CIRY suggerisce di consultare un medico specialista.
+
+🎁 HAI UN REGALO ESCLUSIVO!
+
+PRIMO CONSULTO GRATUITO
+Codice: ${PROMO_CODE}
+
+📱 Come iniziare:
+1. Scarica l'App Prohmed da App Store o Google Play
+2. Registrati con questa email: ${email}
+3. Inserisci il codice ${PROMO_CODE}
+4. Richiedi il tuo primo consulto gratuito!
+
+Cosa include:
+- Consulto con medico specialista
+- Telemedicina 24/7
+- Privacy garantita
+
+Scarica l'app: https://prohmed.it/app
+
+Con attenzione alla tua salute,
+Il Team Prohmed & CIRY
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: "🏥 Il tuo Primo Consulto Gratuito con Prohmed - Codice PROHMED2025",
+    htmlContent,
+    textContent,
+    senderName: "Prohmed & CIRY"
+  });
+}
+
 export async function sendPasswordResetEmail(
   email: string,
   resetToken: string

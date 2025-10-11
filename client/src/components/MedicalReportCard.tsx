@@ -120,13 +120,8 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow border-l-4 border-l-blue-500 dark:border-l-blue-400" data-testid={`medical-report-${report.id}`}>
-      {/* Prohmed Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-3 flex items-center justify-between">
-        <img 
-          src="/images/prohmed-logo.jpg" 
-          alt="Prohmed" 
-          className="h-8 object-contain bg-white rounded px-2"
-        />
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-3 flex items-center justify-center">
         <span className="text-white text-sm font-medium">Referto Medico</span>
       </div>
       

@@ -64,6 +64,7 @@ export function setupGoogleAuth(app: Express) {
               authProvider: "google",
               isPremium: false,
               isAdmin: false,
+              aiOnlyAccess: true, // All new users are AI-only by default
             });
           } else if (user.authProvider !== "google") {
             user = await storage.updateUser(user.id, {

@@ -406,6 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isPremium,
           companyName,
           corporateAgreementId,
+          aiOnlyAccess: true, // All new users are AI-only by default
         });
       } catch (error) {
         // If user creation failed but we reserved a slot, release it

@@ -731,7 +731,7 @@ export async function sendBadgeEarnedEmail(
         </div>
         <div class="footer">
           <div class="footer-links">
-            <a href="mailto:support@credactive.com">Supporto</a> |
+            <a href="mailto:support@ciry.app">Supporto</a> |
             <a href="${baseUrl}/dashboard">Dashboard</a> |
             <a href="${baseUrl}/certificates">Certificati</a>
           </div>
@@ -844,7 +844,7 @@ export async function sendLevelUpEmail(
         </div>
         <div class="footer">
           <div class="footer-links">
-            <a href="mailto:support@credactive.com">Supporto</a> |
+            <a href="mailto:support@ciry.app">Supporto</a> |
             <a href="${baseUrl}/dashboard">Dashboard</a> |
             <a href="${baseUrl}/leaderboard">Classifica</a>
           </div>
@@ -957,7 +957,7 @@ export async function sendCertificateEarnedEmail(
         </div>
         <div class="footer">
           <div class="footer-links">
-            <a href="mailto:support@credactive.com">Supporto</a> |
+            <a href="mailto:support@ciry.app">Supporto</a> |
             <a href="${baseUrl}/certificates">Certificati</a> |
             <a href="${baseUrl}/dashboard">Dashboard</a>
           </div>

@@ -74,6 +74,9 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   aiOnlyAccess: boolean("ai_only_access").default(false), // User can access ONLY AI prevention, not quiz/courses
   language: varchar("language", { length: 2 }), // it, en, es, fr
+  // MFA (Multi-Factor Authentication) fields
+  mfaEnabled: boolean("mfa_enabled").default(false),
+  mfaSecret: varchar("mfa_secret", { length: 255 }), // Base32 encoded secret for TOTP
   // Gamification fields
   nickname: varchar("nickname", { length: 50 }), // Display name for leaderboards
   totalPoints: integer("total_points").default(0),

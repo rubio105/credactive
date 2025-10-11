@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield } from "lucide-react";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
 
@@ -342,6 +342,13 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         </Link>
                       </>
                     )}
+                    <DropdownMenuSeparator />
+                    <Link href="/security">
+                      <DropdownMenuItem data-testid="menu-security">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Sicurezza
+                      </DropdownMenuItem>
+                    </Link>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
                       <LogOut className="w-4 h-4 mr-2" />

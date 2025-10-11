@@ -591,6 +591,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // MFA endpoints
+  const speakeasy = require('speakeasy');
+  const QRCode = require('qrcode');
+
+  // Get MFA status
+  app.get('/api/auth/mfa/status', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      res.json({ enabled: user.mfaEnabled || false });
+    } catch (error: any) {
+      console.error('MFA status error:', error);
+      res.status(500).json({ message: "Errore durante il recupero dello stato MFA" });
+    }
+  });
+
+  // Enable MFA
+  app.post('/api/auth/mfa/enable', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      // Generate secret
+      const secret = speakeasy.generateSecret({
+        name: `CIRY (${user.email})`,
+        length: 20,
+      });
+
+      // Generate QR code
+      const qrCodeDataUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+      // Save secret (but don't enable MFA yet - wait for verification)
+      await storage.updateUser(user.id, {
+        mfaSecret: secret.base32,
+      });
+
+      // Update session with new secret
+      (req.user as any).mfaSecret = secret.base32;
+
+      res.json({
+        secret: secret.base32,
+        qrCode: qrCodeDataUrl,
+      });
+    } catch (error: any) {
+      console.error('MFA enable error:', error);
+      res.status(500).json({ message: "Errore durante l'attivazione MFA" });
+    }
+  });
+
+  // Verify and complete MFA setup
+  app.post('/api/auth/mfa/verify', isAuthenticated, async (req, res) => {
+    try {
+      const sessionUser = req.user as any;
+      const { code } = req.body;
+
+      if (!code) {
+        return res.status(400).json({ message: "Codice richiesto" });
+      }
+
+      // Fetch fresh user data from database to ensure we have the latest secret
+      const user = await storage.getUserById(sessionUser.id);
+      if (!user) {
+        return res.status(404).json({ message: "Utente non trovato" });
+      }
+
+      if (!user.mfaSecret) {
+        return res.status(400).json({ message: "MFA non configurato. Abilita prima MFA." });
+      }
+
+      // Verify code
+      const verified = speakeasy.totp.verify({
+        secret: user.mfaSecret,
+        encoding: 'base32',
+        token: code,
+        window: 2, // Allow 2-step time window for clock skew
+      });
+
+      if (!verified) {
+        return res.status(400).json({ message: "Codice non valido" });
+      }
+
+      // Enable MFA
+      await storage.updateUser(user.id, {
+        mfaEnabled: true,
+      });
+
+      // Update session
+      (req.user as any).mfaEnabled = true;
+
+      res.json({ message: "MFA attivato con successo" });
+    } catch (error: any) {
+      console.error('MFA verify error:', error);
+      res.status(500).json({ message: "Errore durante la verifica MFA" });
+    }
+  });
+
+  // Disable MFA
+  app.post('/api/auth/mfa/disable', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      await storage.updateUser(user.id, {
+        mfaEnabled: false,
+        mfaSecret: null,
+      });
+
+      res.json({ message: "MFA disattivato" });
+    } catch (error: any) {
+      console.error('MFA disable error:', error);
+      res.status(500).json({ message: "Errore durante la disattivazione MFA" });
+    }
+  });
+
+  // Change password
+  app.post('/api/auth/change-password', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Password attuale e nuova password richieste" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "La nuova password deve avere almeno 8 caratteri" });
+      }
+
+      // Verify current password
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Password attuale non corretta" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await storage.updateUser(user.id, {
+        password: hashedPassword,
+      });
+
+      res.json({ message: "Password modificata con successo" });
+    } catch (error: any) {
+      console.error('Change password error:', error);
+      res.status(500).json({ message: "Errore durante il cambio password" });
+    }
+  });
+
   // Test-only authentication endpoint (only available in development and test)
   if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     app.post('/api/auth/test-login', async (req, res) => {

@@ -57,6 +57,13 @@ interface TriageSession {
   hasAlert: boolean;
 }
 
+interface TriageAlert {
+  id: string;
+  reason: string;
+  urgencyLevel: 'low' | 'medium' | 'high' | 'emergency';
+  status: 'pending' | 'monitoring' | 'user_resolved';
+}
+
 interface LatestAssessment {
   id: string;
   status: string;
@@ -184,6 +191,12 @@ export default function PreventionPage() {
 
   const { data: tokenUsage } = useQuery<TokenUsageData>({
     queryKey: ["/api/user/token-usage"],
+    enabled: !!user,
+  });
+
+  // Query per alert pendente
+  const { data: pendingAlert } = useQuery<TriageAlert | null>({
+    queryKey: ["/api/triage/pending-alert"],
     enabled: !!user,
   });
 
@@ -356,6 +369,50 @@ export default function PreventionPage() {
       closeSessionMutation.mutate(sessionId);
     }
   };
+
+  // Mutation per risolvere l'alert (Sì, risolto)
+  const resolveAlertMutation = useMutation({
+    mutationFn: async ({ alertId, response }: { alertId: string; response: string }) => {
+      const res = await apiRequest("/api/triage/resolve-alert", "POST", { alertId, response });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      toast({
+        title: "Ottimo!",
+        description: "Siamo felici che il problema sia risolto. C'è qualcos'altro con cui possiamo aiutarti?"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Impossibile aggiornare lo stato",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Mutation per mettere in monitoring l'alert (No, non risolto)
+  const monitorAlertMutation = useMutation({
+    mutationFn: async ({ alertId, response }: { alertId: string; response: string }) => {
+      const res = await apiRequest("/api/triage/monitor-alert", "POST", { alertId, response });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      toast({
+        title: "Registrato",
+        description: "Capisco, ti aiutiamo a gestire la situazione"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Impossibile aggiornare lo stato",
+        variant: "destructive"
+      });
+    },
+  });
 
   // Generate Prevention Path Mutation
   const generatePreventionPathMutation = useMutation({
@@ -1085,6 +1142,63 @@ export default function PreventionPage() {
               <CardContent className="space-y-4">
                 {!sessionId ? (
                   <div className="space-y-4">
+                    {/* Alert Follow-up personalizzato */}
+                    {pendingAlert && (
+                      <Alert className={`border-2 ${
+                        pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
+                          ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700' 
+                          : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700'
+                      }`} data-testid="alert-followup">
+                        <AlertDescription className="space-y-3">
+                          <p className="font-semibold text-base">
+                            👋 Ciao {user?.firstName || 'utente'}, come va oggi?
+                          </p>
+                          <p className="text-sm">
+                            {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
+                              ? `Hai risolto il problema che avevamo rilevato? (${pendingAlert.reason})`
+                              : `Hai risolto la situazione che avevamo segnalato? (${pendingAlert.reason})`
+                            }
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => resolveAlertMutation.mutate({ 
+                                alertId: pendingAlert.id, 
+                                response: "Sì, risolto" 
+                              })}
+                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              data-testid="button-resolve-yes"
+                            >
+                              ✓ Sì, risolto
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                monitorAlertMutation.mutate({ 
+                                  alertId: pendingAlert.id, 
+                                  response: "No, non ancora risolto" 
+                                });
+                                // Start a conversation about the unresolved issue
+                                setTimeout(() => {
+                                  const followupMessage = pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency'
+                                    ? `Il problema di ${pendingAlert.reason} non è ancora risolto. Hai consultato un medico?`
+                                    : `La situazione di ${pendingAlert.reason} non è ancora risolta. Come posso aiutarti?`;
+                                  setUserInput(followupMessage);
+                                }, 500);
+                              }}
+                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
+                              className="border-gray-400 dark:border-gray-600"
+                              data-testid="button-resolve-no"
+                            >
+                              ✗ No
+                            </Button>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
                     <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
                       <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
                         💡 Come funziona l'educazione alla prevenzione?

@@ -1520,7 +1520,7 @@ ${JSON.stringify(questionsToTranslate)}`;
   // Admin - Create user
   app.post('/api/admin/users', isAdmin, async (req, res) => {
     try {
-      const { email, password, firstName, lastName, isPremium, isAdmin: isUserAdmin } = req.body;
+      const { email, password, firstName, lastName, isPremium, isAdmin: isUserAdmin, aiOnlyAccess } = req.body;
 
       // Validate required fields
       if (!email || !password) {
@@ -1544,6 +1544,7 @@ ${JSON.stringify(questionsToTranslate)}`;
         lastName: lastName || '',
         isPremium: isPremium || false,
         isAdmin: isUserAdmin || false,
+        aiOnlyAccess: aiOnlyAccess || false,
         emailVerified: true, // Admin-created users are automatically verified
       });
 

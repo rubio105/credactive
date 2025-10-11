@@ -36,12 +36,17 @@ export default function Login() {
         throw new Error(errorMessage);
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Accesso effettuato",
         description: "Benvenuto su CIRY!",
       });
-      window.location.href = "/";
+      // Redirect users with aiOnlyAccess directly to prevention page
+      if (data?.aiOnlyAccess) {
+        window.location.href = "/prevention";
+      } else {
+        window.location.href = "/";
+      }
     },
     onError: (error: any) => {
       toast({

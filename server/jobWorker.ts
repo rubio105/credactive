@@ -117,6 +117,7 @@ export class JobWorker {
       extractedValues: ocrResult.extractedValues,
       radiologicalAnalysis: radiologicalAnalysis || undefined,
       aiSummary: ocrResult.summary,
+      aiAnalysis: ocrResult.aiAnalysis || undefined,
       issuer: ocrResult.issuer || null,
       reportDate: ocrResult.reportDate ? new Date(ocrResult.reportDate) : null,
       isAnonymized: true,

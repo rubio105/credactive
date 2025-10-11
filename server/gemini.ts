@@ -599,7 +599,14 @@ export interface MedicalReportOCR {
   reportDate?: string; // ISO date string if detected
   extractedValues: Record<string, any>; // Medical values like {glucose: 95, cholesterol: 180}
   medicalKeywords: string[]; // Relevant keywords for search
-  summary: string; // Brief AI summary
+  summary: string; // Brief AI summary (legacy, kept for backward compatibility)
+  aiAnalysis?: {
+    patientSummary: string; // Spiegazione semplice e comprensibile per pazienti
+    doctorSummary: string; // Terminologia medica professionale per medici
+    diagnosis: string; // Diagnosi o interpretazione clinica
+    prevention: string; // Consigli di prevenzione e follow-up
+    severity: "normal" | "moderate" | "urgent"; // Livello di gravità
+  };
   confidence: number; // 0-100 OCR confidence
 }
 
@@ -682,6 +689,31 @@ Estrai le seguenti informazioni (TUTTO IN ITALIANO):
    - Significato clinico generale in linguaggio comprensibile
 8. Confidenza OCR (0-100 basata sulla chiarezza del testo)
 
+9. **NUOVA SEZIONE - Analisi Differenziata per Ruolo**:
+   a) **Riepilogo per Paziente** (patientSummary): Spiegazione semplice e rassicurante in 4-6 frasi, usando linguaggio non tecnico. 
+      - Evita termini medici complessi
+      - Spiega cosa significa per la salute in modo chiaro
+      - Usa analogie comprensibili se utile
+   
+   b) **Riepilogo per Medico** (doctorSummary): Analisi professionale in terminologia medica (4-6 frasi).
+      - Usa nomenclatura clinica precisa
+      - Include valori specifici e range di riferimento
+      - Menziona eventuali diagnosi differenziali se rilevante
+   
+   c) **Diagnosi** (diagnosis): Interpretazione clinica principale basata sui dati (2-3 frasi).
+      - Indica cosa suggeriscono i risultati
+      - Segnala eventuali anomalie o pattern patologici
+   
+   d) **Prevenzione** (prevention): Consigli pratici di prevenzione e follow-up (3-5 punti).
+      - Suggerimenti per mantenere o migliorare la salute
+      - Frequenza controlli consigliata
+      - Eventuali accertamenti di approfondimento
+   
+   e) **Gravità** (severity): Valuta il livello di urgenza/preoccupazione:
+      - "normal": Valori nella norma, nessuna preoccupazione
+      - "moderate": Valori anomali che richiedono attenzione e monitoraggio
+      - "urgent": Valori critici che necessitano intervento medico immediato
+
 IMPORTANTE: Tutti i nomi dei parametri medici devono essere in ITALIANO, non in inglese.
 
 Rispondi con JSON in questo formato esatto:
@@ -692,7 +724,14 @@ Rispondi con JSON in questo formato esatto:
   "reportDate": "2024-03-15 o null",
   "extractedValues": {"glucosio": 95, "colesterolo totale": 180, "emoglobina": 14.5},
   "medicalKeywords": ["parola1", "parola2", ...],
-  "summary": "breve riassunto in italiano",
+  "summary": "breve riassunto in italiano (legacy)",
+  "aiAnalysis": {
+    "patientSummary": "Spiegazione semplice per il paziente...",
+    "doctorSummary": "Analisi medica professionale...",
+    "diagnosis": "Interpretazione clinica...",
+    "prevention": "Consigli di prevenzione...",
+    "severity": "normal|moderate|urgent"
+  },
   "confidence": 85
 }`;
 
@@ -720,6 +759,7 @@ Rispondi con JSON in questo formato esatto:
       extractedValues: analysis.extractedValues || {},
       medicalKeywords: analysis.medicalKeywords || [],
       summary: analysis.summary,
+      aiAnalysis: analysis.aiAnalysis || undefined,
       confidence: analysis.confidence || 70,
     };
 

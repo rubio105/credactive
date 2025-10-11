@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope } from "lucide-react";
 const logoImageSmall = "/images/ciry-logo.png";
 const logoImageFull = "/images/ciry-full-logo.png";
 
@@ -327,6 +327,17 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                           <DropdownMenuItem className="text-primary" data-testid="menu-upgrade">
                             <Crown className="w-4 h-4 mr-2" />
                             Upgrade to Premium
+                          </DropdownMenuItem>
+                        </Link>
+                      </>
+                    )}
+                    {typedUser?.aiOnlyAccess && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <Link href="/pacchetto-prohmed">
+                          <DropdownMenuItem className="text-green-600 dark:text-green-400 font-semibold" data-testid="menu-prohmed-package">
+                            <Stethoscope className="w-4 h-4 mr-2" />
+                            Pacchetto Prohmed 39€
                           </DropdownMenuItem>
                         </Link>
                       </>

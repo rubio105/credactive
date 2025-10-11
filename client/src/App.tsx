@@ -37,6 +37,7 @@ import Prevention from "@/pages/prevention";
 import WebinarHealth from "@/pages/webinar-health";
 import CrosswordPage from "@/pages/crossword";
 import PatientAI from "@/pages/patient-ai";
+import PacchettoProhmed from "@/pages/pacchetto-prohmed";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
@@ -82,6 +83,7 @@ function Router() {
       </Route>
       <Route path="/prevention" component={Prevention} />
       <Route path="/webinar-health" component={WebinarHealth} />
+      <Route path="/pacchetto-prohmed" component={PacchettoProhmed} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

@@ -690,7 +690,8 @@ export default function PreventionPage() {
               </CardContent>
             </Card>
 
-            {/* Token Usage & Upgrade */}
+            {/* Token Usage & Upgrade - Hidden for AI-only users */}
+            {!user?.aiOnlyAccess && (
             <Card className="shadow-lg border-orange-100 dark:border-orange-900">
               <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950">
                 <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
@@ -786,6 +787,7 @@ export default function PreventionPage() {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* App Prohmed */}
             <Card className="shadow-lg border-blue-100 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">

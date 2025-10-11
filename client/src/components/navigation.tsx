@@ -265,36 +265,40 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    <Link href="/dashboard">
-                      <DropdownMenuItem data-testid="menu-dashboard">
-                        <ChartLine className="w-4 h-4 mr-2" />
-                        Dashboard
-                      </DropdownMenuItem>
-                    </Link>
-                    <Link href="/">
-                      <DropdownMenuItem data-testid="menu-quizzes">
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        Quiz
-                      </DropdownMenuItem>
-                    </Link>
-                    <Link href="/leaderboard">
-                      <DropdownMenuItem data-testid="menu-leaderboard">
-                        <Trophy className="w-4 h-4 mr-2" />
-                        Classifica
-                      </DropdownMenuItem>
-                    </Link>
-                    <Link href="/certificates">
-                      <DropdownMenuItem data-testid="menu-certificates">
-                        <Award className="w-4 h-4 mr-2" />
-                        Certificati
-                      </DropdownMenuItem>
-                    </Link>
-                    <Link href="/analytics">
-                      <DropdownMenuItem data-testid="menu-analytics">
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        Analytics
-                      </DropdownMenuItem>
-                    </Link>
+                    {!typedUser?.aiOnlyAccess && (
+                      <>
+                        <Link href="/dashboard">
+                          <DropdownMenuItem data-testid="menu-dashboard">
+                            <ChartLine className="w-4 h-4 mr-2" />
+                            Dashboard
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/">
+                          <DropdownMenuItem data-testid="menu-quizzes">
+                            <BookOpen className="w-4 h-4 mr-2" />
+                            Quiz
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/leaderboard">
+                          <DropdownMenuItem data-testid="menu-leaderboard">
+                            <Trophy className="w-4 h-4 mr-2" />
+                            Classifica
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/certificates">
+                          <DropdownMenuItem data-testid="menu-certificates">
+                            <Award className="w-4 h-4 mr-2" />
+                            Certificati
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/analytics">
+                          <DropdownMenuItem data-testid="menu-analytics">
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            Analytics
+                          </DropdownMenuItem>
+                        </Link>
+                      </>
+                    )}
                     {typedUser?.corporateAgreementId && (
                       <>
                         <DropdownMenuSeparator />

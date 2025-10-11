@@ -182,8 +182,8 @@ export function MedicalReportViewerDialog({
             <TabsTrigger value="riepilogo" data-testid="tab-summary">
               Riepilogo
             </TabsTrigger>
-            <TabsTrigger value="diagnosi" data-testid="tab-diagnosis">
-              Diagnosi
+            <TabsTrigger value="panoramica" data-testid="tab-overview">
+              Panoramica
             </TabsTrigger>
             <TabsTrigger value="prevenzione" data-testid="tab-prevention">
               Prevenzione
@@ -260,13 +260,13 @@ export function MedicalReportViewerDialog({
             )}
           </TabsContent>
 
-          {/* Diagnosi Tab */}
-          <TabsContent value="diagnosi" className="mt-4" data-testid="content-diagnosis">
+          {/* Panoramica Tab */}
+          <TabsContent value="panoramica" className="mt-4" data-testid="content-overview">
             {report.aiAnalysis?.diagnosis ? (
               <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                 <p className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
                   <Stethoscope className="w-4 h-4" />
-                  Diagnosi
+                  Panoramica
                 </p>
                 <p className="text-sm text-purple-800 dark:text-purple-200 leading-relaxed whitespace-pre-wrap">
                   {report.aiAnalysis.diagnosis}
@@ -275,7 +275,7 @@ export function MedicalReportViewerDialog({
             ) : (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <Stethoscope className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Nessuna diagnosi disponibile</p>
+                <p>Nessuna panoramica disponibile</p>
               </div>
             )}
           </TabsContent>

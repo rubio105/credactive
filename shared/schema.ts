@@ -29,7 +29,7 @@ const vector = customType<{ data: number[]; driverData: string; config: { dimens
   },
 });
 
-// Session storage table for Replit Auth
+// Session storage table for OIDC authentication
 export const sessions = pgTable(
   "sessions",
   {

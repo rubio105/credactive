@@ -1640,7 +1640,8 @@ export const userHealthReports = pgTable("user_health_reports", {
   radiologicalAnalysis: jsonb("radiological_analysis"), // {imageType, bodyPart, findings[], overallAssessment, recommendations[], confidence}
   
   // Context and analysis
-  aiSummary: text("ai_summary"), // Brief summary by AI
+  aiSummary: text("ai_summary"), // Brief summary by AI (legacy, kept for backward compatibility)
+  aiAnalysis: jsonb("ai_analysis"), // Extended AI analysis: {patientSummary, doctorSummary, diagnosis, prevention, severity}
   healthImpact: varchar("health_impact", { length: 20 }), // positive, neutral, concerning, critical
   
   // Conversational context

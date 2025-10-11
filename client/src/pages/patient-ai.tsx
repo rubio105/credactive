@@ -415,22 +415,34 @@ export default function PatientAIPage() {
                       </ScrollArea>
 
                       {session?.status === 'active' && (
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Scrivi un messaggio..."
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                            className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
-                            data-testid="input-message"
-                          />
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Scrivi un messaggio..."
+                              value={userInput}
+                              onChange={(e) => setUserInput(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                              className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800"
+                              data-testid="input-message"
+                            />
+                            <Button
+                              onClick={handleSend}
+                              disabled={sendMessageMutation.isPending}
+                              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                              data-testid="button-send"
+                            >
+                              <Send className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          
                           <Button
-                            onClick={handleSend}
-                            disabled={sendMessageMutation.isPending}
-                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                            data-testid="button-send"
+                            onClick={() => setShowUploadDialog(true)}
+                            variant="outline"
+                            className="w-full border-emerald-200 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300"
+                            data-testid="button-upload-report-chat"
                           >
-                            <Send className="w-4 h-4" />
+                            <FileText className="w-4 h-4 mr-2" />
+                            Carica Referto/Analisi
                           </Button>
                         </div>
                       )}

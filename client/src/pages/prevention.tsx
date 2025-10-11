@@ -1110,34 +1110,46 @@ export default function PreventionPage() {
                     </ScrollArea>
 
                     {session?.status === 'active' && (
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Input
-                            placeholder="Scrivi un messaggio..."
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                            className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800 pr-12"
-                            data-testid="input-triage-message"
-                          />
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              placeholder="Scrivi un messaggio..."
+                              value={userInput}
+                              onChange={(e) => setUserInput(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                              className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800 pr-12"
+                              data-testid="input-triage-message"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={toggleVoiceInput}
+                              className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}
+                              data-testid="button-voice-input-message"
+                            >
+                              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                            </Button>
+                          </div>
                           <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={toggleVoiceInput}
-                            className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}
-                            data-testid="button-voice-input-message"
+                            onClick={handleSend}
+                            disabled={sendMessageMutation.isPending}
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
+                            data-testid="button-send-message"
                           >
-                            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                            <Send className="w-4 h-4" />
                           </Button>
                         </div>
+                        
                         <Button
-                          onClick={handleSend}
-                          disabled={sendMessageMutation.isPending}
-                          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
-                          data-testid="button-send-message"
+                          onClick={() => setShowUploadDialog(true)}
+                          variant="outline"
+                          className="w-full border-emerald-200 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300"
+                          data-testid="button-upload-report-chat"
                         >
-                          <Send className="w-4 h-4" />
+                          <FileText className="w-4 h-4 mr-2" />
+                          Carica Referto/Analisi
                         </Button>
                       </div>
                     )}

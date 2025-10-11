@@ -11,9 +11,23 @@ import {
   uuid,
   serial,
   unique,
+  customType,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Custom type for pgvector embeddings
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType(config) {
+    return `vector(${config?.dimensions ?? 768})`;
+  },
+  toDriver(value: number[]): string {
+    return JSON.stringify(value);
+  },
+  fromDriver(value: string): number[] {
+    return JSON.parse(value);
+  },
+});
 
 // Session storage table for Replit Auth
 export const sessions = pgTable(
@@ -1776,6 +1790,79 @@ export const insertJobQueueSchema = createInsertSchema(jobQueue).omit({
   updatedAt: true,
 });
 export type InsertJobQueue = z.infer<typeof insertJobQueueSchema>;
+
+// Medical Knowledge Base (RAG - Scientific Documents)
+export const medicalKnowledgeBase = pgTable("medical_knowledge_base", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Document metadata
+  title: varchar("title", { length: 500 }).notNull(),
+  documentType: varchar("document_type", { length: 50 }).notNull(), // guideline, study, protocol, article, review
+  source: varchar("source", { length: 300 }), // Publisher, journal, institution
+  authors: text("authors"), // Comma-separated or JSON
+  publicationDate: timestamp("publication_date"),
+  doi: varchar("doi", { length: 200 }), // Digital Object Identifier
+  url: text("url"), // External link to full document
+  
+  // Content
+  abstract: text("abstract"), // Summary/abstract
+  fullContent: text("full_content"), // Full text content (if available)
+  fileUrl: varchar("file_url", { length: 500 }), // S3/storage path to PDF
+  
+  // Classification
+  medicalTopics: text("medical_topics").array(), // ["cardiology", "diabetes", "prevention"]
+  keywords: text("keywords").array(), // Searchable keywords
+  language: varchar("language", { length: 2 }).default("it"), // it, en, es
+  
+  // Metadata
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  isActive: boolean("is_active").default(true), // Admin can deactivate
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_medical_kb_topics").on(table.medicalTopics),
+  index("idx_medical_kb_type").on(table.documentType),
+  index("idx_medical_kb_active").on(table.isActive),
+]);
+
+export type MedicalKnowledgeBase = typeof medicalKnowledgeBase.$inferSelect;
+export const insertMedicalKnowledgeBaseSchema = createInsertSchema(medicalKnowledgeBase).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMedicalKnowledgeBase = z.infer<typeof insertMedicalKnowledgeBaseSchema>;
+
+// Medical Knowledge Chunks (for semantic search with vector embeddings)
+export const medicalKnowledgeChunks = pgTable("medical_knowledge_chunks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Parent document reference
+  documentId: uuid("document_id").notNull().references(() => medicalKnowledgeBase.id, { onDelete: "cascade" }),
+  
+  // Chunk data
+  chunkIndex: integer("chunk_index").notNull(), // Order in document (0, 1, 2...)
+  content: text("content").notNull(), // Text chunk (~500-1000 tokens)
+  
+  // Vector embedding for similarity search (using pgvector)
+  embedding: vector("embedding", { dimensions: 768 }), // Gemini text-embedding-004 produces 768-dim vectors
+  
+  // Metadata for retrieval
+  tokenCount: integer("token_count"), // Approximate token count
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_chunk_document").on(table.documentId),
+  // Note: Vector similarity index (HNSW) will be created via SQL migration after push
+]);
+
+export type MedicalKnowledgeChunk = typeof medicalKnowledgeChunks.$inferSelect;
+export const insertMedicalKnowledgeChunkSchema = createInsertSchema(medicalKnowledgeChunks).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMedicalKnowledgeChunk = z.infer<typeof insertMedicalKnowledgeChunkSchema>;
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

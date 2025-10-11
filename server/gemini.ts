@@ -951,3 +951,61 @@ If no additional PII found beyond regex patterns, return empty piiItems array.`;
     throw new Error(`Failed to anonymize medical text: ${error}`);
   }
 }
+
+/**
+ * Generate text embeddings using Gemini Embeddings API
+ */
+export async function generateEmbedding(text: string): Promise<number[]> {
+  try {
+    const response = await ai.models.embedContent({
+      model: "text-embedding-004",
+      contents: [{ role: "user", parts: [{ text }] }],
+    });
+
+    if (!response.embeddings || response.embeddings.length === 0 || !response.embeddings[0].values) {
+      throw new Error("No embedding returned from Gemini");
+    }
+
+    console.log("[Gemini] Generated embedding:", response.embeddings[0].values.length, "dimensions");
+    return response.embeddings[0].values;
+  } catch (error) {
+    console.error("[Gemini] Failed to generate embedding:", error);
+    throw new Error(`Failed to generate embedding: ${error}`);
+  }
+}
+
+/**
+ * Chunk text into smaller pieces for embedding (overlap strategy for context preservation)
+ */
+export interface TextChunk {
+  content: string;
+  index: number;
+  tokenCount: number;
+}
+
+export function chunkText(text: string, maxTokens: number = 500, overlapTokens: number = 50): TextChunk[] {
+  // Simple word-based chunking (1 token ≈ 0.75 words as rough estimate)
+  const wordsPerChunk = Math.floor(maxTokens * 0.75);
+  const overlapWords = Math.floor(overlapTokens * 0.75);
+  
+  const words = text.split(/\s+/);
+  const chunks: TextChunk[] = [];
+  let index = 0;
+  
+  for (let i = 0; i < words.length; i += wordsPerChunk - overlapWords) {
+    const chunkWords = words.slice(i, i + wordsPerChunk);
+    const content = chunkWords.join(' ');
+    
+    if (content.trim().length > 0) {
+      chunks.push({
+        content,
+        index,
+        tokenCount: Math.ceil(chunkWords.length / 0.75), // Rough token estimate
+      });
+      index++;
+    }
+  }
+  
+  console.log(`[Gemini] Chunked text into ${chunks.length} chunks (max ${maxTokens} tokens, overlap ${overlapTokens})`);
+  return chunks;
+}

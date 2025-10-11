@@ -16,9 +16,9 @@ export default function PacchettoProhmed() {
             <Card className="shadow-lg">
               <CardContent className="p-6 text-center">
                 <img 
-                  src="https://www.prohmed.it/wp-content/uploads/2024/02/logo-prohmed.png"
-                  alt="Prohmed"
-                  className="h-20 w-auto mx-auto mb-4"
+                  src="/images/prohmed-logo.png"
+                  alt="Prohmed - Medical Intelligence Prevention"
+                  className="h-24 w-auto mx-auto mb-4"
                 />
                 <h2 className="text-2xl font-bold text-green-900 dark:text-green-100 mb-2">
                   Pacchetto Prohmed

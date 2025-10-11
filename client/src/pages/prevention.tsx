@@ -16,7 +16,6 @@ import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import Navigation from "@/components/navigation";
 const ciryMainLogo = "/images/ciry-main-logo.png";
-const prohmedLogo = "/images/ciry-logo.png";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -839,7 +838,7 @@ export default function PreventionPage() {
             <Card className="shadow-lg border-blue-100 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
               <CardHeader>
                 <div className="flex items-center gap-3 mb-2">
-                  <img src={prohmedLogo} alt="Prohmed" className="w-12 h-12 object-contain" />
+                  <img src="/images/prohmed-logo.png" alt="Prohmed - Medical Intelligence Prevention" className="w-16 h-16 object-contain" />
                   <div>
                     <CardTitle className="text-blue-900 dark:text-blue-100 text-lg">Prohmed App</CardTitle>
                     <CardDescription className="text-blue-700 dark:text-blue-300">Telemedicina sempre con te</CardDescription>

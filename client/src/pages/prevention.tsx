@@ -1089,30 +1089,61 @@ export default function PreventionPage() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Esempi di casi pratici:</p>
                       <div className="grid grid-cols-1 gap-2">
-                        <Button 
-                          variant="outline" 
-                          className="justify-start text-left h-auto py-2"
-                          onClick={() => setUserInput("Ho familiarità con il diabete, come posso prevenirlo?")}
-                          data-testid="button-example-diabetes"
-                        >
-                          <span className="text-xs">Ho familiarità con il diabete, come posso prevenirlo?</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="justify-start text-left h-auto py-2"
-                          onClick={() => setUserInput("Lavoro molto seduto, cosa posso fare per la mia salute cardiovascolare?")}
-                          data-testid="button-example-cardiovascular"
-                        >
-                          <span className="text-xs">Lavoro molto seduto, cosa posso fare per la salute cardiovascolare?</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="justify-start text-left h-auto py-2"
-                          onClick={() => setUserInput("Ho 45 anni, quali screening preventivi dovrei fare?")}
-                          data-testid="button-example-screening"
-                        >
-                          <span className="text-xs">Ho 45 anni, quali screening preventivi dovrei fare?</span>
-                        </Button>
+                        {userRole === 'doctor' ? (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              className="justify-start text-left h-auto py-2"
+                              onClick={() => setUserInput("Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?")}
+                              data-testid="button-example-diabetes"
+                            >
+                              <span className="text-xs">Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?</span>
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="justify-start text-left h-auto py-2"
+                              onClick={() => setUserInput("Gestione prevenzione secondaria post-IMA in paziente 55 anni")}
+                              data-testid="button-example-cardiovascular"
+                            >
+                              <span className="text-xs">Gestione prevenzione secondaria post-IMA in paziente 55 anni</span>
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="justify-start text-left h-auto py-2"
+                              onClick={() => setUserInput("Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida")}
+                              data-testid="button-example-screening"
+                            >
+                              <span className="text-xs">Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida</span>
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              className="justify-start text-left h-auto py-2"
+                              onClick={() => setUserInput("Ho familiarità con il diabete, come posso prevenirlo?")}
+                              data-testid="button-example-diabetes"
+                            >
+                              <span className="text-xs">Ho familiarità con il diabete, come posso prevenirlo?</span>
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="justify-start text-left h-auto py-2"
+                              onClick={() => setUserInput("Lavoro molto seduto, cosa posso fare per la mia salute cardiovascolare?")}
+                              data-testid="button-example-cardiovascular"
+                            >
+                              <span className="text-xs">Lavoro molto seduto, cosa posso fare per la salute cardiovascolare?</span>
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="justify-start text-left h-auto py-2"
+                              onClick={() => setUserInput("Ho 45 anni, quali screening preventivi dovrei fare?")}
+                              data-testid="button-example-screening"
+                            >
+                              <span className="text-xs">Ho 45 anni, quali screening preventivi dovrei fare?</span>
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
 

@@ -23,6 +23,7 @@ interface User {
   profileImageUrl?: string;
   isPremium: boolean;
   isAdmin: boolean;
+  aiOnlyAccess?: boolean;
   credits?: number;
   corporateAgreementId?: string;
 }
@@ -111,36 +112,50 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                <Link href="/dashboard">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
-                    <ChartLine className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </Button>
-                </Link>
-                <Link href="/">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-quizzes">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    I miei Quiz
-                  </Button>
-                </Link>
-                <Link href="/leaderboard">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-leaderboard">
-                    <Trophy className="w-4 h-4 mr-2" />
-                    Classifica
-                  </Button>
-                </Link>
-                <Link href="/certificates">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-certificates">
+                {!typedUser?.aiOnlyAccess && (
+                  <>
+                    <Link href="/dashboard">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
+                        <ChartLine className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Link href="/">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-quizzes">
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        I miei Quiz
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                <Link href="/prevention">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
                     <Award className="w-4 h-4 mr-2" />
-                    Certificati
+                    AI Prevenzione
                   </Button>
                 </Link>
-                <Link href="/analytics">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-analytics">
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Analytics
-                  </Button>
-                </Link>
+                {!typedUser?.aiOnlyAccess && (
+                  <>
+                    <Link href="/leaderboard">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-leaderboard">
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Classifica
+                      </Button>
+                    </Link>
+                    <Link href="/certificates">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-certificates">
+                        <Award className="w-4 h-4 mr-2" />
+                        Certificati
+                      </Button>
+                    </Link>
+                    <Link href="/analytics">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-analytics">
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Analytics
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </>
             ) : (
               <>

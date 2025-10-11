@@ -71,6 +71,7 @@ export const users = pgTable("users", {
   isPremium: boolean("is_premium").default(false),
   subscriptionTier: varchar("subscription_tier", { length: 20 }).default("free"), // free, premium, premium_plus
   isAdmin: boolean("is_admin").default(false),
+  aiOnlyAccess: boolean("ai_only_access").default(false), // User can access ONLY AI prevention, not quiz/courses
   language: varchar("language", { length: 2 }), // it, en, es, fr
   // Gamification fields
   nickname: varchar("nickname", { length: 50 }), // Display name for leaderboards

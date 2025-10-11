@@ -54,6 +54,7 @@ interface User {
   isPremium: boolean;
   subscriptionTier: string;
   isAdmin: boolean;
+  aiOnlyAccess: boolean;
   createdAt: string;
 }
 
@@ -65,6 +66,7 @@ interface NewUser {
   isPremium: boolean;
   subscriptionTier: string;
   isAdmin: boolean;
+  aiOnlyAccess: boolean;
 }
 
 export function AdminUsers() {
@@ -82,6 +84,7 @@ export function AdminUsers() {
     isPremium: false,
     subscriptionTier: 'free',
     isAdmin: false,
+    aiOnlyAccess: false,
   });
 
   const { data: users, isLoading } = useQuery<User[]>({
@@ -127,6 +130,7 @@ export function AdminUsers() {
         isPremium: false,
         subscriptionTier: 'free',
         isAdmin: false,
+        aiOnlyAccess: false,
       });
     },
     onError: (error: any) => {
@@ -160,6 +164,7 @@ export function AdminUsers() {
         isPremium: editingUser.subscriptionTier !== 'free',
         subscriptionTier: editingUser.subscriptionTier,
         isAdmin: editingUser.isAdmin,
+        aiOnlyAccess: editingUser.aiOnlyAccess,
       },
     });
   };
@@ -488,6 +493,15 @@ export function AdminUsers() {
                   data-testid="switch-isAdmin"
                 />
               </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="aiOnlyAccess">Accesso Solo AI</Label>
+                <Switch
+                  id="aiOnlyAccess"
+                  checked={editingUser.aiOnlyAccess}
+                  onCheckedChange={(checked) => setEditingUser({ ...editingUser, aiOnlyAccess: checked })}
+                  data-testid="switch-aiOnlyAccess"
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -577,6 +591,15 @@ export function AdminUsers() {
                 data-testid="switch-new-isAdmin"
               />
             </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="newAiOnlyAccess">Accesso Solo AI</Label>
+              <Switch
+                id="newAiOnlyAccess"
+                checked={newUser.aiOnlyAccess}
+                onCheckedChange={(checked) => setNewUser({ ...newUser, aiOnlyAccess: checked })}
+                data-testid="switch-new-aiOnlyAccess"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button 
@@ -591,6 +614,7 @@ export function AdminUsers() {
                   isPremium: false,
                   subscriptionTier: 'free',
                   isAdmin: false,
+                  aiOnlyAccess: false,
                 });
               }}
             >

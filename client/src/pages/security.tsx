@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Lock, Key, Check, X, Smartphone } from "lucide-react";
+import { Shield, Lock, Key, Check, X, Smartphone, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { useLocation } from "wouter";
 
 export default function Security() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -150,6 +152,17 @@ export default function Security() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/")}
+          className="mb-4"
+          data-testid="button-back-to-home"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Torna alla Home
+        </Button>
+
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Shield className="w-8 h-8 text-primary" />

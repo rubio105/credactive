@@ -4,9 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { LineChart, Line, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, Award, Target, Clock, Brain, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, Target, Clock, Brain, BarChart3, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 interface CategoryAnalytics {
   categoryId: string;
@@ -32,6 +34,7 @@ interface PerformanceTrend {
 export default function AnalyticsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [trendDays, setTrendDays] = useState<number>(30);
+  const [, navigate] = useLocation();
 
   // Fetch overall analytics
   const { data: overallAnalytics, isLoading: loadingOverall, error: overallError } = useQuery<CategoryAnalytics[]>({
@@ -119,6 +122,17 @@ export default function AnalyticsPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        onClick={() => navigate("/")}
+        className="mb-4"
+        data-testid="button-back-to-home"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Torna alla Home
+      </Button>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-analytics-title">Performance Analytics</h1>

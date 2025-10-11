@@ -1342,6 +1342,12 @@ export const triageAlerts = pgTable("triage_alerts", {
   reviewNotes: text("review_notes"),
   reviewedAt: timestamp("reviewed_at"),
   
+  // User follow-up tracking
+  status: varchar("status", { length: 20 }).default("pending"), // pending, user_resolved, monitoring, closed
+  userResolved: boolean("user_resolved").default(false),
+  userResolvedAt: timestamp("user_resolved_at"),
+  followupResponse: text("followup_response"),
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 

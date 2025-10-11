@@ -7038,7 +7038,8 @@ Le risposte DEVONO essere in italiano.`;
       }
 
       // Check token usage for authenticated users (monthly limits)
-      if (user?.id) {
+      // EXCEPTION: Users with aiOnlyAccess have unlimited tokens for now
+      if (user?.id && !user.aiOnlyAccess) {
         const tokenUsage = await storage.getOrCreateTokenUsage(user.id);
         const TOKEN_LIMITS = {
           free: 120,

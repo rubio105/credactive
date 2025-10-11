@@ -37,6 +37,7 @@ import Prevention from "@/pages/prevention";
 import WebinarHealth from "@/pages/webinar-health";
 import CrosswordPage from "@/pages/crossword";
 import PatientAI from "@/pages/patient-ai";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -52,28 +53,60 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/logout" component={Logout} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/subscribe" component={Subscribe} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/leaderboard" component={Leaderboard} />
-      <Route path="/certificates" component={Certificates} />
-      <Route path="/analytics" component={Analytics} />
-      <Route path="/admin" component={Admin} />
-      <Route path="/corporate" component={CorporatePortal} />
-      <Route path="/corporate/join/:token" component={CorporateJoin} />
+      <Route path="/dashboard">
+        {() => <ProtectedRoute requireNonAiOnly><Dashboard /></ProtectedRoute>}
+      </Route>
+      <Route path="/subscribe">
+        {() => <ProtectedRoute requireNonAiOnly><Subscribe /></ProtectedRoute>}
+      </Route>
+      <Route path="/settings">
+        {() => <ProtectedRoute requireNonAiOnly><Settings /></ProtectedRoute>}
+      </Route>
+      <Route path="/leaderboard">
+        {() => <ProtectedRoute requireNonAiOnly><Leaderboard /></ProtectedRoute>}
+      </Route>
+      <Route path="/certificates">
+        {() => <ProtectedRoute requireNonAiOnly><Certificates /></ProtectedRoute>}
+      </Route>
+      <Route path="/analytics">
+        {() => <ProtectedRoute requireNonAiOnly><Analytics /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin">
+        {() => <ProtectedRoute requireNonAiOnly><Admin /></ProtectedRoute>}
+      </Route>
+      <Route path="/corporate">
+        {() => <ProtectedRoute requireNonAiOnly><CorporatePortal /></ProtectedRoute>}
+      </Route>
+      <Route path="/corporate/join/:token">
+        {() => <ProtectedRoute requireNonAiOnly><CorporateJoin /></ProtectedRoute>}
+      </Route>
       <Route path="/prevention" component={Prevention} />
       <Route path="/webinar-health" component={WebinarHealth} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
         <>
-          <Route path="/" component={Home} />
-          <Route path="/quiz/:quizId" component={Quiz} />
-          <Route path="/report/:attemptId" component={Report} />
-          <Route path="/corsi-on-demand" component={CorsiOnDemand} />
-          <Route path="/corsi-on-demand/:courseId" component={CorsoOnDemand} />
-          <Route path="/live-session/:sessionId" component={LiveSession} />
-          <Route path="/crossword/:id" component={CrosswordPage} />
+          <Route path="/">
+            {() => <ProtectedRoute requireNonAiOnly><Home /></ProtectedRoute>}
+          </Route>
+          <Route path="/quiz/:quizId">
+            {() => <ProtectedRoute requireNonAiOnly><Quiz /></ProtectedRoute>}
+          </Route>
+          <Route path="/report/:attemptId">
+            {() => <ProtectedRoute requireNonAiOnly><Report /></ProtectedRoute>}
+          </Route>
+          <Route path="/corsi-on-demand">
+            {() => <ProtectedRoute requireNonAiOnly><CorsiOnDemand /></ProtectedRoute>}
+          </Route>
+          <Route path="/corsi-on-demand/:courseId">
+            {() => <ProtectedRoute requireNonAiOnly><CorsoOnDemand /></ProtectedRoute>}
+          </Route>
+          <Route path="/live-session/:sessionId">
+            {() => <ProtectedRoute requireNonAiOnly><LiveSession /></ProtectedRoute>}
+          </Route>
+          <Route path="/crossword/:id">
+            {() => <ProtectedRoute requireNonAiOnly><CrosswordPage /></ProtectedRoute>}
+          </Route>
         </>
       )}
       <Route path="/page/:slug" component={DynamicContentPage} />

@@ -14,6 +14,7 @@ import { useLocation } from "wouter";
 import PreventionAssessment from "@/components/PreventionAssessment";
 import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
+import Navigation from "@/components/navigation";
 const ciryFullLogo = "/images/ciry-full-logo.png";
 const prohmedLogo = "/images/ciry-logo.png";
 import {
@@ -518,19 +519,22 @@ export default function PreventionPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
+      <Navigation />
       <div className="container py-8 max-w-7xl">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation('/')}
-            className="gap-2"
-            data-testid="button-back-home"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Torna alla Home
-          </Button>
-        </div>
+        {/* Back Button - Only for non-AI-only users */}
+        {!user?.aiOnlyAccess && (
+          <div className="mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => setLocation('/')}
+              className="gap-2"
+              data-testid="button-back-home"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Torna alla Home
+            </Button>
+          </div>
+        )}
 
         {/* Hero Section */}
         <div className="mb-8 text-center">
@@ -547,6 +551,46 @@ export default function PreventionPage() {
 
         <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">
           <div className="lg:col-span-1 space-y-6 order-2 lg:order-1 max-w-full">
+            {/* Pacchetto Prohmed - Only for AI-only users */}
+            {user?.aiOnlyAccess && (
+              <Card className="shadow-xl border-2 border-green-200 dark:border-green-800 overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+                <CardHeader className="bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 text-white pb-6">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <Crown className="w-5 h-5" />
+                    </div>
+                    Pacchetto Prohmed
+                  </CardTitle>
+                  <CardDescription className="text-white/90 text-sm mt-1">
+                    Prevenzione completa a 14,90€/mese
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 pb-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span>Webinar interattivi mensili</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span>1 consulto specialistico/mese</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span>Eventi live sul territorio</span>
+                    </div>
+                    <Button
+                      onClick={() => setLocation('/pacchetto-prohmed')}
+                      className="w-full mt-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                      data-testid="button-view-package"
+                    >
+                      Scopri di Più
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             {/* Indicatore Prevenzione */}
             <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
               <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-8">
@@ -1079,10 +1123,10 @@ export default function PreventionPage() {
                       <MedicalTimeline 
                         reports={healthReports.map(r => ({
                           id: r.id,
-                          title: r.fileName,
-                          reportType: r.reportType,
+                          title: r.fileName ?? 'Documento senza titolo',
+                          reportType: r.reportType ?? '',
                           uploadDate: r.createdAt,
-                          summary: r.aiSummary
+                          summary: r.aiSummary ?? ''
                         }))}
                       />
                       
@@ -1092,12 +1136,11 @@ export default function PreventionPage() {
                             key={report.id}
                             report={{
                               id: report.id,
-                              fileName: report.fileName,
-                              reportType: report.reportType,
+                              title: report.fileName ?? 'Documento senza titolo',
+                              reportType: report.reportType ?? '',
                               uploadDate: report.createdAt,
-                              aiSummary: report.aiSummary,
-                              medicalValues: report.medicalValues,
-                              radiologicalAnalysis: report.radiologicalAnalysis
+                              aiSummary: report.aiSummary ?? undefined,
+                              medicalValues: report.medicalValues ?? undefined
                             }}
                           />
                         ))}

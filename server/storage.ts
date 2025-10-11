@@ -188,7 +188,7 @@ import {
   type InsertMedicalKnowledgeChunk,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and, gte } from "drizzle-orm";
+import { eq, desc, sql, and, or, gte } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -483,6 +483,8 @@ export interface IStorage {
   getAllTriageAlerts(): Promise<TriageAlert[]>; // Admin: fetch all alerts
   getAllTriageAlertsWithDetails(): Promise<Array<TriageAlert & { session?: TriageSession; user?: User }>>; // Optimized with JOIN
   updateTriageAlert(id: string, updates: Partial<TriageAlert>): Promise<TriageAlert>;
+  getPendingAlertForUser(userId: string): Promise<TriageAlert | undefined>; // Get most recent pending medium/high alert
+  resolveUserAlert(alertId: string, response: string): Promise<TriageAlert>; // Mark alert as resolved by user
   
   // Prohmed code operations
   createProhmedCode(code: InsertProhmedCode): Promise<ProhmedCode>;
@@ -2946,6 +2948,40 @@ export class DatabaseStorage implements IStorage {
       .update(triageAlerts)
       .set(updates)
       .where(eq(triageAlerts.id, id))
+      .returning();
+    return alert;
+  }
+
+  async getPendingAlertForUser(userId: string): Promise<TriageAlert | undefined> {
+    const [alert] = await db
+      .select()
+      .from(triageAlerts)
+      .where(
+        and(
+          eq(triageAlerts.userId, userId),
+          eq(triageAlerts.status, 'pending'),
+          or(
+            eq(triageAlerts.urgencyLevel, 'medium'),
+            eq(triageAlerts.urgencyLevel, 'high'),
+            eq(triageAlerts.urgencyLevel, 'emergency')
+          )
+        )
+      )
+      .orderBy(desc(triageAlerts.createdAt))
+      .limit(1);
+    return alert;
+  }
+
+  async resolveUserAlert(alertId: string, response: string): Promise<TriageAlert> {
+    const [alert] = await db
+      .update(triageAlerts)
+      .set({
+        status: 'user_resolved',
+        userResolved: true,
+        userResolvedAt: new Date(),
+        followupResponse: response,
+      })
+      .where(eq(triageAlerts.id, alertId))
       .returning();
     return alert;
   }

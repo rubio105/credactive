@@ -337,7 +337,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         <Link href="/pacchetto-prohmed">
                           <DropdownMenuItem className="text-green-600 dark:text-green-400 font-semibold" data-testid="menu-prohmed-package">
                             <Stethoscope className="w-4 h-4 mr-2" />
-                            Pacchetto Prohmed 39€
+                            Pacchetto Prohmed 14,90€
                           </DropdownMenuItem>
                         </Link>
                       </>

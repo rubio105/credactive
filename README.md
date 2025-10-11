@@ -54,9 +54,9 @@ CIRY is a comprehensive platform integrating AI-powered health prevention tools 
 
 ### Setup
 
-1. **Clone repository**
+1. **Setup project**
 ```bash
-git clone https://github.com/your-org/ciry.git
+# Download or clone the project
 cd ciry
 ```
 
@@ -236,7 +236,7 @@ Proprietary - All rights reserved
 
 For technical support or deployment assistance:
 - Email: support@ciry.app
-- Documentation: See `replit.md` for detailed architecture
+- Documentation: See architecture documentation for detailed information
 
 ---
 

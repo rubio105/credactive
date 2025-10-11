@@ -38,6 +38,8 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 *   **Leaderboard System**: Gamification features with global and corporate-exclusive leaderboards.
 *   **AI Conversational Assistant**: Context-aware AI coaching using OpenAI GPT-4o for scenario-based learning.
 *   **Medical Prevention System (Prohmed Partnership)**: Comprehensive health prevention module powered by Google Gemini AI, featuring medical document upload/analysis, an AI educational assistant ("AI Prohmed - Impara la Prevenzione"), and a medical alert system. Includes advanced UI for Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring. Enhanced with GDPR-compliant privacy disclaimers detailing anonymization algorithms, professional Prohmed branding on all reports, and role-based AI responses (doctor vs. patient) for personalized medical communication. Interactive radiological image viewer displays findings with visual markers on medical images.
+    *   **Medical Report Popup Viewer**: Comprehensive dialog system (`MedicalReportViewerDialog`) displaying full medical report details with tabbed interface for radiological images (with markers), AI summary, and medical values. Supports PDF download on-demand and integrates seamlessly with `RadiologicalImageViewer` for imaging studies.
+    *   **Recent Documents Home Display**: Home page shows 3 most recent medical documents with "View All" link to full repository in prevention section, providing quick access to latest health data without cluttering the interface.
 *   **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI, integrated with quizzes, leaderboards, and daily generation limits.
 *   **Health Score System**: AI-powered personal health scoring based on medical report analysis (PDF and images), PII anonymization, and conversational AI.
 *   **Token Usage System**: Tiered monthly token limits for AI interactions with database tracking and UI indicators.
@@ -50,6 +52,8 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 ## Deployment Architecture
 
 The production environment runs on ciry.app using a Hetzner VPS with PM2. Development is on Replit. Version control is GitHub. The database is Neon PostgreSQL. Build systems are esbuild (backend) and Vite (frontend).
+
+**Production Independence**: Platform uses BASE_URL environment variable for all URL construction (emails, OAuth callbacks, CORS), completely independent from Replit infrastructure. No Replit/GitHub references in production code paths.
 
 # External Dependencies
 

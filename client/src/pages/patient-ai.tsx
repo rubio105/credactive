@@ -30,6 +30,18 @@ interface TriageSession {
   hasAlert: boolean;
 }
 
+interface TriageAlert {
+  id: string;
+  sessionId: string;
+  userId: string;
+  alertType: string;
+  reason: string;
+  urgencyLevel: string;
+  status: string;
+  userResolved: boolean;
+  createdAt: string;
+}
+
 interface HealthReport {
   id: string;
   reportType: string;
@@ -91,6 +103,34 @@ export default function PatientAIPage() {
   const { data: healthReports = [] } = useQuery<HealthReport[]>({
     queryKey: ["/api/health-score/reports/my"],
     enabled: !!user,
+  });
+
+  // Query per alert pendente
+  const { data: pendingAlert } = useQuery<TriageAlert | null>({
+    queryKey: ["/api/triage/pending-alert"],
+    enabled: !!user,
+  });
+
+  // Mutation per risolvere l'alert
+  const resolveAlertMutation = useMutation({
+    mutationFn: async ({ alertId, response }: { alertId: string; response: string }) => {
+      const res = await apiRequest("/api/triage/resolve-alert", "POST", { alertId, response });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      toast({
+        title: "Grazie per l'aggiornamento",
+        description: "Il tuo stato è stato registrato con successo"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Impossibile aggiornare lo stato",
+        variant: "destructive"
+      });
+    },
   });
 
   useEffect(() => {
@@ -356,6 +396,63 @@ export default function PatientAIPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
+                  {/* Alert Follow-up personalizzato */}
+                  {pendingAlert && !sessionId && (
+                    <Alert className={`border-2 ${
+                      pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
+                        ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700' 
+                        : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700'
+                    }`} data-testid="alert-followup">
+                      <AlertDescription className="space-y-3">
+                        <p className="font-semibold text-base">
+                          👋 Ciao {user?.firstName || 'utente'}, come va oggi?
+                        </p>
+                        <p className="text-sm">
+                          {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
+                            ? `Hai risolto il problema che avevamo rilevato? (${pendingAlert.reason})`
+                            : `Hai risolto la situazione che avevamo segnalato? (${pendingAlert.reason})`
+                          }
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => resolveAlertMutation.mutate({ 
+                              alertId: pendingAlert.id, 
+                              response: "Sì, risolto" 
+                            })}
+                            disabled={resolveAlertMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            data-testid="button-resolve-yes"
+                          >
+                            ✓ Sì, risolto
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              resolveAlertMutation.mutate({ 
+                                alertId: pendingAlert.id, 
+                                response: "No, non ancora risolto" 
+                              });
+                              // Start a conversation about the unresolved issue
+                              setTimeout(() => {
+                                const followupMessage = pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency'
+                                  ? `Il problema di ${pendingAlert.reason} non è ancora risolto. Hai consultato un medico?`
+                                  : `La situazione di ${pendingAlert.reason} non è ancora risolta. Come posso aiutarti?`;
+                                setUserInput(followupMessage);
+                              }, 500);
+                            }}
+                            disabled={resolveAlertMutation.isPending}
+                            className="border-gray-400 dark:border-gray-600"
+                            data-testid="button-resolve-no"
+                          >
+                            ✗ No
+                          </Button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   {!sessionId ? (
                     <div className="space-y-4">
                       <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">

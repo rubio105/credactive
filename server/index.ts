@@ -114,9 +114,9 @@ app.use((req, res, next) => {
   // Webinar reminder system - Check every hour for sessions starting in 24 hours
   setInterval(async () => {
     try {
-      const { db } = await import("@/db");
+      const { db } = await import("./db");
       const { sendEmail } = await import("./email");
-      const { liveCourseSessions, liveCourses, liveCourseEnrollments, users } = await import("@shared/schema");
+      const { liveCourseSessions, liveCourses, liveCourseEnrollments, users } = await import("../shared/schema");
       const { eq, and, gte, lte } = await import("drizzle-orm");
       
       const now = new Date();
@@ -188,7 +188,11 @@ app.use((req, res, next) => {
               <p>Il Team CIRY</p>
             `;
             
-            await sendEmail(enrollment.userEmail, emailSubject, emailContent);
+            await sendEmail({
+              to: enrollment.userEmail,
+              subject: emailSubject,
+              htmlContent: emailContent
+            });
             
             // Mark reminder as sent
             await db

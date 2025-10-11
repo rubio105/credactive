@@ -723,58 +723,14 @@ export default function PreventionPage() {
           </div>
         )}
 
-        {/* Hero Section */}
-        <div className="mb-8 text-center">
-          <div className="flex justify-center mb-6">
-            <img src={ciryMainLogo} alt="CIRY - Care & Intelligence Ready for You" className="h-32 object-contain" />
-          </div>
-          <p className="text-muted-foreground text-lg max-w-4xl mx-auto leading-relaxed">
-            Condividi il tuo caso personale a Ciry e scopri strategie pratiche per la prevenzione con l'intelligenza artificiale
-          </p>
+        {/* Compact Header */}
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold">Prevenzione con Intelligenza Artificiale</h1>
+          <p className="text-sm text-muted-foreground mt-2">Analizza documenti medici, chatta con l'AI e monitora il tuo percorso di salute</p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">
           <div className="lg:col-span-1 space-y-6 order-2 lg:order-1 max-w-full">
-            {/* Pacchetto Prohmed - Only for AI-only users */}
-            {user?.aiOnlyAccess && (
-              <Card className="shadow-xl border-2 border-green-200 dark:border-green-800 overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
-                <CardHeader className="bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 text-white pb-6">
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                      <Crown className="w-5 h-5" />
-                    </div>
-                    Pacchetto Prohmed
-                  </CardTitle>
-                  <CardDescription className="text-white/90 text-sm mt-1">
-                    Prevenzione completa a 14,90€/mese
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4 pb-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      <span>Webinar interattivi mensili</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      <span>1 consulto specialistico/mese</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      <span>Eventi live sul territorio</span>
-                    </div>
-                    <Button
-                      onClick={() => setLocation('/pacchetto-prohmed')}
-                      className="w-full mt-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-                      data-testid="button-view-package"
-                    >
-                      Scopri di Più
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
             {/* Indicatore Prevenzione */}
             <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
               <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-8">
@@ -1015,6 +971,46 @@ export default function PreventionPage() {
                 )}
               </CardContent>
             </Card>
+            )}
+
+            {/* Pacchetto Prohmed - Only for AI-only users */}
+            {user?.aiOnlyAccess && (
+              <Card className="shadow-xl border-2 border-green-200 dark:border-green-800 overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+                <CardHeader className="bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 text-white pb-6">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <Crown className="w-5 h-5" />
+                    </div>
+                    Pacchetto Prohmed
+                  </CardTitle>
+                  <CardDescription className="text-white/90 text-sm mt-1">
+                    Prevenzione completa a 14,90€/mese
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 pb-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span>Webinar interattivi mensili</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span>1 consulto specialistico/mese</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span>Eventi live sul territorio</span>
+                    </div>
+                    <Button
+                      onClick={() => setLocation('/pacchetto-prohmed')}
+                      className="w-full mt-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                      data-testid="button-view-package"
+                    >
+                      Scopri di Più
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* App Prohmed */}

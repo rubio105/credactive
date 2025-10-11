@@ -8,7 +8,9 @@ import { useState } from "react";
 
 interface Finding {
   category: 'normal' | 'attention' | 'urgent';
-  description: string;
+  description: string; // Legacy field
+  technicalDescription?: string; // For medical professionals
+  patientDescription?: string; // For patients
   location?: string;
 }
 
@@ -17,7 +19,9 @@ interface ImageAnalysisResult {
   imageType: 'xray' | 'mri' | 'ct' | 'ultrasound' | 'general';
   bodyPart?: string;
   findings: Finding[];
-  overallAssessment: string;
+  overallAssessment: string; // Legacy field
+  technicalAssessment?: string; // For medical professionals
+  patientAssessment?: string; // For patients
   confidence: number;
   recommendations?: string[];
   uploadDate: string;
@@ -25,6 +29,7 @@ interface ImageAnalysisResult {
 
 export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResult }) {
   const [showImageViewer, setShowImageViewer] = useState(false);
+  const [viewMode, setViewMode] = useState<'patient' | 'technical'>('patient');
 
   const getImageTypeName = (type: string) => {
     const names: Record<string, string> = {
@@ -88,12 +93,30 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <FileImage className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <CardTitle className="text-xl">Analisi Immagine Radiologica</CardTitle>
+                <CardTitle className="text-xl">Refertazione Radiologica</CardTitle>
               </div>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-200 dark:border-indigo-700" data-testid="badge-image-type">
-                {getImageTypeName(analysis.imageType)}
-              </Badge>
+              <div className="flex flex-wrap items-center gap-2 mt-3 mb-2">
+                <Button
+                  variant={viewMode === 'patient' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('patient')}
+                  data-testid="button-patient-view"
+                >
+                  Versione Paziente
+                </Button>
+                <Button
+                  variant={viewMode === 'technical' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('technical')}
+                  data-testid="button-technical-view"
+                >
+                  Versione Medica
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-200 dark:border-indigo-700" data-testid="badge-image-type">
+                  {getImageTypeName(analysis.imageType)}
+                </Badge>
               {analysis.bodyPart && (
                 <Badge variant="outline" data-testid="badge-body-part">
                   {analysis.bodyPart}
@@ -117,7 +140,9 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
               Valutazione Complessiva
             </p>
             <p className="text-sm text-indigo-800 dark:text-indigo-200">
-              {analysis.overallAssessment}
+              {viewMode === 'technical' 
+                ? (analysis.technicalAssessment || analysis.overallAssessment)
+                : (analysis.patientAssessment || analysis.overallAssessment)}
             </p>
           </AlertDescription>
         </Alert>
@@ -135,7 +160,9 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
                   {getFindingIcon(finding.category)}
                   <div className="flex-1">
                     <p className="text-sm font-medium text-red-900 dark:text-red-100">
-                      {finding.description}
+                      {viewMode === 'technical'
+                        ? (finding.technicalDescription || finding.description)
+                        : (finding.patientDescription || finding.description)}
                     </p>
                     {finding.location && (
                       <p className="text-xs text-red-700 dark:text-red-300 mt-1">
@@ -162,7 +189,9 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
                   {getFindingIcon(finding.category)}
                   <div className="flex-1">
                     <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
-                      {finding.description}
+                      {viewMode === 'technical'
+                        ? (finding.technicalDescription || finding.description)
+                        : (finding.patientDescription || finding.description)}
                     </p>
                     {finding.location && (
                       <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
@@ -189,7 +218,9 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
                   <div className="flex items-start gap-2">
                     {getFindingIcon(finding.category)}
                     <p className="text-sm text-green-800 dark:text-green-200">
-                      {finding.description}
+                      {viewMode === 'technical'
+                        ? (finding.technicalDescription || finding.description)
+                        : (finding.patientDescription || finding.description)}
                     </p>
                   </div>
                 </div>
@@ -218,7 +249,7 @@ export function MedicalImageAnalysis({ analysis }: { analysis: ImageAnalysisResu
         {/* Disclaimer */}
         <Alert className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
           <AlertDescription className="text-xs text-gray-600 dark:text-gray-400">
-            <strong>Nota importante:</strong> Questa è un'analisi AI preliminare a scopo educativo. 
+            <strong>Nota importante:</strong> Questa analisi è fornita a scopo informativo e di supporto. 
             Consultare sempre un medico specialista per una valutazione clinica completa e definitiva.
           </AlertDescription>
         </Alert>

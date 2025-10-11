@@ -695,7 +695,9 @@ Rispondi con JSON in questo formato esatto:
 
 export interface RadiologyFinding {
   category: 'normal' | 'attention' | 'urgent';
-  description: string;
+  description: string; // Legacy field - kept for backward compatibility
+  technicalDescription?: string; // Medical terminology for professionals
+  patientDescription?: string; // Clear explanation for patients
   location?: string;
   confidence?: number;
 }
@@ -704,7 +706,9 @@ export interface RadiologicalAnalysis {
   imageType: 'xray' | 'mri' | 'ct' | 'ultrasound' | 'other';
   bodyPart: string;
   findings: RadiologyFinding[];
-  overallAssessment: string;
+  overallAssessment: string; // Legacy field - kept for backward compatibility
+  technicalAssessment?: string; // Professional medical assessment
+  patientAssessment?: string; // Patient-friendly assessment
   recommendations: string[];
   confidence: number;
 }
@@ -726,23 +730,29 @@ export async function analyzeRadiologicalImage(
     
     const radiologyPrompt = `Sei un radiologo esperto. Analizza questa immagine medica radiologica e fornisci un referto dettagliato IN ITALIANO.
 
-IMPORTANTE: Questa è un'analisi AI di supporto, NON sostituisce un medico specialista. Fornisci solo osservazioni oggettive basate sull'immagine.
+IMPORTANTE: Fornisci DOPPIA DESCRIZIONE per ogni elemento - una tecnica per medici e una comprensibile per pazienti.
 
 Analizza e identifica:
 1. Tipo di imaging (xray, mri, ct, ultrasound, other)
 2. Parte del corpo visualizzata (es. "torace", "cranio", "ginocchio sinistro", "addome")
-3. Reperti radiologici (findings) categorizzati come:
-   - "normal": Reperti normali, fisiologici
-   - "attention": Reperti da monitorare, lievi alterazioni che richiedono attenzione
-   - "urgent": Reperti critici che richiedono valutazione medica urgente
-4. Valutazione complessiva (overall assessment) - sintesi professionale in italiano
-5. Raccomandazioni (recommendations) - suggerimenti pratici in italiano
+3. Reperti radiologici (findings) con DUE DESCRIZIONI per ogni reperto:
+   - "technicalDescription": Descrizione medico-scientifica precisa con terminologia tecnica (per professionisti sanitari)
+   - "patientDescription": Spiegazione comprensibile e rassicurante (per il paziente e familiari)
+   - Categorizzati come: "normal", "attention", "urgent"
+4. Valutazione complessiva in DUE VERSIONI:
+   - "technicalAssessment": Valutazione professionale con terminologia medica
+   - "patientAssessment": Spiegazione chiara e comprensibile per il paziente
+5. Raccomandazioni pratiche in italiano
 6. Livello di confidenza (0-100) basato sulla qualità dell'immagine
 
-ESEMPI DI FINDINGS:
-- category: "normal", description: "Parenchima polmonare normoespanso bilateralmente"
-- category: "attention", description: "Lieve ispessimento pleurico basale destro", location: "base polmonare destra"
-- category: "urgent", description: "Sospetta frattura costale con possibile pneumotorace", location: "costa 7^ destra"
+ESEMPIO DI FINDING:
+{
+  "category": "attention",
+  "technicalDescription": "Ispessimento pleurico basale destro con minimo versamento pleurico. Disventilazione parenchimale basale.",
+  "patientDescription": "Si nota un leggero accumulo di liquido nella parte bassa del polmone destro. Questo può essere dovuto a infiammazione o irritazione della membrana che riveste il polmone. Nulla di grave, ma da monitorare.",
+  "location": "base polmonare destra",
+  "confidence": 85
+}
 
 Rispondi SOLO con JSON in questo formato:
 {
@@ -751,18 +761,14 @@ Rispondi SOLO con JSON in questo formato:
   "findings": [
     {
       "category": "normal",
-      "description": "Descrizione del reperto normale",
-      "location": "sede anatomica specifica (opzionale)",
+      "technicalDescription": "Descrizione tecnica professionale",
+      "patientDescription": "Spiegazione comprensibile per il paziente",
+      "location": "sede anatomica (opzionale)",
       "confidence": 90
-    },
-    {
-      "category": "attention", 
-      "description": "Descrizione del reperto da monitorare",
-      "location": "sede anatomica",
-      "confidence": 85
     }
   ],
-  "overallAssessment": "Sintesi professionale del referto radiologico in italiano",
+  "technicalAssessment": "Valutazione complessiva professionale con terminologia medica",
+  "patientAssessment": "Spiegazione chiara e rassicurante per il paziente della situazione complessiva",
   "recommendations": [
     "Prima raccomandazione pratica",
     "Seconda raccomandazione se necessaria"

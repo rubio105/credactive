@@ -42,12 +42,19 @@ export const getQueryFn: <T>(options: {
       credentials: "include",
     });
 
+    console.log('=== QueryFn DEBUG ===');
+    console.log('URL:', queryKey.join("/"));
+    console.log('Status:', res.status);
+
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      console.log('Returning null for 401');
       return null;
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const data = await res.json();
+    console.log('Data received:', data);
+    return data;
   };
 
 export const queryClient = new QueryClient({

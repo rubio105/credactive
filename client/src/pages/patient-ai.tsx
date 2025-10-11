@@ -68,6 +68,7 @@ export default function PatientAIPage() {
   const [prohmedCode, setProhmedCode] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -203,9 +204,16 @@ export default function PatientAIPage() {
   };
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    // Scroll to bottom when new messages arrive
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: "smooth",
+          block: "end",
+          inline: "nearest"
+        });
+      }
+    }, 150); // Delay to ensure DOM is updated with new message
   }, [messages]);
 
   if (!user) {
@@ -383,7 +391,7 @@ export default function PatientAIPage() {
                     </div>
                   ) : (
                     <>
-                      <ScrollArea className="h-[500px] border border-emerald-100 dark:border-emerald-800 rounded-lg p-4 bg-gradient-to-b from-white to-emerald-50/30 dark:from-gray-950 dark:to-emerald-950/30">
+                      <ScrollArea ref={scrollAreaRef} className="h-[500px] border border-emerald-100 dark:border-emerald-800 rounded-lg p-4 bg-gradient-to-b from-white to-emerald-50/30 dark:from-gray-950 dark:to-emerald-950/30">
                         <div className="space-y-4">
                           {messages?.map((msg) => (
                             <div

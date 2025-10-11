@@ -78,7 +78,7 @@ function Router() {
         {() => <ProtectedRoute requireNonAiOnly><CorporatePortal /></ProtectedRoute>}
       </Route>
       <Route path="/corporate/join/:token">
-        {() => <ProtectedRoute requireNonAiOnly><CorporateJoin /></ProtectedRoute>}
+        {(params) => <ProtectedRoute requireNonAiOnly><CorporateJoin params={params} /></ProtectedRoute>}
       </Route>
       <Route path="/prevention" component={Prevention} />
       <Route path="/webinar-health" component={WebinarHealth} />

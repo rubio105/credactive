@@ -46,11 +46,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const logoImage = logoImageFull;
   const [location, setLocation] = useLocation();
 
-  // DEBUG: Log user data
-  if (typedUser) {
-    console.log('[Navigation] User email:', typedUser.email, 'aiOnlyAccess:', typedUser.aiOnlyAccess);
-  }
-
   const { data: headerPages = [] } = useQuery<ContentPage[]>({
     queryKey: ["/api/content-pages"],
     select: (pages) => pages.filter(page => page.placement === 'header' && page.isPublished && page.slug !== 'chi-siamo'),
@@ -103,7 +98,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-24 py-2">
           {/* Logo */}
-          <Link href="/">
+          <Link href={typedUser?.aiOnlyAccess ? "/prevention" : "/"}>
             <div className="flex items-center cursor-pointer" data-testid="logo">
               <img 
                 src={logoImage} 
@@ -210,14 +205,16 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
             ) : (
               /* Authenticated State */
               <div className="flex items-center space-x-4">
-                {/* Credits Badge */}
-                <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800" data-testid="badge-credits">
-                  <Coins className="w-3 h-3 mr-1" />
-                  {typedUser?.credits || 0}
-                </Badge>
+                {/* Credits Badge - Hide for AI-only users */}
+                {!typedUser?.aiOnlyAccess && (
+                  <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800" data-testid="badge-credits">
+                    <Coins className="w-3 h-3 mr-1" />
+                    {typedUser?.credits || 0}
+                  </Badge>
+                )}
                 
-                {/* Premium Badge */}
-                {typedUser?.isPremium && (
+                {/* Premium Badge - Hide for AI-only users */}
+                {!typedUser?.aiOnlyAccess && typedUser?.isPremium && (
                   <Badge className="bg-accent/10 text-accent border-accent/20" data-testid="badge-premium">
                     <Crown className="w-3 h-3 mr-1" />
                     Premium
@@ -251,18 +248,20 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     <div className="px-2 py-1.5">
                       <p className="text-sm font-medium">{getUserName()}</p>
                       <p className="text-xs text-muted-foreground">{typedUser?.email}</p>
-                      <div className="flex items-center gap-1 mt-2">
-                        <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 text-xs py-0.5">
-                          <Coins className="w-3 h-3 mr-1" />
-                          {typedUser?.credits || 0} Crediti
-                        </Badge>
-                        {typedUser?.isPremium && (
-                          <Badge className="bg-accent/10 text-accent border-accent/20 text-xs py-0.5">
-                            <Crown className="w-3 h-3 mr-1" />
-                            Premium
+                      {!typedUser?.aiOnlyAccess && (
+                        <div className="flex items-center gap-1 mt-2">
+                          <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 text-xs py-0.5">
+                            <Coins className="w-3 h-3 mr-1" />
+                            {typedUser?.credits || 0} Crediti
                           </Badge>
-                        )}
-                      </div>
+                          {typedUser?.isPremium && (
+                            <Badge className="bg-accent/10 text-accent border-accent/20 text-xs py-0.5">
+                              <Crown className="w-3 h-3 mr-1" />
+                              Premium
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <DropdownMenuSeparator />
                     {!typedUser?.aiOnlyAccess && (
@@ -321,7 +320,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         </Link>
                       </>
                     )}
-                    {!typedUser?.isPremium && (
+                    {!typedUser?.isPremium && !typedUser?.aiOnlyAccess && (
                       <>
                         <DropdownMenuSeparator />
                         <Link href="/subscribe">

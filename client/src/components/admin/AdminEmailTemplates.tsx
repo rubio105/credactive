@@ -130,9 +130,11 @@ export function AdminEmailTemplates() {
 
   const handleSave = () => {
     if (!selectedTemplate) return;
+    // Extract only editable fields, exclude readonly fields (id, createdAt, updatedAt)
+    const { id, createdAt, updatedAt, ...editableFields } = selectedTemplate;
     updateTemplate.mutate({
       id: selectedTemplate.id,
-      updates: selectedTemplate,
+      updates: editableFields,
     });
   };
 

@@ -1,4 +1,4 @@
-# CREDACTIVE ACADEMY - Design Guidelines
+# CIRY - Design Guidelines
 
 ## Design Approach
 

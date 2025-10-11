@@ -8181,6 +8181,134 @@ Format as JSON: {
     }
   });
 
+  // Get medical value trends (GET /api/health-score/trends/:valueName)
+  app.get('/api/health-score/trends/:valueName', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const valueName = req.params.valueName; // Keep exact case to match extractedValues keys
+      
+      // Get all user's reports
+      const reports = await storage.getHealthReportsByUser(user.id);
+      
+      // Extract trend data for the specified value
+      const trendData = reports
+        .filter(report => {
+          const values = report.extractedValues as Record<string, any> || {};
+          return values[valueName] !== undefined;
+        })
+        .map(report => {
+          const values = report.extractedValues as Record<string, any> || {};
+          return {
+            date: report.createdAt || report.uploadDate || new Date(),
+            reportId: report.id,
+            reportType: report.reportType,
+            value: parseFloat(values[valueName]) || 0,
+            rawValue: values[valueName],
+          };
+        })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      res.json({
+        valueName,
+        dataPoints: trendData,
+        count: trendData.length,
+      });
+    } catch (error: any) {
+      console.error('Get medical value trends error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get trends' });
+    }
+  });
+
+  // Download medical report PDF (GET /api/health-score/reports/:id/pdf)
+  app.get('/api/health-score/reports/:id/pdf', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const reportId = req.params.id;
+      
+      // Get the report
+      const report = await storage.getHealthReportById(reportId);
+      
+      if (!report) {
+        return res.status(404).json({ message: 'Report not found' });
+      }
+      
+      // Verify ownership
+      if (report.userId !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      // If it's a PDF file, serve it directly
+      if (report.fileType === 'application/pdf' && report.filePath) {
+        const filePath = path.join(process.cwd(), 'public', report.filePath);
+        if (fs.existsSync(filePath)) {
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', `attachment; filename="${report.fileName}"`);
+          return res.sendFile(filePath);
+        }
+      }
+      
+      // Otherwise, generate a PDF from the report data
+      let PDFDocument;
+      try {
+        PDFDocument = (await import('pdfkit')).default;
+      } catch (error) {
+        console.error('PDFKit import failed:', error);
+        return res.status(500).json({ message: 'PDF generation not available' });
+      }
+
+      const doc = new PDFDocument();
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="referto-${report.id}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // PDF Header
+      doc.fontSize(20).text('Referto Medico', { align: 'center' });
+      doc.moveDown();
+      
+      // Report info
+      doc.fontSize(12).text(`Tipo: ${report.reportType}`);
+      doc.text(`Data caricamento: ${new Date(report.createdAt || new Date()).toLocaleDateString('it-IT')}`);
+      if (report.reportDate) {
+        doc.text(`Data referto: ${new Date(report.reportDate).toLocaleDateString('it-IT')}`);
+      }
+      doc.moveDown();
+      
+      // AI Summary
+      if (report.aiSummary) {
+        doc.fontSize(14).text('Riepilogo AI:', { underline: true });
+        doc.fontSize(10).text(report.aiSummary);
+        doc.moveDown();
+      }
+      
+      // Extracted Values
+      const values = report.extractedValues as Record<string, any> || {};
+      if (Object.keys(values).length > 0) {
+        doc.fontSize(14).text('Valori Rilevati:', { underline: true });
+        doc.fontSize(10);
+        Object.entries(values).forEach(([key, value]) => {
+          doc.text(`${key}: ${value}`);
+        });
+        doc.moveDown();
+      }
+      
+      // Anonymized Text
+      if (report.anonymizedText) {
+        doc.fontSize(14).text('Testo Referto (Anonimizzato):', { underline: true });
+        doc.fontSize(9).text(report.anonymizedText);
+      }
+      
+      // CRITICAL: Close the PDF document stream
+      doc.end();
+    } catch (error: any) {
+      console.error('Download medical report PDF error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ message: error.message || 'Failed to generate PDF' });
+      }
+    }
+  });
+
   // Acknowledge health insight (POST /api/health-score/insights/:id/acknowledge)
   app.post('/api/health-score/insights/:id/acknowledge', isAuthenticated, async (req, res) => {
     try {

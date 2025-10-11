@@ -80,6 +80,8 @@ export default function PreventionPage() {
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
   const [attentionPointsData, setAttentionPointsData] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadQueue, setUploadQueue] = useState<Array<{ file: File; status: 'pending' | 'uploading' | 'completed' | 'error'; error?: string; result?: any }>>([]);
   const [uploadResult, setUploadResult] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -405,6 +407,115 @@ export default function PreventionPage() {
   });
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate each file
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    const validFiles: File[] = [];
+    
+    for (const file of files) {
+      // Validate file type
+      if (!validTypes.includes(file.type)) {
+        toast({ 
+          title: "Formato non valido", 
+          description: `${file.name}: Usa solo PDF, JPG o PNG`, 
+          variant: "destructive" 
+        });
+        continue;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File troppo grande",
+          description: `${file.name}: Massimo 10MB`,
+          variant: "destructive"
+        });
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) return;
+
+    // Add files to queue
+    setSelectedFiles(validFiles);
+    setUploadQueue(validFiles.map(file => ({
+      file,
+      status: 'pending' as const
+    })));
+  };
+
+  // Process upload queue
+  const processUploadQueue = async () => {
+    let completedCount = 0;
+    let errorCount = 0;
+
+    // Get current queue snapshot
+    const currentQueue = uploadQueue.filter(q => q.status === 'pending');
+    
+    for (const item of currentQueue) {
+      // Update status to uploading using functional update
+      setUploadQueue(prev => prev.map(q => 
+        q.file === item.file && q.status === 'pending' 
+          ? { ...q, status: 'uploading' as const } 
+          : q
+      ));
+
+      try {
+        const formData = new FormData();
+        formData.append('report', item.file);
+        formData.append('userConsent', 'true');
+        if (sessionId) {
+          formData.append('triageSessionId', sessionId);
+        }
+
+        const response = await fetch('/api/health-score/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Errore durante il caricamento');
+        }
+
+        const result = await response.json();
+
+        // Update status to completed
+        setUploadQueue(prev => prev.map(q => 
+          q.file === item.file && q.status === 'uploading'
+            ? { ...q, status: 'completed' as const, result } 
+            : q
+        ));
+        completedCount++;
+      } catch (error: any) {
+        // Update status to error
+        setUploadQueue(prev => prev.map(q => 
+          q.file === item.file && q.status === 'uploading'
+            ? { ...q, status: 'error' as const, error: error.message } 
+            : q
+        ));
+        errorCount++;
+      }
+    }
+
+    // Refresh data after all uploads
+    queryClient.invalidateQueries({ queryKey: ['/api/health-score/latest'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/prevention/documents'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/prevention/index'] });
+
+    // Show accurate completion summary
+    toast({
+      title: "Upload completati",
+      description: `${completedCount} referti elaborati con successo${errorCount > 0 ? `, ${errorCount} errori` : ''}`
+    });
+  };
+
+  const handleOldFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -1305,19 +1416,20 @@ export default function PreventionPage() {
 
             <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
               <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              {!selectedFile ? (
+              {uploadQueue.length === 0 ? (
                 <>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Clicca per selezionare il tuo referto medico
+                    Clicca per selezionare i tuoi referti medici
                   </p>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Formati supportati: PDF, JPG, PNG (max 10MB)
+                    Formati supportati: PDF, JPG, PNG (max 10MB) • Selezione multipla supportata
                   </p>
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
                     onChange={handleFileSelect}
+                    multiple
                     className="hidden"
                     data-testid="input-file-report"
                   />
@@ -1333,30 +1445,59 @@ export default function PreventionPage() {
                     }}
                     data-testid="button-select-files"
                   >
-                    Seleziona File
+                    <FileUp className="w-4 h-4 mr-2" />
+                    Seleziona Referti
                   </Button>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-medium mb-2">{selectedFile.name}</p>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+                  <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+                    {uploadQueue.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded-lg border">
+                        <div className="flex items-center gap-3 flex-1">
+                          <FileText className="w-5 h-5 text-blue-600" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{item.file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(item.file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          {item.status === 'pending' && (
+                            <Badge variant="outline" className="bg-gray-100">In attesa</Badge>
+                          )}
+                          {item.status === 'uploading' && (
+                            <Badge className="bg-blue-100 text-blue-700">Caricamento...</Badge>
+                          )}
+                          {item.status === 'completed' && (
+                            <Badge className="bg-green-100 text-green-700">✓ Completato</Badge>
+                          )}
+                          {item.status === 'error' && (
+                            <Badge variant="destructive">✗ Errore</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                   <div className="flex gap-2 justify-center">
                     <Button 
                       variant="outline" 
-                      onClick={() => setSelectedFile(null)}
-                      data-testid="button-cancel-file"
+                      onClick={() => {
+                        setUploadQueue([]);
+                        setSelectedFiles([]);
+                      }}
+                      data-testid="button-cancel-queue"
                     >
                       <X className="w-4 h-4 mr-2" />
                       Annulla
                     </Button>
                     <Button 
-                      onClick={handleUploadFile}
-                      disabled={uploadReportMutation.isPending}
-                      data-testid="button-upload-file"
+                      onClick={processUploadQueue}
+                      disabled={uploadQueue.some(q => q.status === 'uploading')}
+                      data-testid="button-upload-queue"
                     >
-                      {uploadReportMutation.isPending ? "Caricamento..." : "Carica Referto"}
+                      {uploadQueue.some(q => q.status === 'uploading') ? "Caricamento..." : `Carica ${uploadQueue.length} Referti`}
                     </Button>
                   </div>
                 </>

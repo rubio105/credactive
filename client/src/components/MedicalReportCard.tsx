@@ -1,9 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { FileText, Download, TrendingUp, Calendar, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { MedicalTrendChart } from "./MedicalTrendChart";
+import { useToast } from "@/hooks/use-toast";
 
 interface MedicalValue {
   name: string;
@@ -26,6 +31,63 @@ interface MedicalReport {
 }
 
 export function MedicalReportCard({ report }: { report: MedicalReport }) {
+  const [showTrendDialog, setShowTrendDialog] = useState(false);
+  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Get trend data when a value is selected
+  const { data: trendData } = useQuery({
+    queryKey: ['/api/health-score/trends', selectedValue],
+    queryFn: async () => {
+      if (!selectedValue) return null;
+      const response = await fetch(`/api/health-score/trends/${encodeURIComponent(selectedValue)}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch trend data');
+      return response.json();
+    },
+    enabled: !!selectedValue && showTrendDialog,
+  });
+
+  const handleViewTrend = (valueName: string) => {
+    // Use exact value name without lowercasing to match extractedValues keys
+    setSelectedValue(valueName);
+    setShowTrendDialog(true);
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      const response = await fetch(`/api/health-score/reports/${report.id}/pdf`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Errore durante il download');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `referto-${report.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Download completato",
+        description: "Il referto è stato scaricato con successo",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile scaricare il referto",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getReportTypeColor = (type: string) => {
     const colors: Record<string, string> = {
       esame_sangue: "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-200 dark:border-red-800",
@@ -150,16 +212,52 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" size="sm" className="flex-1" data-testid="button-view-trend">
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Vedi Trend
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1" data-testid="button-export-pdf">
+          {report.medicalValues && report.medicalValues.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={() => handleViewTrend(report.medicalValues![0].name)}
+              data-testid="button-view-trend"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Vedi Trend
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={handleDownloadPDF}
+            data-testid="button-export-pdf"
+          >
             <Download className="w-4 h-4 mr-2" />
-            Esporta PDF
+            Scarica PDF
           </Button>
         </div>
       </CardContent>
+
+      {/* Trend Dialog */}
+      <Dialog open={showTrendDialog} onOpenChange={setShowTrendDialog}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Analisi Trend</DialogTitle>
+            <DialogDescription>
+              Visualizza l'evoluzione dei valori medici nel tempo
+            </DialogDescription>
+          </DialogHeader>
+          {trendData && trendData.dataPoints && (
+            <MedicalTrendChart 
+              title={trendData.valueName.charAt(0).toUpperCase() + trendData.valueName.slice(1)}
+              unit="" 
+              data={trendData.dataPoints.map((d: any) => ({
+                date: d.date,
+                value: d.value
+              }))}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

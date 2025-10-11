@@ -556,8 +556,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('=== LOGIN ATTEMPT ===');
     console.log('Email:', req.body.email);
     console.log('Password provided:', !!req.body.password);
+    console.log('MFA code provided:', !!req.body.mfaCode);
     
-    passport.authenticate('local', (err: any, user: any, info: any) => {
+    passport.authenticate('local', async (err: any, user: any, info: any) => {
       console.log('Passport authenticate callback:');
       console.log('- Error:', err);
       console.log('- User:', user ? `${user.email} (id: ${user.id})` : null);
@@ -571,6 +572,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Login failed - no user returned');
         return res.status(401).json({ message: info?.message || "Email o password non corretti" });
       }
+
+      // Check if MFA is enabled for this user
+      if (user.mfaEnabled) {
+        console.log('MFA enabled for user, checking code...');
+        const { mfaCode } = req.body;
+
+        if (!mfaCode) {
+          console.log('MFA code required but not provided');
+          return res.status(200).json({ 
+            requiresMfa: true, 
+            message: "Inserisci il codice di autenticazione a due fattori" 
+          });
+        }
+
+        // Verify MFA code
+        const speakeasy = require('speakeasy');
+        const verified = speakeasy.totp.verify({
+          secret: user.mfaSecret,
+          encoding: 'base32',
+          token: mfaCode,
+          window: 2,
+        });
+
+        if (!verified) {
+          console.log('Invalid MFA code');
+          return res.status(401).json({ 
+            message: "Codice MFA non valido" 
+          });
+        }
+        console.log('MFA code verified successfully');
+      }
+
+      // Complete login
       req.login(user, (err) => {
         if (err) {
           console.error('Session login error:', err);

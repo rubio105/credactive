@@ -16,9 +16,11 @@ export default function Login() {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [requiresMfa, setRequiresMfa] = useState(false);
 
   const loginMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
+    mutationFn: async (data: { email: string; password: string; mfaCode?: string }) => {
       try {
         const res = await apiRequest("/api/auth/login", "POST", data);
         return await res.json();
@@ -37,6 +39,16 @@ export default function Login() {
       }
     },
     onSuccess: (data) => {
+      // Check if MFA is required
+      if (data?.requiresMfa) {
+        setRequiresMfa(true);
+        toast({
+          title: "Autenticazione a due fattori",
+          description: data.message || "Inserisci il codice dal tuo authenticator",
+        });
+        return;
+      }
+
       toast({
         title: "Accesso effettuato",
         description: "Benvenuto su CIRY!",
@@ -78,7 +90,16 @@ export default function Login() {
       return;
     }
 
-    loginMutation.mutate({ email, password });
+    if (requiresMfa && !mfaCode) {
+      toast({
+        title: "Codice MFA richiesto",
+        description: "Inserisci il codice di autenticazione a due fattori",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    loginMutation.mutate({ email, password, mfaCode: mfaCode || undefined });
   };
 
   return (
@@ -104,6 +125,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={requiresMfa}
                 data-testid="input-email"
               />
             </div>
@@ -116,25 +138,48 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={requiresMfa}
                 data-testid="input-password"
               />
             </div>
-            <div className="flex justify-end">
-              <Link 
-                href="/forgot-password" 
-                className="text-sm text-primary hover:underline" 
-                data-testid="link-forgot-password"
-              >
-                Hai dimenticato la password?
-              </Link>
-            </div>
+            {requiresMfa && (
+              <div className="space-y-2">
+                <Label htmlFor="mfaCode">Codice Autenticazione (MFA) *</Label>
+                <Input
+                  id="mfaCode"
+                  type="text"
+                  placeholder="123456"
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  required
+                  maxLength={6}
+                  pattern="[0-9]*"
+                  autoFocus
+                  data-testid="input-mfa-code"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Inserisci il codice a 6 cifre dal tuo authenticator
+                </p>
+              </div>
+            )}
+            {!requiresMfa && (
+              <div className="flex justify-end">
+                <Link 
+                  href="/forgot-password" 
+                  className="text-sm text-primary hover:underline" 
+                  data-testid="link-forgot-password"
+                >
+                  Hai dimenticato la password?
+                </Link>
+              </div>
+            )}
             <Button
               type="submit"
               className="w-full"
               disabled={loginMutation.isPending}
               data-testid="button-login"
             >
-              {loginMutation.isPending ? "Accesso in corso..." : "Accedi"}
+              {loginMutation.isPending ? "Accesso in corso..." : requiresMfa ? "Verifica e Accedi" : "Accedi"}
             </Button>
           </form>
 

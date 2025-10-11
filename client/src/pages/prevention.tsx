@@ -724,9 +724,9 @@ export default function PreventionPage() {
         )}
 
         {/* Compact Header */}
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">Prevenzione con Intelligenza Artificiale</h1>
-          <p className="text-sm text-muted-foreground mt-2">Analizza documenti medici, chatta con l'AI e monitora il tuo percorso di salute</p>
+        <div className="mb-6 text-center px-2">
+          <h1 className="text-xl sm:text-2xl font-bold">Prevenzione con Intelligenza Artificiale</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">Analizza documenti medici, chatta con l'AI e monitora il tuo percorso di salute</p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">
@@ -911,7 +911,7 @@ export default function PreventionPage() {
                         data-testid="bar-token-usage"
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {tokenUsage?.tokensRemaining || 0} token rimanenti questo mese
                     </p>
                   </div>
@@ -1269,13 +1269,13 @@ export default function PreventionPage() {
                             data-testid={`message-${msg.id}`}
                           >
                             <div
-                              className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
+                              className={`max-w-[95%] sm:max-w-[85%] md:max-w-[80%] p-3 sm:p-4 rounded-2xl shadow-sm ${
                                 msg.role === 'user'
                                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
                                   : 'bg-white dark:bg-gray-900 border border-emerald-100 dark:border-emerald-800'
                               }`}
                             >
-                              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                              <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">{msg.content}</p>
                               
                               {/* Pulsante Richiedi Contatto Medico - Solo per messaggi AI con aiSuggestDoctor */}
                               {msg.role === 'assistant' && msg.aiSuggestDoctor && (
@@ -1610,7 +1610,7 @@ export default function PreventionPage() {
 
       {/* Upload Documents Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />
@@ -1748,12 +1748,27 @@ export default function PreventionPage() {
                     <p><strong>Dati PII rimossi:</strong> {uploadResult.piiRemoved || 0}</p>
                     <p><strong>Confidenza OCR:</strong> {uploadResult.ocrConfidence || 0}%</p>
                     {uploadResult.report?.aiSummary && (
-                      <p className="mt-2"><strong>Riepilogo:</strong> {uploadResult.report.aiSummary}</p>
+                      <p className="mt-2 break-words"><strong>Riepilogo:</strong> {uploadResult.report.aiSummary}</p>
                     )}
                   </div>
                 </AlertDescription>
               </Alert>
             )}
+          </div>
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUploadDialog(false);
+                setUploadQueue([]);
+                setUploadResult(null);
+                setSelectedFiles([]);
+              }}
+              data-testid="button-close-upload-dialog"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Chiudi
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

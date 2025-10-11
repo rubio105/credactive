@@ -693,6 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.getUser(userId);
+      console.log('[API /api/auth/user] Email:', user?.email, 'aiOnlyAccess:', user?.aiOnlyAccess);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);

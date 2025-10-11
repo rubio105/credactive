@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare, Book, Shield, Gift, CreditCard } from "lucide-react";
+import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare, Book, Shield, Gift, CreditCard, Database } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { AdminUsers } from "@/components/admin/AdminUsers";
@@ -24,6 +24,7 @@ import { AdminPrevention } from "@/components/admin/AdminPrevention";
 import { AdminProhmedCodes } from "@/components/admin/AdminProhmedCodes";
 import { AdminWebinarHealth } from "@/components/admin/AdminWebinarHealth";
 import { AdminSubscriptionPlans } from "@/components/admin/AdminSubscriptionPlans";
+import { AdminKnowledgeBase } from "@/components/admin/AdminKnowledgeBase";
 
 const menuItems = [
   { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
@@ -42,6 +43,7 @@ const menuItems = [
   { id: "corporate", icon: Building2, label: "Aziende", testId: "tab-corporate" },
   { id: "prevention", icon: Shield, label: "AI Prohmed", testId: "tab-prevention" },
   { id: "prohmed-codes", icon: Gift, label: "Codici Prohmed", testId: "tab-prohmed-codes" },
+  { id: "knowledge-base", icon: Database, label: "Knowledge Base", testId: "tab-knowledge-base" },
   { id: "email", icon: Mail, label: "Email", testId: "tab-email" },
   { id: "api", icon: Key, label: "API Keys", testId: "tab-api" },
   { id: "settings", icon: Settings, label: "Impostazioni", testId: "tab-settings" },
@@ -144,6 +146,7 @@ export default function AdminPage() {
           {activeTab === "corporate" && <AdminCorporateAgreements />}
           {activeTab === "prevention" && <AdminPrevention />}
           {activeTab === "prohmed-codes" && <AdminProhmedCodes />}
+          {activeTab === "knowledge-base" && <AdminKnowledgeBase />}
           {activeTab === "email" && <AdminEmailTemplates />}
           {activeTab === "api" && <AdminAPIKeys />}
           {activeTab === "settings" && <AdminSettings />}

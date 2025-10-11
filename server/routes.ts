@@ -16,7 +16,7 @@ import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
-import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent, analyzeRadiologicalImage } from "./gemini";
+import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent, analyzeRadiologicalImage, generateEmbedding } from "./gemini";
 import { clearBrevoInstance } from "./email";
 import { 
   insertUserQuizAttemptSchema, 
@@ -201,6 +201,39 @@ const uploadMedicalReport = multer({
       return cb(null, true);
     } else {
       cb(new Error('Only PDF and images (JPEG, JPG, PNG) are allowed for medical reports!'));
+    }
+  }
+});
+
+// Configure multer for scientific knowledge base documents (PDF, DOCX, TXT, MD)
+const knowledgeBaseDir = path.join(process.cwd(), 'public', 'knowledge-base');
+if (!fs.existsSync(knowledgeBaseDir)) {
+  fs.mkdirSync(knowledgeBaseDir, { recursive: true });
+}
+
+const knowledgeBaseStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, knowledgeBaseDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'kb-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadKnowledgeBase = multer({
+  storage: knowledgeBaseStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit for scientific documents
+  fileFilter: (req, file, cb) => {
+    const allowedExtensions = /pdf|docx|doc|txt|md/;
+    const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
+    const allowedMimetypes = /application\/pdf|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/msword|text\/plain|text\/markdown/;
+    const mimetype = allowedMimetypes.test(file.mimetype) || file.mimetype === 'application/octet-stream'; // Some browsers send octet-stream for .md files
+    
+    if (extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only PDF, DOCX, TXT, and MD files are allowed for knowledge base!'));
     }
   }
 });
@@ -2306,6 +2339,158 @@ Restituisci SOLO un JSON con:
         fs.unlinkSync(req.file.path);
       }
       res.status(500).json({ message: "Failed to upload PDF" });
+    }
+  });
+
+  // *** KNOWLEDGE BASE MANAGEMENT ROUTES (RAG System) ***
+  
+  // Admin - Upload scientific document to knowledge base
+  app.post('/api/admin/knowledge-base/upload', isAdmin, uploadKnowledgeBase.single('document'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const { title, description, category, language = 'it' } = req.body;
+      if (!title) {
+        // Clean up uploaded file
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(400).json({ message: "Title is required" });
+      }
+
+      const fileExt = path.extname(req.file.originalname).toLowerCase();
+      const filePath = req.file.path;
+
+      // Extract text based on file type
+      let extractedText = '';
+      
+      if (fileExt === '.pdf') {
+        const pdfBuffer = fs.readFileSync(filePath);
+        const pdfData = await pdfParse(pdfBuffer);
+        extractedText = pdfData.text;
+      } else if (fileExt === '.txt' || fileExt === '.md') {
+        extractedText = fs.readFileSync(filePath, 'utf-8');
+      } else if (fileExt === '.docx' || fileExt === '.doc') {
+        // For DOCX/DOC, we'll need to implement parsing later or use external library
+        // For now, return error
+        fs.unlinkSync(filePath);
+        return res.status(400).json({ message: "DOCX/DOC support coming soon. Please use PDF or TXT format." });
+      }
+
+      if (!extractedText || extractedText.trim().length < 100) {
+        fs.unlinkSync(filePath);
+        return res.status(400).json({ message: "Document must contain at least 100 characters of text" });
+      }
+
+      // Create document record
+      const document = await storage.createMedicalDocument({
+        title,
+        description: description || null,
+        category: category || null,
+        language,
+        filePath: `/knowledge-base/${req.file.filename}`,
+        fileType: fileExt.substring(1), // Remove the dot
+        fileSize: req.file.size,
+        status: 'processing',
+      });
+
+      // Chunking strategy: 500 tokens per chunk, 50 tokens overlap
+      const CHUNK_SIZE = 500;
+      const CHUNK_OVERLAP = 50;
+      const wordsPerToken = 4; // Rough estimate
+      const charsPerChunk = CHUNK_SIZE * wordsPerToken;
+      const overlapChars = CHUNK_OVERLAP * wordsPerToken;
+
+      const chunks: string[] = [];
+      let startIndex = 0;
+
+      while (startIndex < extractedText.length) {
+        const endIndex = Math.min(startIndex + charsPerChunk, extractedText.length);
+        const chunk = extractedText.substring(startIndex, endIndex);
+        chunks.push(chunk);
+        startIndex += charsPerChunk - overlapChars; // Move forward with overlap
+      }
+
+      console.log(`[Knowledge Base] Created ${chunks.length} chunks from document "${title}"`);
+
+      // Generate embeddings and store chunks
+      for (let i = 0; i < chunks.length; i++) {
+        const chunkText = chunks[i];
+        try {
+          const embedding = await generateEmbedding(chunkText);
+          await storage.createMedicalChunk({
+            documentId: document.id,
+            content: chunkText,
+            chunkIndex: i,
+            embedding,
+          });
+          console.log(`[Knowledge Base] Embedded chunk ${i + 1}/${chunks.length}`);
+        } catch (embeddingError) {
+          console.error(`[Knowledge Base] Failed to embed chunk ${i}:`, embeddingError);
+          // Continue with other chunks even if one fails
+        }
+      }
+
+      // Update document status to processed
+      await storage.updateMedicalDocument(document.id, { status: 'processed' });
+
+      res.json({
+        document,
+        chunksCreated: chunks.length,
+        message: `Document processed successfully with ${chunks.length} chunks`,
+      });
+    } catch (error: any) {
+      console.error("Error uploading knowledge base document:", error);
+      // Clean up file on error
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({ message: error.message || "Failed to upload document" });
+    }
+  });
+
+  // Admin - Get all knowledge base documents
+  app.get('/api/admin/knowledge-base', isAdmin, async (req, res) => {
+    try {
+      const documents = await storage.getAllMedicalDocuments();
+      res.json(documents);
+    } catch (error: any) {
+      console.error("Error fetching knowledge base documents:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch documents" });
+    }
+  });
+
+  // Admin - Delete knowledge base document and its chunks
+  app.delete('/api/admin/knowledge-base/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get document to find file path
+      const documents = await storage.getAllMedicalDocuments();
+      const document = documents.find(d => d.id === id);
+      
+      if (document?.filePath) {
+        const fullPath = path.join(process.cwd(), 'public', document.filePath);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      }
+
+      // Delete chunks first (foreign key constraint)
+      const chunks = await storage.getChunksByDocument(id);
+      for (const chunk of chunks) {
+        await storage.deleteChunk(chunk.id);
+      }
+
+      // Delete document
+      await storage.deleteMedicalDocument(id);
+
+      res.json({ success: true, message: "Document and all chunks deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting knowledge base document:", error);
+      res.status(500).json({ message: error.message || "Failed to delete document" });
     }
   });
 
@@ -6751,12 +6936,30 @@ Le risposte DEVONO essere in italiano.`;
         content: initialSymptom,
       });
 
+      // RAG: Semantic search for scientific context
+      let scientificContext: string | undefined;
+      try {
+        const queryEmbedding = await generateEmbedding(initialSymptom);
+        const relevantChunks = await storage.semanticSearchMedical(queryEmbedding, 3); // Top 3 chunks
+        
+        if (relevantChunks.length > 0) {
+          scientificContext = relevantChunks
+            .map(chunk => `[${chunk.documentTitle}]\n${chunk.content}`)
+            .join('\n\n---\n\n');
+          console.log(`[RAG] Found ${relevantChunks.length} relevant scientific sources for query`);
+        }
+      } catch (ragError) {
+        console.error('[RAG] Semantic search failed:', ragError);
+        // Continue without RAG if it fails
+      }
+
       // Get AI response (pass user's first name for personalization if available)
       const aiResponse = await generateTriageResponse(
         initialSymptom, 
         [], 
         undefined, 
-        user?.firstName
+        user?.firstName,
+        scientificContext
       );
 
       // Save AI response
@@ -6888,12 +7091,30 @@ Le risposte DEVONO essere in italiano.`;
       const messages = await storage.getTriageMessagesBySession(sessionId);
       const history = messages.map(m => ({ role: m.role, content: m.content }));
 
+      // RAG: Semantic search for scientific context
+      let scientificContext: string | undefined;
+      try {
+        const queryEmbedding = await generateEmbedding(content);
+        const relevantChunks = await storage.semanticSearchMedical(queryEmbedding, 3); // Top 3 chunks
+        
+        if (relevantChunks.length > 0) {
+          scientificContext = relevantChunks
+            .map(chunk => `[${chunk.documentTitle}]\n${chunk.content}`)
+            .join('\n\n---\n\n');
+          console.log(`[RAG] Found ${relevantChunks.length} relevant scientific sources for query`);
+        }
+      } catch (ragError) {
+        console.error('[RAG] Semantic search failed:', ragError);
+        // Continue without RAG if it fails
+      }
+
       // Get AI response (pass user's first name for personalization if available)
       const aiResponse = await generateTriageResponse(
         content, 
         history, 
         undefined, 
-        user?.firstName
+        user?.firstName,
+        scientificContext
       );
 
       // Final token check AFTER AI generation (for authenticated users)

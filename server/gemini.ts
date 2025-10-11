@@ -357,11 +357,16 @@ export async function generateTriageResponse(
   userMessage: string,
   conversationHistory: Array<{ role: string; content: string }>,
   documentContext?: string,
-  userName?: string
+  userName?: string,
+  scientificContext?: string
 ): Promise<TriageResponse> {
   try {
     const contextInfo = documentContext 
-      ? `\n\nRelevant medical documentation:\n${documentContext}`
+      ? `\n\nRELEVANT MEDICAL DOCUMENTATION (User's personal reports):\n${documentContext}`
+      : "";
+    
+    const scientificInfo = scientificContext
+      ? `\n\nSCIENTIFIC EVIDENCE BASE (Medical literature):\n${scientificContext}\n\nIMPORTANT: Base your prevention recommendations on these scientific sources when relevant.`
       : "";
     
     const userGreeting = userName 
@@ -416,7 +421,7 @@ Respond with JSON in this exact format:
   "urgencyLevel": "low" | "medium" | "high" | "emergency",
   "relatedTopics": ["prevention topic1", "prevention topic2", ...],
   "needsReportUpload": boolean (true if user wants to share medical reports for personalized learning)
-}${contextInfo}${userGreeting}`;
+}${scientificInfo}${contextInfo}${userGreeting}`;
 
     // Build contents array with proper message structure
     const contents = conversationHistory.map(msg => ({

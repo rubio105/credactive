@@ -38,6 +38,8 @@ import {
   onDemandCourseCorporateAccess,
   emailTemplates,
   subscriptionPlans,
+  medicalKnowledgeBase,
+  medicalKnowledgeChunks,
   type User,
   type UpsertUser,
   type Category,
@@ -180,6 +182,10 @@ import {
   jobQueue,
   type JobQueue,
   type InsertJobQueue,
+  type MedicalKnowledgeBase,
+  type InsertMedicalKnowledgeBase,
+  type MedicalKnowledgeChunk,
+  type InsertMedicalKnowledgeChunk,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
@@ -570,6 +576,22 @@ export interface IStorage {
   updateJobProgress(id: string, progress: number, currentStep: string): Promise<JobQueue>;
   completeJob(id: string, outputData: any): Promise<JobQueue>;
   failJob(id: string, errorMessage: string): Promise<JobQueue>;
+
+  // ========== MEDICAL KNOWLEDGE BASE (RAG) ==========
+  
+  // Medical document operations
+  createMedicalDocument(doc: InsertMedicalKnowledgeBase): Promise<MedicalKnowledgeBase>;
+  getMedicalDocumentById(id: string): Promise<MedicalKnowledgeBase | undefined>;
+  getMedicalDocuments(filters?: { isActive?: boolean; documentType?: string; medicalTopics?: string[] }): Promise<MedicalKnowledgeBase[]>;
+  updateMedicalDocument(id: string, updates: Partial<MedicalKnowledgeBase>): Promise<MedicalKnowledgeBase>;
+  deleteMedicalDocument(id: string): Promise<void>;
+  
+  // Medical knowledge chunks operations
+  createMedicalChunk(chunk: InsertMedicalKnowledgeChunk): Promise<MedicalKnowledgeChunk>;
+  getChunksByDocument(documentId: string): Promise<MedicalKnowledgeChunk[]>;
+  
+  // Semantic search operation
+  semanticSearchMedical(queryEmbedding: number[], limit?: number, topicFilter?: string[]): Promise<Array<MedicalKnowledgeChunk & { similarity: number; documentTitle: string }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3525,6 +3547,92 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobQueue.id, id))
       .returning();
     return failed;
+  }
+
+  // ========== MEDICAL KNOWLEDGE BASE (RAG) OPERATIONS ==========
+
+  async createMedicalDocument(doc: InsertMedicalKnowledgeBase): Promise<MedicalKnowledgeBase> {
+    const [document] = await db.insert(medicalKnowledgeBase).values(doc).returning();
+    return document;
+  }
+
+  async getMedicalDocumentById(id: string): Promise<MedicalKnowledgeBase | undefined> {
+    const [doc] = await db.select().from(medicalKnowledgeBase).where(eq(medicalKnowledgeBase.id, id));
+    return doc;
+  }
+
+  async getMedicalDocuments(filters?: { isActive?: boolean; documentType?: string; medicalTopics?: string[] }): Promise<MedicalKnowledgeBase[]> {
+    let query = db.select().from(medicalKnowledgeBase);
+    
+    const conditions = [];
+    if (filters?.isActive !== undefined) {
+      conditions.push(eq(medicalKnowledgeBase.isActive, filters.isActive));
+    }
+    if (filters?.documentType) {
+      conditions.push(eq(medicalKnowledgeBase.documentType, filters.documentType));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query;
+  }
+
+  async updateMedicalDocument(id: string, updates: Partial<MedicalKnowledgeBase>): Promise<MedicalKnowledgeBase> {
+    const [updated] = await db
+      .update(medicalKnowledgeBase)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(medicalKnowledgeBase.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMedicalDocument(id: string): Promise<void> {
+    await db.delete(medicalKnowledgeBase).where(eq(medicalKnowledgeBase.id, id));
+  }
+
+  async createMedicalChunk(chunk: InsertMedicalKnowledgeChunk): Promise<MedicalKnowledgeChunk> {
+    const [created] = await db.insert(medicalKnowledgeChunks).values(chunk as any).returning();
+    return created;
+  }
+
+  async getChunksByDocument(documentId: string): Promise<MedicalKnowledgeChunk[]> {
+    return await db.select().from(medicalKnowledgeChunks).where(eq(medicalKnowledgeChunks.documentId, documentId));
+  }
+
+  async semanticSearchMedical(
+    queryEmbedding: number[], 
+    limit: number = 5, 
+    topicFilter?: string[]
+  ): Promise<Array<MedicalKnowledgeChunk & { similarity: number; documentTitle: string }>> {
+    // Convert embedding array to pgvector format
+    const embeddingStr = `[${queryEmbedding.join(',')}]`;
+    
+    // Cosine similarity search with optional topic filtering
+    const query = sql`
+      SELECT 
+        c.id,
+        c.document_id,
+        c.chunk_index,
+        c.content,
+        c.token_count,
+        c.created_at,
+        d.title as document_title,
+        1 - (c.embedding <=> ${embeddingStr}::vector) as similarity
+      FROM medical_knowledge_chunks c
+      JOIN medical_knowledge_base d ON c.document_id = d.id
+      WHERE d.is_active = true
+      ${topicFilter && topicFilter.length > 0 
+        ? sql`AND d.medical_topics && ARRAY[${sql.join(topicFilter.map(t => sql`${t}`), sql`, `)}]::text[]`
+        : sql``
+      }
+      ORDER BY c.embedding <=> ${embeddingStr}::vector
+      LIMIT ${limit}
+    `;
+    
+    const results = await db.execute(query);
+    return results.rows as any;
   }
 }
 

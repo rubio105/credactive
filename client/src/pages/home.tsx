@@ -93,10 +93,25 @@ export default function Home() {
     enabled: !!user,
   });
 
-  // Get only the 3 most recent reports for home page (clone to avoid mutating cache)
-  const recentReports = [...healthReports]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 3);
+  // Get all reports sorted by date (clone to avoid mutating cache)
+  const sortedReports = [...healthReports]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  
+  // Pagination for recent reports (3 per page)
+  const [reportPage, setReportPage] = useState(0);
+  const REPORTS_PER_PAGE = 3;
+  const totalReportPages = Math.ceil(sortedReports.length / REPORTS_PER_PAGE);
+  const recentReports = sortedReports.slice(
+    reportPage * REPORTS_PER_PAGE,
+    (reportPage + 1) * REPORTS_PER_PAGE
+  );
+
+  // Reset to first page when reports change (new uploads or deletions)
+  useEffect(() => {
+    if (sortedReports.length > 0) {
+      setReportPage(0);
+    }
+  }, [sortedReports.length, sortedReports[0]?.id]);
 
   const { data: categoriesWithQuizzes = [] } = useQuery<Array<Category & { quizzes: QuizWithCount[] }>>({
     queryKey: ["/api/categories-with-quizzes"],
@@ -411,20 +426,49 @@ export default function Home() {
         </Card>
 
         {/* Recent Medical Reports */}
-        {recentReports.length > 0 && (
+        {sortedReports.length > 0 && (
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   <h2 className="text-2xl font-bold">Documenti Recenti</h2>
+                  {totalReportPages > 1 && (
+                    <span className="text-sm text-muted-foreground">
+                      Pagina {reportPage + 1} di {totalReportPages}
+                    </span>
+                  )}
                 </div>
-                <Link href="/prevention">
-                  <Button variant="outline" size="sm" data-testid="button-view-all-reports">
-                    Vedi Tutti
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                  {totalReportPages > 1 && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setReportPage(Math.max(0, reportPage - 1))}
+                        disabled={reportPage === 0}
+                        data-testid="button-prev-reports"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setReportPage(Math.min(totalReportPages - 1, reportPage + 1))}
+                        disabled={reportPage === totalReportPages - 1}
+                        data-testid="button-next-reports"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
+                  <Link href="/prevention">
+                    <Button variant="outline" size="sm" data-testid="button-view-all-reports">
+                      Vedi Tutti
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {recentReports.map(report => (
@@ -450,19 +494,21 @@ export default function Home() {
                   />
                 ))}
               </div>
-              {recentReports.length === 0 && (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Nessun documento caricato</p>
-                  <p className="text-sm mt-2">Carica il tuo primo referto medico per iniziare</p>
-                  <Button 
-                    className="mt-4" 
-                    onClick={() => setShowUploadDialog(true)}
-                    data-testid="button-upload-first-report"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Carica Referto
-                  </Button>
+              {/* Pagination Dots Indicator */}
+              {totalReportPages > 1 && (
+                <div className="flex justify-center gap-2 mt-4">
+                  {Array.from({ length: totalReportPages }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setReportPage(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === reportPage 
+                          ? 'bg-primary w-6' 
+                          : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                      }`}
+                      data-testid={`dot-report-page-${index}`}
+                    />
+                  ))}
                 </div>
               )}
             </CardContent>

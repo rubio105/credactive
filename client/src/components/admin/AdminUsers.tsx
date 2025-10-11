@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Trash2, ArrowLeft, Plus, Download, Upload } from "lucide-react";
+import { Pencil, Trash2, ArrowLeft, Plus, Download, Upload, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -76,6 +76,9 @@ export function AdminUsers() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const USERS_PER_PAGE = 15;
   const [newUser, setNewUser] = useState<NewUser>({
     email: '',
     password: '',
@@ -228,6 +231,30 @@ export function AdminUsers() {
     }
   };
 
+  // Filter and paginate users
+  const filteredUsers = users?.filter(user => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      user.email.toLowerCase().includes(query) ||
+      user.firstName?.toLowerCase().includes(query) ||
+      user.lastName?.toLowerCase().includes(query) ||
+      user.phone?.toLowerCase().includes(query)
+    );
+  }) || [];
+
+  const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    currentPage * USERS_PER_PAGE,
+    (currentPage + 1) * USERS_PER_PAGE
+  );
+
+  // Reset to page 0 when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(0);
+  };
+
   if (isLoading) {
     return <div>Caricamento...</div>;
   }
@@ -278,6 +305,23 @@ export function AdminUsers() {
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-4 flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Cerca utenti (email, nome, cognome, telefono)..."
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-10"
+            data-testid="input-search-users"
+          />
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {filteredUsers.length} utenti trovati
+        </div>
+      </div>
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
@@ -295,7 +339,7 @@ export function AdminUsers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user) => (
+            {paginatedUsers.map((user) => (
               <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.firstName}</TableCell>
@@ -353,6 +397,61 @@ export function AdminUsers() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Pagina {currentPage + 1} di {totalPages} • Mostrando {paginatedUsers.length} di {filteredUsers.length} utenti
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+              data-testid="button-prev-page"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Precedente
+            </Button>
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                const pageNum = currentPage < 3 
+                  ? i 
+                  : currentPage > totalPages - 3 
+                    ? totalPages - 5 + i 
+                    : currentPage - 2 + i;
+                
+                if (pageNum < 0 || pageNum >= totalPages) return null;
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className="w-10"
+                    data-testid={`button-page-${pageNum}`}
+                  >
+                    {pageNum + 1}
+                  </Button>
+                );
+              })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              disabled={currentPage === totalPages - 1}
+              data-testid="button-next-page"
+            >
+              Successiva
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-h-[90vh] flex flex-col" data-testid="dialog-edit-user">

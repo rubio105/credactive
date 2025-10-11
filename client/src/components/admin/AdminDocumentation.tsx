@@ -52,8 +52,7 @@ export function AdminDocumentation() {
               <h3>Deployment</h3>
               <ul>
                 <li><strong>Dominio Produzione:</strong> ciry.app</li>
-                <li><strong>Sviluppo:</strong> Replit (auto-reload, hot module replacement)</li>
-                <li><strong>Repository:</strong> GitHub (https://github.com/rubio105/credactive.git)</li>
+                <li><strong>Sviluppo:</strong> Ambiente locale (auto-reload, hot module replacement)</li>
                 <li><strong>Produzione:</strong> Hetzner VPS (IP: 157.180.21.147, porta 5000)</li>
                 <li><strong>Process Manager:</strong> PM2 per gestione processi Node.js</li>
                 <li><strong>Build System:</strong> esbuild (backend) + Vite (frontend)</li>
@@ -155,20 +154,20 @@ VITE_GOOGLE_ANALYTICS_ID=G-...`}
         <TabsContent value="commands" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Workflow di Deployment (Replit → GitHub → Hetzner)</CardTitle>
+              <CardTitle>Workflow di Deployment</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-3">📝 STEP 1: Sviluppo su Replit</h3>
+                <h3 className="text-lg font-semibold mb-3">📝 STEP 1: Sviluppo Locale</h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Modifica il codice su Replit. L'applicazione si riavvia automaticamente.
+                  Modifica il codice nell'ambiente di sviluppo. L'applicazione si riavvia automaticamente.
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-3">🔄 STEP 2: Push su GitHub (Shell di Replit)</h3>
+                <h3 className="text-lg font-semibold mb-3">🔄 STEP 2: Commit Modifiche</h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Dopo aver salvato le modifiche, esegui questi comandi nella <strong>Shell di Replit</strong>:
+                  Dopo aver salvato le modifiche, esegui questi comandi:
                 </p>
                 <div className="space-y-2">
                   {[
@@ -193,15 +192,12 @@ VITE_GOOGLE_ANALYTICS_ID=G-...`}
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  💡 <strong>Tip:</strong> Puoi anche usare il pannello Git nella barra laterale di Replit
-                </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-3">🚀 STEP 3: Deploy su Hetzner (SSH dal tuo PC)</h3>
+                <h3 className="text-lg font-semibold mb-3">🚀 STEP 3: Deploy su Produzione (SSH)</h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Apri il <strong>terminale del tuo computer</strong> e connettiti al server di produzione:
+                  Connettiti al server di produzione via SSH:
                 </p>
                 
                 <div className="space-y-3">

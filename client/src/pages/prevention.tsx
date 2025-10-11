@@ -782,8 +782,8 @@ export default function PreventionPage() {
 
         {/* Compact Header */}
         <div className="mb-6 text-center px-2">
-          <h1 className="text-xl sm:text-2xl font-bold">Prevenzione con Intelligenza Artificiale</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-2">Analizza documenti medici, chatta con l'AI e monitora il tuo percorso di salute</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Fai prevenzione grazie a Ciry, modello AI di Prohmed</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">Con un medico sempre al tuo fianco</p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">

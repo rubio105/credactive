@@ -11,13 +11,14 @@ import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import LanguageSelector from "@/components/language-selector";
 import { LiveCourseModal } from "@/components/LiveCourseModal";
+import { MedicalReportCard } from "@/components/MedicalReportCard";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload, FileText, ArrowRight } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 const prohmedLogo = "/images/ciry-logo.png";
 
@@ -73,6 +74,29 @@ export default function Home() {
   const { data: preventionIndex } = useQuery<{ score: number; tier: string }>({
     queryKey: ["/api/prevention/index"],
   });
+
+  interface HealthReport {
+    id: string;
+    fileName: string;
+    reportType: string;
+    fileType: string;
+    aiSummary: string;
+    createdAt: string;
+    reportDate: string | null;
+    issuer: string | null;
+    extractedValues: Record<string, any>;
+    radiologicalAnalysis: any;
+  }
+
+  const { data: healthReports = [] } = useQuery<HealthReport[]>({
+    queryKey: ["/api/health-score/reports"],
+    enabled: !!user,
+  });
+
+  // Get only the 3 most recent reports for home page (clone to avoid mutating cache)
+  const recentReports = [...healthReports]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
 
   const { data: categoriesWithQuizzes = [] } = useQuery<Array<Category & { quizzes: QuizWithCount[] }>>({
     queryKey: ["/api/categories-with-quizzes"],
@@ -385,6 +409,65 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Recent Medical Reports */}
+        {recentReports.length > 0 && (
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <h2 className="text-2xl font-bold">Documenti Recenti</h2>
+                </div>
+                <Link href="/prevention">
+                  <Button variant="outline" size="sm" data-testid="button-view-all-reports">
+                    Vedi Tutti
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {recentReports.map(report => (
+                  <MedicalReportCard
+                    key={report.id}
+                    report={{
+                      id: report.id,
+                      title: report.fileName,
+                      reportType: report.reportType,
+                      uploadDate: report.createdAt,
+                      ocrConfidence: undefined,
+                      aiSummary: report.aiSummary,
+                      medicalValues: report.extractedValues ? Object.entries(report.extractedValues).map(([name, value]) => ({
+                        name,
+                        value: String(value),
+                        isAbnormal: false
+                      })) : [],
+                      language: 'it',
+                      hospitalName: report.issuer || undefined,
+                      fileType: report.fileType,
+                      radiologicalAnalysis: report.radiologicalAnalysis
+                    }}
+                  />
+                ))}
+              </div>
+              {recentReports.length === 0 && (
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                  <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium">Nessun documento caricato</p>
+                  <p className="text-sm mt-2">Carica il tuo primo referto medico per iniziare</p>
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => setShowUploadDialog(true)}
+                    data-testid="button-upload-first-report"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Carica Referto
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Stats */}
         {dashboardData && (

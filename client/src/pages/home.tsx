@@ -82,7 +82,8 @@ export default function Home() {
       'ultrasound': 'Ecografia',
     };
 
-    const typeLabel = reportTypeMap[report.reportType.toLowerCase()] || 'Referto Medico';
+    const reportTypeLower = report.reportType?.toLowerCase() || '';
+    const typeLabel = reportTypeMap[reportTypeLower] || 'Referto Medico';
     const date = report.reportDate 
       ? new Date(report.reportDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
       : new Date(report.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });

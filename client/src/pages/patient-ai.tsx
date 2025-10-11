@@ -111,7 +111,7 @@ export default function PatientAIPage() {
     enabled: !!user,
   });
 
-  // Mutation per risolvere l'alert
+  // Mutation per risolvere l'alert (Sì, risolto)
   const resolveAlertMutation = useMutation({
     mutationFn: async ({ alertId, response }: { alertId: string; response: string }) => {
       const res = await apiRequest("/api/triage/resolve-alert", "POST", { alertId, response });
@@ -120,8 +120,30 @@ export default function PatientAIPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       toast({
-        title: "Grazie per l'aggiornamento",
-        description: "Il tuo stato è stato registrato con successo"
+        title: "Ottimo!",
+        description: "Siamo felici che il problema sia risolto. C'è qualcos'altro con cui possiamo aiutarti?"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Impossibile aggiornare lo stato",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Mutation per mettere in monitoring l'alert (No, non risolto)
+  const monitorAlertMutation = useMutation({
+    mutationFn: async ({ alertId, response }: { alertId: string; response: string }) => {
+      const res = await apiRequest("/api/triage/monitor-alert", "POST", { alertId, response });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      toast({
+        title: "Registrato",
+        description: "Capisco, ti aiutiamo a gestire la situazione"
       });
     },
     onError: (error: any) => {
@@ -420,7 +442,7 @@ export default function PatientAIPage() {
                               alertId: pendingAlert.id, 
                               response: "Sì, risolto" 
                             })}
-                            disabled={resolveAlertMutation.isPending}
+                            disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
                             className="bg-green-600 hover:bg-green-700 text-white"
                             data-testid="button-resolve-yes"
                           >
@@ -430,7 +452,7 @@ export default function PatientAIPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              resolveAlertMutation.mutate({ 
+                              monitorAlertMutation.mutate({ 
                                 alertId: pendingAlert.id, 
                                 response: "No, non ancora risolto" 
                               });
@@ -442,7 +464,7 @@ export default function PatientAIPage() {
                                 setUserInput(followupMessage);
                               }, 500);
                             }}
-                            disabled={resolveAlertMutation.isPending}
+                            disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
                             className="border-gray-400 dark:border-gray-600"
                             data-testid="button-resolve-no"
                           >

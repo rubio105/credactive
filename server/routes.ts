@@ -7439,10 +7439,10 @@ Le risposte DEVONO essere in italiano.`;
         return res.status(400).json({ message: 'Alert ID and response are required' });
       }
 
-      // Verify alert belongs to user
-      const alert = await storage.getTriageAlertsBySession(alertId);
-      if (!alert || alert.length === 0) {
-        return res.status(404).json({ message: 'Alert not found' });
+      // Verify alert exists and belongs to user
+      const alert = await storage.getTriageAlertById(alertId);
+      if (!alert || alert.userId !== user.id) {
+        return res.status(404).json({ message: 'Alert not found or access denied' });
       }
 
       const resolvedAlert = await storage.resolveUserAlert(alertId, response);
@@ -7450,6 +7450,30 @@ Le risposte DEVONO essere in italiano.`;
     } catch (error: any) {
       console.error('Resolve alert error:', error);
       res.status(500).json({ message: error.message || 'Failed to resolve alert' });
+    }
+  });
+
+  // Update alert to monitoring (POST /api/triage/monitor-alert)
+  app.post('/api/triage/monitor-alert', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { alertId, response } = req.body;
+
+      if (!alertId || !response) {
+        return res.status(400).json({ message: 'Alert ID and response are required' });
+      }
+
+      // Verify alert exists and belongs to user
+      const alert = await storage.getTriageAlertById(alertId);
+      if (!alert || alert.userId !== user.id) {
+        return res.status(404).json({ message: 'Alert not found or access denied' });
+      }
+
+      const monitoringAlert = await storage.updateAlertToMonitoring(alertId, response);
+      res.json(monitoringAlert);
+    } catch (error: any) {
+      console.error('Monitor alert error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update alert to monitoring' });
     }
   });
 

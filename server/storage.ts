@@ -478,6 +478,7 @@ export interface IStorage {
   
   // Triage alert operations
   createTriageAlert(alert: InsertTriageAlert): Promise<TriageAlert>;
+  getTriageAlertById(id: string): Promise<TriageAlert | undefined>; // Get alert by ID
   getTriageAlertsBySession(sessionId: string): Promise<TriageAlert[]>;
   getUnreviewedTriageAlerts(): Promise<TriageAlert[]>;
   getAllTriageAlerts(): Promise<TriageAlert[]>; // Admin: fetch all alerts
@@ -485,6 +486,7 @@ export interface IStorage {
   updateTriageAlert(id: string, updates: Partial<TriageAlert>): Promise<TriageAlert>;
   getPendingAlertForUser(userId: string): Promise<TriageAlert | undefined>; // Get most recent pending medium/high alert
   resolveUserAlert(alertId: string, response: string): Promise<TriageAlert>; // Mark alert as resolved by user
+  updateAlertToMonitoring(alertId: string, response: string): Promise<TriageAlert>; // Update alert to monitoring (not resolved)
   
   // Prohmed code operations
   createProhmedCode(code: InsertProhmedCode): Promise<ProhmedCode>;
@@ -2901,6 +2903,14 @@ export class DatabaseStorage implements IStorage {
     return newAlert;
   }
 
+  async getTriageAlertById(id: string): Promise<TriageAlert | undefined> {
+    const [alert] = await db
+      .select()
+      .from(triageAlerts)
+      .where(eq(triageAlerts.id, id));
+    return alert;
+  }
+
   async getTriageAlertsBySession(sessionId: string): Promise<TriageAlert[]> {
     return await db
       .select()
@@ -2959,7 +2969,10 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(triageAlerts.userId, userId),
-          eq(triageAlerts.status, 'pending'),
+          or(
+            eq(triageAlerts.status, 'pending'),
+            eq(triageAlerts.status, 'monitoring')
+          ),
           or(
             eq(triageAlerts.urgencyLevel, 'medium'),
             eq(triageAlerts.urgencyLevel, 'high'),
@@ -2979,6 +2992,19 @@ export class DatabaseStorage implements IStorage {
         status: 'user_resolved',
         userResolved: true,
         userResolvedAt: new Date(),
+        followupResponse: response,
+      })
+      .where(eq(triageAlerts.id, alertId))
+      .returning();
+    return alert;
+  }
+
+  async updateAlertToMonitoring(alertId: string, response: string): Promise<TriageAlert> {
+    const [alert] = await db
+      .update(triageAlerts)
+      .set({
+        status: 'monitoring',
+        userResolved: false,
         followupResponse: response,
       })
       .where(eq(triageAlerts.id, alertId))

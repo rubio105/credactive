@@ -46,6 +46,11 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const logoImage = logoImageFull;
   const [location, setLocation] = useLocation();
 
+  // DEBUG: Log user data
+  if (typedUser) {
+    console.log('[Navigation] User email:', typedUser.email, 'aiOnlyAccess:', typedUser.aiOnlyAccess);
+  }
+
   const { data: headerPages = [] } = useQuery<ContentPage[]>({
     queryKey: ["/api/content-pages"],
     select: (pages) => pages.filter(page => page.placement === 'header' && page.isPublished && page.slug !== 'chi-siamo'),

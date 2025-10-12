@@ -2811,7 +2811,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(preventionDocuments)
       .where(eq(preventionDocuments.uploadedById, userId))
-      .orderBy(desc(preventionDocuments.uploadDate)); // Order by upload date descending (most recent first)
+      .orderBy(desc(preventionDocuments.createdAt)); // Order by creation date descending (most recent first)
   }
 
   async updatePreventionDocument(id: string, updates: Partial<PreventionDocument>): Promise<PreventionDocument> {

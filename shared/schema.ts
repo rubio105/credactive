@@ -1239,7 +1239,8 @@ export const preventionDocuments = pgTable("prevention_documents", {
   analysisStatus: varchar("analysis_status", { length: 20 }).default("pending"), // pending, processing, completed, failed
   extractedTopics: text("extracted_topics").array(), // Topics extracted by AI
   extractedKeywords: text("extracted_keywords").array(), // Keywords extracted by AI
-  summary: text("summary"), // AI-generated summary
+  summary: text("summary"), // AI-generated summary (legacy)
+  aiAnalysis: jsonb("ai_analysis"), // Extended AI analysis: {patientSummary, doctorSummary, diagnosis, prevention, severity}
   language: varchar("language", { length: 2 }), // it, en, es
   
   isActive: boolean("is_active").default(true),

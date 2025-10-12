@@ -6535,9 +6535,21 @@ Explicación de audio:`
         const transformedReports = healthReports.map(report => ({
           id: report.id,
           title: report.reportType || report.fileName,
+          reportType: report.reportType,
+          uploadDate: report.createdAt,
           fileUrl: report.filePath || `/medical-reports/${report.fileName}`,
+          fileType: report.fileType,
           extractedTopics: report.medicalKeywords || [],
           summary: report.aiSummary || undefined,
+          aiAnalysis: report.aiAnalysis || undefined,
+          medicalValues: report.extractedValues ? Object.entries(report.extractedValues).map(([name, value]) => ({
+            name,
+            value: String(value),
+            isAbnormal: false
+          })) : [],
+          ocrConfidence: report.ocrConfidence,
+          hospitalName: report.issuer,
+          radiologicalAnalysis: report.radiologicalAnalysis || undefined,
         }));
         
         // Combine and return both types of documents

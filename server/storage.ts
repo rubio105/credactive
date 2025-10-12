@@ -455,6 +455,7 @@ export interface IStorage {
   createPreventionDocument(doc: InsertPreventionDocument): Promise<PreventionDocument>;
   getPreventionDocumentById(id: string): Promise<PreventionDocument | undefined>;
   getAllPreventionDocuments(activeOnly?: boolean): Promise<PreventionDocument[]>;
+  getPreventionDocumentsByUser(userId: string): Promise<PreventionDocument[]>;
   updatePreventionDocument(id: string, updates: Partial<PreventionDocument>): Promise<PreventionDocument>;
   deletePreventionDocument(id: string): Promise<void>;
   
@@ -2803,6 +2804,14 @@ export class DatabaseStorage implements IStorage {
       return await query.where(eq(preventionDocuments.isActive, true)).orderBy(desc(preventionDocuments.createdAt));
     }
     return await query.orderBy(desc(preventionDocuments.createdAt));
+  }
+
+  async getPreventionDocumentsByUser(userId: string): Promise<PreventionDocument[]> {
+    return await db
+      .select()
+      .from(preventionDocuments)
+      .where(eq(preventionDocuments.uploadedById, userId))
+      .orderBy(desc(preventionDocuments.uploadDate)); // Order by upload date descending (most recent first)
   }
 
   async updatePreventionDocument(id: string, updates: Partial<PreventionDocument>): Promise<PreventionDocument> {

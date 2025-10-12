@@ -7132,6 +7132,31 @@ Le risposte DEVONO essere in italiano.`;
         // Continue without RAG if it fails
       }
 
+      // Get last 2 medical reports for context (if user is authenticated)
+      let documentContext: string | undefined;
+      if (user?.id) {
+        try {
+          const allReports = await storage.getPreventionDocumentsByUser(user.id);
+          const recentReports = allReports.slice(0, 2); // Get only the 2 most recent
+          if (recentReports.length > 0) {
+            documentContext = recentReports.map((report, index) => {
+              const summary = report.aiAnalysis?.patientSummary || report.aiAnalysis?.doctorSummary || report.aiSummary || 'No summary available';
+              const diagnosis = report.aiAnalysis?.diagnosis ? `\nDiagnosi: ${report.aiAnalysis.diagnosis}` : '';
+              const prevention = report.aiAnalysis?.prevention ? `\nPrevenzione: ${report.aiAnalysis.prevention}` : '';
+              
+              return `[REFERTO ${index + 1}: ${report.title}]
+Data: ${new Date(report.uploadDate).toLocaleDateString('it-IT')}
+Tipo: ${report.reportType}
+Riepilogo: ${summary}${diagnosis}${prevention}`;
+            }).join('\n\n---\n\n');
+            console.log(`[Context] Included ${recentReports.length} recent medical reports in conversation context`);
+          }
+        } catch (contextError) {
+          console.error('[Context] Failed to fetch recent reports:', contextError);
+          // Continue without document context if it fails
+        }
+      }
+
       // Calculate user age from date of birth
       const userAge = user?.dateOfBirth 
         ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -7141,7 +7166,7 @@ Le risposte DEVONO essere in italiano.`;
       const aiResponse = await generateTriageResponse(
         initialSymptom, 
         [], 
-        undefined, 
+        documentContext, 
         user?.firstName,
         scientificContext,
         session.userRole as 'patient' | 'doctor', // Pass user role to customize response style
@@ -7299,6 +7324,31 @@ Le risposte DEVONO essere in italiano.`;
         // Continue without RAG if it fails
       }
 
+      // Get last 2 medical reports for context (if user is authenticated)
+      let documentContext: string | undefined;
+      if (user?.id) {
+        try {
+          const allReports = await storage.getPreventionDocumentsByUser(user.id);
+          const recentReports = allReports.slice(0, 2); // Get only the 2 most recent
+          if (recentReports.length > 0) {
+            documentContext = recentReports.map((report, index) => {
+              const summary = report.aiAnalysis?.patientSummary || report.aiAnalysis?.doctorSummary || report.aiSummary || 'No summary available';
+              const diagnosis = report.aiAnalysis?.diagnosis ? `\nDiagnosi: ${report.aiAnalysis.diagnosis}` : '';
+              const prevention = report.aiAnalysis?.prevention ? `\nPrevenzione: ${report.aiAnalysis.prevention}` : '';
+              
+              return `[REFERTO ${index + 1}: ${report.title}]
+Data: ${new Date(report.uploadDate).toLocaleDateString('it-IT')}
+Tipo: ${report.reportType}
+Riepilogo: ${summary}${diagnosis}${prevention}`;
+            }).join('\n\n---\n\n');
+            console.log(`[Context] Included ${recentReports.length} recent medical reports in conversation context`);
+          }
+        } catch (contextError) {
+          console.error('[Context] Failed to fetch recent reports:', contextError);
+          // Continue without document context if it fails
+        }
+      }
+
       // Calculate user age from date of birth
       const userAge = user?.dateOfBirth 
         ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -7308,7 +7358,7 @@ Le risposte DEVONO essere in italiano.`;
       const aiResponse = await generateTriageResponse(
         content, 
         history, 
-        undefined, 
+        documentContext, 
         user?.firstName,
         scientificContext,
         session.userRole as 'patient' | 'doctor', // Pass user role to customize response style

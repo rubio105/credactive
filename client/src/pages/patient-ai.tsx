@@ -488,6 +488,66 @@ export default function PatientAIPage() {
                         </AlertDescription>
                       </Alert>
 
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          💬 Prova uno scenario di esempio:
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                            onClick={() => setUserInput("Raccontami l'ultimo referto")}
+                            data-testid="example-latest-report"
+                          >
+                            <div className="flex items-start gap-2">
+                              <FileText className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                                Raccontami l'ultimo referto
+                              </span>
+                            </div>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                            onClick={() => setUserInput("Vorrei imparare a prevenire l'ipertensione")}
+                            data-testid="example-hypertension"
+                          >
+                            <div className="flex items-start gap-2">
+                              <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                                Vorrei imparare a prevenire l'ipertensione
+                              </span>
+                            </div>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                            onClick={() => setUserInput("Come posso migliorare i miei valori del colesterolo?")}
+                            data-testid="example-cholesterol"
+                          >
+                            <div className="flex items-start gap-2">
+                              <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                                Come posso migliorare i miei valori del colesterolo?
+                              </span>
+                            </div>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                            onClick={() => setUserInput("Quali esami di screening sono consigliati per la mia età?")}
+                            data-testid="example-screening"
+                          >
+                            <div className="flex items-start gap-2">
+                              <Shield className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                                Quali esami di screening sono consigliati per la mia età?
+                              </span>
+                            </div>
+                          </Button>
+                        </div>
+                      </div>
+
                       <div className="flex gap-2">
                         <Input
                           placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."

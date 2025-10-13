@@ -441,9 +441,9 @@ export default function PatientAIPage() {
                             : '💡 Hai risolto la situazione che avevamo segnalato?'
                           }
                         </p>
-                        {pendingAlert.reason.includes('Related topics:') && (
+                        {(pendingAlert as any).userSymptom && (
                           <p className="text-xs text-muted-foreground italic">
-                            Riguardo: {pendingAlert.reason.split('Related topics:')[1].trim()}
+                            Riguardo: {(pendingAlert as any).userSymptom}
                           </p>
                         )}
                         <div className="flex gap-2">

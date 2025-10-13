@@ -7477,7 +7477,22 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
     try {
       const user = req.user as any;
       const pendingAlert = await storage.getPendingAlertForUser(user.id);
-      res.json(pendingAlert || null);
+      
+      if (!pendingAlert) {
+        return res.json(null);
+      }
+
+      // Get the first user message from the session to show the specific symptom
+      let userSymptom = null;
+      if (pendingAlert.sessionId) {
+        const messages = await storage.getTriageMessagesBySession(pendingAlert.sessionId);
+        const firstUserMessage = messages.find(m => m.role === 'user');
+        if (firstUserMessage) {
+          userSymptom = firstUserMessage.content;
+        }
+      }
+
+      res.json({ ...pendingAlert, userSymptom });
     } catch (error: any) {
       console.error('Get pending alert error:', error);
       res.status(500).json({ message: error.message || 'Failed to get pending alert' });

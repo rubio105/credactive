@@ -2978,10 +2978,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(triageAlerts.userId, userId),
-          or(
-            eq(triageAlerts.status, 'pending'),
-            eq(triageAlerts.status, 'monitoring')
-          ),
+          eq(triageAlerts.status, 'pending'),
           or(
             eq(triageAlerts.urgencyLevel, 'medium'),
             eq(triageAlerts.urgencyLevel, 'high'),

@@ -443,7 +443,7 @@ export default function PatientAIPage() {
                         </p>
                         {(pendingAlert as any).userSymptom && (
                           <p className="text-xs text-muted-foreground italic">
-                            Riguardo: {(pendingAlert as any).userSymptom}
+                            Riguardo: al tuo {(pendingAlert as any).userSymptom.toLowerCase().replace(/^(ho |mi fa male |sento )/i, '')}
                           </p>
                         )}
                         <div className="flex gap-2">

@@ -7148,7 +7148,7 @@ Le risposte DEVONO essere in italiano.`;
       let documentContext: string | undefined;
       if (user?.id) {
         try {
-          const allReports = await storage.getPreventionDocumentsByUser(user.id);
+          const allReports = await storage.getHealthReportsByUser(user.id);
           const recentReports = allReports.slice(0, 2); // Get only the 2 most recent
           if (recentReports.length > 0) {
             documentContext = recentReports.map((report, index) => {
@@ -7156,8 +7156,8 @@ Le risposte DEVONO essere in italiano.`;
               const diagnosis = report.aiAnalysis?.diagnosis ? `\nDiagnosi: ${report.aiAnalysis.diagnosis}` : '';
               const prevention = report.aiAnalysis?.prevention ? `\nPrevenzione: ${report.aiAnalysis.prevention}` : '';
               
-              return `[REFERTO ${index + 1}: ${report.title}]
-Data: ${new Date(report.uploadDate).toLocaleDateString('it-IT')}
+              return `[REFERTO ${index + 1}: ${report.reportType || report.fileName}]
+Data: ${new Date(report.createdAt).toLocaleDateString('it-IT')}
 Tipo: ${report.reportType}
 Riepilogo: ${summary}${diagnosis}${prevention}`;
             }).join('\n\n---\n\n');
@@ -7340,7 +7340,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
       let documentContext: string | undefined;
       if (user?.id) {
         try {
-          const allReports = await storage.getPreventionDocumentsByUser(user.id);
+          const allReports = await storage.getHealthReportsByUser(user.id);
           const recentReports = allReports.slice(0, 2); // Get only the 2 most recent
           if (recentReports.length > 0) {
             documentContext = recentReports.map((report, index) => {
@@ -7348,8 +7348,8 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
               const diagnosis = report.aiAnalysis?.diagnosis ? `\nDiagnosi: ${report.aiAnalysis.diagnosis}` : '';
               const prevention = report.aiAnalysis?.prevention ? `\nPrevenzione: ${report.aiAnalysis.prevention}` : '';
               
-              return `[REFERTO ${index + 1}: ${report.title}]
-Data: ${new Date(report.uploadDate).toLocaleDateString('it-IT')}
+              return `[REFERTO ${index + 1}: ${report.reportType || report.fileName}]
+Data: ${new Date(report.createdAt).toLocaleDateString('it-IT')}
 Tipo: ${report.reportType}
 Riepilogo: ${summary}${diagnosis}${prevention}`;
             }).join('\n\n---\n\n');

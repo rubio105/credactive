@@ -7441,6 +7441,49 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
     }
   });
 
+  // Get user's triage sessions (GET /api/triage/user/sessions)
+  app.get('/api/triage/user/sessions', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const sessions = await storage.getTriageSessionsByUser(user.id);
+      res.json(sessions);
+    } catch (error: any) {
+      console.error('Get user triage sessions error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get sessions' });
+    }
+  });
+
+  // Get active triage session (GET /api/triage/session/active)
+  app.get('/api/triage/session/active', async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Anonymous users don't have saved sessions
+      if (!user) {
+        return res.json(null);
+      }
+      
+      const sessions = await storage.getTriageSessionsByUser(user.id);
+      const activeSession = sessions.find(s => s.status === 'active');
+      res.json(activeSession || null);
+    } catch (error: any) {
+      console.error('Get active triage session error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get active session' });
+    }
+  });
+
+  // Get pending alert for user (GET /api/triage/pending-alert)
+  app.get('/api/triage/pending-alert', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const pendingAlert = await storage.getPendingAlertForUser(user.id);
+      res.json(pendingAlert || null);
+    } catch (error: any) {
+      console.error('Get pending alert error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get pending alert' });
+    }
+  });
+
   // Get triage session (GET /api/triage/:sessionId)
   app.get('/api/triage/:sessionId', async (req, res) => {
     try {
@@ -7488,49 +7531,6 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
     } catch (error: any) {
       console.error('Get triage messages error:', error);
       res.status(500).json({ message: error.message || 'Failed to get messages' });
-    }
-  });
-
-  // Get user's triage sessions (GET /api/triage/user/sessions)
-  app.get('/api/triage/user/sessions', isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const sessions = await storage.getTriageSessionsByUser(user.id);
-      res.json(sessions);
-    } catch (error: any) {
-      console.error('Get user triage sessions error:', error);
-      res.status(500).json({ message: error.message || 'Failed to get sessions' });
-    }
-  });
-
-  // Get active triage session (GET /api/triage/session/active)
-  app.get('/api/triage/session/active', async (req, res) => {
-    try {
-      const user = req.user as any;
-      
-      // Anonymous users don't have saved sessions
-      if (!user) {
-        return res.json(null);
-      }
-      
-      const sessions = await storage.getTriageSessionsByUser(user.id);
-      const activeSession = sessions.find(s => s.status === 'active');
-      res.json(activeSession || null);
-    } catch (error: any) {
-      console.error('Get active triage session error:', error);
-      res.status(500).json({ message: error.message || 'Failed to get active session' });
-    }
-  });
-
-  // Get pending alert for user (GET /api/triage/pending-alert)
-  app.get('/api/triage/pending-alert', isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const pendingAlert = await storage.getPendingAlertForUser(user.id);
-      res.json(pendingAlert || null);
-    } catch (error: any) {
-      console.error('Get pending alert error:', error);
-      res.status(500).json({ message: error.message || 'Failed to get pending alert' });
     }
   });
 

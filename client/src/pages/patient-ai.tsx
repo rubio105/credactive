@@ -437,10 +437,15 @@ export default function PatientAIPage() {
                         </p>
                         <p className="text-sm">
                           {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
-                            ? `Hai risolto il problema che avevamo rilevato? (${pendingAlert.reason})`
-                            : `Hai risolto la situazione che avevamo segnalato? (${pendingAlert.reason})`
+                            ? '⚠️ Hai risolto il problema di salute che avevamo rilevato?'
+                            : '💡 Hai risolto la situazione che avevamo segnalato?'
                           }
                         </p>
+                        {pendingAlert.reason.includes('Related topics:') && (
+                          <p className="text-xs text-muted-foreground italic">
+                            Riguardo: {pendingAlert.reason.split('Related topics:')[1].trim()}
+                          </p>
+                        )}
                         <div className="flex gap-2">
                           <Button
                             size="sm"

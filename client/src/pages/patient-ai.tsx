@@ -133,23 +133,29 @@ export default function PatientAIPage() {
     },
   });
 
-  // Mutation per mettere in monitoring l'alert (No, non risolto)
-  const monitorAlertMutation = useMutation({
-    mutationFn: async ({ alertId, response }: { alertId: string; response: string }) => {
-      const res = await apiRequest("/api/triage/monitor-alert", "POST", { alertId, response });
+  // Mutation per contattare medico Prohmed
+  const contactProhmedMutation = useMutation({
+    mutationFn: async ({ alertId }: { alertId: string }) => {
+      // Prima metti l'alert in monitoring
+      await apiRequest("/api/triage/monitor-alert", "POST", { 
+        alertId, 
+        response: "Richiesta contatto medico Prohmed" 
+      });
+      // Poi invia email Prohmed
+      const res = await apiRequest("/api/triage/request-medical-contact", "POST", {});
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       toast({
-        title: "Registrato",
-        description: "Capisco, ti aiutiamo a gestire la situazione"
+        title: "✉️ Email inviata!",
+        description: "Riceverai presto un'email da Prohmed con le istruzioni per prenotare una visita medica."
       });
     },
     onError: (error: any) => {
       toast({
         title: "Errore",
-        description: error?.message || "Impossibile aggiornare lo stato",
+        description: error?.message || "Impossibile inviare la richiesta",
         variant: "destructive"
       });
     },
@@ -442,7 +448,7 @@ export default function PatientAIPage() {
                               alertId: pendingAlert.id, 
                               response: "Sì, risolto" 
                             })}
-                            disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
+                            disabled={resolveAlertMutation.isPending || contactProhmedMutation.isPending}
                             className="bg-green-600 hover:bg-green-700 text-white"
                             data-testid="button-resolve-yes"
                           >
@@ -451,24 +457,12 @@ export default function PatientAIPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => {
-                              monitorAlertMutation.mutate({ 
-                                alertId: pendingAlert.id, 
-                                response: "No, non ancora risolto" 
-                              });
-                              // Start a conversation about the unresolved issue
-                              setTimeout(() => {
-                                const followupMessage = pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency'
-                                  ? `Il problema di ${pendingAlert.reason} non è ancora risolto. Hai consultato un medico?`
-                                  : `La situazione di ${pendingAlert.reason} non è ancora risolta. Come posso aiutarti?`;
-                                setUserInput(followupMessage);
-                              }, 500);
-                            }}
-                            disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
-                            className="border-gray-400 dark:border-gray-600"
-                            data-testid="button-resolve-no"
+                            onClick={() => contactProhmedMutation.mutate({ alertId: pendingAlert.id })}
+                            disabled={resolveAlertMutation.isPending || contactProhmedMutation.isPending}
+                            className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                            data-testid="button-contact-prohmed"
                           >
-                            ✗ No
+                            📞 Contatta medico Prohmed
                           </Button>
                         </div>
                       </AlertDescription>

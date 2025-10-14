@@ -41,9 +41,9 @@ export function DoctorDashboard() {
   const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
 
   // Get doctor code - using mutation to generate on demand
-  const generateCodeMutation = useMutation({
+  const generateCodeMutation = useMutation<{ code: string }>({
     mutationFn: async () => {
-      return apiRequest<{ code: string }>("/api/doctor/generate-code", "POST", {});
+      return apiRequest("/api/doctor/generate-code", "POST", {}) as unknown as Promise<{ code: string }>;
     },
   });
 
@@ -168,7 +168,7 @@ export function DoctorDashboard() {
             Il Tuo Codice Medico
           </CardTitle>
           <CardDescription>
-            Condividi questo codice con i tuoi pazienti per collegarli al tuo account (massimo 10 pazienti)
+            Condividi questo codice con i tuoi pazienti per collegarli al tuo account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -187,7 +187,7 @@ export function DoctorDashboard() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            Pazienti collegati: {patients.length}/10
+            Pazienti collegati: {patients.length}
           </p>
         </CardContent>
       </Card>

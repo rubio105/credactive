@@ -3819,14 +3819,6 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Sei già collegato a questo medico');
     }
 
-    // Check doctor's patient limit (max 10)
-    const patientCount = await db.select().from(doctorPatientLinks)
-      .where(eq(doctorPatientLinks.doctorId, doctor.id));
-
-    if (patientCount.length >= 10) {
-      throw new Error('Il medico ha raggiunto il limite di 10 pazienti');
-    }
-
     // Create link
     await db.insert(doctorPatientLinks).values({
       doctorId: doctor.id,

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Stethoscope, Filter, Search, SortAsc, User, ChevronUp, ChevronDown } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -1292,39 +1292,69 @@ export default function PreventionPage() {
                   </div>
                 ) : (
                   <>
-                    <ScrollArea ref={scrollAreaRef} className="h-[450px] border border-emerald-100 dark:border-emerald-800 rounded-lg p-4 bg-gradient-to-b from-white to-emerald-50/30 dark:from-gray-950 dark:to-emerald-950/30">
-                      <div className="space-y-4">
+                    <ScrollArea ref={scrollAreaRef} className="h-[500px] rounded-xl p-6 bg-gradient-to-b from-white via-emerald-50/20 to-white dark:from-gray-950 dark:via-emerald-950/10 dark:to-gray-950">
+                      <div className="space-y-6">
                         {messages?.map((msg) => (
                           <div
                             key={msg.id}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                             data-testid={`message-${msg.id}`}
                           >
+                            {msg.role === 'assistant' && (
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                                <Sparkles className="w-5 h-5 text-white" />
+                              </div>
+                            )}
                             <div
-                              className={`max-w-[95%] sm:max-w-[85%] md:max-w-[80%] p-3 sm:p-4 rounded-2xl shadow-sm ${
+                              className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:shadow-lg ${
                                 msg.role === 'user'
-                                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
-                                  : 'bg-white dark:bg-gray-900 border border-emerald-100 dark:border-emerald-800'
+                                  ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white rounded-tr-sm'
+                                  : 'bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm'
                               }`}
                             >
-                              <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">{msg.content}</p>
+                              <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">
+                                {msg.content}
+                              </p>
                             </div>
+                            {msg.role === 'user' && (
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                                <span className="text-white font-semibold text-sm">
+                                  {user?.nome ? user.nome[0].toUpperCase() : 'U'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         ))}
+                        
+                        {sendMessageMutation.isPending && (
+                          <div className="flex gap-3 justify-start" data-testid="typing-indicator">
+                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                              <Sparkles className="w-5 h-5 text-white animate-pulse" />
+                            </div>
+                            <div className="max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-4 rounded-2xl shadow-md bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm">
+                              <div className="flex gap-1">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
                         <div ref={messagesEndRef} />
                       </div>
                     </ScrollArea>
 
                     {session?.status === 'active' && (
-                      <div className="space-y-2">
-                        <div className="flex gap-2">
+                      <div className="space-y-3 mt-4">
+                        <div className="flex gap-2 items-end">
                           <div className="relative flex-1">
                             <Input
                               placeholder="Scrivi un messaggio..."
                               value={userInput}
                               onChange={(e) => setUserInput(e.target.value)}
-                              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                              className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800 pr-12"
+                              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                              className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 pr-12 py-6 rounded-xl shadow-sm transition-all"
                               data-testid="input-triage-message"
                             />
                             <Button
@@ -1332,31 +1362,34 @@ export default function PreventionPage() {
                               size="sm"
                               variant="ghost"
                               onClick={toggleVoiceInput}
-                              className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}
+                              className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900 ${isListening ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}
                               data-testid="button-voice-input-message"
                             >
-                              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                             </Button>
                           </div>
                           <Button
                             onClick={handleSend}
-                            disabled={sendMessageMutation.isPending}
-                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
+                            disabled={sendMessageMutation.isPending || !userInput.trim()}
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all"
                             data-testid="button-send-message"
                           >
-                            <Send className="w-4 h-4" />
+                            <Send className="w-5 h-5" />
                           </Button>
                         </div>
                         
-                        <Button
-                          onClick={() => setShowUploadDialog(true)}
-                          variant="outline"
-                          className="w-full border-emerald-200 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300"
-                          data-testid="button-upload-report-chat"
-                        >
-                          <FileText className="w-4 h-4 mr-2" />
-                          Carica Referto/Analisi
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => setShowUploadDialog(true)}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 rounded-xl transition-all"
+                            data-testid="button-upload-report-chat"
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Carica Referto
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </>

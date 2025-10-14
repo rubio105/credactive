@@ -1932,7 +1932,7 @@ export const doctorNotes = pgTable("doctor_notes", {
   doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   patientId: varchar("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   preventionDocumentId: uuid("prevention_document_id").references(() => preventionDocuments.id, { onDelete: 'set null' }), // Optional: link to specific document
-  alertId: uuid("alert_id").references(() => medicalAlerts.id, { onDelete: 'set null' }), // Optional: link to specific alert
+  alertId: uuid("alert_id").references(() => triageAlerts.id, { onDelete: 'set null' }), // Optional: link to specific alert
   noteTitle: varchar("note_title", { length: 200 }),
   noteText: text("note_text").notNull(),
   isReport: boolean("is_report").default(false), // True if this is a formal medical report

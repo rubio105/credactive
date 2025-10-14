@@ -21,10 +21,10 @@ interface Alert {
   id: string;
   userId: string;
   sessionId: string;
-  symptom: string;
-  severity: string;
-  urgency: string;
-  recommendations: string[];
+  alertType: string;
+  reason: string;
+  urgencyLevel: string;
+  isReviewed: boolean;
   status: string;
   createdAt: string;
   patientName: string;
@@ -43,7 +43,7 @@ export function DoctorDashboard() {
   // Get doctor code - using mutation to generate on demand
   const generateCodeMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest<{ code: string }>("POST", "/api/doctor/generate-code", {});
+      return apiRequest<{ code: string }>("/api/doctor/generate-code", "POST", {});
     },
   });
 
@@ -67,7 +67,7 @@ export function DoctorDashboard() {
   // Create note mutation
   const createNoteMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/doctor/notes", data);
+      return apiRequest("/api/doctor/notes", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctor/patients"] });
@@ -95,7 +95,7 @@ export function DoctorDashboard() {
   // Unlink patient mutation
   const unlinkPatientMutation = useMutation({
     mutationFn: async (patientId: string) => {
-      return apiRequest("DELETE", `/api/doctor/patients/${patientId}`, {});
+      return apiRequest(`/api/doctor/patients/${patientId}`, "DELETE", {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctor/patients"] });
@@ -140,7 +140,7 @@ export function DoctorDashboard() {
     setSelectedPatient(patient);
     if (alert) {
       setSelectedAlert(alert.id);
-      setNoteTitle(`Risposta ad alert: ${alert.symptom}`);
+      setNoteTitle(`Risposta ad alert: ${alert.reason}`);
     }
     setShowNoteDialog(true);
   };
@@ -282,24 +282,14 @@ export function DoctorDashboard() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <p className="font-medium">{alert.patientName}</p>
-                        <Badge className={getSeverityColor(alert.severity)}>
-                          {alert.severity}
+                        <Badge className={getSeverityColor(alert.urgencyLevel)}>
+                          {alert.urgencyLevel}
                         </Badge>
                         <Badge variant="outline">{alert.status}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
-                        {alert.symptom}
+                        {alert.reason}
                       </p>
-                      {alert.recommendations && alert.recommendations.length > 0 && (
-                        <div className="text-sm">
-                          <p className="font-medium mb-1">Raccomandazioni AI:</p>
-                          <ul className="list-disc list-inside text-muted-foreground">
-                            {alert.recommendations.map((rec, idx) => (
-                              <li key={idx}>{rec}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                       <p className="text-xs text-muted-foreground mt-2">
                         {new Date(alert.createdAt).toLocaleString('it-IT')}
                       </p>

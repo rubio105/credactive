@@ -12,7 +12,6 @@ import { apiRequest } from "@/lib/queryClient";
 const logoImage = "/images/ciry-main-logo.png";
 import { Link } from "wouter";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -180,28 +179,6 @@ export default function Register() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => window.location.href = "/api/auth/google"}
-              data-testid="button-google-register"
-              className="w-full mb-4"
-            >
-              <FcGoogle className="mr-2 h-5 w-5" />
-              Registrati con Google
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Oppure registrati con email</span>
-              </div>
-            </div>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Dati Personali */}
             <div className="space-y-4">

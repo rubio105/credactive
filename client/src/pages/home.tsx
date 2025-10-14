@@ -311,20 +311,31 @@ export default function Home() {
             <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
               {t.welcome}, {(user as User)?.firstName || 'User'}!
             </h1>
-            <p className="text-muted-foreground">
-              {t.subtitle}
-            </p>
-            <div className="mt-4">
-              <p className="text-sm text-primary font-medium">
-                🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
+            {!(user as UserType)?.isDoctor && (
+              <>
+                <p className="text-muted-foreground">
+                  {t.subtitle}
+                </p>
+                <div className="mt-4">
+                  <p className="text-sm text-primary font-medium">
+                    🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
+                  </p>
+                </div>
+              </>
+            )}
+            {(user as UserType)?.isDoctor && (
+              <p className="text-muted-foreground text-lg">
+                Gestisci i tuoi pazienti e monitora la loro salute
               </p>
-            </div>
+            )}
           </div>
-          <Link href="/dashboard">
-            <Button variant="outline" data-testid="button-view-dashboard">
-              {t.viewDashboard}
-            </Button>
-          </Link>
+          {!(user as UserType)?.isDoctor && (
+            <Link href="/dashboard">
+              <Button variant="outline" data-testid="button-view-dashboard">
+                {t.viewDashboard}
+              </Button>
+            </Link>
+          )}
         </div>
 
 

@@ -83,7 +83,6 @@ export default function PreventionPage() {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
   const [showAttentionPointsDialog, setShowAttentionPointsDialog] = useState(false);
-  const [showMedicalContactDialog, setShowMedicalContactDialog] = useState(false);
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
   const [attentionPointsData, setAttentionPointsData] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -1309,23 +1308,6 @@ export default function PreventionPage() {
                               }`}
                             >
                               <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">{msg.content}</p>
-                              
-                              {/* Pulsante Richiedi Contatto Medico - Solo per messaggi AI con aiSuggestDoctor */}
-                              {msg.role === 'assistant' && msg.aiSuggestDoctor && (
-                                <div className="mt-3 pt-3 border-t border-emerald-100 dark:border-emerald-800">
-                                  <Button
-                                    onClick={() => setShowMedicalContactDialog(true)}
-                                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm"
-                                    data-testid="button-request-medical-contact"
-                                  >
-                                    <Stethoscope className="w-4 h-4 mr-2" />
-                                    Richiedi Contatto Medico
-                                  </Button>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                                    Sarai ricontattato dal team medico Prohmed
-                                  </p>
-                                </div>
-                              )}
                             </div>
                           </div>
                         ))}
@@ -1527,69 +1509,6 @@ export default function PreventionPage() {
             >
               <Crown className="w-4 h-4 mr-2" />
               Abbonati Ora
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Medical Contact Confirmation Dialog */}
-      <AlertDialog open={showMedicalContactDialog} onOpenChange={setShowMedicalContactDialog}>
-        <AlertDialogContent className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-2xl">
-              <Stethoscope className="w-6 h-6 text-blue-600" />
-              Contattare il Team Medico?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-base space-y-3">
-              <p>
-                L'AI suggerisce di consultare un medico per questa situazione.
-              </p>
-              <p className="font-semibold text-blue-900 dark:text-blue-100">
-                Vuoi che il team medico Prohmed ti contatti?
-              </p>
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  ✓ <strong>Sì</strong> - Ti invieremo una richiesta di contatto via email<br/>
-                  ✓ <strong>No</strong> - Continua la conversazione con l'AI
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              onClick={() => setShowMedicalContactDialog(false)}
-              data-testid="button-cancel-medical-contact"
-            >
-              No, Continuiamo
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={async () => {
-                setShowMedicalContactDialog(false);
-                try {
-                  const response = await apiRequest('/api/triage/request-medical-contact', 'POST', {});
-                  const data = await response.json();
-                  
-                  if (response.ok) {
-                    toast({
-                      title: "🎁 Email inviata!",
-                      description: `Abbiamo inviato un codice promozionale (${data.promoCode}) per un consulto gratuito con Prohmed.`,
-                    });
-                  } else {
-                    throw new Error(data.message);
-                  }
-                } catch (error: any) {
-                  toast({
-                    title: "Errore",
-                    description: error.message || "Impossibile inviare l'email",
-                    variant: "destructive"
-                  });
-                }
-              }}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-              data-testid="button-confirm-medical-contact"
-            >
-              <Stethoscope className="w-4 h-4 mr-2" />
-              Sì, Contattatemi
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

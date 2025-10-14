@@ -93,6 +93,9 @@ export const users = pgTable("users", {
   corporateAgreementId: uuid("corporate_agreement_id"),
   // Coupon tracking
   couponCode: varchar("coupon_code", { length: 100 }),
+  // Login tracking for feedback popup
+  loginCount: integer("login_count").default(0),
+  feedbackSubmitted: boolean("feedback_submitted").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1215,14 +1218,25 @@ export const userFeedback = pgTable("user_feedback", {
   userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
   rating: integer("rating").notNull(), // 1-5 stars
   comment: text("comment"),
+  message: text("message"), // Detailed feedback message
+  category: varchar("category", { length: 50 }), // bug, feature_request, improvement, other
+  page: varchar("page", { length: 100 }), // Which page user was on
   source: varchar("source", { length: 50 }), // popup, email, manual
+  isResolved: boolean("is_resolved").default(false),
+  adminNotes: text("admin_notes"), // Internal admin notes
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_feedback_user").on(table.userId),
+  index("idx_feedback_category").on(table.category),
+  index("idx_feedback_resolved").on(table.isResolved),
+]);
 
 export type UserFeedback = typeof userFeedback.$inferSelect;
 export const insertUserFeedbackSchema = createInsertSchema(userFeedback).omit({
   id: true,
   createdAt: true,
+  isResolved: true,
+  adminNotes: true,
 });
 export type InsertUserFeedback = z.infer<typeof insertUserFeedbackSchema>;
 

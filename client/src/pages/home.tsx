@@ -12,6 +12,7 @@ import QuizCard from "@/components/quiz-card";
 import LanguageSelector from "@/components/language-selector";
 import { LiveCourseModal } from "@/components/LiveCourseModal";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
+import { DoctorDashboard } from "@/components/DoctorDashboard";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
@@ -417,8 +418,15 @@ export default function Home() {
           </Card>
         )}
 
+        {/* Doctor Dashboard - Only for doctors */}
+        {(user as UserType)?.isDoctor && (
+          <div className="mb-8">
+            <DoctorDashboard />
+          </div>
+        )}
+
         {/* Quick Stats */}
-        {dashboardData && (
+        {dashboardData && !(user as UserType)?.isDoctor && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardContent className="p-6">

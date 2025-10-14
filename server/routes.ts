@@ -6795,7 +6795,7 @@ Explicación de audio:`
       const activeOnly = req.query.activeOnly === 'true';
       const documents = await storage.getAllPreventionDocuments(activeOnly);
       
-      // If user is authenticated, also include their health reports transformed as prevention documents
+      // If user is authenticated, also include their health reports and doctor notes transformed as prevention documents
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         const user = req.user as any;
         const healthReports = await storage.getHealthReportsByUser(user.id);
@@ -6821,8 +6821,33 @@ Explicación de audio:`
           radiologicalAnalysis: report.radiologicalAnalysis || undefined,
         }));
         
-        // Combine and return both types of documents
-        return res.json([...documents, ...transformedReports]);
+        // Get doctor notes for this patient
+        const doctorNotes = await storage.getDoctorNotesByPatient(user.id);
+        
+        // Transform doctor notes to prevention document format
+        const transformedNotes = doctorNotes.map(note => ({
+          id: note.id,
+          title: note.noteTitle || 'Nota Medica',
+          reportType: note.isReport ? 'Referto Medico' : 'Nota Medica',
+          uploadDate: note.createdAt,
+          fileUrl: null,
+          fileType: 'doctor_note',
+          extractedTopics: [],
+          summary: note.noteText,
+          aiAnalysis: undefined,
+          medicalValues: [],
+          ocrConfidence: undefined,
+          hospitalName: note.doctorName || 'Medico Curante',
+          radiologicalAnalysis: undefined,
+          doctorNote: {
+            doctorName: note.doctorName,
+            isReport: note.isReport,
+            content: note.noteText,
+          }
+        }));
+        
+        // Combine and return all types of documents
+        return res.json([...documents, ...transformedReports, ...transformedNotes]);
       }
       
       res.json(documents);

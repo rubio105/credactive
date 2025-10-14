@@ -1,58 +1,30 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, HelpCircle, Settings, Calendar, FileText, Video, Building2, Key, Mail, BarChart3, Home, Tv, MessageSquare, Book, Shield, Gift, CreditCard, Database } from "lucide-react";
+import { Users, Mail, Home, Shield, Gift, Database } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { AdminUsers } from "@/components/admin/AdminUsers";
-import { AdminCategories } from "@/components/admin/AdminCategories";
-import { AdminQuizzes } from "@/components/admin/AdminQuizzes";
-import { AdminQuestions } from "@/components/admin/AdminQuestions";
-import { AdminSettings } from "@/components/admin/AdminSettings";
-import { AdminAPIKeys } from "@/components/admin/AdminAPIKeys";
-import { AdminLiveCourses } from "@/components/admin/AdminLiveCourses";
-import { AdminContentPages } from "@/components/admin/AdminContentPages";
-import { AdminOnDemandCourses } from "@/components/admin/AdminOnDemandCourses";
-import { AdminCorporateAgreements } from "@/components/admin/AdminCorporateAgreements";
 import { AdminEmailTemplates } from "@/components/admin/AdminEmailTemplates";
-import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
-import { AdminLiveSessions } from "@/components/admin/AdminLiveSessions";
-import { AdminFeedback } from "@/components/admin/AdminFeedback";
-import { AdminDocumentation } from "@/components/admin/AdminDocumentation";
 import { AdminPrevention } from "@/components/admin/AdminPrevention";
 import { AdminProhmedCodes } from "@/components/admin/AdminProhmedCodes";
 import { AdminWebinarHealth } from "@/components/admin/AdminWebinarHealth";
-import { AdminSubscriptionPlans } from "@/components/admin/AdminSubscriptionPlans";
 import { AdminKnowledgeBase } from "@/components/admin/AdminKnowledgeBase";
 
 const menuItems = [
-  { id: "analytics", icon: BarChart3, label: "Analytics", testId: "tab-analytics" },
-  { id: "feedback", icon: MessageSquare, label: "Feedback", testId: "tab-feedback" },
-  { id: "marketing", icon: Mail, label: "Marketing", testId: "tab-marketing" },
-  { id: "users", icon: Users, label: "Utenti", testId: "tab-users" },
-  { id: "subscription-plans", icon: CreditCard, label: "Piani", testId: "tab-subscription-plans" },
-  { id: "categories", icon: BookOpen, label: "Categorie", testId: "tab-categories" },
-  { id: "quizzes", icon: BookOpen, label: "Quiz", testId: "tab-quizzes" },
-  { id: "questions", icon: HelpCircle, label: "Domande", testId: "tab-questions" },
-  { id: "live-courses", icon: Calendar, label: "Corsi Live", testId: "tab-live-courses" },
-  { id: "live-sessions", icon: Tv, label: "Sessioni Live", testId: "tab-live-sessions" },
-  { id: "webinar-health", icon: Shield, label: "Webinar Health", testId: "tab-webinar-health" },
-  { id: "on-demand-courses", icon: Video, label: "Corsi On-Demand", testId: "tab-on-demand-courses" },
-  { id: "pages", icon: FileText, label: "Pagine", testId: "tab-pages" },
-  { id: "corporate", icon: Building2, label: "Aziende", testId: "tab-corporate" },
+  { id: "users", icon: Users, label: "Gestione Utenti", testId: "tab-users" },
   { id: "prevention", icon: Shield, label: "AI Prohmed", testId: "tab-prevention" },
-  { id: "prohmed-codes", icon: Gift, label: "Codici Prohmed", testId: "tab-prohmed-codes" },
-  { id: "knowledge-base", icon: Database, label: "Knowledge Base", testId: "tab-knowledge-base" },
-  { id: "email", icon: Mail, label: "Email", testId: "tab-email" },
-  { id: "api", icon: Key, label: "API Keys", testId: "tab-api" },
-  { id: "settings", icon: Settings, label: "Impostazioni", testId: "tab-settings" },
-  { id: "documentation", icon: Book, label: "Documentazione", testId: "tab-documentation" },
+  { id: "marketing", icon: Mail, label: "Marketing", testId: "tab-marketing" },
+  { id: "email", icon: Mail, label: "Template Email", testId: "tab-email" },
+  { id: "knowledge-base", icon: Database, label: "Documenti Scientifici", testId: "tab-knowledge-base" },
+  { id: "webinar-health", icon: Shield, label: "Webinar Salute", testId: "tab-webinar-health" },
+  { id: "prohmed-codes", icon: Gift, label: "Codici Accesso", testId: "tab-prohmed-codes" },
 ];
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState("analytics");
+  const [activeTab, setActiveTab] = useState("users");
 
   if (isLoading) {
     return (
@@ -89,8 +61,8 @@ export default function AdminPage() {
             <Home className="w-4 h-4" />
             Torna alla Home
           </Link>
-          <h2 className="text-xl font-bold mt-4">Admin Panel</h2>
-          <p className="text-sm text-muted-foreground mt-1">CIRY</p>
+          <h2 className="text-xl font-bold mt-4">Pannello Sanitario</h2>
+          <p className="text-sm text-muted-foreground mt-1">Gestione Sistema Prohmed</p>
         </div>
         
         <nav className="flex-1 p-4 overflow-y-auto">
@@ -125,32 +97,18 @@ export default function AdminPage() {
             <h1 className="text-3xl font-bold">
               {menuItems.find(item => item.id === activeTab)?.label || "Pannello Amministrativo"}
             </h1>
-            <p className="text-muted-foreground mt-1">Gestione completa della piattaforma</p>
+            <p className="text-muted-foreground mt-1">Sistema di gestione sanitaria e prevenzione</p>
           </div>
         </div>
 
         <div className="p-8">
-          {activeTab === "analytics" && <AdminAnalytics />}
-          {activeTab === "feedback" && <AdminFeedback />}
-          {activeTab === "marketing" && <AdminMarketing />}
           {activeTab === "users" && <AdminUsers />}
-          {activeTab === "subscription-plans" && <AdminSubscriptionPlans />}
-          {activeTab === "categories" && <AdminCategories />}
-          {activeTab === "quizzes" && <AdminQuizzes />}
-          {activeTab === "questions" && <AdminQuestions />}
-          {activeTab === "live-courses" && <AdminLiveCourses />}
-          {activeTab === "live-sessions" && <AdminLiveSessions />}
-          {activeTab === "webinar-health" && <AdminWebinarHealth />}
-          {activeTab === "on-demand-courses" && <AdminOnDemandCourses />}
-          {activeTab === "pages" && <AdminContentPages />}
-          {activeTab === "corporate" && <AdminCorporateAgreements />}
           {activeTab === "prevention" && <AdminPrevention />}
-          {activeTab === "prohmed-codes" && <AdminProhmedCodes />}
-          {activeTab === "knowledge-base" && <AdminKnowledgeBase />}
+          {activeTab === "marketing" && <AdminMarketing />}
           {activeTab === "email" && <AdminEmailTemplates />}
-          {activeTab === "api" && <AdminAPIKeys />}
-          {activeTab === "settings" && <AdminSettings />}
-          {activeTab === "documentation" && <AdminDocumentation />}
+          {activeTab === "knowledge-base" && <AdminKnowledgeBase />}
+          {activeTab === "webinar-health" && <AdminWebinarHealth />}
+          {activeTab === "prohmed-codes" && <AdminProhmedCodes />}
         </div>
       </main>
     </div>

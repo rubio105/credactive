@@ -121,6 +121,10 @@ export default function PatientAIPage() {
       return res.json();
     },
     onSuccess: () => {
+      // Clear dismissed alert ID immediately when resolved
+      setDismissedAlertId(null);
+      localStorage.removeItem('dismissedAlertId');
+      
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       toast({
         title: "Ottimo!",
@@ -149,6 +153,10 @@ export default function PatientAIPage() {
       return res.json();
     },
     onSuccess: () => {
+      // Clear dismissed alert ID when contacting doctor
+      setDismissedAlertId(null);
+      localStorage.removeItem('dismissedAlertId');
+      
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       toast({
         title: "✉️ Email inviata!",

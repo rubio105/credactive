@@ -14,6 +14,7 @@ import Dashboard from "@/pages/dashboard";
 import Subscribe from "@/pages/subscribe";
 import Report from "@/pages/report";
 import Admin from "@/pages/admin";
+import AdminAudit from "@/pages/admin-audit";
 import ChiSiamo from "@/pages/chi-siamo";
 import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
@@ -75,6 +76,9 @@ function Router() {
       </Route>
       <Route path="/admin">
         {() => <ProtectedRoute requireNonAiOnly><Admin /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/audit">
+        {() => <ProtectedRoute requireNonAiOnly><AdminAudit /></ProtectedRoute>}
       </Route>
       <Route path="/corporate">
         {() => <ProtectedRoute requireNonAiOnly><CorporatePortal /></ProtectedRoute>}

@@ -3014,6 +3014,158 @@ Restituisci SOLO un JSON con:
     }
   });
 
+  // *** AUDIT LOG SYSTEM (GDPR COMPLIANCE) ***
+
+  // Create audit log entry (authenticated users)
+  app.post('/api/audit/log', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const auditSchema = z.object({
+        action: z.string().min(1).max(100),
+        resourceType: z.string().min(1).max(50),
+        resourceId: z.string().uuid(),
+        resourceOwnerId: z.string().optional(),
+        metadata: z.record(z.any()).optional(),
+      });
+
+      const validation = auditSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid input data",
+          errors: validation.error.errors 
+        });
+      }
+
+      const { action, resourceType, resourceId, resourceOwnerId, metadata } = validation.data;
+
+      // Extract IP and User Agent
+      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 
+                       req.socket.remoteAddress || 
+                       null;
+      const userAgent = req.headers['user-agent'] || null;
+
+      const log = await storage.createAuditLog({
+        userId,
+        action,
+        resourceType,
+        resourceId,
+        resourceOwnerId: resourceOwnerId || null,
+        ipAddress,
+        userAgent,
+        metadata: metadata || null,
+      });
+
+      res.json({ success: true, logId: log.id });
+    } catch (error: any) {
+      console.error('Error creating audit log:', error);
+      res.status(500).json({ message: 'Failed to create audit log' });
+    }
+  });
+
+  // Admin - Get audit logs with filters
+  app.get('/api/admin/audit/logs', isAdmin, async (req, res) => {
+    try {
+      const { 
+        userId, 
+        resourceType, 
+        resourceOwnerId, 
+        startDate, 
+        endDate,
+        page = '1',
+        limit = '50'
+      } = req.query;
+
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const offset = (pageNum - 1) * limitNum;
+
+      const filters: any = {
+        limit: limitNum,
+        offset,
+      };
+
+      if (userId) filters.userId = userId as string;
+      if (resourceType) filters.resourceType = resourceType as string;
+      if (resourceOwnerId) filters.resourceOwnerId = resourceOwnerId as string;
+      if (startDate) filters.startDate = new Date(startDate as string);
+      if (endDate) filters.endDate = new Date(endDate as string);
+
+      const [logs, total] = await Promise.all([
+        storage.getAuditLogs(filters),
+        storage.getAuditLogsCount(filters),
+      ]);
+
+      res.json({
+        logs,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      });
+    } catch (error: any) {
+      console.error('Error fetching audit logs:', error);
+      res.status(500).json({ message: 'Failed to fetch audit logs' });
+    }
+  });
+
+  // Admin - Export audit logs as CSV
+  app.get('/api/admin/audit/export', isAdmin, async (req, res) => {
+    try {
+      const { 
+        userId, 
+        resourceType, 
+        resourceOwnerId, 
+        startDate, 
+        endDate 
+      } = req.query;
+
+      const filters: any = {};
+      if (userId) filters.userId = userId as string;
+      if (resourceType) filters.resourceType = resourceType as string;
+      if (resourceOwnerId) filters.resourceOwnerId = resourceOwnerId as string;
+      if (startDate) filters.startDate = new Date(startDate as string);
+      if (endDate) filters.endDate = new Date(endDate as string);
+
+      const logs = await storage.getAuditLogs(filters);
+
+      // Generate CSV
+      const csvRows = [
+        ['ID', 'User', 'User Email', 'Action', 'Resource Type', 'Resource ID', 'IP Address', 'Timestamp'].join(',')
+      ];
+
+      for (const log of logs) {
+        const row = [
+          log.id,
+          log.user?.fullName || 'Unknown',
+          log.user?.email || 'N/A',
+          log.action,
+          log.resourceType,
+          log.resourceId,
+          log.ipAddress || 'N/A',
+          log.createdAt ? new Date(log.createdAt).toISOString() : 'N/A',
+        ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
+        
+        csvRows.push(row);
+      }
+
+      const csv = csvRows.join('\n');
+      const filename = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csv);
+    } catch (error: any) {
+      console.error('Error exporting audit logs:', error);
+      res.status(500).json({ message: 'Failed to export audit logs' });
+    }
+  });
+
   // User - Upload profile image
   app.post('/api/user/upload-profile-image', isAuthenticated, uploadProfileImage.single('image'), async (req: any, res) => {
     try {

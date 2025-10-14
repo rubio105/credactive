@@ -1,12 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import {
   Users,
   UserCheck,
   User,
   CreditCard,
   TrendingUp,
-  Activity
+  Activity,
+  Shield
 } from "lucide-react";
 
 interface AnalyticsData {
@@ -269,6 +272,37 @@ export function AdminDashboard() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Security & Audit */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Shield className="w-5 h-5" />
+          Sicurezza & Audit
+        </h3>
+        <Card className="border-amber-200 dark:border-amber-900">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <Shield className="w-5 h-5" />
+              Sistema Audit Log (GDPR)
+            </CardTitle>
+            <CardDescription>
+              Tracciamento completo degli accessi ai referti sanitari per compliance GDPR
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Visualizza log di accesso, download, condivisioni e eliminazioni di documenti sanitari.
+              Sistema di auditing con export CSV per verifiche e compliance normativa.
+            </p>
+            <Link href="/admin/audit">
+              <Button variant="outline" className="w-full sm:w-auto" data-testid="link-audit-logs">
+                <Shield className="w-4 h-4 mr-2" />
+                Accedi ai Log di Audit
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

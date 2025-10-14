@@ -195,6 +195,9 @@ import {
   type InsertDoctorPatientLink,
   type DoctorNote,
   type InsertDoctorNote,
+  auditLogs,
+  type AuditLog,
+  type InsertAuditLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, or, gte } from "drizzle-orm";
@@ -635,6 +638,25 @@ export interface IStorage {
   
   // Doctor Alert operations  
   getPatientAlertsByDoctor(doctorId: string): Promise<Array<TriageAlert & { patientName: string; patientEmail: string }>>;
+  
+  // Audit Log operations (GDPR compliance)
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogs(filters?: {
+    userId?: string;
+    resourceType?: string;
+    resourceOwnerId?: string;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<Array<AuditLog & { user?: { fullName: string; email: string }; resourceOwner?: { fullName: string; email: string } }>>;
+  getAuditLogsCount(filters?: {
+    userId?: string;
+    resourceType?: string;
+    resourceOwnerId?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3948,6 +3970,122 @@ export class DatabaseStorage implements IStorage {
       patientName: `${r.patientFirstName} ${r.patientLastName}`,
       patientEmail: r.patientEmail,
     }));
+  }
+
+  // ========== AUDIT LOG OPERATIONS (GDPR COMPLIANCE) ==========
+
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const [created] = await db
+      .insert(auditLogs)
+      .values(log)
+      .returning();
+    return created;
+  }
+
+  async getAuditLogs(filters?: {
+    userId?: string;
+    resourceType?: string;
+    resourceOwnerId?: string;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<Array<AuditLog & { user?: { fullName: string; email: string }; resourceOwner?: { fullName: string; email: string } }>> {
+    const conditions = [];
+    
+    if (filters?.userId) {
+      conditions.push(eq(auditLogs.userId, filters.userId));
+    }
+    
+    if (filters?.resourceType) {
+      conditions.push(eq(auditLogs.resourceType, filters.resourceType));
+    }
+    
+    if (filters?.resourceOwnerId) {
+      conditions.push(eq(auditLogs.resourceOwnerId, filters.resourceOwnerId));
+    }
+    
+    if (filters?.startDate) {
+      conditions.push(gte(auditLogs.createdAt, filters.startDate));
+    }
+    
+    if (filters?.endDate) {
+      conditions.push(sql`${auditLogs.createdAt} <= ${filters.endDate}`);
+    }
+
+    let query = db
+      .select({
+        log: auditLogs,
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
+        userEmail: users.email,
+      })
+      .from(auditLogs)
+      .leftJoin(users, eq(auditLogs.userId, users.id))
+      .orderBy(desc(auditLogs.createdAt));
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit) as any;
+    }
+
+    if (filters?.offset) {
+      query = query.offset(filters.offset) as any;
+    }
+
+    const results = await query;
+
+    return results.map(r => ({
+      ...r.log,
+      user: r.userFirstName && r.userLastName ? {
+        fullName: `${r.userFirstName} ${r.userLastName}`,
+        email: r.userEmail || '',
+      } : undefined,
+    }));
+  }
+
+  async getAuditLogsCount(filters?: {
+    userId?: string;
+    resourceType?: string;
+    resourceOwnerId?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<number> {
+    const conditions = [];
+    
+    if (filters?.userId) {
+      conditions.push(eq(auditLogs.userId, filters.userId));
+    }
+    
+    if (filters?.resourceType) {
+      conditions.push(eq(auditLogs.resourceType, filters.resourceType));
+    }
+    
+    if (filters?.resourceOwnerId) {
+      conditions.push(eq(auditLogs.resourceOwnerId, filters.resourceOwnerId));
+    }
+    
+    if (filters?.startDate) {
+      conditions.push(gte(auditLogs.createdAt, filters.startDate));
+    }
+    
+    if (filters?.endDate) {
+      conditions.push(sql`${auditLogs.createdAt} <= ${filters.endDate}`);
+    }
+
+    let query = db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(auditLogs);
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const [result] = await query;
+    return result?.count || 0;
   }
 }
 

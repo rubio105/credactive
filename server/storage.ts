@@ -457,6 +457,9 @@ export interface IStorage {
   getAllUserFeedback(): Promise<(UserFeedback & { user?: User })[]>;
   getUserFeedbackByUserId(userId: string): Promise<UserFeedback[]>;
   checkUserHasRecentFeedback(userId: string, days?: number): Promise<boolean>;
+  updateFeedbackResolution(id: number, isResolved: boolean, adminNotes?: string): Promise<void>;
+  incrementUserLoginCount(userId: string): Promise<void>;
+  markUserFeedbackSubmitted(userId: string): Promise<void>;
 
   // ========== PREVENTION SYSTEM ==========
   
@@ -2773,12 +2776,7 @@ export class DatabaseStorage implements IStorage {
   async getAllUserFeedback(): Promise<(UserFeedback & { user?: User })[]> {
     const feedbacks = await db
       .select({
-        id: userFeedback.id,
-        userId: userFeedback.userId,
-        rating: userFeedback.rating,
-        comment: userFeedback.comment,
-        source: userFeedback.source,
-        createdAt: userFeedback.createdAt,
+        feedback: userFeedback,
         user: users,
       })
       .from(userFeedback)
@@ -2786,14 +2784,30 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(userFeedback.createdAt));
     
     return feedbacks.map(f => ({
-      id: f.id,
-      userId: f.userId,
-      rating: f.rating,
-      comment: f.comment,
-      source: f.source,
-      createdAt: f.createdAt,
+      ...f.feedback,
       user: f.user || undefined,
     }));
+  }
+
+  async updateFeedbackResolution(id: number, isResolved: boolean, adminNotes?: string): Promise<void> {
+    await db
+      .update(userFeedback)
+      .set({ isResolved, adminNotes })
+      .where(eq(userFeedback.id, id));
+  }
+
+  async incrementUserLoginCount(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ loginCount: sql`${users.loginCount} + 1` })
+      .where(eq(users.id, userId));
+  }
+
+  async markUserFeedbackSubmitted(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ feedbackSubmitted: true })
+      .where(eq(users.id, userId));
   }
 
   async getUserFeedbackByUserId(userId: string): Promise<UserFeedback[]> {

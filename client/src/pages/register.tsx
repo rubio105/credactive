@@ -281,8 +281,8 @@ export default function Register() {
                     <SelectValue placeholder="Seleziona..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="patient">Sono un Paziente</SelectItem>
-                    <SelectItem value="doctor">Sono un Medico</SelectItem>
+                    <SelectItem value="patient">Accesso Personale</SelectItem>
+                    <SelectItem value="doctor">Accesso Professionale</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

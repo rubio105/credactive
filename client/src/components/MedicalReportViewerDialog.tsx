@@ -98,7 +98,7 @@ export function MedicalReportViewerDialog({
       esame_urine: "Esame delle Urine",
       generale: "Referto Generale",
     };
-    return names[type] || "Referto Medico";
+    return names[type] || "Referto Sanitario";
   };
 
   const getSeverityBadge = (severity?: "normal" | "moderate" | "urgent") => {
@@ -138,8 +138,8 @@ export function MedicalReportViewerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" data-testid="medical-report-viewer-dialog">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-7xl h-[95vh] max-h-[95vh] overflow-hidden flex flex-col p-0" data-testid="medical-report-viewer-dialog">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <DialogTitle className="text-2xl flex items-center gap-3">
@@ -172,8 +172,8 @@ export function MedicalReportViewerDialog({
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue={hasRadiologicalImage ? "image" : "riepilogo"} className="mt-4">
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: hasRadiologicalImage ? "repeat(5, 1fr)" : "repeat(4, 1fr)" }}>
+        <Tabs defaultValue={hasRadiologicalImage ? "image" : "riepilogo"} className="flex-1 flex flex-col overflow-hidden px-6">
+          <TabsList className="grid w-full my-4" style={{ gridTemplateColumns: hasRadiologicalImage ? "repeat(5, 1fr)" : "repeat(4, 1fr)" }}>
             {hasRadiologicalImage && (
               <TabsTrigger value="image" data-testid="tab-radiological-image">
                 Immagine Radiologica
@@ -189,13 +189,13 @@ export function MedicalReportViewerDialog({
               Prevenzione
             </TabsTrigger>
             <TabsTrigger value="valori" data-testid="tab-values">
-              Valori Medici
+              Valori Clinici
             </TabsTrigger>
           </TabsList>
 
           {/* Radiological Image Tab */}
           {hasRadiologicalImage && report.radiologicalAnalysis && (
-            <TabsContent value="image" className="mt-4" data-testid="content-radiological-image">
+            <TabsContent value="image" className="flex-1 overflow-y-auto pb-6" data-testid="content-radiological-image">
               <div className="space-y-4">
                 <RadiologicalImageViewer
                   reportId={report.id}
@@ -238,12 +238,12 @@ export function MedicalReportViewerDialog({
           )}
 
           {/* Riepilogo Tab */}
-          <TabsContent value="riepilogo" className="mt-4" data-testid="content-summary">
+          <TabsContent value="riepilogo" className="flex-1 overflow-y-auto pb-6" data-testid="content-summary">
             {(report.aiAnalysis?.patientSummary || report.aiAnalysis?.doctorSummary || report.aiSummary) ? (
               <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
                   {isDoctor ? <Stethoscope className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
-                  {isDoctor ? "Riepilogo Medico" : "Riepilogo"}
+                  Riepilogo
                 </p>
                 <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed whitespace-pre-wrap">
                   {isDoctor 
@@ -261,7 +261,7 @@ export function MedicalReportViewerDialog({
           </TabsContent>
 
           {/* Panoramica Tab */}
-          <TabsContent value="panoramica" className="mt-4" data-testid="content-overview">
+          <TabsContent value="panoramica" className="flex-1 overflow-y-auto pb-6" data-testid="content-overview">
             {report.aiAnalysis?.diagnosis ? (
               <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                 <p className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
@@ -281,7 +281,7 @@ export function MedicalReportViewerDialog({
           </TabsContent>
 
           {/* Prevenzione Tab */}
-          <TabsContent value="prevenzione" className="mt-4" data-testid="content-prevention">
+          <TabsContent value="prevenzione" className="flex-1 overflow-y-auto pb-6" data-testid="content-prevention">
             {report.aiAnalysis?.prevention ? (
               <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <p className="text-sm font-medium text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
@@ -301,7 +301,7 @@ export function MedicalReportViewerDialog({
           </TabsContent>
 
           {/* Valori Medici Tab */}
-          <TabsContent value="valori" className="mt-4" data-testid="content-medical-values">
+          <TabsContent value="valori" className="flex-1 overflow-y-auto pb-6" data-testid="content-medical-values">
             {report.medicalValues && report.medicalValues.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {report.medicalValues.map((value, index) => (
@@ -335,7 +335,7 @@ export function MedicalReportViewerDialog({
             ) : (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Nessun valore medico disponibile</p>
+                <p>Nessun valore disponibile</p>
               </div>
             )}
           </TabsContent>

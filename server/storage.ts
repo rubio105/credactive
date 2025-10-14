@@ -189,6 +189,12 @@ import {
   professionalContactRequests,
   type ProfessionalContactRequest,
   type InsertProfessionalContactRequest,
+  doctorPatientLinks,
+  doctorNotes,
+  type DoctorPatientLink,
+  type InsertDoctorPatientLink,
+  type DoctorNote,
+  type InsertDoctorNote,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, or, gte } from "drizzle-orm";
@@ -609,6 +615,23 @@ export interface IStorage {
   getAllProfessionalContactRequests(): Promise<ProfessionalContactRequest[]>;
   updateProfessionalContactRequest(id: string, updates: Partial<ProfessionalContactRequest>): Promise<ProfessionalContactRequest>;
   deleteProfessionalContactRequest(id: string): Promise<void>;
+
+  // Doctor-Patient Link operations
+  generateDoctorCode(doctorId: string): Promise<string>;
+  linkPatientToDoctor(patientId: string, doctorCode: string): Promise<void>;
+  getDoctorPatients(doctorId: string): Promise<Array<User & { linkedAt: Date }>>;
+  getPatientDoctors(patientId: string): Promise<Array<User & { linkedAt: Date }>>;
+  unlinkPatientFromDoctor(doctorId: string, patientId: string): Promise<void>;
+  
+  // Doctor Notes operations
+  createDoctorNote(note: InsertDoctorNote): Promise<DoctorNote>;
+  getDoctorNotesByPatient(patientId: string): Promise<Array<DoctorNote & { doctorName: string }>>;
+  getDoctorNotesByDoctor(doctorId: string): Promise<DoctorNote[]>;
+  getDoctorNoteById(id: string): Promise<DoctorNote | undefined>;
+  deleteDoctorNote(id: string): Promise<void>;
+  
+  // Doctor Alert operations  
+  getPatientAlertsByDoctor(doctorId: string): Promise<Array<TriageAlert & { patientName: string; patientEmail: string }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3742,6 +3765,183 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProfessionalContactRequest(id: string): Promise<void> {
     await db.delete(professionalContactRequests).where(eq(professionalContactRequests.id, id));
+  }
+
+  // ========== DOCTOR-PATIENT LINK OPERATIONS ==========
+
+  async generateDoctorCode(doctorId: string): Promise<string> {
+    // Check if doctor already has a code
+    const doctor = await this.getUser(doctorId);
+    if (doctor?.doctorCode) {
+      return doctor.doctorCode;
+    }
+
+    // Generate unique 8-character alphanumeric code
+    let code = '';
+    let isUnique = false;
+    
+    while (!isUnique) {
+      code = Math.random().toString(36).substring(2, 10).toUpperCase();
+      
+      // Check if code already exists
+      const existing = await db.select().from(users).where(eq(users.doctorCode, code));
+      if (existing.length === 0) {
+        isUnique = true;
+      }
+    }
+
+    // Save code to doctor's profile
+    await db.update(users).set({ doctorCode: code }).where(eq(users.id, doctorId));
+    
+    return code;
+  }
+
+  async linkPatientToDoctor(patientId: string, doctorCode: string): Promise<void> {
+    // Find doctor by code
+    const [doctor] = await db.select().from(users).where(eq(users.doctorCode, doctorCode));
+    
+    if (!doctor) {
+      throw new Error('Codice medico non valido');
+    }
+
+    if (!doctor.isDoctor) {
+      throw new Error('Il codice non appartiene a un medico');
+    }
+
+    // Check if already linked
+    const existing = await db.select().from(doctorPatientLinks)
+      .where(and(
+        eq(doctorPatientLinks.doctorId, doctor.id),
+        eq(doctorPatientLinks.patientId, patientId)
+      ));
+
+    if (existing.length > 0) {
+      throw new Error('Sei già collegato a questo medico');
+    }
+
+    // Check doctor's patient limit (max 10)
+    const patientCount = await db.select().from(doctorPatientLinks)
+      .where(eq(doctorPatientLinks.doctorId, doctor.id));
+
+    if (patientCount.length >= 10) {
+      throw new Error('Il medico ha raggiunto il limite di 10 pazienti');
+    }
+
+    // Create link
+    await db.insert(doctorPatientLinks).values({
+      doctorId: doctor.id,
+      patientId,
+      doctorCode,
+    });
+  }
+
+  async getDoctorPatients(doctorId: string): Promise<Array<User & { linkedAt: Date }>> {
+    const results = await db
+      .select({
+        user: users,
+        linkedAt: doctorPatientLinks.linkedAt,
+      })
+      .from(doctorPatientLinks)
+      .innerJoin(users, eq(doctorPatientLinks.patientId, users.id))
+      .where(eq(doctorPatientLinks.doctorId, doctorId))
+      .orderBy(desc(doctorPatientLinks.linkedAt));
+
+    return results.map(r => ({ ...r.user, linkedAt: r.linkedAt! }));
+  }
+
+  async getPatientDoctors(patientId: string): Promise<Array<User & { linkedAt: Date }>> {
+    const results = await db
+      .select({
+        user: users,
+        linkedAt: doctorPatientLinks.linkedAt,
+      })
+      .from(doctorPatientLinks)
+      .innerJoin(users, eq(doctorPatientLinks.doctorId, users.id))
+      .where(eq(doctorPatientLinks.patientId, patientId))
+      .orderBy(desc(doctorPatientLinks.linkedAt));
+
+    return results.map(r => ({ ...r.user, linkedAt: r.linkedAt! }));
+  }
+
+  async unlinkPatientFromDoctor(doctorId: string, patientId: string): Promise<void> {
+    await db.delete(doctorPatientLinks)
+      .where(and(
+        eq(doctorPatientLinks.doctorId, doctorId),
+        eq(doctorPatientLinks.patientId, patientId)
+      ));
+  }
+
+  // ========== DOCTOR NOTES OPERATIONS ==========
+
+  async createDoctorNote(note: InsertDoctorNote): Promise<DoctorNote> {
+    const [created] = await db.insert(doctorNotes).values(note).returning();
+    return created;
+  }
+
+  async getDoctorNotesByPatient(patientId: string): Promise<Array<DoctorNote & { doctorName: string }>> {
+    const results = await db
+      .select({
+        note: doctorNotes,
+        doctorFirstName: users.firstName,
+        doctorLastName: users.lastName,
+      })
+      .from(doctorNotes)
+      .innerJoin(users, eq(doctorNotes.doctorId, users.id))
+      .where(eq(doctorNotes.patientId, patientId))
+      .orderBy(desc(doctorNotes.createdAt));
+
+    return results.map(r => ({
+      ...r.note,
+      doctorName: `Dr. ${r.doctorFirstName} ${r.doctorLastName}`,
+    }));
+  }
+
+  async getDoctorNotesByDoctor(doctorId: string): Promise<DoctorNote[]> {
+    return await db
+      .select()
+      .from(doctorNotes)
+      .where(eq(doctorNotes.doctorId, doctorId))
+      .orderBy(desc(doctorNotes.createdAt));
+  }
+
+  async getDoctorNoteById(id: string): Promise<DoctorNote | undefined> {
+    const [note] = await db.select().from(doctorNotes).where(eq(doctorNotes.id, id));
+    return note;
+  }
+
+  async deleteDoctorNote(id: string): Promise<void> {
+    await db.delete(doctorNotes).where(eq(doctorNotes.id, id));
+  }
+
+  // ========== DOCTOR ALERT OPERATIONS ==========
+
+  async getPatientAlertsByDoctor(doctorId: string): Promise<Array<TriageAlert & { patientName: string; patientEmail: string }>> {
+    // Get all patients linked to this doctor
+    const linkedPatients = await this.getDoctorPatients(doctorId);
+    const patientIds = linkedPatients.map(p => p.id);
+
+    if (patientIds.length === 0) {
+      return [];
+    }
+
+    // Get alerts for these patients
+    const results = await db
+      .select({
+        alert: triageAlerts,
+        patientFirstName: users.firstName,
+        patientLastName: users.lastName,
+        patientEmail: users.email,
+      })
+      .from(triageAlerts)
+      .innerJoin(users, eq(triageAlerts.userId, users.id))
+      .where(sql`${triageAlerts.userId} = ANY(${patientIds})`)
+      .orderBy(desc(triageAlerts.createdAt));
+
+    return results.map(r => ({
+      ...r.alert,
+      patientName: `${r.patientFirstName} ${r.patientLastName}`,
+      patientEmail: r.patientEmail,
+    }));
   }
 }
 

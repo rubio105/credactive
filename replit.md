@@ -1,6 +1,6 @@
 # Overview
 
-CIRY (Care & Intelligence Ready for You) is a B2B platform focused on integrating health prevention and cybersecurity education. It offers professional certification preparation, including quizzes and progress tracking, alongside AI-powered health prevention tools. The platform aims to be a leader in dual-domain education, leveraging AI for generating vast numbers of quiz questions and providing comprehensive health prevention through conversational AI and medical document analysis. Key ambitions include expanding market reach in both cybersecurity and health education, and continuously innovating with AI to enhance user learning and well-being.
+CIRY (Care & Intelligence Ready for You) is a B2B platform integrating health prevention and cybersecurity education. It offers professional certification prep with quizzes, progress tracking, and AI-powered health prevention tools. The platform aims to be a leader in dual-domain education, leveraging AI for content generation and comprehensive health prevention through conversational AI and medical document analysis. Ambitions include market expansion in both education sectors and continuous AI innovation to enhance user learning and well-being.
 
 # User Preferences
 
@@ -8,68 +8,74 @@ Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
-## Frontend
+## UI/UX Decisions
 
-The frontend uses React with TypeScript, Vite, shadcn/ui (Radix UI + Tailwind CSS), TanStack Query, Wouter for routing, and React Hook Form with Zod. It provides a modern, consistent interface with features like a professional color wheel visualization for personality reports.
+The frontend utilizes React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod, ensuring a modern and consistent interface. Design elements include a professional color wheel visualization for personality reports, modern chat interfaces with avatar circles, bubble-style messages, typing indicators, and large input fields. Severity badges with icons and color-coding are used for medical reports. The UI is designed for role-based content display (patient vs. doctor) and features smooth transitions and hover effects.
 
-## Backend
+## Technical Implementations
 
-The backend is built with Express.js, Node.js, and TypeScript, providing a RESTful API. Authentication uses Passport.js (local strategy with bcrypt) with persistent sessions. Drizzle ORM provides type-safe database access to PostgreSQL. Security measures include rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.
+### Frontend
+Built with React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, and React Hook Form with Zod.
 
-## Data Storage
+### Backend
+Developed using Express.js, Node.js, and TypeScript, providing a RESTful API. Authentication is handled by Passport.js (local strategy with bcrypt) with persistent sessions. Drizzle ORM provides type-safe access to PostgreSQL. Security measures include rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.
 
-PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. The schema supports various features including Users (with Stripe data), Subscription Plans, Quizzes, Questions, User Progress, Reports, Live Courses, Static Content, Email Templates, Settings, Prevention Documents, Prevention Topics, Triage Sessions, Prohmed Codes, and Crossword Puzzles.
+### Data Storage
+PostgreSQL (Neon's serverless driver) is managed by Drizzle ORM. The schema supports users (with health profiles), subscriptions, quizzes, progress tracking, reports, live courses, static content, email templates, settings, prevention documents, topics, triage, Prohmed codes, crosswords, audit logs, appointments, clinic organizations, and email notifications.
 
-## Key Features
+## Feature Specifications
 
+### Core Features
 *   **Comprehensive Quiz System**: Hierarchical structure, randomized questions, timed quizzes, and detailed reports.
-*   **Insight Discovery Personality Reports**: A 72-type assessment system based on Jung/Hippocrates color theory.
+*   **Insight Discovery Personality Reports**: 72-type assessment based on Jung/Hippocrates color theory.
 *   **Premium Features**: Content access via Stripe subscription.
-*   **AI Question Generation**: Admin functionality using OpenAI GPT-4o for bulk, context-aware question generation from documents.
-*   **Live Courses & Streaming**: System for purchasing and tracking live courses with real-time interactive learning via WebSockets.
-*   **Content Management System (CMS)**: Manages static content pages and dynamic navigation.
-*   **Internationalization**: Multi-language support with in-quiz language selection and real-time AI translation via OpenAI GPT-4o.
-*   **Database-Driven Subscription Plans**: Dynamic subscription management with configurable limits and Stripe integration.
+*   **AI Question Generation**: Admin functionality using OpenAI GPT-4o for bulk, context-aware question generation.
+*   **Live Courses & Streaming**: System for purchasing and tracking live courses with real-time interactive learning.
+*   **Content Management System (CMS)**: Manages static pages and dynamic navigation.
+*   **Internationalization**: Multi-language support with in-quiz language selection and real-time AI translation.
+*   **Database-Driven Subscription Plans**: Dynamic management with configurable limits and Stripe integration.
 *   **Analytics Dashboard**: Comprehensive business intelligence metrics.
 *   **AI Email Marketing System**: Intelligent campaign management using OpenAI GPT-4o and Brevo integration.
 *   **SEO Optimization**: Dynamic meta tags and sitemap generation.
-*   **Admin Dashboard**: Streamlined analytics-only dashboard displaying key system metrics and indicators (user registrations, access types, revenue, etc.) without management interfaces.
-*   **Corporate B2B Licensing System**: Enterprise solution for bulk license sales, corporate accounts, and course assignments.
+*   **Admin Dashboard**: Streamlined analytics-only dashboard.
+*   **Corporate B2B Licensing System**: Enterprise solution for bulk license sales and corporate accounts.
 *   **Leaderboard System**: Gamification features with global and corporate-exclusive leaderboards.
 *   **AI Conversational Assistant**: Context-aware AI coaching using OpenAI GPT-4o for scenario-based learning.
-*   **Medical Prevention System (Prohmed Partnership)**: Comprehensive health prevention module powered by Google Gemini AI, featuring medical document upload/analysis, an AI educational assistant ("AI Prohmed - Impara la Prevenzione"), and a medical alert system. Includes advanced UI for Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring. Enhanced with GDPR-compliant privacy disclaimers detailing anonymization algorithms, professional Prohmed branding on all reports, and role-based AI responses (doctor vs. patient) for personalized medical communication. Interactive radiological image viewer displays findings with visual markers on medical images.
-    *   **Modern Chat Interface**: AI prevention chat features professional UI with avatar circles (Sparkles icon for AI, user initials for patients), bubble-style messages with smooth rounded corners, typing indicator animation during AI responses, large spaced input field with voice recording support, and disabled send button when input is empty. Interface maintains 500px chat height for optimal readability with gradient backgrounds and hover effects for enhanced interactivity.
-    *   **Streamlined Patient Experience**: Removed "Contact Doctor" button and associated dialog from patient prevention interface to maintain clear separation between AI educational features and direct medical consultation. Patients interact solely through AI chat for prevention education, with system-generated alerts routing to doctors when medical attention is recommended.
-    *   **Role-Based AI Analysis**: Dual-content system generating differentiated medical summaries. `aiAnalysis` field (JSONB) contains `patientSummary` (simplified language), `doctorSummary` (medical terminology), `diagnosis`, `prevention` advice, and `severity` assessment (normal/moderate/urgent). UI automatically displays appropriate version based on user.isDoctor flag with color-coded severity badges.
-    *   **Medical Report Viewer Dialog**: Comprehensive dialog system (`MedicalReportViewerDialog`) with 5-tab interface: Radiological Images (with visual markers), Riepilogo (role-aware summary), Panoramica (overview/diagnosis), Prevenzione (prevention advice), and Valori Medici (medical values). Severity badges with icons displayed in both card and dialog views.
-    *   **Contextual AI Conversations**: AI chat automatically includes last 2 medical reports in conversation context, enabling intelligent responses to queries like "Raccontami l'ultimo referto". System passes patient/doctor summaries, diagnosis, and prevention data to enhance personalized health education.
-    *   **Example Scenarios UI**: Patient AI interface features 4 pre-defined conversation starters including "Raccontami l'ultimo referto", hypertension prevention, cholesterol management, and age-appropriate screening recommendations.
-    *   **Recent Documents Home Display**: Home page shows 3 most recent medical documents with "View All" link to full repository in prevention section, providing quick access to latest health data without cluttering the interface.
-    *   **Demographic-Aware AI Responses**: AI system considers user's age (calculated from date of birth) and gender for personalized health recommendations. For patients (non-doctors), AI adapts screening schedules (mammography, prostate, colonoscopy), risk factor assessment, and prevention strategies based on demographic profile. Age-specific considerations include pediatric vs adult vs elderly evaluations, while gender-specific factors include menopause, andropause, and gender-related health concerns.
-    *   **Alert Follow-up System**: Intelligent medical alert tracking with user confirmation workflow. When AI detects concerning symptoms, system creates alerts with status tracking (pending → monitoring → user_resolved). Users receive contextual welcome messages asking about alert resolution. "Yes, resolved" closes the alert; "No" keeps it in monitoring status and prompts AI conversation. Alerts persist across sessions until user confirms resolution, with response history tracking (userResolved, userResolvedAt, followupResponse fields).
-*   **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI, integrated with quizzes, leaderboards, and daily generation limits.
-*   **Health Score System**: AI-powered personal health scoring based on medical report analysis (PDF and images), PII anonymization, and conversational AI.
-*   **Token Usage System**: Tiered monthly token limits for AI interactions with database tracking and UI indicators.
-*   **Webinar Health System**: Free webinar platform for prevention education with expert speakers, automated reminders, and admin management.
-*   **Patient-Only AI Access System**: Dedicated access for Prohmed code-based authentication, allowing patients to interact with AI prevention features and view medical reports.
-*   **AI-Only Access User Management**: Admin capability to create dedicated AI-only users (aiOnlyAccess flag) who can access ONLY the AI Prevention features, with restricted navigation hiding all quiz/course/analytics sections for focused medical consultation use cases.
-*   **Professional Registration Workflow**: Doctor registration requires contact request approval (medici@ciry.app). Public registration page shows two access types: "Accesso Professionale" (contact request form: name, email, phone, specialization) and "Accesso Personale" (full registration). Admin panel includes "Richieste Professionali" section to approve/reject professional contact requests. Approved requests require manual doctor account creation by admin with subsequent email notification to complete onboarding.
-*   **Doctor-Patient Linking System**: Comprehensive medical referral system enabling doctors to monitor and report on their patients' health data. Doctors receive unique 8-character alphanumeric codes (auto-generated, copyable) for patient linking with unlimited patient capacity. Patients can link to doctors via code entry with validation. Doctor dashboard displays linked patients with management capabilities (view/unlink), consolidated alert monitoring across all patients with severity indicators and timestamps, and refertazione capabilities to create medical notes/reports sent directly to patient document folders. Backend provides role-based API endpoints (/api/doctor/*) with isDoctor authentication guards, storage methods for code generation, patient linking/unlinking, alert retrieval, and note creation. Database schema includes doctorPatientLinks table (doctorId, patientId, linkedAt) and doctorNotes table (doctorId, patientId, noteTitle, noteText, isReport). TypeScript type safety ensured via Express.User augmentation (server/global.d.ts) extending interface with User schema fields. UI segregation hides ALL non-medical elements (quiz, courses, analytics, leaderboard, certificates, premium features) from doctor interface, replacing home page with clinical-only DoctorDashboard and showing only "AI Prevenzione" link in navigation for focused medical workflow.
-    *   **Patient Note Visibility**: Doctor notes and referti are seamlessly integrated into patient prevention documents view. GET /api/prevention/documents endpoint returns combined results including health reports and doctor notes (filtered by fileType: 'doctor_note'). Frontend prevention.tsx merges doctor notes with health reports into unified timeline, displaying each note with title, type (Referto Medico/Nota Medica), doctor name badge, creation date, and summary content. MedicalReportCard component renders doctor notes alongside uploaded medical documents with consistent UI, enabling patients to view all medical information in single consolidated interface.
-*   **Job Queue System**: Asynchronous processing infrastructure for heavy tasks like medical document analysis (OCR, PII removal, radiological imaging analysis) with progress tracking and retry logic.
-*   **RAG Knowledge Base System**: PostgreSQL + pgvector-based semantic search for medical AI specialization. Gemini text-embedding-004 (768 dimensions) generates embeddings for scientific documents chunked at 500 tokens with 50-token overlap. HNSW indexing enables fast similarity search, enriching AI triage responses with evidence-based medical context automatically retrieved from uploaded scientific literature.
-*   **User Feedback System**: Intelligent feedback collection and management system for continuous platform improvement. Automated popup dialog appears after 2-3 user logins (tracked via loginCount field) to collect 5-star ratings, categorized feedback (improvement/bug/feature_request/other), detailed messages, and page context. Admin panel "Feedback" section provides comprehensive analytics including total feedback, unresolved items, average ratings, bug reports, and category distribution. Admins can filter feedback by category and resolution status, view detailed feedback with user information, add internal notes, and mark items as resolved. Database schema includes userFeedback table (rating, comment, message, category, page, isResolved, adminNotes) and users.loginCount/feedbackSubmitted fields for smart popup logic.
+*   **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI.
+*   **Health Score System**: AI-powered personal health scoring based on medical report analysis.
+*   **Token Usage System**: Tiered monthly token limits for AI interactions.
+*   **Webinar Health System**: Free webinar platform for prevention education.
+*   **Professional Registration Workflow**: Doctor registration via contact request approval; public registration for personal access.
+*   **Job Queue System**: Asynchronous processing for heavy tasks like medical document analysis.
+*   **User Feedback System**: Intelligent collection and management of feedback.
+*   **Patient Onboarding System**: Collects health profile data from new patients.
+*   **Audit Log System**: GDPR-compliant access tracking for security and compliance.
+*   **Appointment Scheduling System**: Calendar system for doctor-patient consultations.
+*   **Multi-Tenant B2B Infrastructure**: Clinic organizations with custom branding, subscription tiers, and feature flags.
+*   **Email Notification Queue**: Intelligent scheduling for automated notifications.
 
-## Deployment Architecture
+### Medical Prevention System (Prohmed Partnership)
+Powered by Google Gemini AI, featuring medical document upload/analysis, an AI educational assistant ("AI Prohmed - Impara la Prevenzione"), and a medical alert system. Includes advanced UI for Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring. Enhanced with GDPR-compliant privacy disclaimers, Prohmed branding on reports, and role-based AI responses.
 
-The production environment runs on **ciry.app** using a Hetzner VPS with PM2 process manager. Version control is managed through GitHub. The database is Neon PostgreSQL (serverless). Build systems are esbuild (backend) and Vite (frontend).
+*   **Role-Based AI Analysis**: Dual-content system with `patientSummary` (simplified) and `doctorSummary` (medical terminology), diagnosis, prevention advice, and severity assessment.
+*   **Medical Report Viewer Dialog**: 5-tab interface for radiological images, summary, overview, prevention, and medical values.
+*   **Contextual AI Conversations**: AI chat includes the last 2 medical reports in conversation context for personalized health education.
+*   **Demographic-Aware AI Responses**: AI considers user's age and gender for personalized health recommendations and screening schedules.
+*   **Alert Follow-up System**: Intelligent medical alert tracking with user confirmation workflow.
+*   **Patient-Only AI Access System**: Dedicated access for Prohmed code-based authentication to AI prevention features.
+*   **AI-Only Access User Management**: Admin capability to create users with restricted access to only AI Prevention features.
+*   **Doctor-Patient Linking System**: Medical referral system for doctors to monitor patients, generate 8-character linking codes, view linked patients, and create medical notes/reports integrated into patient document folders. Doctor UI hides non-medical elements.
+*   **RAG Knowledge Base System**: PostgreSQL + pgvector for semantic search, using Gemini text-embedding-004 to generate embeddings for scientific documents, enriching AI triage responses with evidence-based medical context.
 
-**Production Independence**: Platform uses BASE_URL environment variable for all URL construction (emails, OAuth callbacks, CORS), ensuring complete deployment flexibility across any hosting provider.
+## System Design Choices
+
+### Deployment Architecture
+Production runs on `ciry.app` using a Hetzner VPS with PM2. Version control via GitHub. Neon PostgreSQL for the database. Build systems: esbuild (backend) and Vite (frontend). Production independence is ensured via BASE_URL environment variable.
 
 # External Dependencies
 
 *   **Stripe**: Payment processing and subscription management.
 *   **Brevo (Sendinblue)**: Transactional email service.
 *   **Neon Database**: Serverless PostgreSQL.
-*   **OpenAI**: GPT-4o and GPT-4o-mini for AI question generation and text-to-speech.
+*   **OpenAI**: GPT-4o and GPT-4o-mini for AI question generation, text-to-speech, and AI conversational assistance.
 *   **Google Gemini AI**: Gemini-2.5-pro and Gemini-2.5-flash for medical document analysis, conversational triage, and crossword puzzle generation.

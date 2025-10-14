@@ -56,6 +56,10 @@ export const users = pgTable("users", {
   dateOfBirth: timestamp("date_of_birth"),
   gender: varchar("gender", { length: 50 }), // male, female, other, prefer_not_to_say
   phone: varchar("phone", { length: 50 }),
+  // Patient health profile
+  heightCm: integer("height_cm"), // Height in centimeters
+  weightKg: integer("weight_kg"), // Weight in kilograms
+  onboardingCompleted: boolean("onboarding_completed").default(false), // Tracks if initial onboarding popup was completed
   profession: varchar("profession", { length: 100 }), // Deprecated - kept for backward compatibility
   education: varchar("education", { length: 100 }), // Deprecated - kept for backward compatibility
   company: varchar("company", { length: 200 }),
@@ -1964,6 +1968,175 @@ export const insertDoctorNoteSchema = createInsertSchema(doctorNotes).omit({
   createdAt: true,
 });
 export type InsertDoctorNote = z.infer<typeof insertDoctorNoteSchema>;
+
+// Audit Logs (GDPR-compliant access tracking)
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  action: varchar("action", { length: 100 }).notNull(), // view_report, download_report, share_report, delete_report
+  resourceType: varchar("resource_type", { length: 50 }).notNull(), // health_report, prevention_document, doctor_note
+  resourceId: uuid("resource_id").notNull(), // ID of the accessed resource
+  resourceOwnerId: varchar("resource_owner_id").references(() => users.id, { onDelete: 'set null' }), // Owner of the resource (for cross-user access tracking)
+  ipAddress: varchar("ip_address", { length: 45 }), // IPv4 or IPv6
+  userAgent: text("user_agent"),
+  metadata: jsonb("metadata"), // Additional context: {documentType, doctorId, patientId, etc}
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_audit_user").on(table.userId),
+  index("idx_audit_resource").on(table.resourceType, table.resourceId),
+  index("idx_audit_owner").on(table.resourceOwnerId),
+  index("idx_audit_created").on(table.createdAt),
+]);
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+// Appointments (Calendar system for doctor-patient appointments)
+export const appointments = pgTable("appointments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  patientId: varchar("patient_id").references(() => users.id, { onDelete: 'cascade' }), // Nullable if slot not yet booked
+  
+  // Appointment details
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  title: varchar("title", { length: 200 }),
+  description: text("description"),
+  type: varchar("type", { length: 50 }).default("consultation"), // consultation, follow_up, screening, emergency
+  status: varchar("status", { length: 20 }).default("available"), // available, booked, confirmed, completed, cancelled, no_show
+  
+  // Online meeting details
+  meetingUrl: text("meeting_url"), // Video call link (Google Meet, Zoom, etc)
+  meetingPlatform: varchar("meeting_platform", { length: 50 }), // google_meet, zoom, teams
+  
+  // Notifications
+  reminderSentAt: timestamp("reminder_sent_at"),
+  confirmationSentAt: timestamp("confirmation_sent_at"),
+  
+  // Cancellation tracking
+  cancelledBy: varchar("cancelled_by"), // doctor_id or patient_id
+  cancellationReason: text("cancellation_reason"),
+  cancelledAt: timestamp("cancelled_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_appointments_doctor").on(table.doctorId),
+  index("idx_appointments_patient").on(table.patientId),
+  index("idx_appointments_time").on(table.startTime),
+  index("idx_appointments_status").on(table.status),
+]);
+
+export type Appointment = typeof appointments.$inferSelect;
+export const insertAppointmentSchema = createInsertSchema(appointments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+
+// Clinic Organizations (Multi-tenant B2B for hospitals/clinics)
+export const clinicOrganizations = pgTable("clinic_organizations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 200 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(), // URL-friendly identifier
+  
+  // Branding
+  logoUrl: text("logo_url"),
+  primaryColor: varchar("primary_color", { length: 7 }), // Hex color #RRGGBB
+  secondaryColor: varchar("secondary_color", { length: 7 }),
+  customDomain: varchar("custom_domain", { length: 255 }), // e.g., health.clinic-name.com
+  
+  // Contact information
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  address: text("address"),
+  website: text("website"),
+  
+  // Subscription & limits
+  subscriptionTier: varchar("subscription_tier", { length: 50 }).default("basic"), // basic, professional, enterprise
+  maxDoctors: integer("max_doctors").default(5),
+  maxPatients: integer("max_patients").default(100),
+  
+  // Features enabled
+  featuresEnabled: jsonb("features_enabled"), // {appointments: true, aiAnalysis: true, etc}
+  
+  // Admin contact
+  adminUserId: varchar("admin_user_id").references(() => users.id, { onDelete: 'set null' }), // Primary admin
+  
+  // Billing
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_clinic_slug").on(table.slug),
+  index("idx_clinic_active").on(table.isActive),
+  index("idx_clinic_admin").on(table.adminUserId),
+]);
+
+export type ClinicOrganization = typeof clinicOrganizations.$inferSelect;
+export const insertClinicOrganizationSchema = createInsertSchema(clinicOrganizations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertClinicOrganization = z.infer<typeof insertClinicOrganizationSchema>;
+
+// Email Notifications (Queue for intelligent email notifications)
+export const emailNotifications = pgTable("email_notifications", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  
+  // Email details
+  recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 300 }).notNull(),
+  body: text("body").notNull(), // HTML or plain text
+  templateId: varchar("template_id", { length: 100 }), // Brevo template ID
+  
+  // Notification type
+  type: varchar("type", { length: 50 }).notNull(), // alert_urgent, screening_reminder, new_report, appointment_reminder, welcome, password_reset
+  priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, urgent
+  
+  // Scheduling
+  scheduledFor: timestamp("scheduled_for"), // When to send (null = send immediately)
+  
+  // Status tracking
+  status: varchar("status", { length: 20 }).default("pending"), // pending, sent, failed, cancelled
+  sentAt: timestamp("sent_at"),
+  failureReason: text("failure_reason"),
+  retryCount: integer("retry_count").default(0),
+  
+  // Context & metadata
+  relatedResourceType: varchar("related_resource_type", { length: 50 }), // appointment, report, alert
+  relatedResourceId: uuid("related_resource_id"),
+  metadata: jsonb("metadata"), // Additional data for email personalization
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_email_user").on(table.userId),
+  index("idx_email_status").on(table.status),
+  index("idx_email_type").on(table.type),
+  index("idx_email_scheduled").on(table.scheduledFor),
+  index("idx_email_created").on(table.createdAt),
+]);
+
+export type EmailNotification = typeof emailNotifications.$inferSelect;
+export const insertEmailNotificationSchema = createInsertSchema(emailNotifications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertEmailNotification = z.infer<typeof insertEmailNotificationSchema>;
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

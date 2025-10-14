@@ -1597,6 +1597,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Complete user onboarding (POST /api/user/complete-onboarding) - Save health profile
+  app.post('/api/user/complete-onboarding', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Check user exists and is not a doctor (doctors don't need patient onboarding)
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (user.isDoctor) {
+        return res.status(403).json({ message: "Doctors do not need patient onboarding" });
+      }
+
+      // Zod schema for onboarding validation with string-to-number coercion
+      const onboardingSchema = z.object({
+        heightCm: z.union([
+          z.number().int().min(50).max(300),
+          z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(50).max(300)),
+        ]).optional(),
+        weightKg: z.union([
+          z.number().int().min(10).max(500),
+          z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(10).max(500)),
+        ]).optional(),
+      });
+
+      // Validate request body
+      const validation = onboardingSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid input data",
+          errors: validation.error.errors 
+        });
+      }
+
+      const { heightCm, weightKg } = validation.data;
+
+      // Update user profile - only for authenticated non-doctor user
+      await storage.updateUser(userId, {
+        heightCm: heightCm ?? null,
+        weightKg: weightKg ?? null,
+        onboardingCompleted: true,
+      });
+
+      const updatedUser = await storage.getUser(userId);
+      res.json({ 
+        success: true, 
+        user: updatedUser 
+      });
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+      res.status(500).json({ message: "Failed to complete onboarding" });
+    }
+  });
+
   // Analytics endpoints
   app.get('/api/analytics/category/:categoryId', isAuthenticated, async (req: any, res) => {
     try {

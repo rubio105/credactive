@@ -13,6 +13,7 @@ import LanguageSelector from "@/components/language-selector";
 import { LiveCourseModal } from "@/components/LiveCourseModal";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import { DoctorDashboard } from "@/components/DoctorDashboard";
+import { OnboardingDialog } from "@/components/OnboardingDialog";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
@@ -63,6 +64,7 @@ export default function Home() {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [userConsent, setUserConsent] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const CATEGORIES_PER_PAGE = 12;
   
   const userLanguage = (user as UserType)?.language;
@@ -197,6 +199,18 @@ export default function Home() {
     const userWithLanguage = user as UserType;
     if (userWithLanguage && !userWithLanguage.language) {
       setShowLanguageSelector(true);
+    }
+  }, [user]);
+
+  // Check if user needs onboarding (only for patients, not doctors)
+  useEffect(() => {
+    const userWithOnboarding = user as UserType;
+    if (userWithOnboarding && !userWithOnboarding.isDoctor && !userWithOnboarding.onboardingCompleted) {
+      // Small delay to let the user settle in before showing the dialog
+      const timer = setTimeout(() => {
+        setShowOnboarding(true);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [user]);
 
@@ -803,6 +817,12 @@ export default function Home() {
       </div>
 
       <Footer />
+
+      {/* Onboarding Dialog */}
+      <OnboardingDialog 
+        open={showOnboarding} 
+        onOpenChange={setShowOnboarding}
+      />
 
       {/* Medical Report Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>

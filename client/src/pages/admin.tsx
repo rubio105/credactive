@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Mail, Home, Shield, Gift, Database, BarChart3, UserCheck } from "lucide-react";
+import { Users, Mail, Home, Shield, Gift, Database, BarChart3, UserCheck, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
@@ -13,11 +13,13 @@ import { AdminProhmedCodes } from "@/components/admin/AdminProhmedCodes";
 import { AdminWebinarHealth } from "@/components/admin/AdminWebinarHealth";
 import { AdminKnowledgeBase } from "@/components/admin/AdminKnowledgeBase";
 import { AdminProfessionalRequests } from "@/components/admin/AdminProfessionalRequests";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 
 const menuItems = [
   { id: "dashboard", icon: BarChart3, label: "Dashboard", testId: "tab-dashboard" },
   { id: "users", icon: Users, label: "Gestione Utenti", testId: "tab-users" },
   { id: "professional-requests", icon: UserCheck, label: "Richieste Professionali", testId: "tab-professional-requests" },
+  { id: "feedback", icon: MessageSquare, label: "Feedback", testId: "tab-feedback" },
   { id: "prevention", icon: Shield, label: "AI Prohmed", testId: "tab-prevention" },
   { id: "marketing", icon: Mail, label: "Marketing", testId: "tab-marketing" },
   { id: "email", icon: Mail, label: "Template Email", testId: "tab-email" },
@@ -109,6 +111,7 @@ export default function AdminPage() {
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "users" && <AdminUsers />}
           {activeTab === "professional-requests" && <AdminProfessionalRequests />}
+          {activeTab === "feedback" && <AdminFeedback />}
           {activeTab === "prevention" && <AdminPrevention />}
           {activeTab === "marketing" && <AdminMarketing />}
           {activeTab === "email" && <AdminEmailTemplates />}

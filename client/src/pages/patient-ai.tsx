@@ -79,6 +79,9 @@ export default function PatientAIPage() {
   const [uploadResult, setUploadResult] = useState<any>(null);
   const [prohmedCode, setProhmedCode] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [dismissedAlertId, setDismissedAlertId] = useState<string | null>(
+    localStorage.getItem('dismissedAlertId')
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -166,6 +169,14 @@ export default function PatientAIPage() {
       setSessionId(activeSession.id);
     }
   }, [activeSession, sessionId]);
+
+  // Clear dismissed alert when alert changes or is resolved
+  useEffect(() => {
+    if (!pendingAlert && dismissedAlertId) {
+      setDismissedAlertId(null);
+      localStorage.removeItem('dismissedAlertId');
+    }
+  }, [pendingAlert, dismissedAlertId]);
 
   const handleProhmedLogin = async () => {
     if (!prohmedCode.trim()) {
@@ -425,7 +436,7 @@ export default function PatientAIPage() {
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
                   {/* Alert Follow-up personalizzato */}
-                  {pendingAlert && !sessionId && (
+                  {pendingAlert && !sessionId && dismissedAlertId !== pendingAlert.id && (
                     <Alert className={`border-2 ${
                       pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
                         ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700' 
@@ -446,7 +457,7 @@ export default function PatientAIPage() {
                             Riguardo: al tuo {(pendingAlert as any).userSymptom.toLowerCase().replace(/^(ho |mi fa male |sento )/i, '')}
                           </p>
                         )}
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             size="sm"
                             onClick={() => resolveAlertMutation.mutate({ 
@@ -458,6 +469,19 @@ export default function PatientAIPage() {
                             data-testid="button-resolve-yes"
                           >
                             ✓ Sì, risolto
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setDismissedAlertId(pendingAlert.id);
+                              localStorage.setItem('dismissedAlertId', pendingAlert.id);
+                            }}
+                            disabled={resolveAlertMutation.isPending || contactProhmedMutation.isPending}
+                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600"
+                            data-testid="button-dismiss-alert"
+                          >
+                            ✗ No, continua conversazione
                           </Button>
                           <Button
                             size="sm"

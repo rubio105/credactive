@@ -11,17 +11,23 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Star } from "lucide-react";
+import { Star, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 export function FeedbackDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [message, setMessage] = useState("");
+  const [category, setCategory] = useState("improvement");
 
   const { data: shouldPrompt } = useQuery<{ shouldPrompt: boolean }>({
     queryKey: ['/api/feedback/should-prompt'],
@@ -32,17 +38,17 @@ export function FeedbackDialog() {
 
   useEffect(() => {
     if (shouldPrompt?.shouldPrompt && user && !user.isAdmin) {
-      // Wait 30 seconds before showing feedback dialog
+      // Wait 1 second before showing feedback dialog
       const timer = setTimeout(() => {
         setIsOpen(true);
-      }, 30000); // 30 seconds
+      }, 1000); // 1 second
 
       return () => clearTimeout(timer);
     }
   }, [shouldPrompt, user]);
 
   const submitFeedbackMutation = useMutation({
-    mutationFn: (data: { rating: number; comment?: string; source: string }) =>
+    mutationFn: (data: { rating: number; comment?: string; message?: string; category?: string; page?: string; source: string }) =>
       apiRequest("/api/feedback", "POST", data),
     onSuccess: () => {
       toast({
@@ -52,6 +58,8 @@ export function FeedbackDialog() {
       setIsOpen(false);
       setRating(0);
       setComment("");
+      setMessage("");
+      setCategory("improvement");
     },
     onError: (error: any) => {
       toast({
@@ -75,6 +83,9 @@ export function FeedbackDialog() {
     submitFeedbackMutation.mutate({
       rating,
       comment: comment.trim() || undefined,
+      message: message.trim() || undefined,
+      category,
+      page: location,
       source: "popup",
     });
   };
@@ -83,6 +94,8 @@ export function FeedbackDialog() {
     setIsOpen(false);
     setRating(0);
     setComment("");
+    setMessage("");
+    setCategory("improvement");
   };
 
   if (!user || user.isAdmin) {
@@ -93,9 +106,12 @@ export function FeedbackDialog() {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-md" data-testid="dialog-feedback">
         <DialogHeader>
-          <DialogTitle>Ci aiuti a migliorare?</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            Come sta andando CIRY?
+          </DialogTitle>
           <DialogDescription>
-            Il tuo feedback è prezioso per noi. Ci aiuta a rendere la piattaforma sempre migliore.
+            Il tuo feedback è prezioso per migliorare la piattaforma
           </DialogDescription>
         </DialogHeader>
 
@@ -124,20 +140,53 @@ export function FeedbackDialog() {
                 </button>
               ))}
             </div>
+            {rating > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {rating === 5 && "Eccellente! 🎉"}
+                {rating === 4 && "Molto bene! 👍"}
+                {rating === 3 && "Buono 👌"}
+                {rating === 2 && "Sufficiente 🤔"}
+                {rating === 1 && "Può migliorare 💪"}
+              </p>
+            )}
           </div>
 
-          {/* Comment */}
+          {/* Category */}
           <div className="space-y-2">
-            <label htmlFor="feedback-comment" className="text-sm font-medium">
-              Commento (opzionale)
-            </label>
+            <Label htmlFor="category">Categoria</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="category" data-testid="select-category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="improvement" data-testid="category-improvement">
+                  Suggerimento di miglioramento
+                </SelectItem>
+                <SelectItem value="bug" data-testid="category-bug">
+                  Bug o problema tecnico
+                </SelectItem>
+                <SelectItem value="feature_request" data-testid="category-feature">
+                  Richiesta funzionalità
+                </SelectItem>
+                <SelectItem value="other" data-testid="category-other">
+                  Altro
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Message */}
+          <div className="space-y-2">
+            <Label htmlFor="feedback-message">
+              Il tuo feedback <span className="text-muted-foreground">(opzionale)</span>
+            </Label>
             <Textarea
-              id="feedback-comment"
-              placeholder="Raccontaci la tua esperienza..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              id="feedback-message"
+              placeholder="Raccontaci la tua esperienza con CIRY..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               rows={4}
-              data-testid="input-feedback-comment"
+              data-testid="input-feedback-message"
             />
           </div>
         </div>

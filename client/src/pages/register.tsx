@@ -11,7 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 const logoImage = "/images/ciry-main-logo.png";
 import { Link } from "wouter";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Stethoscope, User } from "lucide-react";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -247,21 +247,80 @@ export default function Register() {
             {/* Tipo di Accesso */}
             <div className="space-y-4">
               <h3 className="font-semibold text-lg border-b pb-2">Tipo di Accesso *</h3>
-              <div className="space-y-2">
-                <Label htmlFor="accountType">Seleziona il tipo di account</Label>
-                <Select
-                  value={formData.accountType}
-                  onValueChange={(value) => setFormData({ ...formData, accountType: value })}
-                  required
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Accesso Professionale (Doctor) */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, accountType: 'doctor' })}
+                  className={`relative p-6 rounded-lg border-2 transition-all duration-200 text-left ${
+                    formData.accountType === 'doctor'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-lg'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md'
+                  }`}
+                  data-testid="button-account-doctor"
                 >
-                  <SelectTrigger data-testid="select-accountType">
-                    <SelectValue placeholder="Seleziona..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="patient">Accesso Personale</SelectItem>
-                    <SelectItem value="doctor">Accesso Professionale</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-full ${
+                      formData.accountType === 'doctor'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    }`}>
+                      <Stethoscope className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className={`font-semibold text-lg ${
+                        formData.accountType === 'doctor'
+                          ? 'text-blue-700 dark:text-blue-300'
+                          : 'text-gray-700 dark:text-gray-300'
+                      }`}>
+                        Accesso Professionale
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Per medici e professionisti sanitari
+                      </p>
+                    </div>
+                    {formData.accountType === 'doctor' && (
+                      <CheckCircle2 className="w-6 h-6 text-blue-500 absolute top-3 right-3" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Accesso Personale (Patient) */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, accountType: 'patient' })}
+                  className={`relative p-6 rounded-lg border-2 transition-all duration-200 text-left ${
+                    formData.accountType === 'patient'
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-lg'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md'
+                  }`}
+                  data-testid="button-account-patient"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-full ${
+                      formData.accountType === 'patient'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    }`}>
+                      <User className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className={`font-semibold text-lg ${
+                        formData.accountType === 'patient'
+                          ? 'text-emerald-700 dark:text-emerald-300'
+                          : 'text-gray-700 dark:text-gray-300'
+                      }`}>
+                        Accesso Personale
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Per utenti e pazienti
+                      </p>
+                    </div>
+                    {formData.accountType === 'patient' && (
+                      <CheckCircle2 className="w-6 h-6 text-emerald-500 absolute top-3 right-3" />
+                    )}
+                  </div>
+                </button>
               </div>
             </div>
 

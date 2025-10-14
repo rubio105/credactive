@@ -443,24 +443,10 @@ export default function PatientAIPage() {
                         : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700'
                     }`} data-testid="alert-followup">
                       <AlertDescription className="space-y-3">
-                        <p className="font-semibold text-base">
-                          👋 Ciao {user?.firstName || 'utente'}!
+                        <p className="text-sm">
+                          Ciao {user?.firstName || 'utente'},<br />
+                          Riguardo al problema di salute individuato recentemente, è ancora presente?
                         </p>
-                        {(pendingAlert as any).userSymptom ? (
-                          <p className="text-sm">
-                            {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
-                              ? `⚠️ Come va il problema di: ${(pendingAlert as any).userSymptom.toLowerCase()}?`
-                              : `💡 Come sta andando con: ${(pendingAlert as any).userSymptom.toLowerCase()}?`
-                            }
-                          </p>
-                        ) : (
-                          <p className="text-sm">
-                            {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
-                              ? '⚠️ Hai risolto il problema di salute che avevamo rilevato?'
-                              : '💡 Hai risolto la situazione che avevamo segnalato?'
-                            }
-                          </p>
-                        )}
                         <div className="flex flex-wrap gap-2">
                           <Button
                             size="sm"

@@ -22,14 +22,16 @@ export default function Security() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  // MFA state
+  // MFA/2FA state
   const [mfaCode, setMfaCode] = useState("");
   const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<string>("");
+  const [manualKey, setManualKey] = useState<string>("");
 
-  // Query MFA status
-  const { data: mfaStatus } = useQuery<{ enabled: boolean }>({
-    queryKey: ["/api/auth/mfa/status"],
-    enabled: !!user,
+  // Query 2FA status (doctor only)
+  const { data: mfaStatus } = useQuery<{ enabled: boolean; configured: boolean }>({
+    queryKey: ["/api/doctor/2fa/status"],
+    enabled: !!user?.isDoctor,
   });
 
   // Change password mutation
@@ -53,36 +55,40 @@ export default function Security() {
     },
   });
 
-  // Enable MFA mutation
-  const enableMfaMutation = useMutation({
+  // Setup 2FA mutation (doctor only)
+  const setupMfaMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/auth/mfa/enable", "POST", {});
+      const response = await apiRequest("/api/doctor/2fa/setup", "POST", {});
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { qrCode: string; manualEntryKey: string }) => {
+      setQrCodeData(data.qrCode);
+      setManualKey(data.manualEntryKey);
       setShowMfaSetup(true);
-      toast({ title: "MFA configurato", description: "Usa il QR code per configurare l'app" });
+      toast({ title: "2FA configurato", description: "Scansiona il QR code con l'app" });
     },
     onError: (error: any) => {
       toast({ 
         title: "Errore", 
-        description: error.message || "Errore durante l'attivazione MFA",
+        description: error.message || "Errore durante il setup 2FA",
         variant: "destructive" 
       });
     },
   });
 
-  // Verify MFA mutation
-  const verifyMfaMutation = useMutation({
-    mutationFn: async (code: string) => {
-      const response = await apiRequest("/api/auth/mfa/verify", "POST", { code });
+  // Enable 2FA mutation (doctor only)
+  const enableMfaMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const response = await apiRequest("/api/doctor/2fa/enable", "POST", { token });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/mfa/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/2fa/status"] });
       setShowMfaSetup(false);
       setMfaCode("");
-      toast({ title: "✅ MFA attivato con successo!" });
+      setQrCodeData("");
+      setManualKey("");
+      toast({ title: "✅ 2FA attivato con successo!" });
     },
     onError: (error: any) => {
       toast({ 
@@ -93,20 +99,20 @@ export default function Security() {
     },
   });
 
-  // Disable MFA mutation
+  // Disable 2FA mutation (doctor only)
   const disableMfaMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("/api/auth/mfa/disable", "POST", {});
+    mutationFn: async (token: string) => {
+      const response = await apiRequest("/api/doctor/2fa/disable", "POST", { token });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/mfa/status"] });
-      toast({ title: "MFA disattivato" });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/2fa/status"] });
+      toast({ title: "2FA disattivato" });
     },
     onError: (error: any) => {
       toast({ 
         title: "Errore", 
-        description: error.message || "Errore durante la disattivazione MFA",
+        description: error.message || "Errore durante la disattivazione 2FA",
         variant: "destructive" 
       });
     },
@@ -131,22 +137,28 @@ export default function Security() {
     changePasswordMutation.mutate({ currentPassword, newPassword });
   };
 
-  const handleEnableMfa = () => {
-    enableMfaMutation.mutate();
+  const handleSetup2FA = () => {
+    setupMfaMutation.mutate();
   };
 
-  const handleVerifyMfa = () => {
+  const handleEnable2FA = () => {
     if (!mfaCode || mfaCode.length !== 6) {
       toast({ title: "Inserisci un codice a 6 cifre", variant: "destructive" });
       return;
     }
-    verifyMfaMutation.mutate(mfaCode);
+    enableMfaMutation.mutate(mfaCode);
   };
 
-  const handleDisableMfa = () => {
-    if (confirm("Sei sicuro di voler disattivare l'autenticazione a due fattori?")) {
-      disableMfaMutation.mutate();
+  const handleDisable2FA = () => {
+    const code = prompt("Inserisci il codice 2FA per confermare la disattivazione:");
+    if (!code) return;
+    
+    if (code.length !== 6) {
+      toast({ title: "Codice non valido", variant: "destructive" });
+      return;
     }
+    
+    disableMfaMutation.mutate(code);
   };
 
   return (
@@ -227,139 +239,148 @@ export default function Security() {
           </CardContent>
         </Card>
 
-        {/* MFA Section */}
-        <Card data-testid="card-mfa">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Smartphone className="w-5 h-5" />
-              Autenticazione a Due Fattori (MFA)
-            </CardTitle>
-            <CardDescription>
-              Aggiungi un ulteriore livello di sicurezza al tuo account
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* MFA Status */}
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                {mfaStatus?.enabled ? (
-                  <>
-                    <Check className="w-5 h-5 text-green-500" />
-                    <div>
-                      <p className="font-medium">MFA Attivo</p>
-                      <p className="text-sm text-muted-foreground">
-                        Il tuo account è protetto con autenticazione a due fattori
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <X className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">MFA Non Attivo</p>
-                      <p className="text-sm text-muted-foreground">
-                        Attiva MFA per proteggere meglio il tuo account
-                      </p>
-                    </div>
-                  </>
-                )}
+        {/* 2FA Section (Doctor Only) */}
+        {user?.isDoctor && (
+          <Card data-testid="card-mfa">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                Autenticazione a Due Fattori (2FA)
+              </CardTitle>
+              <CardDescription>
+                Protezione obbligatoria per account medici - richiede app authenticator
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* 2FA Status */}
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div className="flex items-center gap-3">
+                  {mfaStatus?.enabled ? (
+                    <>
+                      <Check className="w-5 h-5 text-green-500" />
+                      <div>
+                        <p className="font-medium">2FA Attivo</p>
+                        <p className="text-sm text-muted-foreground">
+                          Account protetto con autenticazione a due fattori
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-5 h-5 text-amber-500" />
+                      <div>
+                        <p className="font-medium">2FA Non Attivo</p>
+                        <p className="text-sm text-muted-foreground">
+                          Configura 2FA per proteggere il tuo account medico
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <Badge variant={mfaStatus?.enabled ? "default" : "outline"} data-testid="badge-mfa-status">
+                  {mfaStatus?.enabled ? "Abilitato" : "Disabilitato"}
+                </Badge>
               </div>
-              <Badge variant={mfaStatus?.enabled ? "default" : "outline"} data-testid="badge-mfa-status">
-                {mfaStatus?.enabled ? "Abilitato" : "Disabilitato"}
-              </Badge>
-            </div>
 
-            {/* MFA Setup */}
-            {!mfaStatus?.enabled && !showMfaSetup && (
-              <div className="space-y-4">
-                <Alert>
-                  <Key className="h-4 w-4" />
-                  <AlertDescription>
-                    L'autenticazione a due fattori richiede un'app come Google Authenticator o Authy.
-                    Ogni volta che accedi, dovrai inserire un codice generato dall'app.
-                  </AlertDescription>
-                </Alert>
+              {/* 2FA Setup Button */}
+              {!mfaStatus?.enabled && !showMfaSetup && (
+                <div className="space-y-4">
+                  <Alert>
+                    <Key className="h-4 w-4" />
+                    <AlertDescription>
+                      Usa Google Authenticator, Authy o app simili per generare codici TOTP.
+                      Al login ti verrà richiesto il codice a 6 cifre.
+                    </AlertDescription>
+                  </Alert>
+                  <Button 
+                    onClick={handleSetup2FA} 
+                    disabled={setupMfaMutation.isPending}
+                    data-testid="button-enable-mfa"
+                  >
+                    {setupMfaMutation.isPending ? "Configurazione..." : "Configura 2FA"}
+                  </Button>
+                </div>
+              )}
+
+              {/* 2FA QR Code Setup */}
+              {showMfaSetup && qrCodeData && (
+                <div className="space-y-4">
+                  <Alert>
+                    <AlertDescription>
+                      <strong>Passaggio 1:</strong> Scansiona il QR code con la tua app authenticator
+                    </AlertDescription>
+                  </Alert>
+                  <div className="flex justify-center p-4 bg-white rounded-lg">
+                    <img 
+                      src={qrCodeData} 
+                      alt="2FA QR Code" 
+                      className="w-48 h-48"
+                      data-testid="img-mfa-qr"
+                    />
+                  </div>
+                  {manualKey && (
+                    <Alert>
+                      <AlertDescription>
+                        <strong>Chiave manuale:</strong> <code className="bg-muted px-2 py-1 rounded">{manualKey}</code>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <Alert>
+                    <AlertDescription>
+                      <strong>Passaggio 2:</strong> Inserisci il codice a 6 cifre dall'app per attivare
+                    </AlertDescription>
+                  </Alert>
+                  <div className="space-y-2">
+                    <Label htmlFor="mfa-code">Codice di Verifica</Label>
+                    <Input
+                      id="mfa-code"
+                      type="text"
+                      maxLength={6}
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="000000"
+                      className="text-center text-2xl tracking-widest font-mono"
+                      data-testid="input-mfa-code"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleEnable2FA} 
+                      disabled={enableMfaMutation.isPending}
+                      data-testid="button-verify-mfa"
+                    >
+                      {enableMfaMutation.isPending ? "Verifica..." : "Verifica e Attiva"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowMfaSetup(false);
+                        setQrCodeData("");
+                        setManualKey("");
+                        setMfaCode("");
+                      }}
+                      data-testid="button-cancel-mfa-setup"
+                    >
+                      Annulla
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Disable 2FA */}
+              {mfaStatus?.enabled && (
                 <Button 
-                  onClick={handleEnableMfa} 
-                  disabled={enableMfaMutation.isPending}
-                  data-testid="button-enable-mfa"
+                  variant="destructive" 
+                  onClick={handleDisable2FA}
+                  disabled={disableMfaMutation.isPending}
+                  data-testid="button-disable-mfa"
                 >
-                  {enableMfaMutation.isPending ? "Configurazione..." : "Attiva MFA"}
+                  {disableMfaMutation.isPending ? "Disattivazione..." : "Disattiva 2FA"}
                 </Button>
-              </div>
-            )}
-
-            {/* MFA QR Code Setup */}
-            {showMfaSetup && enableMfaMutation.data && (
-              <div className="space-y-4">
-                <Alert>
-                  <AlertDescription>
-                    <strong>Passaggio 1:</strong> Scansiona il QR code con la tua app di autenticazione
-                  </AlertDescription>
-                </Alert>
-                <div className="flex justify-center p-4 bg-white rounded-lg">
-                  <img 
-                    src={enableMfaMutation.data.qrCode} 
-                    alt="MFA QR Code" 
-                    className="w-48 h-48"
-                    data-testid="img-mfa-qr"
-                  />
-                </div>
-                <Alert>
-                  <AlertDescription>
-                    <strong>Secret Key (alternativa):</strong> {enableMfaMutation.data.secret}
-                  </AlertDescription>
-                </Alert>
-                <Alert>
-                  <AlertDescription>
-                    <strong>Passaggio 2:</strong> Inserisci il codice a 6 cifre generato dall'app
-                  </AlertDescription>
-                </Alert>
-                <div className="space-y-2">
-                  <Label htmlFor="mfa-code">Codice di Verifica</Label>
-                  <Input
-                    id="mfa-code"
-                    type="text"
-                    maxLength={6}
-                    value={mfaCode}
-                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="000000"
-                    className="text-center text-2xl tracking-widest"
-                    data-testid="input-mfa-code"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleVerifyMfa} 
-                    disabled={verifyMfaMutation.isPending}
-                    data-testid="button-verify-mfa"
-                  >
-                    {verifyMfaMutation.isPending ? "Verifica..." : "Verifica e Attiva"}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowMfaSetup(false)}
-                    data-testid="button-cancel-mfa-setup"
-                  >
-                    Annulla
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Disable MFA */}
-            {mfaStatus?.enabled && (
-              <Button 
-                variant="destructive" 
-                onClick={handleDisableMfa}
-                disabled={disableMfaMutation.isPending}
-                data-testid="button-disable-mfa"
-              >
-                {disableMfaMutation.isPending ? "Disattivazione..." : "Disattiva MFA"}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

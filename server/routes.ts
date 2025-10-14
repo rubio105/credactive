@@ -42,6 +42,8 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
+import speakeasy from "speakeasy";
+import QRCode from "qrcode";
 import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
@@ -3163,6 +3165,235 @@ Restituisci SOLO un JSON con:
     } catch (error: any) {
       console.error('Error exporting audit logs:', error);
       res.status(500).json({ message: 'Failed to export audit logs' });
+    }
+  });
+
+  // *** TWO-FACTOR AUTHENTICATION (2FA) FOR DOCTORS ***
+
+  // Doctor - Setup 2FA (generate secret and QR code)
+  app.post('/api/doctor/2fa/setup', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user?.isDoctor) {
+        return res.status(403).json({ message: "Only doctors can enable 2FA" });
+      }
+
+      // Generate new secret
+      const secret = speakeasy.generateSecret({
+        name: `CIRY (${user.email})`,
+        issuer: 'CIRY Platform',
+        length: 32,
+      });
+
+      // Generate QR code as data URL
+      const qrCodeDataURL = await QRCode.toDataURL(secret.otpauth_url!);
+
+      // Store secret temporarily (not enabled yet)
+      await storage.updateUser(userId, {
+        mfaSecret: secret.base32,
+        mfaEnabled: false,
+      });
+
+      res.json({
+        secret: secret.base32,
+        qrCode: qrCodeDataURL,
+        manualEntryKey: secret.base32,
+      });
+    } catch (error: any) {
+      console.error('Error setting up 2FA:', error);
+      res.status(500).json({ message: 'Failed to setup 2FA' });
+    }
+  });
+
+  // Doctor - Verify 2FA token
+  app.post('/api/doctor/2fa/verify', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const verifySchema = z.object({
+        token: z.string().length(6).regex(/^\d{6}$/),
+      });
+
+      const validation = verifySchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid token format. Must be 6 digits.",
+          errors: validation.error.errors 
+        });
+      }
+
+      const { token } = validation.data;
+
+      const user = await storage.getUser(userId);
+      if (!user?.isDoctor) {
+        return res.status(403).json({ message: "Only doctors can use 2FA" });
+      }
+
+      if (!user.mfaSecret) {
+        return res.status(400).json({ message: "2FA not set up. Please setup 2FA first." });
+      }
+
+      // Verify token
+      const verified = speakeasy.totp.verify({
+        secret: user.mfaSecret,
+        encoding: 'base32',
+        token: token,
+        window: 2, // Allow 2 time steps before/after for clock skew
+      });
+
+      if (!verified) {
+        return res.status(400).json({ 
+          message: "Invalid verification code. Please try again.",
+          success: false 
+        });
+      }
+
+      res.json({ success: true, message: "Verification successful" });
+    } catch (error: any) {
+      console.error('Error verifying 2FA token:', error);
+      res.status(500).json({ message: 'Failed to verify 2FA token' });
+    }
+  });
+
+  // Doctor - Enable 2FA (after successful verification)
+  app.post('/api/doctor/2fa/enable', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const enableSchema = z.object({
+        token: z.string().length(6).regex(/^\d{6}$/),
+      });
+
+      const validation = enableSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid token format",
+          errors: validation.error.errors 
+        });
+      }
+
+      const { token } = validation.data;
+
+      const user = await storage.getUser(userId);
+      if (!user?.isDoctor) {
+        return res.status(403).json({ message: "Only doctors can enable 2FA" });
+      }
+
+      if (!user.mfaSecret) {
+        return res.status(400).json({ message: "2FA secret not found. Please setup 2FA first." });
+      }
+
+      // Verify token before enabling
+      const verified = speakeasy.totp.verify({
+        secret: user.mfaSecret,
+        encoding: 'base32',
+        token: token,
+        window: 2,
+      });
+
+      if (!verified) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      // Enable 2FA
+      await storage.updateUser(userId, {
+        mfaEnabled: true,
+      });
+
+      res.json({ success: true, message: "2FA enabled successfully" });
+    } catch (error: any) {
+      console.error('Error enabling 2FA:', error);
+      res.status(500).json({ message: 'Failed to enable 2FA' });
+    }
+  });
+
+  // Doctor - Disable 2FA
+  app.post('/api/doctor/2fa/disable', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const disableSchema = z.object({
+        token: z.string().length(6).regex(/^\d{6}$/),
+      });
+
+      const validation = disableSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid token format",
+          errors: validation.error.errors 
+        });
+      }
+
+      const { token } = validation.data;
+
+      const user = await storage.getUser(userId);
+      if (!user?.isDoctor) {
+        return res.status(403).json({ message: "Only doctors can disable 2FA" });
+      }
+
+      if (!user.mfaEnabled || !user.mfaSecret) {
+        return res.status(400).json({ message: "2FA is not enabled" });
+      }
+
+      // Verify token before disabling
+      const verified = speakeasy.totp.verify({
+        secret: user.mfaSecret,
+        encoding: 'base32',
+        token: token,
+        window: 2,
+      });
+
+      if (!verified) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      // Disable 2FA and clear secret
+      await storage.updateUser(userId, {
+        mfaEnabled: false,
+        mfaSecret: null,
+      });
+
+      res.json({ success: true, message: "2FA disabled successfully" });
+    } catch (error: any) {
+      console.error('Error disabling 2FA:', error);
+      res.status(500).json({ message: 'Failed to disable 2FA' });
+    }
+  });
+
+  // Doctor - Get 2FA status
+  app.get('/api/doctor/2fa/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user?.isDoctor) {
+        return res.status(403).json({ message: "Only doctors can check 2FA status" });
+      }
+
+      res.json({
+        enabled: user.mfaEnabled || false,
+        configured: !!user.mfaSecret,
+      });
+    } catch (error: any) {
+      console.error('Error fetching 2FA status:', error);
+      res.status(500).json({ message: 'Failed to fetch 2FA status' });
     }
   });
 

@@ -583,6 +583,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== DOCTOR-PATIENT SYSTEM ==========
+  
+  // Generate doctor code (only for doctors)
+  app.post('/api/doctor/generate-code', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono generare codici" });
+      }
+
+      const code = await storage.generateDoctorCode(req.user.id);
+      res.json({ code });
+    } catch (error) {
+      console.error("Error generating doctor code:", error);
+      res.status(500).json({ message: "Errore durante la generazione del codice" });
+    }
+  });
+
+  // Link patient to doctor via code
+  app.post('/api/patient/link-doctor', isAuthenticated, async (req, res) => {
+    try {
+      const { doctorCode } = req.body;
+      
+      if (!doctorCode) {
+        return res.status(400).json({ message: "Codice medico richiesto" });
+      }
+
+      await storage.linkPatientToDoctor(req.user!.id, doctorCode.trim().toUpperCase());
+      res.json({ success: true, message: "Collegamento al medico effettuato con successo" });
+    } catch (error: any) {
+      console.error("Error linking patient to doctor:", error);
+      res.status(400).json({ message: error.message || "Errore durante il collegamento" });
+    }
+  });
+
+  // Get doctor's patients
+  app.get('/api/doctor/patients', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
+      }
+
+      const patients = await storage.getDoctorPatients(req.user.id);
+      res.json(patients);
+    } catch (error) {
+      console.error("Error getting doctor patients:", error);
+      res.status(500).json({ message: "Errore durante il recupero dei pazienti" });
+    }
+  });
+
+  // Get patient's doctors
+  app.get('/api/patient/doctors', isAuthenticated, async (req, res) => {
+    try {
+      const doctors = await storage.getPatientDoctors(req.user!.id);
+      res.json(doctors);
+    } catch (error) {
+      console.error("Error getting patient doctors:", error);
+      res.status(500).json({ message: "Errore durante il recupero dei medici" });
+    }
+  });
+
+  // Unlink patient from doctor
+  app.delete('/api/doctor/patients/:patientId', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono rimuovere pazienti" });
+      }
+
+      await storage.unlinkPatientFromDoctor(req.user.id, req.params.patientId);
+      res.json({ success: true, message: "Paziente rimosso con successo" });
+    } catch (error) {
+      console.error("Error unlinking patient:", error);
+      res.status(500).json({ message: "Errore durante la rimozione del paziente" });
+    }
+  });
+
+  // Create doctor note
+  app.post('/api/doctor/notes', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono creare note" });
+      }
+
+      const { patientId, preventionDocumentId, alertId, noteTitle, noteText, isReport } = req.body;
+      
+      if (!patientId || !noteText) {
+        return res.status(400).json({ message: "PatientId e noteText sono obbligatori" });
+      }
+
+      // Verify patient is linked to this doctor
+      const patients = await storage.getDoctorPatients(req.user.id);
+      if (!patients.find(p => p.id === patientId)) {
+        return res.status(403).json({ message: "Paziente non collegato a questo medico" });
+      }
+
+      const note = await storage.createDoctorNote({
+        doctorId: req.user.id,
+        patientId,
+        preventionDocumentId: preventionDocumentId || null,
+        alertId: alertId || null,
+        noteTitle: noteTitle || null,
+        noteText,
+        isReport: isReport || false,
+      });
+
+      res.json(note);
+    } catch (error) {
+      console.error("Error creating doctor note:", error);
+      res.status(500).json({ message: "Errore durante la creazione della nota" });
+    }
+  });
+
+  // Get doctor notes for a patient (doctor view)
+  app.get('/api/doctor/notes/:patientId', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
+      }
+
+      // Verify patient is linked to this doctor
+      const patients = await storage.getDoctorPatients(req.user.id);
+      if (!patients.find(p => p.id === req.params.patientId)) {
+        return res.status(403).json({ message: "Paziente non collegato a questo medico" });
+      }
+
+      const notes = await storage.getDoctorNotesByPatient(req.params.patientId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error getting doctor notes:", error);
+      res.status(500).json({ message: "Errore durante il recupero delle note" });
+    }
+  });
+
+  // Get patient's own medical notes
+  app.get('/api/patient/notes', isAuthenticated, async (req, res) => {
+    try {
+      const notes = await storage.getDoctorNotesByPatient(req.user!.id);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error getting patient notes:", error);
+      res.status(500).json({ message: "Errore durante il recupero delle note" });
+    }
+  });
+
+  // Get alerts for doctor's patients
+  app.get('/api/doctor/alerts', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
+      }
+
+      const alerts = await storage.getPatientAlertsByDoctor(req.user.id);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error getting patient alerts:", error);
+      res.status(500).json({ message: "Errore durante il recupero degli alert" });
+    }
+  });
+
+  // Delete doctor note
+  app.delete('/api/doctor/notes/:noteId', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono eliminare note" });
+      }
+
+      const note = await storage.getDoctorNoteById(req.params.noteId);
+      if (!note || note.doctorId !== req.user.id) {
+        return res.status(403).json({ message: "Non autorizzato a eliminare questa nota" });
+      }
+
+      await storage.deleteDoctorNote(req.params.noteId);
+      res.json({ success: true, message: "Nota eliminata con successo" });
+    } catch (error) {
+      console.error("Error deleting doctor note:", error);
+      res.status(500).json({ message: "Errore durante l'eliminazione della nota" });
+    }
+  });
+
   // Resend verification code
   app.post('/api/auth/resend-verification', authLimiter, async (req, res) => {
     try {

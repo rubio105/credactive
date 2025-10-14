@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, Calendar, Users, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { Activity, Calendar, Users, Link as LinkIcon, ExternalLink, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +50,18 @@ export function AdminWebinarHealth() {
   const [streamingUrl, setStreamingUrl] = useState("");
   const [isStreamingDialogOpen, setIsStreamingDialogOpen] = useState(false);
   const [isEnrollmentsDialogOpen, setIsEnrollmentsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  // Create webinar form state
+  const [newWebinar, setNewWebinar] = useState({
+    title: "",
+    description: "",
+    instructor: "",
+    sessionDate: "",
+    sessionTime: "",
+    duration: "90",
+    capacity: "100",
+  });
 
   const { data: webinars, isLoading } = useQuery<Webinar[]>({
     queryKey: ["/api/admin/webinar-health"],
@@ -73,6 +86,32 @@ export function AdminWebinarHealth() {
       toast({
         title: "Errore",
         description: error?.message || "Impossibile aggiornare il link streaming",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createWebinarMutation = useMutation({
+    mutationFn: (data: typeof newWebinar) =>
+      apiRequest("/api/admin/webinar-health/create", "POST", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/webinar-health"] });
+      setIsCreateDialogOpen(false);
+      setNewWebinar({
+        title: "",
+        description: "",
+        instructor: "",
+        sessionDate: "",
+        sessionTime: "",
+        duration: "90",
+        capacity: "100",
+      });
+      toast({ title: "Webinar creato con successo!" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Impossibile creare il webinar",
         variant: "destructive",
       });
     },
@@ -110,13 +149,25 @@ export function AdminWebinarHealth() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5" />
-            Gestione Webinar Health
-          </CardTitle>
-          <CardDescription>
-            Gestisci i webinar sulla prevenzione, aggiungi link streaming e visualizza gli iscritti
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Gestione Webinar Health
+              </CardTitle>
+              <CardDescription>
+                Gestisci i webinar sulla prevenzione, aggiungi link streaming e visualizza gli iscritti
+              </CardDescription>
+            </div>
+            <Button 
+              onClick={() => setIsCreateDialogOpen(true)}
+              data-testid="button-create-webinar"
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Crea Webinar
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 
@@ -324,6 +375,135 @@ export function AdminWebinarHealth() {
           </div>
           <DialogFooter>
             <Button onClick={() => setIsEnrollmentsDialogOpen(false)}>Chiudi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Webinar Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Crea Nuovo Webinar</DialogTitle>
+            <DialogDescription>
+              Crea un nuovo webinar di prevenzione sanitaria per i tuoi utenti
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Titolo Webinar*</Label>
+              <Input
+                id="title"
+                placeholder="Es: Prevenzione Cardiovascolare"
+                value={newWebinar.title}
+                onChange={(e) => setNewWebinar({ ...newWebinar, title: e.target.value })}
+                data-testid="input-webinar-title"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Descrizione*</Label>
+              <Textarea
+                id="description"
+                placeholder="Descrivi il contenuto del webinar..."
+                value={newWebinar.description}
+                onChange={(e) => setNewWebinar({ ...newWebinar, description: e.target.value })}
+                rows={3}
+                data-testid="input-webinar-description"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="instructor">Relatore</Label>
+              <Input
+                id="instructor"
+                placeholder="Nome del relatore"
+                value={newWebinar.instructor}
+                onChange={(e) => setNewWebinar({ ...newWebinar, instructor: e.target.value })}
+                data-testid="input-webinar-instructor"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="session-date">Data*</Label>
+                <Input
+                  id="session-date"
+                  type="date"
+                  value={newWebinar.sessionDate}
+                  onChange={(e) => setNewWebinar({ ...newWebinar, sessionDate: e.target.value })}
+                  data-testid="input-webinar-date"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="session-time">Orario*</Label>
+                <Input
+                  id="session-time"
+                  type="time"
+                  value={newWebinar.sessionTime}
+                  onChange={(e) => setNewWebinar({ ...newWebinar, sessionTime: e.target.value })}
+                  data-testid="input-webinar-time"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="duration">Durata (minuti)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  placeholder="90"
+                  value={newWebinar.duration}
+                  onChange={(e) => setNewWebinar({ ...newWebinar, duration: e.target.value })}
+                  data-testid="input-webinar-duration"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="capacity">Posti Disponibili</Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  placeholder="100"
+                  value={newWebinar.capacity}
+                  onChange={(e) => setNewWebinar({ ...newWebinar, capacity: e.target.value })}
+                  data-testid="input-webinar-capacity"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCreateDialogOpen(false);
+                setNewWebinar({
+                  title: "",
+                  description: "",
+                  instructor: "",
+                  sessionDate: "",
+                  sessionTime: "",
+                  duration: "90",
+                  capacity: "100",
+                });
+              }}
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={() => createWebinarMutation.mutate(newWebinar)}
+              disabled={
+                !newWebinar.title || 
+                !newWebinar.description || 
+                !newWebinar.sessionDate || 
+                !newWebinar.sessionTime ||
+                createWebinarMutation.isPending
+              }
+              data-testid="button-save-webinar"
+            >
+              {createWebinarMutation.isPending ? "Creazione..." : "Crea Webinar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

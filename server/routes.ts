@@ -8967,6 +8967,64 @@ Format as JSON: {
       res.status(500).json({ message: error.message || 'Failed to get session enrollments' });
     }
   });
+
+  // Create webinar with session (POST /api/admin/webinar-health/create)
+  app.post('/api/admin/webinar-health/create', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { 
+        title, 
+        description, 
+        instructor, 
+        sessionDate, 
+        sessionTime, 
+        duration, 
+        capacity 
+      } = req.body;
+      
+      if (!title || !description || !sessionDate || !sessionTime) {
+        return res.status(400).json({ message: 'Title, description, date and time are required' });
+      }
+      
+      // Create the webinar course
+      const course = await storage.createLiveCourse({
+        title,
+        description,
+        instructor: instructor || null,
+        price: 0, // Free webinars
+        isFree: true,
+        isWebinarHealth: true,
+        isPremiumRequired: false,
+      });
+      
+      // Parse date and time
+      const [hours, minutes] = sessionTime.split(':');
+      const startDate = new Date(sessionDate);
+      startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      const endDate = new Date(startDate);
+      endDate.setMinutes(endDate.getMinutes() + parseInt(duration || '90'));
+      
+      // Create the session
+      const session = await storage.createLiveCourseSession({
+        courseId: course.id,
+        startDate,
+        endDate,
+        capacity: capacity ? parseInt(capacity) : null,
+        status: 'available',
+        streamingUrl: null,
+      });
+      
+      res.json({ 
+        success: true, 
+        course, 
+        session,
+        message: 'Webinar created successfully' 
+      });
+    } catch (error: any) {
+      console.error('Create webinar error:', error);
+      res.status(500).json({ message: error.message || 'Failed to create webinar' });
+    }
+  });
   
   return httpServer;
 }

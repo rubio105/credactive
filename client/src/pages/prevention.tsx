@@ -127,8 +127,25 @@ export default function PreventionPage() {
     enabled: !!user,
   });
 
+  // Get doctor notes from prevention documents (fileType: 'doctor_note')
+  const doctorNotes = (documents || []).filter((doc: any) => doc.fileType === 'doctor_note');
+  
+  // Transform doctor notes to match HealthReport interface
+  const doctorNotesAsReports: HealthReport[] = doctorNotes.map((note: any) => ({
+    id: note.id,
+    fileName: note.title,
+    reportType: note.reportType,
+    aiSummary: note.summary,
+    createdAt: note.uploadDate,
+    medicalValues: note.medicalValues || [],
+    radiologicalAnalysis: note.radiologicalAnalysis,
+  }));
+
+  // Combine health reports and doctor notes
+  const allReports = [...healthReports, ...doctorNotesAsReports];
+
   // Apply filters and sorting to reports
-  const filteredReports = healthReports
+  const filteredReports = allReports
     .filter(r => {
       // Filter by type
       if (reportFilter !== 'all' && r.reportType !== reportFilter) return false;
@@ -1378,7 +1395,7 @@ export default function PreventionPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  {healthReports.length === 0 ? (
+                  {allReports.length === 0 ? (
                     <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
                       <FileUp className="w-5 h-5 text-emerald-600" />
                       <AlertDescription className="ml-2 text-emerald-800 dark:text-emerald-200">

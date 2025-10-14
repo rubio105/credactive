@@ -1435,22 +1435,11 @@ export default function PreventionPage() {
                         </div>
                       </div>
 
-                      {/* Timeline */}
-                      <MedicalTimeline 
-                        reports={recentReports.map(r => ({
-                          id: r.id,
-                          title: r.fileName ?? 'Documento senza titolo',
-                          reportType: r.reportType ?? '',
-                          uploadDate: r.createdAt,
-                          summary: r.aiSummary ?? ''
-                        }))}
-                      />
-                      
-                      {/* Recent Report Cards (Latest 3) */}
+                      {/* Cronologia Medica (Tutti i Documenti) */}
                       <div className="space-y-3">
-                        <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">Documenti Recenti</h3>
+                        <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">Cronologia Medica</h3>
                         <div className="grid gap-4">
-                          {recentReports.map((report) => (
+                          {filteredReports.map((report) => (
                             <MedicalReportCard
                               key={report.id}
                               report={{
@@ -1465,41 +1454,6 @@ export default function PreventionPage() {
                           ))}
                         </div>
                       </div>
-
-                      {/* Archived Reports (Rest) */}
-                      {archivedReports.length > 0 && (
-                        <div className="mt-6 space-y-3">
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowArchive(!showArchive)}
-                            className="w-full flex items-center justify-between"
-                            data-testid="button-toggle-archive"
-                          >
-                            <span className="text-base font-medium">
-                              Archivio Documenti ({archivedReports.length})
-                            </span>
-                            {showArchive ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                          </Button>
-                          
-                          {showArchive && (
-                            <div className="grid gap-4 mt-3">
-                              {archivedReports.map((report) => (
-                                <MedicalReportCard
-                                  key={report.id}
-                                  report={{
-                                    id: report.id,
-                                    title: report.fileName ?? 'Documento senza titolo',
-                                    reportType: report.reportType ?? '',
-                                    uploadDate: report.createdAt,
-                                    aiSummary: report.aiSummary ?? undefined,
-                                    medicalValues: report.medicalValues ?? undefined
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
 
                       {/* No results message */}
                       {filteredReports.length === 0 && (

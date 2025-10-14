@@ -33,7 +33,7 @@ PostgreSQL (Neon's serverless driver) is the database, managed by Drizzle ORM. T
 *   **Analytics Dashboard**: Comprehensive business intelligence metrics.
 *   **AI Email Marketing System**: Intelligent campaign management using OpenAI GPT-4o and Brevo integration.
 *   **SEO Optimization**: Dynamic meta tags and sitemap generation.
-*   **Admin Panel**: User management, quiz rotation, content, settings, and analytics.
+*   **Admin Dashboard**: Streamlined analytics-only dashboard displaying key system metrics and indicators (user registrations, access types, revenue, etc.) without management interfaces.
 *   **Corporate B2B Licensing System**: Enterprise solution for bulk license sales, corporate accounts, and course assignments.
 *   **Leaderboard System**: Gamification features with global and corporate-exclusive leaderboards.
 *   **AI Conversational Assistant**: Context-aware AI coaching using OpenAI GPT-4o for scenario-based learning.

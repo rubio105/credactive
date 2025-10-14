@@ -862,11 +862,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Complete login
-      req.login(user, (err) => {
+      req.login(user, async (err) => {
         if (err) {
           console.error('Session login error:', err);
           return res.status(500).json({ message: "Errore durante il login" });
         }
+        
+        // Increment login count for feedback popup logic
+        try {
+          await storage.incrementUserLoginCount(user.id);
+        } catch (loginCountError) {
+          console.error('Failed to increment login count:', loginCountError);
+          // Don't fail the login if this fails
+        }
+        
         console.log('Login successful!');
         res.json(user);
       });
@@ -6741,7 +6750,7 @@ Explicación de audio:`
   app.post('/api/feedback', isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      const { rating, comment, source } = req.body;
+      const { rating, comment, message, category, page, source } = req.body;
 
       if (!rating || rating < 1 || rating > 5) {
         return res.status(400).json({ message: 'Rating must be between 1 and 5' });
@@ -6751,8 +6760,14 @@ Explicación de audio:`
         userId: user.id,
         rating,
         comment: comment || null,
+        message: message || null,
+        category: category || null,
+        page: page || null,
         source: source || 'popup',
       });
+
+      // Mark user as having submitted feedback
+      await storage.markUserFeedbackSubmitted(user.id);
 
       res.json(feedback);
     } catch (error: any) {
@@ -6766,13 +6781,34 @@ Explicación de audio:`
     try {
       const user = req.user as any;
       
-      // Check if user has submitted feedback in the last 30 days
-      const hasRecentFeedback = await storage.checkUserHasRecentFeedback(user.id, 30);
+      // Fetch fresh user data to check loginCount and feedbackSubmitted
+      const freshUser = await storage.getUser(user.id);
+      if (!freshUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
       
-      res.json({ shouldPrompt: !hasRecentFeedback });
+      // Show popup after 2-3 logins, only if feedback not yet submitted
+      const shouldPrompt = (freshUser.loginCount || 0) >= 2 && !freshUser.feedbackSubmitted;
+      
+      res.json({ shouldPrompt, loginCount: freshUser.loginCount || 0 });
     } catch (error: any) {
       console.error('Check feedback prompt error:', error);
       res.status(500).json({ message: error.message || 'Failed to check feedback prompt' });
+    }
+  });
+
+  // Admin - Resolve feedback (PATCH /api/admin/feedback/:id)
+  app.patch('/api/admin/feedback/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isResolved, adminNotes } = req.body;
+
+      await storage.updateFeedbackResolution(parseInt(id), isResolved, adminNotes);
+
+      res.json({ message: 'Feedback updated successfully' });
+    } catch (error: any) {
+      console.error('Update feedback error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update feedback' });
     }
   });
 

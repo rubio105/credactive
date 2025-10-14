@@ -79,6 +79,14 @@ export default function Register() {
           description: "Controlla la tua email per il codice di verifica.",
         });
         setLocation(`/verify-email?email=${encodeURIComponent(data.email)}`);
+      } else if (data.message) {
+        // For doctor registrations or custom messages from backend
+        toast({
+          title: "Richiesta inviata",
+          description: data.message,
+        });
+        // Redirect to login after showing success message
+        setTimeout(() => setLocation('/login'), 2000);
       } else {
         toast({
           title: "Registrazione completata",

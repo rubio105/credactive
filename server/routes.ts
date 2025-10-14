@@ -341,6 +341,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // HEALTHCARE REGISTRATION LOGIC
+      // Require explicit isDoctor field
+      if (isDoctor === undefined || isDoctor === null) {
+        return res.status(400).json({ 
+          message: "Il campo 'isDoctor' è obbligatorio. Specifica se sei un medico o un paziente." 
+        });
+      }
+
       // If doctor: send email to medici@ciry.app instead of creating account
       if (isDoctor === true) {
         await sendDoctorRegistrationRequestEmail({

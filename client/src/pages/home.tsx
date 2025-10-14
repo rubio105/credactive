@@ -675,12 +675,13 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Learning Paths */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6">Percorsi di Formazione</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* On-Demand Courses */}
-            <Card className="hover-scale overflow-hidden">
+        {/* Learning Paths - Hidden for Doctors */}
+        {!(user as UserType)?.isDoctor && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-6">Percorsi di Formazione</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* On-Demand Courses */}
+              <Card className="hover-scale overflow-hidden">
               <div className="gradient-premium-plus text-white p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 bg-white/20 rounded-lg">
@@ -773,6 +774,7 @@ export default function Home() {
             </Card>
           </div>
         </div>
+        )}
       </div>
 
       <Footer />

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Mail, Home, Shield, Gift, Database } from "lucide-react";
+import { Users, Mail, Home, Shield, Gift, Database, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminEmailTemplates } from "@/components/admin/AdminEmailTemplates";
 import { AdminMarketing } from "@/components/admin/AdminMarketing";
@@ -13,6 +14,7 @@ import { AdminWebinarHealth } from "@/components/admin/AdminWebinarHealth";
 import { AdminKnowledgeBase } from "@/components/admin/AdminKnowledgeBase";
 
 const menuItems = [
+  { id: "dashboard", icon: BarChart3, label: "Dashboard", testId: "tab-dashboard" },
   { id: "users", icon: Users, label: "Gestione Utenti", testId: "tab-users" },
   { id: "prevention", icon: Shield, label: "AI Prohmed", testId: "tab-prevention" },
   { id: "marketing", icon: Mail, label: "Marketing", testId: "tab-marketing" },
@@ -24,7 +26,7 @@ const menuItems = [
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   if (isLoading) {
     return (
@@ -102,6 +104,7 @@ export default function AdminPage() {
         </div>
 
         <div className="p-8">
+          {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "users" && <AdminUsers />}
           {activeTab === "prevention" && <AdminPrevention />}
           {activeTab === "marketing" && <AdminMarketing />}

@@ -2000,6 +2000,11 @@ ${JSON.stringify(questionsToTranslate)}`;
       // Newsletter subscribers
       const newsletterSubscribers = users.filter(u => u.newsletterConsent).length;
       
+      // Access type breakdown (professional vs personal)
+      const professionalUsers = users.filter(u => u.isDoctor === true).length;
+      const personalUsers = users.filter(u => u.isDoctor === false).length;
+      const aiOnlyUsers = users.filter(u => u.aiOnlyAccess === true).length;
+      
       res.json({
         onboarding: {
           totalUsers,
@@ -2010,6 +2015,13 @@ ${JSON.stringify(questionsToTranslate)}`;
           growth: newUsersLastMonth > 0 
             ? (((newUsersThisMonth - newUsersLastMonth) / newUsersLastMonth) * 100).toFixed(1) + '%'
             : 'N/A'
+        },
+        accessTypes: {
+          professionalUsers,
+          personalUsers,
+          aiOnlyUsers,
+          professionalPercentage: totalUsers > 0 ? ((professionalUsers / totalUsers) * 100).toFixed(1) + '%' : '0%',
+          personalPercentage: totalUsers > 0 ? ((personalUsers / totalUsers) * 100).toFixed(1) + '%' : '0%'
         },
         revenue: {
           estimatedAnnualRevenue,

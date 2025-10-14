@@ -26,6 +26,7 @@ export default function Register() {
     dateOfBirth: "",
     gender: "",
     phone: "",
+    accountType: "", // "doctor" or "patient"
     specialization: "", // Replaces profession/education
     company: "",
     addressStreet: "",
@@ -125,7 +126,7 @@ export default function Register() {
       return;
     }
 
-    if (!formData.gender || !formData.addressCountry) {
+    if (!formData.gender || !formData.addressCountry || !formData.accountType) {
       toast({
         title: "Selezioni mancanti",
         description: "Seleziona tutti i campi obbligatori dai menu a tendina",
@@ -142,6 +143,7 @@ export default function Register() {
       dateOfBirth: formData.dateOfBirth,
       gender: formData.gender,
       phone: formData.phone || null,
+      isDoctor: formData.accountType === 'doctor',
       specialization: formData.specialization || null, // New field
       company: formData.company || null,
       addressStreet: formData.addressStreet,
@@ -257,6 +259,27 @@ export default function Register() {
               </div>
             </div>
 
+            {/* Tipo di Accesso */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Tipo di Accesso *</h3>
+              <div className="space-y-2">
+                <Label htmlFor="accountType">Seleziona il tipo di account</Label>
+                <Select
+                  value={formData.accountType}
+                  onValueChange={(value) => setFormData({ ...formData, accountType: value })}
+                  required
+                >
+                  <SelectTrigger data-testid="select-accountType">
+                    <SelectValue placeholder="Seleziona..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="patient">Sono un Paziente</SelectItem>
+                    <SelectItem value="doctor">Sono un Medico</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {/* Contatti */}
             <div className="space-y-4">
               <h3 className="font-semibold text-lg border-b pb-2">Contatti</h3>
@@ -289,48 +312,50 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Specializzazione (Opzionale) */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg border-b pb-2">Informazioni Aggiuntive (Opzionale)</h3>
-              <div className="space-y-2">
-                <Label htmlFor="specialization">Specializzazione</Label>
-                <Select
-                  value={formData.specialization}
-                  onValueChange={(value) => setFormData({ ...formData, specialization: value })}
-                >
-                  <SelectTrigger data-testid="select-specialization">
-                    <SelectValue placeholder="Seleziona la tua specializzazione (opzionale)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="medico_base">Medico di Base</SelectItem>
-                    <SelectItem value="cardiologo">Cardiologo</SelectItem>
-                    <SelectItem value="dermatologo">Dermatologo</SelectItem>
-                    <SelectItem value="pediatra">Pediatra</SelectItem>
-                    <SelectItem value="ginecologo">Ginecologo</SelectItem>
-                    <SelectItem value="ortopedico">Ortopedico</SelectItem>
-                    <SelectItem value="neurologo">Neurologo</SelectItem>
-                    <SelectItem value="psichiatra">Psichiatra</SelectItem>
-                    <SelectItem value="oculista">Oculista</SelectItem>
-                    <SelectItem value="otorinolaringoiatra">Otorinolaringoiatra</SelectItem>
-                    <SelectItem value="radiologo">Radiologo</SelectItem>
-                    <SelectItem value="oncologo">Oncologo</SelectItem>
-                    <SelectItem value="endocrinologo">Endocrinologo</SelectItem>
-                    <SelectItem value="altro">Altro</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* Specializzazione (Solo per Medici) */}
+            {formData.accountType === 'doctor' && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg border-b pb-2">Informazioni Professionali</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="specialization">Specializzazione</Label>
+                  <Select
+                    value={formData.specialization}
+                    onValueChange={(value) => setFormData({ ...formData, specialization: value })}
+                  >
+                    <SelectTrigger data-testid="select-specialization">
+                      <SelectValue placeholder="Seleziona la tua specializzazione (opzionale)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="medico_base">Medico di Base</SelectItem>
+                      <SelectItem value="cardiologo">Cardiologo</SelectItem>
+                      <SelectItem value="dermatologo">Dermatologo</SelectItem>
+                      <SelectItem value="pediatra">Pediatra</SelectItem>
+                      <SelectItem value="ginecologo">Ginecologo</SelectItem>
+                      <SelectItem value="ortopedico">Ortopedico</SelectItem>
+                      <SelectItem value="neurologo">Neurologo</SelectItem>
+                      <SelectItem value="psichiatra">Psichiatra</SelectItem>
+                      <SelectItem value="oculista">Oculista</SelectItem>
+                      <SelectItem value="otorinolaringoiatra">Otorinolaringoiatra</SelectItem>
+                      <SelectItem value="radiologo">Radiologo</SelectItem>
+                      <SelectItem value="oncologo">Oncologo</SelectItem>
+                      <SelectItem value="endocrinologo">Endocrinologo</SelectItem>
+                      <SelectItem value="altro">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company">Azienda/Organizzazione</Label>
+                  <Input
+                    id="company"
+                    placeholder="Nome azienda (facoltativo)"
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    autoComplete="organization"
+                    data-testid="input-company"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="company">Azienda/Organizzazione</Label>
-                <Input
-                  id="company"
-                  placeholder="Nome azienda (facoltativo)"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  autoComplete="organization"
-                  data-testid="input-company"
-                />
-              </div>
-            </div>
+            )}
 
             {/* Indirizzo */}
             <div className="space-y-4">

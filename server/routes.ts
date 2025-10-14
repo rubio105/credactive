@@ -42,7 +42,7 @@ import {
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import passport from "passport";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import { generateAssessmentPDFBuffer } from "./assessmentPDFGenerator";
@@ -318,6 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateOfBirth,
         gender,
         phone,
+        isDoctor, // New field to distinguish doctor/patient
         profession, // Deprecated - kept for backward compatibility
         education, // Deprecated - kept for backward compatibility
         specialization, // New field
@@ -337,6 +338,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           !gender || !addressStreet || 
           !addressCity || !addressPostalCode || !addressProvince || !addressCountry) {
         return res.status(400).json({ message: "Tutti i campi obbligatori devono essere compilati" });
+      }
+
+      // HEALTHCARE REGISTRATION LOGIC
+      // If doctor: send email to medici@ciry.app instead of creating account
+      if (isDoctor === true) {
+        await sendDoctorRegistrationRequestEmail({
+          email,
+          firstName,
+          lastName,
+          phone: phone || undefined,
+          specialization: specialization || undefined,
+          company: company || undefined,
+          addressCity: addressCity || undefined,
+        });
+
+        return res.json({
+          success: true,
+          message: "Richiesta inviata con successo! Il team medico di CIRY ti contatterà a breve per completare la registrazione.",
+          requiresVerification: false,
+        });
+      }
+
+      // If patient: registration is temporarily disabled
+      if (isDoctor === false) {
+        return res.status(403).json({ 
+          message: "La registrazione per pazienti è temporaneamente disabilitata. Per maggiori informazioni, contatta support@ciry.app" 
+        });
       }
 
       const existingUser = await storage.getUserByEmail(email.toLowerCase());

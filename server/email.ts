@@ -1580,3 +1580,88 @@ Hai bisogno di aiuto? support@ciry.app
     textContent,
   });
 }
+
+export async function sendDoctorRegistrationRequestEmail(
+  doctorData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    specialization?: string;
+    company?: string;
+    addressCity?: string;
+  }
+): Promise<void> {
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+        .content { background: white; padding: 40px 30px; }
+        .info-box { background: #f8f9ff; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .info-row { margin: 10px 0; }
+        .info-label { font-weight: bold; color: #667eea; }
+        h1 { margin: 0; font-size: 28px; font-weight: 700; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>👨‍⚕️ Nuova Richiesta Registrazione Medico</h1>
+        </div>
+        <div class="content">
+          <p style="font-size: 16px;">Un medico ha richiesto la registrazione alla piattaforma CIRY.</p>
+          
+          <div class="info-box">
+            <h3 style="margin-top: 0;">Dati del Medico:</h3>
+            <div class="info-row">
+              <span class="info-label">Nome:</span> ${sanitizeUserInput(doctorData.firstName)} ${sanitizeUserInput(doctorData.lastName)}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span> ${sanitizeUserInput(doctorData.email)}
+            </div>
+            ${doctorData.phone ? `<div class="info-row">
+              <span class="info-label">Telefono:</span> ${sanitizeUserInput(doctorData.phone)}
+            </div>` : ''}
+            ${doctorData.specialization ? `<div class="info-row">
+              <span class="info-label">Specializzazione:</span> ${sanitizeUserInput(doctorData.specialization)}
+            </div>` : ''}
+            ${doctorData.company ? `<div class="info-row">
+              <span class="info-label">Azienda/Organizzazione:</span> ${sanitizeUserInput(doctorData.company)}
+            </div>` : ''}
+            ${doctorData.addressCity ? `<div class="info-row">
+              <span class="info-label">Città:</span> ${sanitizeUserInput(doctorData.addressCity)}
+            </div>` : ''}
+          </div>
+          
+          <p style="margin-top: 30px;">Contattare il medico per completare la registrazione.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+NUOVA RICHIESTA REGISTRAZIONE MEDICO
+
+Un medico ha richiesto la registrazione alla piattaforma CIRY.
+
+Dati del Medico:
+- Nome: ${doctorData.firstName} ${doctorData.lastName}
+- Email: ${doctorData.email}${doctorData.phone ? `\n- Telefono: ${doctorData.phone}` : ''}${doctorData.specialization ? `\n- Specializzazione: ${doctorData.specialization}` : ''}${doctorData.company ? `\n- Azienda/Organizzazione: ${doctorData.company}` : ''}${doctorData.addressCity ? `\n- Città: ${doctorData.addressCity}` : ''}
+
+Contattare il medico per completare la registrazione.
+  `;
+
+  await sendEmail({
+    to: 'medici@ciry.app',
+    subject: '👨‍⚕️ Nuova Richiesta Registrazione Medico - CIRY',
+    htmlContent,
+    textContent,
+  });
+}

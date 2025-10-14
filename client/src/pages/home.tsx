@@ -328,8 +328,8 @@ export default function Home() {
         </div>
 
 
-        {/* Recent Medical Reports */}
-        {sortedReports.length > 0 && (
+        {/* Recent Medical Reports - Hidden for doctors */}
+        {sortedReports.length > 0 && !(user as UserType)?.isDoctor && (
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">
@@ -486,8 +486,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Premium Status */}
-        {!(user as User)?.isPremium && (
+        {/* Premium Status - Hidden for doctors */}
+        {!(user as User)?.isPremium && !(user as UserType)?.isDoctor && (
           <Card className="gradient-primary text-white mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -514,7 +514,8 @@ export default function Home() {
           </Card>
         )}
 
-        {/* Filter Section */}
+        {/* Filter Section - Hidden for doctors */}
+        {!(user as UserType)?.isDoctor && (
         <Card className="mb-8">
           <CardContent className="p-6">
             <h3 className="text-sm font-medium text-muted-foreground mb-3">Filtra per Categoria</h3>
@@ -558,9 +559,10 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* Categories Carousel (12 per page, with pinned priority) */}
-        {quizCategories.length > 0 && (
+        {/* Categories Carousel (12 per page, with pinned priority) - Hidden for doctors */}
+        {quizCategories.length > 0 && !(user as UserType)?.isDoctor && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Categorie Quiz</h2>
@@ -607,7 +609,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Available Quizzes */}
+        {/* Available Quizzes - Hidden for doctors */}
+        {!(user as UserType)?.isDoctor && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">{t.categories.allQuizzes}</h2>
@@ -653,8 +656,10 @@ export default function Home() {
             </Card>
           )}
         </div>
+        )}
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Hidden for doctors */}
+        {!(user as UserType)?.isDoctor && (
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
@@ -682,6 +687,7 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Learning Paths - Hidden for Doctors */}
         {!(user as UserType)?.isDoctor && (

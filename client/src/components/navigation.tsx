@@ -23,6 +23,7 @@ interface User {
   profileImageUrl?: string;
   isPremium: boolean;
   isAdmin: boolean;
+  isDoctor?: boolean;
   aiOnlyAccess?: boolean;
   credits?: number;
   corporateAgreementId?: string;
@@ -112,7 +113,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {!typedUser?.aiOnlyAccess && (
+                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
                   <>
                     <Link href="/dashboard">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
@@ -134,7 +135,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     AI Prevenzione
                   </Button>
                 </Link>
-                {!typedUser?.aiOnlyAccess && (
+                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
                   <>
                     <Link href="/leaderboard">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-leaderboard">
@@ -205,16 +206,16 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
             ) : (
               /* Authenticated State */
               <div className="flex items-center space-x-4">
-                {/* Credits Badge - Hide for AI-only users */}
-                {!typedUser?.aiOnlyAccess && (
+                {/* Credits Badge - Hide for AI-only users and doctors */}
+                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
                   <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800" data-testid="badge-credits">
                     <Coins className="w-3 h-3 mr-1" />
                     {typedUser?.credits || 0}
                   </Badge>
                 )}
                 
-                {/* Premium Badge - Hide for AI-only users */}
-                {!typedUser?.aiOnlyAccess && typedUser?.isPremium && (
+                {/* Premium Badge - Hide for AI-only users and doctors */}
+                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && typedUser?.isPremium && (
                   <Badge className="bg-accent/10 text-accent border-accent/20" data-testid="badge-premium">
                     <Crown className="w-3 h-3 mr-1" />
                     Premium
@@ -248,7 +249,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     <div className="px-2 py-1.5">
                       <p className="text-sm font-medium">{getUserName()}</p>
                       <p className="text-xs text-muted-foreground">{typedUser?.email}</p>
-                      {!typedUser?.aiOnlyAccess && (
+                      {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
                         <div className="flex items-center gap-1 mt-2">
                           <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 text-xs py-0.5">
                             <Coins className="w-3 h-3 mr-1" />
@@ -264,7 +265,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                       )}
                     </div>
                     <DropdownMenuSeparator />
-                    {!typedUser?.aiOnlyAccess && (
+                    {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
                       <>
                         <Link href="/dashboard">
                           <DropdownMenuItem data-testid="menu-dashboard">
@@ -320,7 +321,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         </Link>
                       </>
                     )}
-                    {!typedUser?.isPremium && !typedUser?.aiOnlyAccess && (
+                    {!typedUser?.isPremium && !typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
                       <>
                         <DropdownMenuSeparator />
                         <Link href="/subscribe">

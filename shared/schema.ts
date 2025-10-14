@@ -73,6 +73,7 @@ export const users = pgTable("users", {
   subscriptionTier: varchar("subscription_tier", { length: 20 }).default("free"), // free, premium, premium_plus
   isAdmin: boolean("is_admin").default(false),
   isDoctor: boolean("is_doctor").default(false), // Medical professional flag
+  doctorCode: varchar("doctor_code", { length: 20 }).unique(), // Unique code for doctors to share with patients
   aiOnlyAccess: boolean("ai_only_access").default(false), // User can access ONLY AI prevention, not quiz/courses
   language: varchar("language", { length: 2 }), // it, en, es, fr
   // MFA (Multi-Factor Authentication) fields
@@ -1903,6 +1904,52 @@ export const insertProfessionalContactRequestSchema = createInsertSchema(profess
   updatedAt: true,
 });
 export type InsertProfessionalContactRequest = z.infer<typeof insertProfessionalContactRequestSchema>;
+
+// Doctor-Patient Links (for doctor-patient relationship via doctor code)
+export const doctorPatientLinks = pgTable("doctor_patient_links", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  patientId: varchar("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  doctorCode: varchar("doctor_code", { length: 20 }).notNull(), // The code used by patient to link
+  linkedAt: timestamp("linked_at").defaultNow(),
+}, (table) => [
+  unique("unique_doctor_patient").on(table.doctorId, table.patientId),
+  index("idx_doctor_patient_doctor").on(table.doctorId),
+  index("idx_doctor_patient_patient").on(table.patientId),
+  index("idx_doctor_patient_code").on(table.doctorCode),
+]);
+
+export type DoctorPatientLink = typeof doctorPatientLinks.$inferSelect;
+export const insertDoctorPatientLinkSchema = createInsertSchema(doctorPatientLinks).omit({
+  id: true,
+  linkedAt: true,
+});
+export type InsertDoctorPatientLink = z.infer<typeof insertDoctorPatientLinkSchema>;
+
+// Doctor Notes (medical notes sent by doctors to patients)
+export const doctorNotes = pgTable("doctor_notes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  patientId: varchar("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  preventionDocumentId: uuid("prevention_document_id").references(() => preventionDocuments.id, { onDelete: 'set null' }), // Optional: link to specific document
+  alertId: uuid("alert_id").references(() => medicalAlerts.id, { onDelete: 'set null' }), // Optional: link to specific alert
+  noteTitle: varchar("note_title", { length: 200 }),
+  noteText: text("note_text").notNull(),
+  isReport: boolean("is_report").default(false), // True if this is a formal medical report
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_doctor_notes_doctor").on(table.doctorId),
+  index("idx_doctor_notes_patient").on(table.patientId),
+  index("idx_doctor_notes_document").on(table.preventionDocumentId),
+  index("idx_doctor_notes_alert").on(table.alertId),
+]);
+
+export type DoctorNote = typeof doctorNotes.$inferSelect;
+export const insertDoctorNoteSchema = createInsertSchema(doctorNotes).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertDoctorNote = z.infer<typeof insertDoctorNoteSchema>;
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

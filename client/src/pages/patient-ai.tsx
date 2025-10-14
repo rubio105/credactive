@@ -444,17 +444,21 @@ export default function PatientAIPage() {
                     }`} data-testid="alert-followup">
                       <AlertDescription className="space-y-3">
                         <p className="font-semibold text-base">
-                          👋 Ciao {user?.firstName || 'utente'}, come va oggi?
+                          👋 Ciao {user?.firstName || 'utente'}!
                         </p>
-                        <p className="text-sm">
-                          {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
-                            ? '⚠️ Hai risolto il problema di salute che avevamo rilevato?'
-                            : '💡 Hai risolto la situazione che avevamo segnalato?'
-                          }
-                        </p>
-                        {(pendingAlert as any).userSymptom && (
-                          <p className="text-xs text-muted-foreground italic">
-                            Riguardo: al tuo {(pendingAlert as any).userSymptom.toLowerCase().replace(/^(ho |mi fa male |sento )/i, '')}
+                        {(pendingAlert as any).userSymptom ? (
+                          <p className="text-sm">
+                            {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
+                              ? `⚠️ Come va il problema di: ${(pendingAlert as any).userSymptom.toLowerCase()}?`
+                              : `💡 Come sta andando con: ${(pendingAlert as any).userSymptom.toLowerCase()}?`
+                            }
+                          </p>
+                        ) : (
+                          <p className="text-sm">
+                            {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
+                              ? '⚠️ Hai risolto il problema di salute che avevamo rilevato?'
+                              : '💡 Hai risolto la situazione che avevamo segnalato?'
+                            }
                           </p>
                         )}
                         <div className="flex flex-wrap gap-2">
@@ -481,7 +485,7 @@ export default function PatientAIPage() {
                             className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600"
                             data-testid="button-dismiss-alert"
                           >
-                            ✗ No, continua conversazione
+                            Ignora
                           </Button>
                           <Button
                             size="sm"

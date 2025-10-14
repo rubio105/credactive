@@ -1879,5 +1879,30 @@ export const insertMedicalKnowledgeChunkSchema = createInsertSchema(medicalKnowl
 });
 export type InsertMedicalKnowledgeChunk = z.infer<typeof insertMedicalKnowledgeChunkSchema>;
 
+// Professional Contact Requests (for doctor registration requests)
+export const professionalContactRequests = pgTable("professional_contact_requests", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  specialization: varchar("specialization", { length: 200 }).notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, approved, rejected, contacted
+  adminNotes: text("admin_notes"), // Internal notes for admin
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_professional_requests_status").on(table.status),
+  index("idx_professional_requests_email").on(table.email),
+]);
+
+export type ProfessionalContactRequest = typeof professionalContactRequests.$inferSelect;
+export const insertProfessionalContactRequestSchema = createInsertSchema(professionalContactRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProfessionalContactRequest = z.infer<typeof insertProfessionalContactRequestSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

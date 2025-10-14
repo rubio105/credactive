@@ -186,6 +186,9 @@ import {
   type InsertMedicalKnowledgeBase,
   type MedicalKnowledgeChunk,
   type InsertMedicalKnowledgeChunk,
+  professionalContactRequests,
+  type ProfessionalContactRequest,
+  type InsertProfessionalContactRequest,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, or, gte } from "drizzle-orm";
@@ -597,6 +600,15 @@ export interface IStorage {
   
   // Semantic search operation
   semanticSearchMedical(queryEmbedding: number[], limit?: number, topicFilter?: string[]): Promise<Array<MedicalKnowledgeChunk & { similarity: number; documentTitle: string }>>;
+  
+  // ========== PROFESSIONAL CONTACT REQUESTS ==========
+  
+  // Professional contact request operations
+  createProfessionalContactRequest(request: InsertProfessionalContactRequest): Promise<ProfessionalContactRequest>;
+  getProfessionalContactRequestById(id: string): Promise<ProfessionalContactRequest | undefined>;
+  getAllProfessionalContactRequests(): Promise<ProfessionalContactRequest[]>;
+  updateProfessionalContactRequest(id: string, updates: Partial<ProfessionalContactRequest>): Promise<ProfessionalContactRequest>;
+  deleteProfessionalContactRequest(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3701,6 +3713,35 @@ export class DatabaseStorage implements IStorage {
     
     const results = await db.execute(query);
     return results.rows as any;
+  }
+
+  // ========== PROFESSIONAL CONTACT REQUESTS ==========
+
+  async createProfessionalContactRequest(request: InsertProfessionalContactRequest): Promise<ProfessionalContactRequest> {
+    const [created] = await db.insert(professionalContactRequests).values(request).returning();
+    return created;
+  }
+
+  async getProfessionalContactRequestById(id: string): Promise<ProfessionalContactRequest | undefined> {
+    const [request] = await db.select().from(professionalContactRequests).where(eq(professionalContactRequests.id, id));
+    return request;
+  }
+
+  async getAllProfessionalContactRequests(): Promise<ProfessionalContactRequest[]> {
+    return await db.select().from(professionalContactRequests).orderBy(desc(professionalContactRequests.createdAt));
+  }
+
+  async updateProfessionalContactRequest(id: string, updates: Partial<ProfessionalContactRequest>): Promise<ProfessionalContactRequest> {
+    const [updated] = await db
+      .update(professionalContactRequests)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(professionalContactRequests.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteProfessionalContactRequest(id: string): Promise<void> {
+    await db.delete(professionalContactRequests).where(eq(professionalContactRequests.id, id));
   }
 }
 

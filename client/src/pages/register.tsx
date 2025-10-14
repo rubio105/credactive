@@ -52,6 +52,41 @@ export default function Register() {
   const passwordChecks = validatePassword(formData.password);
   const isPasswordValid = Object.values(passwordChecks).every(check => check);
 
+  const professionalRequestMutation = useMutation({
+    mutationFn: async (data: any) => {
+      try {
+        const res = await apiRequest("/api/auth/professional-contact-request", "POST", data);
+        return await res.json();
+      } catch (error: any) {
+        let errorMessage = "Si è verificato un errore. Riprova.";
+        if (error.message) {
+          try {
+            const match = error.message.match(/\{.*\}/);
+            if (match) {
+              const jsonError = JSON.parse(match[0]);
+              errorMessage = jsonError.message || errorMessage;
+            }
+          } catch {}
+        }
+        throw new Error(errorMessage);
+      }
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Richiesta inviata!",
+        description: data.message || "Ti contatteremo presto per completare la registrazione.",
+      });
+      setTimeout(() => setLocation('/login'), 3000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Si è verificato un errore. Riprova.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
       try {
@@ -106,6 +141,30 @@ export default function Register() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Professional Contact Request (for doctors)
+    if (formData.accountType === 'doctor') {
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.specialization) {
+        toast({
+          title: "Campi obbligatori mancanti",
+          description: "Compila tutti i campi della richiesta di contatto",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const requestPayload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        specialization: formData.specialization,
+      };
+      
+      professionalRequestMutation.mutate(requestPayload);
+      return;
+    }
+    
+    // Normal registration (for patients)
     if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
       toast({
         title: "Campi obbligatori mancanti",
@@ -150,8 +209,8 @@ export default function Register() {
       dateOfBirth: formData.dateOfBirth,
       gender: formData.gender,
       phone: formData.phone || null,
-      isDoctor: formData.accountType === 'doctor',
-      specialization: formData.specialization || null, // New field
+      isDoctor: false, // Always false for personal access registration
+      specialization: formData.specialization || null,
       company: formData.company || null,
       addressStreet: formData.addressStreet,
       addressCity: formData.addressCity,
@@ -210,38 +269,40 @@ export default function Register() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Data di Nascita *</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                    autoComplete="bday"
-                    required
-                    data-testid="input-dateOfBirth"
-                  />
+              {formData.accountType !== 'doctor' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Data di Nascita *</Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      autoComplete="bday"
+                      required
+                      data-testid="input-dateOfBirth"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Sesso *</Label>
+                    <Select
+                      value={formData.gender}
+                      onValueChange={(value) => setFormData({ ...formData, gender: value })}
+                      required
+                    >
+                      <SelectTrigger data-testid="select-gender">
+                        <SelectValue placeholder="Seleziona..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Maschio</SelectItem>
+                        <SelectItem value="female">Femmina</SelectItem>
+                        <SelectItem value="other">Altro</SelectItem>
+                        <SelectItem value="prefer_not_to_say">Preferisco non specificare</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender">Sesso *</Label>
-                  <Select
-                    value={formData.gender}
-                    onValueChange={(value) => setFormData({ ...formData, gender: value })}
-                    required
-                  >
-                    <SelectTrigger data-testid="select-gender">
-                      <SelectValue placeholder="Seleziona..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Maschio</SelectItem>
-                      <SelectItem value="female">Femmina</SelectItem>
-                      <SelectItem value="other">Altro</SelectItem>
-                      <SelectItem value="prefer_not_to_say">Preferisco non specificare</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Tipo di Accesso */}
@@ -342,7 +403,7 @@ export default function Register() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telefono</Label>
+                  <Label htmlFor="phone">Telefono {formData.accountType === 'doctor' && '*'}</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -350,6 +411,7 @@ export default function Register() {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     autoComplete="tel"
+                    required={formData.accountType === 'doctor'}
                     data-testid="input-phone"
                   />
                 </div>
@@ -361,13 +423,14 @@ export default function Register() {
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg border-b pb-2">Informazioni Professionali</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="specialization">Specializzazione</Label>
+                  <Label htmlFor="specialization">Specializzazione *</Label>
                   <Select
                     value={formData.specialization}
                     onValueChange={(value) => setFormData({ ...formData, specialization: value })}
+                    required
                   >
                     <SelectTrigger data-testid="select-specialization">
-                      <SelectValue placeholder="Seleziona la tua specializzazione (opzionale)" />
+                      <SelectValue placeholder="Seleziona la tua specializzazione" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="medico_base">Medico di Base</SelectItem>
@@ -387,21 +450,11 @@ export default function Register() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company">Azienda/Organizzazione</Label>
-                  <Input
-                    id="company"
-                    placeholder="Nome azienda (facoltativo)"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    autoComplete="organization"
-                    data-testid="input-company"
-                  />
-                </div>
               </div>
             )}
 
-            {/* Indirizzo */}
+            {/* Indirizzo (solo per pazienti) */}
+            {formData.accountType !== 'doctor' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-lg border-b pb-2">Indirizzo</h3>
               <div className="space-y-2">
@@ -477,41 +530,12 @@ export default function Register() {
                 </Select>
               </div>
             </div>
+            )}
 
-            {/* Preferenze Account */}
+            {/* Password (solo per pazienti) */}
+            {formData.accountType !== 'doctor' && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg border-b pb-2">Preferenze Account</h3>
-              <div className="space-y-2">
-                <Label htmlFor="language">Lingua preferita *</Label>
-                <Select
-                  value={formData.language}
-                  onValueChange={(value) => setFormData({ ...formData, language: value })}
-                  required
-                >
-                  <SelectTrigger data-testid="select-language">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="it">Italiano</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="fr">Français</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="promoCode">Codice Promozionale (facoltativo)</Label>
-                <Input
-                  id="promoCode"
-                  placeholder="Inserisci il codice promo aziendale"
-                  value={formData.promoCode}
-                  onChange={(e) => setFormData({ ...formData, promoCode: e.target.value.toUpperCase() })}
-                  data-testid="input-promo-code"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Se la tua azienda ha un accordo corporate, inserisci il codice promozionale per accedere ai benefici
-                </p>
-              </div>
+              <h3 className="font-semibold text-lg border-b pb-2">Sicurezza</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="password">Password *</Label>
@@ -599,32 +623,22 @@ export default function Register() {
                 </div>
               )}
             </div>
-
-            {/* Consensi */}
-            <div className="space-y-3">
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="newsletterConsent"
-                  checked={formData.newsletterConsent}
-                  onCheckedChange={(checked) => 
-                    setFormData({ ...formData, newsletterConsent: checked as boolean })
-                  }
-                  data-testid="checkbox-newsletter"
-                />
-                <Label htmlFor="newsletterConsent" className="text-sm font-normal leading-tight cursor-pointer">
-                  Desidero ricevere aggiornamenti, offerte e contenuti esclusivi via email
-                </Label>
-              </div>
-            </div>
+            )}
 
             <Button
               type="submit"
               className="w-full"
               size="lg"
-              disabled={registerMutation.isPending || !isPasswordValid}
+              disabled={
+                formData.accountType === 'doctor' 
+                  ? professionalRequestMutation.isPending 
+                  : (registerMutation.isPending || !isPasswordValid)
+              }
               data-testid="button-register"
             >
-              {registerMutation.isPending ? "Registrazione in corso..." : "Crea Account"}
+              {formData.accountType === 'doctor' 
+                ? (professionalRequestMutation.isPending ? "Invio in corso..." : "Invia Richiesta di Contatto")
+                : (registerMutation.isPending ? "Registrazione in corso..." : "Crea Account")}
             </Button>
           </form>
           <div className="mt-6 text-center text-sm">

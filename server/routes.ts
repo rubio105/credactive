@@ -539,6 +539,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Professional contact request (for doctor registration requests)
+  app.post('/api/auth/professional-contact-request', authLimiter, async (req, res) => {
+    try {
+      const { firstName, lastName, email, phone, specialization } = req.body;
+      
+      if (!firstName || !lastName || !email || !phone || !specialization) {
+        return res.status(400).json({ message: "Tutti i campi sono obbligatori" });
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Formato email non valido" });
+      }
+      
+      // Check if request already exists
+      const allRequests = await storage.getAllProfessionalContactRequests();
+      const existingRequest = allRequests.find(r => r.email.toLowerCase() === email.toLowerCase() && r.status === 'pending');
+      if (existingRequest) {
+        return res.status(400).json({ 
+          message: "Hai già inviato una richiesta in attesa di approvazione" 
+        });
+      }
+      
+      const request = await storage.createProfessionalContactRequest({
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
+        phone,
+        specialization,
+        status: 'pending',
+      });
+      
+      res.json({ 
+        success: true, 
+        message: "Richiesta inviata con successo! Ti contatteremo presto.",
+        requestId: request.id 
+      });
+    } catch (error) {
+      console.error("Error creating professional contact request:", error);
+      res.status(500).json({ message: "Errore durante l'invio della richiesta" });
+    }
+  });
+
   // Resend verification code
   app.post('/api/auth/resend-verification', authLimiter, async (req, res) => {
     try {
@@ -8965,6 +9009,45 @@ Format as JSON: {
     } catch (error: any) {
       console.error('Get session enrollments error:', error);
       res.status(500).json({ message: error.message || 'Failed to get session enrollments' });
+    }
+  });
+
+  // ========== PROFESSIONAL CONTACT REQUESTS ADMIN ==========
+  
+  // Get all professional contact requests
+  app.get('/api/admin/professional-requests', isAdmin, async (req, res) => {
+    try {
+      const requests = await storage.getAllProfessionalContactRequests();
+      res.json(requests);
+    } catch (error: any) {
+      console.error('Get professional requests error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get professional requests' });
+    }
+  });
+
+  // Update professional contact request status
+  app.put('/api/admin/professional-requests/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const updated = await storage.updateProfessionalContactRequest(id, updates);
+      res.json({ success: true, request: updated });
+    } catch (error: any) {
+      console.error('Update professional request error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update professional request' });
+    }
+  });
+
+  // Delete professional contact request
+  app.delete('/api/admin/professional-requests/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteProfessionalContactRequest(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Delete professional request error:', error);
+      res.status(500).json({ message: error.message || 'Failed to delete professional request' });
     }
   });
 

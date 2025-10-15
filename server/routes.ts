@@ -2095,7 +2095,7 @@ ${JSON.stringify(questionsToTranslate)}`;
   // Admin - Create user
   app.post('/api/admin/users', isAdmin, async (req, res) => {
     try {
-      const { email, password, firstName, lastName, isPremium, isAdmin: isUserAdmin, aiOnlyAccess } = req.body;
+      const { email, password, firstName, lastName, isPremium, isAdmin: isUserAdmin, aiOnlyAccess, isDoctor, subscriptionTier } = req.body;
 
       // Validate required fields
       if (!email || !password) {
@@ -2111,17 +2111,29 @@ ${JSON.stringify(questionsToTranslate)}`;
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Determine final tier and isPremium
+      const finalTier = subscriptionTier || 'free';
+      const finalIsPremium = isPremium !== undefined ? isPremium : (finalTier !== 'free');
+
       // Create user
       const user = await storage.createUser({
         email: email.toLowerCase(),
         password: hashedPassword,
         firstName: firstName || '',
         lastName: lastName || '',
-        isPremium: isPremium || false,
+        isPremium: finalIsPremium,
+        subscriptionTier: finalTier,
         isAdmin: isUserAdmin || false,
         aiOnlyAccess: aiOnlyAccess || false,
+        isDoctor: isDoctor || false,
         emailVerified: true, // Admin-created users are automatically verified
       });
+
+      // Auto-generate doctor code if user is a doctor
+      if (isDoctor) {
+        const doctorCode = await storage.generateDoctorCode(user.id);
+        console.log(`[Admin] Auto-generated doctor code ${doctorCode} for new user ${user.email}`);
+      }
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;

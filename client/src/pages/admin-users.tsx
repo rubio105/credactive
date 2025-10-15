@@ -40,6 +40,7 @@ export default function AdminUsersPage() {
     firstName: "",
     lastName: "",
     userType: "patient", // patient, doctor, admin, ai_only
+    subscriptionTier: "free", // free, premium, premium_plus
   });
 
   const { data: users = [], isLoading: usersLoading } = useQuery<UserData[]>({
@@ -64,12 +65,16 @@ export default function AdminUsersPage() {
         payload.aiOnlyAccess = true;
       }
 
+      // Set subscription tier
+      payload.subscriptionTier = userData.subscriptionTier;
+      payload.isPremium = userData.subscriptionTier !== "free";
+
       return apiRequest("/api/admin/users", "POST", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setShowCreateDialog(false);
-      setNewUser({ email: "", password: "", firstName: "", lastName: "", userType: "patient" });
+      setNewUser({ email: "", password: "", firstName: "", lastName: "", userType: "patient", subscriptionTier: "free" });
       toast({
         title: "Utente creato",
         description: "L'utente è stato creato con successo",
@@ -252,6 +257,22 @@ export default function AdminUsersPage() {
                       <SelectItem value="doctor">Medico</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="ai_only">Accesso AI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="subscriptionTier">Piano *</Label>
+                  <Select
+                    value={newUser.subscriptionTier}
+                    onValueChange={(value) => setNewUser({ ...newUser, subscriptionTier: value })}
+                  >
+                    <SelectTrigger data-testid="select-subscription-tier">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="premium_plus">Premium Plus</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

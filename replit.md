@@ -12,10 +12,12 @@ Preferred communication style: Simple, everyday language.
 
 The frontend utilizes React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod, ensuring a modern and consistent interface. Design elements include a professional color wheel visualization for personality reports, modern chat interfaces with avatar circles, bubble-style messages, typing indicators, and large input fields. Severity badges with icons and color-coding are used for medical reports. The UI is designed for role-based content display (patient vs. doctor) and features smooth transitions and hover effects.
 
+The platform now features a comprehensive guide page (/guida) with modern, mobile-first responsive design. Cards use colored circular icons (blue, purple, orange) for visual hierarchy, with hover effects and smooth transitions. The guide includes practical examples with colored left borders, expandable FAQ accordions, and an admin-exclusive DLP (Data Loss Prevention) implementation guide with GDPR compliance checklist.
+
 ## Technical Implementations
 
 ### Frontend
-Built with React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, and React Hook Form with Zod.
+Built with React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, and React Hook Form with Zod. Implements Progressive Web App (PWA) capabilities with service worker for offline functionality and manifest.json for installable experience.
 
 ### Backend
 Developed using Express.js, Node.js, and TypeScript, providing a RESTful API. Authentication is handled by Passport.js (local strategy with bcrypt) with persistent sessions. Drizzle ORM provides type-safe access to PostgreSQL. Security measures include rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.

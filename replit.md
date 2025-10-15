@@ -14,6 +14,10 @@ The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS)
 
 **Patient Navigation (October 2025 Update)**: Regular patients (non-aiOnlyAccess) experience a **prevention-only platform** with NO quiz/cybersecurity content. Home page displays AI Chat Panel integrated inline, medical reports section, and prevention-focused welcome banner. SEO metadata reflects "AI Prevenzione" focus. AI-only access users auto-redirect to `/prevention`. Clean navbar with logo and user menu only. Patient dropdown menu shows: AI Prevenzione, Abbonamento, separator, Sicurezza, Documenti, optional Corporate/Upgrade. **Completely removed** for regular patients: Dashboard, Webinar, Quiz, Classifica, Certificati, Analytics, Corsi sections, all quiz-related queries/data fetching.
 
+**Prevention Page Token Limits**: Token usage limits are ONLY visible to aiOnlyAccess users (quiz/cybersecurity). Regular patients (prevention-only) do NOT see token limits section.
+
+**Subscription Page (Admin-Managed)**: `/abbonamento` shows only 3 static benefits (Passa a Plus, Contatto medico H24, Webinar prevenzione) with email CTA to contact administration. NO plan selection, NO Stripe payment logic, NO FAQ. All subscription management handled by admin.
+
 ## Technical Implementations
 
 ### Frontend

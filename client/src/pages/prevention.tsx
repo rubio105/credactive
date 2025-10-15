@@ -1062,33 +1062,58 @@ export default function PreventionPage() {
           </div>
 
           <div className="lg:col-span-2 order-1 lg:order-2 max-w-full">
-            <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
-              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                      <Shield className="w-5 h-5" />
-                      {userRole === 'doctor' ? 'Supporto alla Diagnosi' : 'Parla del Tuo Caso'}
-                    </CardTitle>
-                    <CardDescription>
-                      {userRole === 'doctor' 
-                        ? 'Assistenza AI per analisi diagnostica e decision-making clinico'
-                        : 'Conversazione educativa personalizzata sulla prevenzione'}
-                    </CardDescription>
+            <Card className="shadow-2xl border-2 border-emerald-200/50 dark:border-emerald-800/50 overflow-hidden backdrop-blur-sm">
+              <CardHeader className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 dark:from-emerald-600 dark:via-teal-600 dark:to-cyan-700 pb-8">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzBoLTEydjEyaDEyVjMwem0wLTI0SDI0djEyaDEyVjZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl shadow-lg animate-pulse">
+                      <Sparkles className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-white text-2xl font-bold">
+                        {userRole === 'doctor' ? 'Supporto alla Diagnosi AI' : 'Assistente AI Personalizzato'}
+                      </CardTitle>
+                      <CardDescription className="text-white/90 text-sm font-medium mt-1">
+                        {userRole === 'doctor' 
+                          ? 'Intelligenza artificiale per analisi diagnostica avanzata'
+                          : 'Guida personalizzata alla prevenzione e al benessere'}
+                      </CardDescription>
+                    </div>
                   </div>
                   {sessionId && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCloseSession}
-                      className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900"
+                      className="border-2 border-white/30 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:border-white/50 transition-all duration-200 shadow-lg"
                       data-testid="button-close-session"
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Esci dalla Chat
+                      Esci
                     </Button>
                   )}
                 </div>
+                {user && tokenUsage && (
+                  <div className="relative z-10 mt-4 flex items-center gap-3 text-white/90 text-sm bg-white/10 backdrop-blur-md rounded-xl px-4 py-2.5 border border-white/20 shadow-md">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="font-medium">
+                      {tokenUsage.hasUnlimitedTokens 
+                        ? '✨ Token illimitati attivi'
+                        : `${tokenUsage.tokensRemaining.toLocaleString()} token rimanenti questo mese`}
+                    </span>
+                    {!tokenUsage.hasUnlimitedTokens && (
+                      <div className="flex-1 max-w-xs">
+                        <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-white rounded-full transition-all duration-500"
+                            style={{ width: `${(tokenUsage.tokensRemaining / tokenUsage.tokenLimit) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 {!sessionId ? (
@@ -1150,61 +1175,124 @@ export default function PreventionPage() {
                       </Alert>
                     )}
                     
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Esempi di casi pratici:</p>
-                      <div className="grid grid-cols-1 gap-2">
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4" />
+                        Esempi di casi pratici
+                      </p>
+                      <div className="grid grid-cols-1 gap-3">
                         {userRole === 'doctor' ? (
                           <>
                             <Button 
                               variant="outline" 
-                              className="justify-start text-left h-auto py-2"
-                              onClick={() => setUserInput("Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?")}
+                              className="group relative justify-start text-left h-auto py-4 px-4 border-2 border-purple-200 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-600 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-950/20 dark:to-indigo-950/20 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                              onClick={() => {
+                                const message = "Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?";
+                                startTriageMutation.mutate({ symptom: message, role: userRole });
+                              }}
+                              disabled={startTriageMutation.isPending}
                               data-testid="button-example-diabetes"
                             >
-                              <span className="text-xs">Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?</span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                              <div className="flex items-start gap-3 relative z-10">
+                                <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg group-hover:scale-110 transition-transform">
+                                  <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <span className="text-sm flex-1">Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?</span>
+                              </div>
                             </Button>
                             <Button 
                               variant="outline" 
-                              className="justify-start text-left h-auto py-2"
-                              onClick={() => setUserInput("Gestione prevenzione secondaria post-IMA in paziente 55 anni")}
+                              className="group relative justify-start text-left h-auto py-4 px-4 border-2 border-red-200 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 bg-gradient-to-r from-red-50/50 to-orange-50/50 dark:from-red-950/20 dark:to-orange-950/20 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                              onClick={() => {
+                                const message = "Gestione prevenzione secondaria post-IMA in paziente 55 anni";
+                                startTriageMutation.mutate({ symptom: message, role: userRole });
+                              }}
+                              disabled={startTriageMutation.isPending}
                               data-testid="button-example-cardiovascular"
                             >
-                              <span className="text-xs">Gestione prevenzione secondaria post-IMA in paziente 55 anni</span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                              <div className="flex items-start gap-3 relative z-10">
+                                <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg group-hover:scale-110 transition-transform">
+                                  <Activity className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                </div>
+                                <span className="text-sm flex-1">Gestione prevenzione secondaria post-IMA in paziente 55 anni</span>
+                              </div>
                             </Button>
                             <Button 
                               variant="outline" 
-                              className="justify-start text-left h-auto py-2"
-                              onClick={() => setUserInput("Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida")}
+                              className="group relative justify-start text-left h-auto py-4 px-4 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 bg-gradient-to-r from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                              onClick={() => {
+                                const message = "Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida";
+                                startTriageMutation.mutate({ symptom: message, role: userRole });
+                              }}
+                              disabled={startTriageMutation.isPending}
                               data-testid="button-example-screening"
                             >
-                              <span className="text-xs">Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida</span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                              <div className="flex items-start gap-3 relative z-10">
+                                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg group-hover:scale-110 transition-transform">
+                                  <Stethoscope className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <span className="text-sm flex-1">Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida</span>
+                              </div>
                             </Button>
                           </>
                         ) : (
                           <>
                             <Button 
                               variant="outline" 
-                              className="justify-start text-left h-auto py-2"
-                              onClick={() => setUserInput("Ho familiarità con il diabete, come posso prevenirlo?")}
+                              className="group relative justify-start text-left h-auto py-4 px-4 border-2 border-purple-200 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-600 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-950/20 dark:to-indigo-950/20 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                              onClick={() => {
+                                const message = "Ho familiarità con il diabete, come posso prevenirlo?";
+                                startTriageMutation.mutate({ symptom: message, role: userRole });
+                              }}
+                              disabled={startTriageMutation.isPending}
                               data-testid="button-example-diabetes"
                             >
-                              <span className="text-xs">Ho familiarità con il diabete, come posso prevenirlo?</span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                              <div className="flex items-start gap-3 relative z-10">
+                                <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg group-hover:scale-110 transition-transform">
+                                  <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <span className="text-sm flex-1">Ho familiarità con il diabete, come posso prevenirlo?</span>
+                              </div>
                             </Button>
                             <Button 
                               variant="outline" 
-                              className="justify-start text-left h-auto py-2"
-                              onClick={() => setUserInput("Lavoro molto seduto, cosa posso fare per la mia salute cardiovascolare?")}
+                              className="group relative justify-start text-left h-auto py-4 px-4 border-2 border-red-200 dark:border-red-800 hover:border-red-400 dark:hover:border-red-600 bg-gradient-to-r from-red-50/50 to-orange-50/50 dark:from-red-950/20 dark:to-orange-950/20 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                              onClick={() => {
+                                const message = "Lavoro molto seduto, cosa posso fare per la mia salute cardiovascolare?";
+                                startTriageMutation.mutate({ symptom: message, role: userRole });
+                              }}
+                              disabled={startTriageMutation.isPending}
                               data-testid="button-example-cardiovascular"
                             >
-                              <span className="text-xs">Lavoro molto seduto, cosa posso fare per la salute cardiovascolare?</span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                              <div className="flex items-start gap-3 relative z-10">
+                                <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg group-hover:scale-110 transition-transform">
+                                  <Activity className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                </div>
+                                <span className="text-sm flex-1">Lavoro molto seduto, cosa posso fare per la salute cardiovascolare?</span>
+                              </div>
                             </Button>
                             <Button 
                               variant="outline" 
-                              className="justify-start text-left h-auto py-2"
-                              onClick={() => setUserInput("Ho 45 anni, quali screening preventivi dovrei fare?")}
+                              className="group relative justify-start text-left h-auto py-4 px-4 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 bg-gradient-to-r from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                              onClick={() => {
+                                const message = "Ho 45 anni, quali screening preventivi dovrei fare?";
+                                startTriageMutation.mutate({ symptom: message, role: userRole });
+                              }}
+                              disabled={startTriageMutation.isPending}
                               data-testid="button-example-screening"
                             >
-                              <span className="text-xs">Ho 45 anni, quali screening preventivi dovrei fare?</span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                              <div className="flex items-start gap-3 relative z-10">
+                                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg group-hover:scale-110 transition-transform">
+                                  <Stethoscope className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <span className="text-sm flex-1">Ho 45 anni, quali screening preventivi dovrei fare?</span>
+                              </div>
                             </Button>
                           </>
                         )}
@@ -1212,77 +1300,86 @@ export default function PreventionPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Strumenti di Prevenzione:</p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Strumenti Avanzati:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <Button
                           variant="outline"
-                          className="border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-950 h-auto py-3"
+                          className="group border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 h-auto py-4 hover:shadow-lg transition-all duration-200"
                           onClick={() => setShowUploadDialog(true)}
                           data-testid="button-upload-documents"
                         >
-                          <div className="flex flex-col items-center gap-1 w-full">
-                            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            <span className="text-xs font-medium">Carica Documenti</span>
+                          <div className="flex flex-col items-center gap-2 w-full">
+                            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg group-hover:scale-110 transition-transform">
+                              <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <span className="text-xs font-semibold">Carica Documenti</span>
                           </div>
                         </Button>
 
                         <Button
                           variant="outline"
-                          className="border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-950 h-auto py-3"
+                          className="group border-2 border-purple-200 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 h-auto py-4 hover:shadow-lg transition-all duration-200"
                           onClick={() => setShowPreventionPathDialog(true)}
                           data-testid="button-generate-prevention-path"
                         >
-                          <div className="flex flex-col items-center gap-1 w-full">
-                            <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                            <span className="text-xs font-medium">Percorso Prevenzione</span>
+                          <div className="flex flex-col items-center gap-2 w-full">
+                            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg group-hover:scale-110 transition-transform">
+                              <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <span className="text-xs font-semibold">Percorso Prevenzione</span>
                           </div>
                         </Button>
 
                         <Button
                           variant="outline"
-                          className="border-orange-200 hover:bg-orange-50 dark:border-orange-800 dark:hover:bg-orange-950 h-auto py-3"
+                          className="group border-2 border-orange-200 dark:border-orange-800 hover:border-orange-400 dark:hover:border-orange-600 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 h-auto py-4 hover:shadow-lg transition-all duration-200"
                           onClick={() => setShowAttentionPointsDialog(true)}
                           data-testid="button-attention-points"
                         >
-                          <div className="flex flex-col items-center gap-1 w-full">
-                            <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                            <span className="text-xs font-medium">Punti di Attenzione</span>
+                          <div className="flex flex-col items-center gap-2 w-full">
+                            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg group-hover:scale-110 transition-transform">
+                              <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <span className="text-xs font-semibold">Punti di Attenzione</span>
                           </div>
                         </Button>
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
-                          value={userInput}
-                          onChange={(e) => setUserInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                          className="border-emerald-200 focus:border-emerald-500 dark:border-emerald-800 pr-12"
-                          data-testid="input-triage-start"
-                        />
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Oppure scrivi la tua domanda:</p>
+                      <div className="flex gap-3">
+                        <div className="relative flex-1">
+                          <Input
+                            placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+                            className="border-2 border-emerald-300 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 pr-12 py-6 rounded-xl shadow-sm transition-all text-base bg-white dark:bg-gray-900"
+                            data-testid="input-triage-start"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={toggleVoiceInput}
+                            className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-full ${isListening ? 'text-red-500 animate-pulse bg-red-50 dark:bg-red-950' : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950'}`}
+                            data-testid="button-voice-input-start"
+                          >
+                            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                          </Button>
+                        </div>
                         <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={toggleVoiceInput}
-                          className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}
-                          data-testid="button-voice-input-start"
+                          onClick={handleStart}
+                          disabled={startTriageMutation.isPending}
+                          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-xl hover:shadow-2xl transition-all duration-200 px-8 py-6 rounded-xl text-base font-semibold"
+                          data-testid="button-start-triage"
                         >
-                          {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                          <Send className="w-5 h-5 mr-2" />
+                          {startTriageMutation.isPending ? "Avvio..." : "Inizia"}
                         </Button>
                       </div>
-                      <Button
-                        onClick={handleStart}
-                        disabled={startTriageMutation.isPending}
-                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
-                        data-testid="button-start-triage"
-                      >
-                        <Send className="w-4 h-4 mr-2" />
-                        {startTriageMutation.isPending ? "Avvio..." : "Inizia"}
-                      </Button>
                     </div>
                   </div>
                 ) : (

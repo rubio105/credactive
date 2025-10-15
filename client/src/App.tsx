@@ -50,6 +50,8 @@ import Security from "@/pages/security";
 import Guida from "@/pages/guida";
 import AppointmentsPage from "@/pages/appointments";
 import DoctorAppointmentsPage from "@/pages/doctor-appointments";
+import DoctorPatientsPage from "@/pages/doctor-patients";
+import DoctorReportsPage from "@/pages/doctor-reports";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
@@ -79,6 +81,12 @@ function Router() {
       </Route>
       <Route path="/doctor/appointments">
         {() => <ProtectedRoute requireNonAiOnly><DoctorAppointmentsPage /></ProtectedRoute>}
+      </Route>
+      <Route path="/doctor/patients">
+        {() => <ProtectedRoute requireNonAiOnly><DoctorPatientsPage /></ProtectedRoute>}
+      </Route>
+      <Route path="/doctor/reports">
+        {() => <ProtectedRoute requireNonAiOnly><DoctorReportsPage /></ProtectedRoute>}
       </Route>
       <Route path="/leaderboard">
         {() => <ProtectedRoute requireNonAiOnly><Leaderboard /></ProtectedRoute>}

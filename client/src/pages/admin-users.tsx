@@ -64,7 +64,7 @@ export default function AdminUsersPage() {
         payload.aiOnlyAccess = true;
       }
 
-      return apiRequest("POST", "/api/admin/users", payload);
+      return apiRequest("/api/admin/users", "POST", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -86,7 +86,7 @@ export default function AdminUsersPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ userId, updates }: { userId: string; updates: any }) => {
-      return apiRequest("PATCH", `/api/admin/users/${userId}`, updates);
+      return apiRequest(`/api/admin/users/${userId}`, "PATCH", updates);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -108,7 +108,7 @@ export default function AdminUsersPage() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      return apiRequest("DELETE", `/api/admin/users/${userId}`);
+      return apiRequest(`/api/admin/users/${userId}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -251,7 +251,7 @@ export default function AdminUsersPage() {
                       <SelectItem value="patient">Paziente</SelectItem>
                       <SelectItem value="doctor">Medico</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="ai_only">Solo AI Prevention</SelectItem>
+                      <SelectItem value="ai_only">Accesso AI</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -471,8 +471,8 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Solo AI Prevention</Label>
-                    <p className="text-sm text-muted-foreground">Accesso limitato ad AI Prevention</p>
+                    <Label>Accesso AI</Label>
+                    <p className="text-sm text-muted-foreground">Accesso limitato alle funzionalità AI</p>
                   </div>
                   <Switch
                     checked={editingUser.aiOnlyAccess}

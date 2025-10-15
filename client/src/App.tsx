@@ -17,7 +17,6 @@ import Admin from "@/pages/admin";
 import AdminAudit from "@/pages/admin-audit";
 import AdminUsers from "@/pages/admin-users";
 import AdminWebinar from "@/pages/admin-webinar";
-import AdminAIPrevention from "@/pages/admin-ai-prevention";
 import AdminRAG from "@/pages/admin-rag";
 import AdminMail from "@/pages/admin-mail";
 import AdminMarketing from "@/pages/admin-marketing";
@@ -101,9 +100,6 @@ function Router() {
       </Route>
       <Route path="/admin/webinar">
         {() => <ProtectedRoute requireNonAiOnly><AdminWebinar /></ProtectedRoute>}
-      </Route>
-      <Route path="/admin/ai-prevention">
-        {() => <ProtectedRoute requireNonAiOnly><AdminAIPrevention /></ProtectedRoute>}
       </Route>
       <Route path="/admin/rag">
         {() => <ProtectedRoute requireNonAiOnly><AdminRAG /></ProtectedRoute>}

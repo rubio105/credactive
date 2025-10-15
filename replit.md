@@ -6,6 +6,16 @@ CIRY (Care & Intelligence Ready for You) is a B2B platform integrating health pr
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Updates (October 2025)
+
+## Navigation & UX Improvements
+- **Patient Menu**: Enhanced horizontal navigation for standard users (non-admin, non-doctor, non-AI-only) with direct access to: Dashboard, Abbonamento (subscription plans), Webinar (health webinars), and Centrale Prohmed (AI prevention contact)
+- **Doctor Menu**: Streamlined medical professional navigation with focus on: I Miei Pazienti (patient list), Refertazione (medical reporting), and AI Prevenzione
+- **Admin UI**: Removed horizontal top bar from AdminLayout for cleaner vertical sidebar-only interface. Added "Presto" badges to incomplete features (Webinar, Mail, Marketing) in sidebar menu
+
+## Backend Enhancements
+- **Auto-generated Doctor Codes**: When admin assigns `isDoctor=true` to a user, the system automatically generates a unique 8-character doctor code for patient linking, eliminating manual code generation step
+
 # System Architecture
 
 ## UI/UX Decisions

@@ -7247,8 +7247,8 @@ Explicación de audio:`
         return res.status(404).json({ message: 'User not found' });
       }
       
-      // Show popup after 2-3 logins, only if feedback not yet submitted
-      const shouldPrompt = (freshUser.loginCount || 0) >= 2 && !freshUser.feedbackSubmitted;
+      // Show popup after 3 logins, only if feedback not yet submitted
+      const shouldPrompt = (freshUser.loginCount || 0) >= 3 && !freshUser.feedbackSubmitted;
       
       res.json({ shouldPrompt, loginCount: freshUser.loginCount || 0 });
     } catch (error: any) {

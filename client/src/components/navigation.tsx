@@ -399,49 +399,19 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         </Link>
                       </>
                     )}
-                    {/* Patient Menu Items */}
+                    {/* Patient Menu Items - Only Prevention related */}
                     {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
                       <>
-                        <Link href="/dashboard">
-                          <DropdownMenuItem data-testid="menu-dashboard">
-                            <ChartLine className="w-4 h-4 mr-2" />
-                            Dashboard
+                        <Link href="/prevention">
+                          <DropdownMenuItem data-testid="menu-prevention">
+                            <Stethoscope className="w-4 h-4 mr-2" />
+                            AI Prevenzione
                           </DropdownMenuItem>
                         </Link>
                         <DropdownMenuItem onClick={handlePlansClick} data-testid="menu-subscription">
                           <CreditCard className="w-4 h-4 mr-2" />
                           Abbonamento
                         </DropdownMenuItem>
-                        <Link href="/webinar-health">
-                          <DropdownMenuItem data-testid="menu-webinar">
-                            <Video className="w-4 h-4 mr-2" />
-                            Webinar
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href="/">
-                          <DropdownMenuItem data-testid="menu-quizzes">
-                            <BookOpen className="w-4 h-4 mr-2" />
-                            Quiz
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href="/leaderboard">
-                          <DropdownMenuItem data-testid="menu-leaderboard">
-                            <Trophy className="w-4 h-4 mr-2" />
-                            Classifica
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href="/certificates">
-                          <DropdownMenuItem data-testid="menu-certificates">
-                            <Award className="w-4 h-4 mr-2" />
-                            Certificati
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href="/analytics">
-                          <DropdownMenuItem data-testid="menu-analytics">
-                            <BarChart3 className="w-4 h-4 mr-2" />
-                            Analytics
-                          </DropdownMenuItem>
-                        </Link>
                         <DropdownMenuSeparator />
                         <Link href="/security">
                           <DropdownMenuItem data-testid="menu-security">

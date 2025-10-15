@@ -342,6 +342,13 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* AI Chat Panel for regular patients (not aiOnlyAccess, not doctor, not admin) */}
+        {user && !(user as UserType)?.isDoctor && !(user as UserType)?.isAdmin && !(user as UserType)?.aiOnlyAccess && (
+          <div className="mb-8">
+            <AIChatPanel />
+          </div>
+        )}
+
         {/* Welcome Section */}
         <div className="mb-8 flex items-start justify-between">
           <div>
@@ -473,8 +480,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Quick Stats */}
-        {dashboardData && !(user as UserType)?.isDoctor && (
+        {/* Quick Stats - HIDDEN for regular patients, only for aiOnlyAccess */}
+        {dashboardData && !(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardContent className="p-6">
@@ -534,8 +541,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Premium Status - Hidden for doctors */}
-        {!(user as User)?.isPremium && !(user as UserType)?.isDoctor && (
+        {/* Premium Status - HIDDEN for regular patients and doctors */}
+        {!(user as User)?.isPremium && !(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
           <Card className="gradient-primary text-white mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -562,8 +569,8 @@ export default function Home() {
           </Card>
         )}
 
-        {/* Filter Section - Hidden for doctors */}
-        {!(user as UserType)?.isDoctor && (
+        {/* Filter Section - HIDDEN for regular patients and doctors */}
+        {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
         <Card className="mb-8">
           <CardContent className="p-6">
             <h3 className="text-sm font-medium text-muted-foreground mb-3">Filtra per Categoria</h3>
@@ -609,8 +616,8 @@ export default function Home() {
         </Card>
         )}
 
-        {/* Categories Carousel (12 per page, with pinned priority) - Hidden for doctors */}
-        {quizCategories.length > 0 && !(user as UserType)?.isDoctor && (
+        {/* Categories Carousel - HIDDEN for regular patients and doctors */}
+        {quizCategories.length > 0 && !(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Categorie Quiz</h2>
@@ -657,8 +664,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Available Quizzes - Hidden for doctors */}
-        {!(user as UserType)?.isDoctor && (
+        {/* Available Quizzes - HIDDEN for regular patients and doctors */}
+        {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">{t.categories.allQuizzes}</h2>
@@ -706,8 +713,8 @@ export default function Home() {
         </div>
         )}
 
-        {/* Quick Actions - Hidden for doctors */}
-        {!(user as UserType)?.isDoctor && (
+        {/* Quick Actions - HIDDEN for regular patients and doctors */}
+        {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
@@ -737,8 +744,8 @@ export default function Home() {
         </div>
         )}
 
-        {/* Learning Paths - Hidden for Doctors */}
-        {!(user as UserType)?.isDoctor && (
+        {/* Learning Paths - HIDDEN for regular patients and doctors */}
+        {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-6">Percorsi di Formazione</h2>
             <div className="grid md:grid-cols-2 gap-6">

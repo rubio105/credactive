@@ -483,8 +483,17 @@ export default function PreventionPage() {
   // Mutation per contattare medico Prohmed (invia email con codice)
   const contactProhmedMutation = useMutation({
     mutationFn: async (alertId: string) => {
+      // Invia email Prohmed
       const res = await apiRequest(`/api/user/alerts/${alertId}/contact-prohmed`, "POST", {});
-      return res.json();
+      const data = await res.json();
+      
+      // Risolvi anche l'alert per chiudere la finestra
+      await apiRequest("/api/triage/resolve-alert", "POST", { 
+        alertId, 
+        response: "Medico contattato tramite Prohmed" 
+      });
+      
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });

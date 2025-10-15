@@ -2014,6 +2014,25 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Admin - Toggle Premium Plus for user (especially for doctors)
+  app.post('/api/admin/users/:id/premium-plus', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { enable } = req.body;
+      
+      const updateData = {
+        subscriptionTier: enable ? 'premium_plus' : 'free',
+        isPremium: enable,
+      };
+      
+      const user = await storage.updateUser(id, updateData);
+      res.json({ success: true, user });
+    } catch (error) {
+      console.error("Error toggling Premium Plus:", error);
+      res.status(500).json({ message: "Failed to toggle Premium Plus" });
+    }
+  });
+
   // Admin - Delete user
   app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
     try {

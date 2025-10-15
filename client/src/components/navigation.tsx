@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle } from "lucide-react";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
 
@@ -252,6 +252,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                   <CreditCard className="w-4 h-4 mr-2" />
                   I Nostri Piani
                 </Button>
+                <Link href="/guida">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-guide">
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Guida
+                  </Button>
+                </Link>
                 <Link href="/contatti">
                   <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-contact">
                     <Mail className="w-4 h-4 mr-2" />

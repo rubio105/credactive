@@ -335,6 +335,242 @@ export default function GuidaPage() {
           </CardContent>
         </Card>
 
+        {/* DLP Implementation Guide for Admins */}
+        {(user as any)?.isAdmin && (
+          <Card className="mb-8 border-2 border-orange-200 dark:border-orange-800">
+            <CardHeader className="bg-orange-50 dark:bg-orange-950/50">
+              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                <Shield className="w-5 h-5" />
+                Guida DLP (Data Loss Prevention) per Admin
+              </CardTitle>
+              <CardDescription>
+                Best practices e implementazione per prevenire la perdita di dati sensibili
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              {/* Overview */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">📋 Cos'è DLP?</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Data Loss Prevention (DLP) è un insieme di strategie e tecnologie per prevenire la fuga o perdita 
+                  di dati sensibili. In CIRY, questo è critico poiché gestiamo informazioni sanitarie personali.
+                </p>
+              </div>
+
+              {/* Core Principles */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">🔐 Principi Fondamentali DLP</h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <h4 className="font-semibold text-sm mb-1">1. Classificazione dei Dati</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Tutti i dati sono classificati in 3 livelli:
+                      <ul className="list-disc list-inside mt-1 ml-2">
+                        <li><strong>Critici:</strong> Referti medici, diagnosi, dati biometrici</li>
+                        <li><strong>Sensibili:</strong> Email, nome, cognome, data di nascita</li>
+                        <li><strong>Pubblici:</strong> Statistiche aggregate, contenuti educativi</li>
+                      </ul>
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-muted rounded-lg">
+                    <h4 className="font-semibold text-sm mb-1">2. Anonimizzazione Automatica</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Prima di inviare dati all'AI, vengono rimossi:
+                      <ul className="list-disc list-inside mt-1 ml-2">
+                        <li>Nomi e cognomi (sostituiti con ID anonimi)</li>
+                        <li>Numeri di telefono e indirizzi</li>
+                        <li>Codici fiscali e identificativi personali</li>
+                      </ul>
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-muted rounded-lg">
+                    <h4 className="font-semibold text-sm mb-1">3. Controllo degli Accessi</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Sistema di permessi a 3 livelli:
+                      <ul className="list-disc list-inside mt-1 ml-2">
+                        <li><strong>Admin:</strong> Accesso completo con audit log</li>
+                        <li><strong>Medici:</strong> Solo dati pazienti collegati</li>
+                        <li><strong>Pazienti:</strong> Solo i propri dati sanitari</li>
+                      </ul>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Implementation Steps */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">⚙️ Come Implementare DLP</h3>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="step1">
+                    <AccordionTrigger className="text-sm">
+                      Step 1: Audit dei Dati Sensibili
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground space-y-2">
+                      <p>Identifica tutti i punti dove vengono gestiti dati sensibili:</p>
+                      <ul className="list-disc list-inside ml-2 space-y-1">
+                        <li>Upload documenti medici (Prevention page)</li>
+                        <li>Conversazioni AI (chat history)</li>
+                        <li>Database PostgreSQL (tabelle users, health_reports)</li>
+                        <li>Email transazionali (Brevo)</li>
+                        <li>Export dati admin (CSV, JSON)</li>
+                      </ul>
+                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded border border-yellow-200 dark:border-yellow-800">
+                        <p className="text-xs font-semibold">✅ Azione Admin:</p>
+                        <p className="text-xs">Vai su <code className="bg-muted px-1 py-0.5 rounded">Dashboard Admin → Audit Log</code> per vedere tutti gli accessi ai dati</p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="step2">
+                    <AccordionTrigger className="text-sm">
+                      Step 2: Configurare Encryption at Rest
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground space-y-2">
+                      <p>Tutti i dati sensibili devono essere crittografati nel database:</p>
+                      <div className="mt-2 p-3 bg-muted rounded">
+                        <p className="font-mono text-xs mb-2">// Esempio: Crittografia campo sensibile</p>
+                        <pre className="text-xs bg-background p-2 rounded overflow-x-auto">
+{`// In shared/schema.ts
+import crypto from 'crypto';
+
+// Funzione per crittografare
+function encrypt(text: string): string {
+  const cipher = crypto.createCipheriv(
+    'aes-256-gcm', 
+    Buffer.from(process.env.ENCRYPTION_KEY!), 
+    Buffer.from(process.env.ENCRYPTION_IV!)
+  );
+  return cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
+}
+
+// Prima di salvare referti medici
+const encryptedReport = encrypt(reportContent);`}
+                        </pre>
+                      </div>
+                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded border border-yellow-200 dark:border-yellow-800">
+                        <p className="text-xs font-semibold">🔑 Setup Richiesto:</p>
+                        <p className="text-xs">Aggiungi <code className="bg-muted px-1 py-0.5 rounded">ENCRYPTION_KEY</code> e <code className="bg-muted px-1 py-0.5 rounded">ENCRYPTION_IV</code> ai secrets Replit</p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="step3">
+                    <AccordionTrigger className="text-sm">
+                      Step 3: Monitoraggio e Alerting
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground space-y-2">
+                      <p>Configura alert automatici per attività sospette:</p>
+                      <ul className="list-disc list-inside ml-2 space-y-1">
+                        <li>Export massivo di dati (&gt;100 record)</li>
+                        <li>Accessi ripetuti falliti (&gt;5 tentativi)</li>
+                        <li>Download documenti da IP sconosciuti</li>
+                        <li>Modifiche ai permessi utente</li>
+                      </ul>
+                      <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
+                        <p className="text-xs font-semibold">📊 Dashboard Consigliata:</p>
+                        <p className="text-xs">Usa <code className="bg-muted px-1 py-0.5 rounded">Admin → Analytics</code> per visualizzare metriche di sicurezza in tempo reale</p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="step4">
+                    <AccordionTrigger className="text-sm">
+                      Step 4: Data Retention Policy
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground space-y-2">
+                      <p>Definisci quanto tempo conservare i dati:</p>
+                      <div className="space-y-2 mt-2">
+                        <div className="p-2 bg-muted rounded">
+                          <p className="font-semibold text-xs">Referti Medici:</p>
+                          <p className="text-xs">10 anni (obbligatorio per legge)</p>
+                        </div>
+                        <div className="p-2 bg-muted rounded">
+                          <p className="font-semibold text-xs">Chat AI:</p>
+                          <p className="text-xs">2 anni, poi archiviazione anonima</p>
+                        </div>
+                        <div className="p-2 bg-muted rounded">
+                          <p className="font-semibold text-xs">Audit Logs:</p>
+                          <p className="text-xs">5 anni (GDPR compliance)</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 rounded border border-red-200 dark:border-red-800">
+                        <p className="text-xs font-semibold">⚠️ Importante:</p>
+                        <p className="text-xs">Configura job automatici per cancellare dati scaduti ogni mese</p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="step5">
+                    <AccordionTrigger className="text-sm">
+                      Step 5: Backup e Disaster Recovery
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground space-y-2">
+                      <p>Piano di backup per prevenire perdita dati:</p>
+                      <ul className="list-disc list-inside ml-2 space-y-1">
+                        <li><strong>Backup giornaliero:</strong> Database completo (Neon auto-backup)</li>
+                        <li><strong>Backup settimanale:</strong> File allegati (AWS S3)</li>
+                        <li><strong>Test recovery:</strong> Mensile, verificare ripristino</li>
+                        <li><strong>Geo-redundancy:</strong> Replica in 3 data center EU</li>
+                      </ul>
+                      <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/30 rounded border border-green-200 dark:border-green-800">
+                        <p className="text-xs font-semibold">✨ Best Practice:</p>
+                        <p className="text-xs">Testa il ripristino ogni mese con dati di test per verificare l'integrità dei backup</p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+
+              {/* Compliance Checklist */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">✅ Checklist Conformità GDPR</h3>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Consenso esplicito per raccolta dati sanitari</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Diritto all'oblio (cancellazione account)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Portabilità dati (export JSON/PDF)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Notifica breach entro 72h</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">DPO (Data Protection Officer) designato</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Audit log completo degli accessi</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  <strong>Azioni Rapide Admin:</strong>
+                  <ul className="list-disc list-inside mt-2 ml-2 space-y-1">
+                    <li>Visualizza audit log: <code className="bg-muted px-1 py-0.5 rounded">/admin/audit</code></li>
+                    <li>Export sicuro dati: <code className="bg-muted px-1 py-0.5 rounded">/admin/users → Export CSV</code></li>
+                    <li>Gestisci permessi: <code className="bg-muted px-1 py-0.5 rounded">/admin/users</code></li>
+                    <li>Monitor alert medici: <code className="bg-muted px-1 py-0.5 rounded">/admin/alerts</code></li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Support Contact */}
         <Card>
           <CardHeader>

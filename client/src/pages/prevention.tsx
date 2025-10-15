@@ -212,9 +212,11 @@ export default function PreventionPage() {
     tokensRemaining: number;
   }
 
+  // Token usage query ONLY for aiOnlyAccess users (quiz/cybersecurity)
+  // Regular patients have unlimited tokens and don't need this query
   const { data: tokenUsage } = useQuery<TokenUsageData>({
     queryKey: ["/api/user/token-usage"],
-    enabled: !!user,
+    enabled: !!user && !!user.aiOnlyAccess,
   });
 
   // Query per alert pendente
@@ -1151,7 +1153,8 @@ export default function PreventionPage() {
                     </Button>
                   )}
                 </div>
-                {user && tokenUsage && (
+                {/* Token banner ONLY for aiOnlyAccess users (quiz/cybersecurity) */}
+                {user && user.aiOnlyAccess && tokenUsage && (
                   <div className="relative z-10 mt-4 flex items-center gap-3 text-white/90 text-sm bg-white/10 backdrop-blur-md rounded-xl px-4 py-2.5 border border-white/20 shadow-md">
                     <Sparkles className="w-4 h-4" />
                     <span className="font-medium">

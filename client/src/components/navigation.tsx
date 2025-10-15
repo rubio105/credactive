@@ -113,7 +113,59 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
+                {/* Admin Navigation - Full access to both systems */}
+                {typedUser?.isAdmin && (
+                  <>
+                    <Link href="/admin">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-panel">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Admin
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
+                        <ChartLine className="w-4 h-4 mr-2" />
+                        Dashboard Quiz
+                      </Button>
+                    </Link>
+                    <Link href="/prevention">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
+                        <Stethoscope className="w-4 h-4 mr-2" />
+                        AI Prevenzione
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                {/* Doctor Navigation - ONLY Prevention/Clinical tools (SEPARATE from quiz) */}
+                {typedUser?.isDoctor && !typedUser?.isAdmin && (
+                  <>
+                    <Link href="/">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
+                        <User className="w-4 h-4 mr-2" />
+                        I Miei Pazienti
+                      </Button>
+                    </Link>
+                    <Link href="/prevention">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
+                        <Stethoscope className="w-4 h-4 mr-2" />
+                        AI Prevenzione
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                {/* AI-Only Prevention Patients - ONLY Prevention (SEPARATE from quiz) */}
+                {typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
+                  <>
+                    <Link href="/prevention">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
+                        <Stethoscope className="w-4 h-4 mr-2" />
+                        AI Prevenzione
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                {/* Quiz Users - ONLY Quiz system (SEPARATE from prevention) */}
+                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
                     <Link href="/dashboard">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
@@ -127,16 +179,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         I miei Quiz
                       </Button>
                     </Link>
-                  </>
-                )}
-                <Link href="/prevention">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
-                    <Award className="w-4 h-4 mr-2" />
-                    AI Prevenzione
-                  </Button>
-                </Link>
-                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
-                  <>
                     <Link href="/leaderboard">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-leaderboard">
                         <Trophy className="w-4 h-4 mr-2" />
@@ -249,7 +291,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     <div className="px-2 py-1.5">
                       <p className="text-sm font-medium">{getUserName()}</p>
                       <p className="text-xs text-muted-foreground">{typedUser?.email}</p>
-                      {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
+                      {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
                         <div className="flex items-center gap-1 mt-2">
                           <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 text-xs py-0.5">
                             <Coins className="w-3 h-3 mr-1" />
@@ -265,7 +307,59 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                       )}
                     </div>
                     <DropdownMenuSeparator />
-                    {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
+                    {/* Admin Menu Items - Full access to both systems */}
+                    {typedUser?.isAdmin && (
+                      <>
+                        <Link href="/admin">
+                          <DropdownMenuItem data-testid="menu-admin-main">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Pannello Admin
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/dashboard">
+                          <DropdownMenuItem data-testid="menu-dashboard">
+                            <ChartLine className="w-4 h-4 mr-2" />
+                            Dashboard Quiz
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/prevention">
+                          <DropdownMenuItem data-testid="menu-prevention">
+                            <Stethoscope className="w-4 h-4 mr-2" />
+                            AI Prevenzione
+                          </DropdownMenuItem>
+                        </Link>
+                      </>
+                    )}
+                    {/* Doctor Menu Items - ONLY Prevention/Clinical (SEPARATE from quiz) */}
+                    {typedUser?.isDoctor && !typedUser?.isAdmin && (
+                      <>
+                        <Link href="/">
+                          <DropdownMenuItem data-testid="menu-patients">
+                            <User className="w-4 h-4 mr-2" />
+                            I Miei Pazienti
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/prevention">
+                          <DropdownMenuItem data-testid="menu-prevention">
+                            <Stethoscope className="w-4 h-4 mr-2" />
+                            AI Prevenzione
+                          </DropdownMenuItem>
+                        </Link>
+                      </>
+                    )}
+                    {/* AI-Only Prevention Patients - ONLY Prevention (SEPARATE from quiz) */}
+                    {typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
+                      <>
+                        <Link href="/prevention">
+                          <DropdownMenuItem data-testid="menu-prevention">
+                            <Stethoscope className="w-4 h-4 mr-2" />
+                            AI Prevenzione
+                          </DropdownMenuItem>
+                        </Link>
+                      </>
+                    )}
+                    {/* Quiz Users Menu Items - ONLY Quiz system (SEPARATE from prevention) */}
+                    {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
                       <>
                         <Link href="/dashboard">
                           <DropdownMenuItem data-testid="menu-dashboard">
@@ -310,18 +404,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         </Link>
                       </>
                     )}
-                    {typedUser?.isAdmin && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <Link href="/admin">
-                          <DropdownMenuItem className="text-destructive" data-testid="menu-admin">
-                            <Settings className="w-4 h-4 mr-2" />
-                            Pannello Admin
-                          </DropdownMenuItem>
-                        </Link>
-                      </>
-                    )}
-                    {!typedUser?.isPremium && !typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
+                    {!typedUser?.isPremium && !typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
                       <>
                         <DropdownMenuSeparator />
                         <Link href="/subscribe">

@@ -51,82 +51,115 @@ export default function GuidaPage() {
         </Alert>
 
         {/* Role-specific Quick Start */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="w-5 h-5" />
-              {isDoctor ? "Guida Rapida per Medici" : "Guida Rapida per Pazienti"}
-            </CardTitle>
-            <CardDescription>
-              {isDoctor 
-                ? "Come utilizzare CIRY per supporto diagnostico e gestione pazienti"
-                : "Come sfruttare al meglio gli strumenti di prevenzione AI"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isDoctor ? (
-              <>
-                <div className="flex gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold">1. Accedi al Supporto Diagnostico</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Vai su "AI Prevention" per analizzare referti medici e ricevere assistenza diagnostica AI
-                    </p>
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-6">
+            {isDoctor ? "Guida Rapida per Medici" : "Primi Passi"}
+          </h2>
+          
+          {isDoctor ? (
+            <div className="grid gap-4 md:gap-6 sm:grid-cols-1 md:grid-cols-3">
+              <Card className="border-2 hover:shadow-lg transition-shadow">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <Brain className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                   </div>
-                </div>
-                <div className="flex gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold">2. Carica Documenti Medici</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Upload referti PDF, immagini radiologiche o esami del sangue per analisi AI approfondita
-                    </p>
+                  <h3 className="font-semibold text-lg mb-2">Supporto Diagnostico</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Analizza referti medici e ricevi assistenza diagnostica AI
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:shadow-lg transition-shadow">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                   </div>
-                </div>
-                <div className="flex gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold">3. Gestisci Pazienti</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Collega pazienti tramite codice univoco e monitora i loro referti medici in tempo reale
-                    </p>
+                  <h3 className="font-semibold text-lg mb-2">Carica Documenti</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Upload referti PDF e immagini radiologiche per analisi AI
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:shadow-lg transition-shadow">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                    <Users className="w-8 h-8 text-orange-600 dark:text-orange-400" />
                   </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold">1. Carica i Tuoi Referti</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Upload esami del sangue, radiografie o altri documenti medici per ricevere analisi AI
-                    </p>
+                  <h3 className="font-semibold text-lg mb-2">Gestisci Pazienti</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Collega pazienti e monitora i loro referti in tempo reale
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:gap-6 sm:grid-cols-1 md:grid-cols-3">
+              <Card className="border-2 hover:shadow-lg transition-shadow">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                   </div>
-                </div>
-                <div className="flex gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold">2. Parla con l'AI Prevention</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Fai domande sulla tua salute e ricevi consigli personalizzati basati sui tuoi referti
-                    </p>
+                  <h3 className="font-semibold text-lg mb-2">Carica Referti</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Upload esami del sangue e radiografie per analisi AI
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:shadow-lg transition-shadow">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                    <MessageSquare className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                   </div>
-                </div>
-                <div className="flex gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold">3. Monitora il Tuo Indice di Prevenzione</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Visualizza il tuo score di salute e segui i suggerimenti per migliorarlo
-                    </p>
+                  <h3 className="font-semibold text-lg mb-2">AI Prevention</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Fai domande e ricevi consigli personalizzati sui tuoi referti
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:shadow-lg transition-shadow">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-orange-600 dark:text-orange-400" />
                   </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  <h3 className="font-semibold text-lg mb-2">Indice Prevenzione</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Monitora il tuo score di salute e segui i suggerimenti
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+
+        {/* Practical Examples */}
+        {!isDoctor && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Esempi di casi pratici</h2>
+            <div className="space-y-3">
+              <Card className="hover:bg-muted/50 transition-colors cursor-pointer border-l-4 border-l-blue-500">
+                <CardContent className="p-4">
+                  <p className="text-sm">Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover:bg-muted/50 transition-colors cursor-pointer border-l-4 border-l-purple-500">
+                <CardContent className="p-4">
+                  <p className="text-sm">Gestione prevenzione secondaria post-IMA in paziente 55 anni</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover:bg-muted/50 transition-colors cursor-pointer border-l-4 border-l-orange-500">
+                <CardContent className="p-4">
+                  <p className="text-sm">Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
 
         {/* Detailed FAQ */}
         <Card className="mb-8">

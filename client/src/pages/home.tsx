@@ -323,9 +323,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <SEO 
-        title="Dashboard Quiz - I Tuoi Corsi Cybersecurity"
-        description="Accedi ai tuoi quiz personalizzati su CISSP, CISM, ISO 27001, GDPR e altre certificazioni cybersecurity. Monitora i progressi, visualizza statistiche e continua la tua preparazione."
-        keywords="dashboard quiz, progressi cybersecurity, certificazioni online, CISSP preparazione, CISM quiz"
+        title={(user as UserType)?.isDoctor ? "Portale Medico - CIRY" : "Dashboard Quiz - I Tuoi Corsi Cybersecurity"}
+        description={(user as UserType)?.isDoctor 
+          ? "Gestisci i tuoi pazienti, crea referti medici e monitora la loro salute sulla piattaforma CIRY."
+          : "Accedi ai tuoi quiz personalizzati su CISSP, CISM, ISO 27001, GDPR e altre certificazioni cybersecurity. Monitora i progressi, visualizza statistiche e continua la tua preparazione."
+        }
+        keywords={(user as UserType)?.isDoctor 
+          ? "portale medico, gestione pazienti, referti medici, prevenzione sanitaria"
+          : "dashboard quiz, progressi cybersecurity, certificazioni online, CISSP preparazione, CISM quiz"
+        }
       />
       <Navigation />
       

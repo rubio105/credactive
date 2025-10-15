@@ -20,6 +20,13 @@ The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS)
 
 **Premium Subscription System (Self-Service Stripe Payment)**: `/subscribe` page allows patients to purchase Premium subscription (€99/month) directly via Stripe checkout. Flow: User → Stripe Elements payment form → /payment-success confirmation → user.isPremium updated. Navigation shows "Passa a Premium" for non-premium users. Backend `updateUserStripeInfo` handles both tier names ('premium', 'premium_plus') and Stripe subscription IDs ('sub_*'), automatically setting isPremium: true. Complete Stripe integration with payment intent creation, success confirmation, and cache invalidation.
 
+**Role-Based Homepage Routing**: Home page (`/`) automatically redirects users to their role-specific dashboard:
+- **Admin** → `/admin` (Dashboard amministrazione)
+- **Dottori** (non-admin) → `/doctor/patients` (I Miei Pazienti)
+- **AI-only access** (non-dottori/admin) → `/prevention` (AI Prevenzione)
+- **Pazienti normali** → Home page with integrated AI Prevention content
+Logic implemented in `home.tsx` with sequential useEffect hooks to prevent redirect conflicts.
+
 ## Technical Implementations
 
 ### Frontend

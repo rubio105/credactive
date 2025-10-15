@@ -9807,6 +9807,203 @@ Format as JSON: {
       res.status(500).json({ message: error.message || 'Failed to create webinar' });
     }
   });
+
+  // ========== APPOINTMENTS ROUTES ==========
+  
+  // Get appointments for current user (doctor or patient)
+  app.get('/api/appointments', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { status, startDate, endDate } = req.query;
+
+      let appointments;
+      
+      if (user.isDoctor) {
+        // Doctor sees all their appointments
+        const start = startDate ? new Date(startDate as string) : undefined;
+        const end = endDate ? new Date(endDate as string) : undefined;
+        appointments = await storage.getAppointmentsByDoctor(user.id, start, end);
+      } else {
+        // Patient sees only their appointments
+        appointments = await storage.getAppointmentsByPatient(user.id, status as string);
+      }
+
+      res.json(appointments);
+    } catch (error: any) {
+      console.error('Get appointments error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get appointments' });
+    }
+  });
+
+  // Create appointment slot (doctor only)
+  app.post('/api/appointments', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (!user.isDoctor) {
+        return res.status(403).json({ message: 'Only doctors can create appointment slots' });
+      }
+
+      const { startTime, endTime, title, type } = req.body;
+
+      if (!startTime || !endTime) {
+        return res.status(400).json({ message: 'Start time and end time are required' });
+      }
+
+      const appointment = await storage.createAppointment({
+        doctorId: user.id,
+        patientId: null,
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        title: title || 'Visita disponibile',
+        type: type || 'consultation',
+        status: 'available',
+      });
+
+      res.json(appointment);
+    } catch (error: any) {
+      console.error('Create appointment error:', error);
+      res.status(500).json({ message: error.message || 'Failed to create appointment' });
+    }
+  });
+
+  // Book appointment (patient)
+  app.post('/api/appointments/:id/book', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+      const { notes } = req.body;
+
+      const appointment = await storage.getAppointmentById(id);
+      if (!appointment) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      if (appointment.status !== 'available') {
+        return res.status(400).json({ message: 'Appointment is not available' });
+      }
+
+      const booked = await storage.bookAppointment(id, user.id, notes);
+
+      // TODO: Send email notification to doctor
+      
+      res.json(booked);
+    } catch (error: any) {
+      console.error('Book appointment error:', error);
+      res.status(500).json({ message: error.message || 'Failed to book appointment' });
+    }
+  });
+
+  // Update appointment status (doctor only)
+  app.put('/api/appointments/:id/status', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+      const { status, reason } = req.body;
+
+      if (!user.isDoctor) {
+        return res.status(403).json({ message: 'Only doctors can update appointment status' });
+      }
+
+      const appointment = await storage.getAppointmentById(id);
+      if (!appointment) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      if (appointment.doctorId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to update this appointment' });
+      }
+
+      const updates: any = { status };
+      if (status === 'cancelled' && reason) {
+        updates.cancellationReason = reason;
+      }
+
+      const updated = await storage.updateAppointmentStatus(id, status, user.id);
+
+      // TODO: Send email notification to patient
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Update appointment status error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update appointment status' });
+    }
+  });
+
+  // Delete appointment (doctor only)
+  app.delete('/api/appointments/:id', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+
+      if (!user.isDoctor) {
+        return res.status(403).json({ message: 'Only doctors can delete appointments' });
+      }
+
+      const appointment = await storage.getAppointmentById(id);
+      if (!appointment) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      if (appointment.doctorId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to delete this appointment' });
+      }
+
+      await storage.deleteAppointment(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Delete appointment error:', error);
+      res.status(500).json({ message: error.message || 'Failed to delete appointment' });
+    }
+  });
+
+  // Get appointments summary (doctor only)
+  app.get('/api/appointments/summary', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      if (!user.isDoctor) {
+        return res.status(403).json({ message: 'Only doctors can view appointment summary' });
+      }
+
+      const summary = await storage.getAppointmentsSummary(user.id);
+      res.json(summary);
+    } catch (error: any) {
+      console.error('Get appointments summary error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get appointments summary' });
+    }
+  });
+
+  // Admin: Toggle appointments feature
+  app.post('/api/admin/settings/appointments/toggle', isAdmin, async (req, res) => {
+    try {
+      const { enabled } = req.body;
+
+      await storage.upsertSetting(
+        'appointments_enabled',
+        enabled.toString(),
+        'Enable/disable appointment booking system',
+        'features'
+      );
+
+      res.json({ success: true, enabled });
+    } catch (error: any) {
+      console.error('Toggle appointments error:', error);
+      res.status(500).json({ message: error.message || 'Failed to toggle appointments feature' });
+    }
+  });
+
+  // Get appointments feature status
+  app.get('/api/settings/appointments-enabled', async (req, res) => {
+    try {
+      const setting = await storage.getSetting('appointments_enabled');
+      const enabled = setting?.value === 'true' || false;
+      res.json({ enabled });
+    } catch (error: any) {
+      console.error('Get appointments setting error:', error);
+      res.status(500).json({ enabled: false });
+    }
+  });
   
   return httpServer;
 }

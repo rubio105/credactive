@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, Sparkles, Stethoscope, Info } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, Sparkles, Stethoscope, Info, Camera } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -88,6 +88,7 @@ export default function PreventionPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadQueue, setUploadQueue] = useState<Array<{ file: File; status: 'pending' | 'uploading' | 'completed' | 'error'; error?: string; result?: any }>>([]);
   const [uploadResult, setUploadResult] = useState<any>(null);
+  const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [reportFilter, setReportFilter] = useState<string>('all');
   const [reportSort, setReportSort] = useState<'recent' | 'oldest' | 'type'>('recent');
   const [reportSearch, setReportSearch] = useState<string>('');
@@ -98,6 +99,7 @@ export default function PreventionPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const doctorAutoStartedRef = useRef<boolean>(false);
 
   // Prevention page is publicly accessible - both authenticated and anonymous users can use it
@@ -659,16 +661,16 @@ export default function PreventionPage() {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    // Validate each file
-    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    // Validate each file - include mobile camera formats (HEIC/HEIF)
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'image/heic', 'image/heif', 'image/webp'];
     const validFiles: File[] = [];
     
     for (const file of files) {
       // Validate file type
-      if (!validTypes.includes(file.type)) {
+      if (!validTypes.includes(file.type.toLowerCase())) {
         toast({ 
           title: "Formato non valido", 
-          description: `${file.name}: Usa solo PDF, JPG o PNG`, 
+          description: `${file.name}: Formato non supportato`, 
           variant: "destructive" 
         });
         continue;
@@ -695,6 +697,9 @@ export default function PreventionPage() {
       file,
       status: 'pending' as const
     })));
+    
+    // Reset upload options to show primary button on next open
+    setShowUploadOptions(false);
   };
 
   // Process upload queue
@@ -1811,36 +1816,101 @@ export default function PreventionPage() {
               <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               {uploadQueue.length === 0 ? (
                 <>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Clicca per selezionare i tuoi referti medici
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Formati supportati: PDF, JPG, PNG (max 10MB) • Selezione multipla supportata
-                  </p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleFileSelect}
-                    multiple
-                    className="hidden"
-                    data-testid="input-file-report"
-                  />
-                  <Button 
-                    variant="outline" 
-                    className="mt-2"
-                    onClick={() => {
-                      if (!user) {
-                        toast({ title: "Accesso richiesto", description: "Effettua il login per caricare documenti", variant: "destructive" });
-                        return;
-                      }
-                      fileInputRef.current?.click();
-                    }}
-                    data-testid="button-select-files"
-                  >
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Seleziona Referti
-                  </Button>
+                  {!showUploadOptions ? (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Carica i tuoi referti medici
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Formati supportati: PDF, JPG, PNG (max 10MB) • Selezione multipla supportata
+                      </p>
+                      <Button 
+                        variant="outline"
+                        className="mt-2"
+                        onClick={() => {
+                          if (!user) {
+                            toast({ title: "Accesso richiesto", description: "Effettua il login per caricare documenti", variant: "destructive" });
+                            return;
+                          }
+                          setShowUploadOptions(true);
+                        }}
+                        data-testid="button-upload-referti"
+                      >
+                        <FileUp className="w-4 h-4 mr-2" />
+                        Carica Referti
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-foreground mb-4">
+                        Scegli come caricare il referto:
+                      </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,image/*"
+                        onChange={handleFileSelect}
+                        multiple
+                        className="hidden"
+                        data-testid="input-file-report"
+                      />
+                      <input
+                        ref={cameraInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        data-testid="input-camera-capture"
+                      />
+                      <div className="flex gap-3 justify-center flex-wrap mt-2">
+                        <Button 
+                          variant="outline"
+                          className="flex-1 max-w-xs h-auto py-4 border-2"
+                          onClick={() => {
+                            fileInputRef.current?.click();
+                            setShowUploadOptions(false);
+                          }}
+                          data-testid="button-select-files"
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <FileUp className="w-6 h-6 text-blue-600" />
+                            <div>
+                              <p className="font-semibold text-sm">Da Galleria</p>
+                              <p className="text-xs text-muted-foreground">Seleziona file esistenti</p>
+                            </div>
+                          </div>
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          className="flex-1 max-w-xs h-auto py-4 border-2 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                          onClick={() => {
+                            cameraInputRef.current?.click();
+                            setShowUploadOptions(false);
+                          }}
+                          data-testid="button-take-photo"
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <Camera className="w-6 h-6 text-blue-600" />
+                            <div>
+                              <p className="font-semibold text-sm">Scatta Foto</p>
+                              <p className="text-xs text-muted-foreground">Usa la fotocamera</p>
+                            </div>
+                          </div>
+                        </Button>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowUploadOptions(false)}
+                        className="mt-3 text-muted-foreground"
+                        data-testid="button-back-upload"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Annulla
+                      </Button>
+                    </>
+                  )}
                 </>
               ) : (
                 <>

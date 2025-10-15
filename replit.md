@@ -14,7 +14,7 @@ The frontend utilizes React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind 
 
 **AI Prevention Chat Design**: AI assistant avatar displays a blue shield icon, user avatars show initials on a blue-indigo gradient.
 
-**Patient Navigation**: Regular patients (non-aiOnlyAccess) access a prevention-only platform, excluding quiz/cybersecurity content. The homepage features an integrated AI Chat Panel, medical reports section, and prevention-focused banner. SEO metadata emphasizes "AI Prevenzione." AI-only access users are redirected to `/prevention`. The navbar is clean, with a logo and user menu. Patient dropdown includes AI Prevenzione, Sicurezza, Webinari, Documenti, and optional Corporate/Passa a Premium. Quiz-related sections and data are completely removed for regular patients.
+**Patient Navigation**: Regular patients (non-aiOnlyAccess) access a prevention-only platform, excluding quiz/cybersecurity content. The homepage features an integrated AI Chat Panel, medical reports section, and prevention-focused banner. SEO metadata emphasizes "AI Prevenzione." AI-only access users are redirected to `/prevention`. The navbar is clean, with a logo and user menu (Premium badge removed from avatar area for cleaner UI). Patient dropdown includes AI Prevenzione, Sicurezza, Webinari, Documenti, and optional Corporate/Passa a Premium. Quiz-related sections and data are completely removed for regular patients.
 
 **Token Limits System (Inverted Model)**:
 - Regular Patients (prevention-only): Unlimited AI tokens, no limits enforced, no token UI displayed.

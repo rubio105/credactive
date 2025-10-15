@@ -23,6 +23,7 @@ import AdminMarketing from "@/pages/admin-marketing";
 import AdminAlerts from "@/pages/admin-alerts";
 import AdminFeedback from "@/pages/admin-feedback";
 import AdminPushNotifications from "@/pages/admin-push-notifications";
+import AdminSubscriptions from "@/pages/admin-subscriptions";
 import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
 import Login from "@/pages/login";
@@ -126,6 +127,9 @@ function Router() {
       </Route>
       <Route path="/admin/push-notifications">
         {() => <ProtectedRoute requireNonAiOnly><AdminPushNotifications /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/subscriptions">
+        {() => <ProtectedRoute requireNonAiOnly><AdminSubscriptions /></ProtectedRoute>}
       </Route>
       <Route path="/corporate">
         {() => <ProtectedRoute requireNonAiOnly><CorporatePortal /></ProtectedRoute>}

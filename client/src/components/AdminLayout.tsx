@@ -10,6 +10,7 @@ import {
   AlertTriangle, 
   MessageSquare,
   Bell,
+  Crown,
   LogOut
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const menuItems = [
     { href: "/admin", icon: BarChart3, label: "Dashboard", testId: "nav-admin-dashboard" },
     { href: "/admin/users", icon: Users, label: "Gestione Utenti", testId: "nav-admin-users" },
+    { href: "/admin/subscriptions", icon: Crown, label: "Subscription", testId: "nav-admin-subscriptions" },
     { href: "/admin/webinar", icon: Video, label: "Webinar", testId: "nav-admin-webinar" },
     { href: "/admin/rag", icon: Database, label: "Sistemi RAG", testId: "nav-admin-rag" },
     { href: "/admin/mail", icon: Mail, label: "Mail", testId: "nav-admin-mail" },

@@ -99,6 +99,7 @@ export default function PreventionPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const doctorAutoStartedRef = useRef<boolean>(false);
 
   // Prevention page is publicly accessible - both authenticated and anonymous users can use it
   // Anonymous users have limited features, authenticated users see token limits and personalized features
@@ -240,6 +241,49 @@ export default function PreventionPage() {
       setSessionId(activeSession.id);
     }
   }, [activeSession, sessionId]);
+
+  // Auto-open AI dialog for doctors when they access prevention page
+  useEffect(() => {
+    const isDoctor = (user as any)?.isDoctor;
+    // Wait for activeSession query to resolve (activeSession will be null if no active session)
+    // Only auto-start if: 1) user is a doctor, 2) activeSession resolved to null, 3) no sessionId, 4) haven't already auto-started
+    if (isDoctor && activeSession === null && !sessionId && !doctorAutoStartedRef.current) {
+      // Mark as started immediately to prevent multiple attempts
+      doctorAutoStartedRef.current = true;
+      
+      // Small delay for better UX
+      const timer = setTimeout(async () => {
+        const initialMessage = "Benvenuto! Come posso aiutarti nella prevenzione e diagnosi oggi?";
+        
+        try {
+          const response = await apiRequest("/api/triage/start", "POST", { 
+            initialSymptom: initialMessage,
+            userRole: 'doctor'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data?.session?.id) {
+              setSessionId(data.session.id);
+              queryClient.invalidateQueries({ queryKey: ["/api/triage/messages"] });
+              // Keep input empty for clean UI
+              setUserInput("");
+            } else {
+              console.error("Doctor auto-start: Invalid response data");
+              doctorAutoStartedRef.current = false; // Allow retry
+            }
+          } else {
+            console.error("Doctor auto-start: HTTP error", response.status);
+            doctorAutoStartedRef.current = false; // Allow retry
+          }
+        } catch (error: any) {
+          console.error("Doctor auto-start error:", error);
+          doctorAutoStartedRef.current = false; // Allow retry
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [user, sessionId, activeSession]);
 
   const startTriageMutation = useMutation({
     mutationFn: async (data: { symptom: string; role: 'patient' | 'doctor' }) => {

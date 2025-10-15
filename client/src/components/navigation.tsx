@@ -191,13 +191,13 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                 {/* Doctor Navigation - ONLY Prevention/Clinical tools (SEPARATE from quiz) */}
                 {typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
-                    <Link href="/">
+                    <Link href="/doctor/patients">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
                         <User className="w-4 h-4 mr-2" />
                         I Miei Pazienti
                       </Button>
                     </Link>
-                    <Link href="/">
+                    <Link href="/doctor/reports">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reporting">
                         <FileCheck className="w-4 h-4 mr-2" />
                         Refertazione

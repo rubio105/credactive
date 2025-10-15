@@ -1192,8 +1192,8 @@ export default function PreventionPage() {
                                 // Start a conversation about the unresolved issue
                                 setTimeout(() => {
                                   const followupMessage = pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency'
-                                    ? `Il problema di ${pendingAlert.reason} non è ancora risolto. Hai consultato un medico?`
-                                    : `La situazione di ${pendingAlert.reason} non è ancora risolta. Come posso aiutarti?`;
+                                    ? `Il problema rilevato non è ancora risolto. Hai consultato un medico?`
+                                    : `La situazione rilevata non è ancora risolta. Come posso aiutarti?`;
                                   setUserInput(followupMessage);
                                 }, 500);
                               }}

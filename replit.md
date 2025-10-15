@@ -16,7 +16,11 @@ The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS)
 
 **Patient Navigation (October 2025 Update)**: Regular patients (non-aiOnlyAccess) experience a **prevention-only platform** with NO quiz/cybersecurity content. Home page displays AI Chat Panel integrated inline, medical reports section, and prevention-focused welcome banner. SEO metadata reflects "AI Prevenzione" focus. AI-only access users auto-redirect to `/prevention`. Clean navbar with logo and user menu only. Patient dropdown menu shows: AI Prevenzione, separator, Sicurezza, Webinari, Documenti, optional Corporate/Passa a Premium (if not premium). **Completely removed** for regular patients: Dashboard, Quiz, Classifica, Certificati, Analytics, Corsi sections, all quiz-related queries/data fetching.
 
-**Prevention Page Token Limits**: Token usage limits are ONLY enforced for aiOnlyAccess users (quiz/cybersecurity). Regular patients (prevention-only) have UNLIMITED tokens and do NOT see token limits section. The backend checks `user.aiOnlyAccess` to determine if token limits apply.
+**Token Limits System (Inverted Model - October 2025)**:
+- **Regular Patients (prevention-only)**: UNLIMITED AI tokens, NO limits enforced, NO token banner/UI displayed
+- **aiOnlyAccess Users (quiz/cybersecurity)**: Token limits enforced (120 free, 1000 premium, unlimited premium_plus)
+- **Implementation**: Frontend checks `user.aiOnlyAccess` to conditionally render token UI and enable query. Backend checks `!user.aiOnlyAccess` to return `tokenLimit: -1` (unlimited). Triage endpoint skips token validation entirely for regular patients.
+- **UI Behavior**: Token usage query and banner ONLY enabled when `user?.aiOnlyAccess === true`. Regular patients never fetch or see token data.
 
 **Premium Subscription System (Self-Service Stripe Payment)**: `/subscribe` page allows patients to purchase Premium subscription (€29/month) directly via Stripe checkout. Flow: User → Stripe Elements payment form → /payment-success confirmation → user.isPremium updated. Navigation shows "Passa a Premium" for non-premium users. Backend `updateUserStripeInfo` handles both tier names ('premium', 'premium_plus') and Stripe subscription IDs ('sub_*'), automatically setting isPremium: true. Complete Stripe integration with payment intent creation, success confirmation, and cache invalidation.
 
@@ -72,7 +76,7 @@ PostgreSQL (Neon's serverless driver) is managed by Drizzle ORM. The schema supp
 - **AI Conversational Assistant**: Context-aware AI coaching using OpenAI GPT-4o for scenario-based learning.
 - **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI.
 - **Health Score System**: AI-powered personal health scoring based on medical report analysis.
-- **Token Usage System**: Tiered monthly token limits for AI interactions.
+- **Token Usage System**: Inverted tiered model - Regular patients have UNLIMITED tokens; only aiOnlyAccess users (quiz/cybersecurity) face monthly limits (120 free, 1000 premium, unlimited premium_plus). Frontend and backend both check `user.aiOnlyAccess` to enforce limits conditionally.
 - **Webinar Health System**: Free webinar platform for prevention education.
 - **Professional Registration Workflow**: Doctor registration via contact request approval; public registration for personal access.
 - **Job Queue System**: Asynchronous processing for heavy tasks like medical document analysis.

@@ -50,6 +50,7 @@ import PatientAI from "@/pages/patient-ai";
 import PacchettoProhmed from "@/pages/pacchetto-prohmed";
 import Security from "@/pages/security";
 import Guida from "@/pages/guida";
+import Documenti from "@/pages/documenti";
 import AppointmentsPage from "@/pages/appointments";
 import DoctorAppointmentsPage from "@/pages/doctor-appointments";
 import DoctorPatientsPage from "@/pages/doctor-patients";
@@ -147,6 +148,9 @@ function Router() {
       <Route path="/guida" component={Guida} />
       <Route path="/security">
         {() => <ProtectedRoute><Security /></ProtectedRoute>}
+      </Route>
+      <Route path="/documenti">
+        {() => <ProtectedRoute requireNonAiOnly><Documenti /></ProtectedRoute>}
       </Route>
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Login} />

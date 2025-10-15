@@ -441,6 +441,19 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             Analytics
                           </DropdownMenuItem>
                         </Link>
+                        <DropdownMenuSeparator />
+                        <Link href="/security">
+                          <DropdownMenuItem data-testid="menu-security">
+                            <Shield className="w-4 h-4 mr-2" />
+                            Sicurezza
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/documenti">
+                          <DropdownMenuItem data-testid="menu-documents">
+                            <FileText className="w-4 h-4 mr-2" />
+                            Documenti
+                          </DropdownMenuItem>
+                        </Link>
                       </>
                     )}
                     {typedUser?.corporateAgreementId && (

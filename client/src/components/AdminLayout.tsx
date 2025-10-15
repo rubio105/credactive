@@ -1,7 +1,5 @@
-import { useAuth } from "@/hooks/useAuth";
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   BarChart3, 
   Users, 
@@ -13,7 +11,8 @@ import {
   AlertTriangle, 
   MessageSquare,
   Bell,
-  LogOut
+  LogOut,
+  Clock
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -21,17 +20,16 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { user } = useAuth();
   const [location] = useLocation();
 
   const menuItems = [
     { href: "/admin", icon: BarChart3, label: "Dashboard", testId: "nav-admin-dashboard" },
     { href: "/admin/users", icon: Users, label: "Gestione Utenti", testId: "nav-admin-users" },
-    { href: "/admin/webinar", icon: Video, label: "Webinar", testId: "nav-admin-webinar" },
+    { href: "/admin/webinar", icon: Video, label: "Webinar", testId: "nav-admin-webinar", comingSoon: true },
     { href: "/admin/ai-prevention", icon: Shield, label: "AI Prevention", testId: "nav-admin-ai-prevention" },
     { href: "/admin/rag", icon: Database, label: "Sistemi RAG", testId: "nav-admin-rag" },
-    { href: "/admin/mail", icon: Mail, label: "Mail", testId: "nav-admin-mail" },
-    { href: "/admin/marketing", icon: Megaphone, label: "Marketing", testId: "nav-admin-marketing" },
+    { href: "/admin/mail", icon: Mail, label: "Mail", testId: "nav-admin-mail", comingSoon: true },
+    { href: "/admin/marketing", icon: Megaphone, label: "Marketing", testId: "nav-admin-marketing", comingSoon: true },
     { href: "/admin/alerts", icon: AlertTriangle, label: "Alert", testId: "nav-admin-alerts" },
     { href: "/admin/feedback", icon: MessageSquare, label: "Feedback", testId: "nav-admin-feedback" },
     { href: "/admin/push-notifications", icon: Bell, label: "Notifiche Push", testId: "nav-admin-push" },
@@ -40,16 +38,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     window.location.href = '/login';
-  };
-
-  const getInitials = (firstName?: string, lastName?: string, email?: string) => {
-    if (firstName && lastName) {
-      return `${firstName[0]}${lastName[0]}`.toUpperCase();
-    }
-    if (email) {
-      return email.substring(0, 2).toUpperCase();
-    }
-    return 'AD';
   };
 
   return (
@@ -79,7 +67,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   data-testid={item.testId}
                 >
                   <Icon className="w-5 h-5 mr-3" />
-                  {item.label}
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.comingSoon && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Presto
+                    </span>
+                  )}
                 </Button>
               </Link>
             );
@@ -102,31 +96,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex items-center justify-end">
-            {/* Admin Info */}
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900 dark:text-white" data-testid="text-admin-name">
-                  Admin
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400" data-testid="text-admin-email">
-                  {(user as any)?.email}
-                </p>
-              </div>
-              <Avatar className="h-9 w-9" data-testid="avatar-admin">
-                <AvatarImage src={(user as any)?.profileImageUrl} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {getInitials((user as any)?.firstName, (user as any)?.lastName, (user as any)?.email)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </header>
-
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

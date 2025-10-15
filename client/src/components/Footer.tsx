@@ -31,9 +31,9 @@ export default function Footer() {
           <div className="flex flex-wrap justify-center gap-6">
             {footerPages.map((page) => (
               <Link key={page.id} href={`/page/${page.slug}`}>
-                <a className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid={`footer-${page.slug}`}>
+                <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer" data-testid={`footer-${page.slug}`}>
                   {page.title}
-                </a>
+                </span>
               </Link>
             ))}
           </div>

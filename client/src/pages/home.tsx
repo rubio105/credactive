@@ -95,8 +95,10 @@ export default function Home() {
     return `${typeLabel} - ${date}`;
   };
   
+  // Only fetch dashboard data for aiOnlyAccess users (quiz/cybersecurity users)
   const { data: dashboardData } = useQuery<DashboardData>({
     queryKey: ["/api/user/dashboard"],
+    enabled: !!(user as UserType)?.aiOnlyAccess,
   });
 
   const { data: preventionIndex } = useQuery<{ score: number; tier: string }>({
@@ -141,8 +143,10 @@ export default function Home() {
     }
   }, [sortedReports.length, sortedReports[0]?.id]);
 
+  // Only fetch categories/quizzes for aiOnlyAccess users (quiz/cybersecurity users)
   const { data: categoriesWithQuizzes = [] } = useQuery<Array<Category & { quizzes: QuizWithCount[] }>>({
     queryKey: ["/api/categories-with-quizzes"],
+    enabled: !!(user as UserType)?.aiOnlyAccess,
   });
 
   // Upload medical report mutation
@@ -324,10 +328,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <SEO 
-        title={(user as UserType)?.isDoctor ? "Portale Medico - CIRY" : "Dashboard Quiz - I Tuoi Corsi Cybersecurity"}
-        description={(user as UserType)?.isDoctor 
-          ? "Gestisci i tuoi pazienti, crea referti medici e monitora la loro salute sulla piattaforma CIRY."
-          : "Accedi ai tuoi quiz personalizzati su CISSP, CISM, ISO 27001, GDPR e altre certificazioni cybersecurity. Monitora i progressi, visualizza statistiche e continua la tua preparazione."
+        title={
+          (user as UserType)?.isDoctor 
+            ? "Portale Medico - CIRY" 
+            : (user as UserType)?.aiOnlyAccess
+              ? "Dashboard Quiz - I Tuoi Corsi Cybersecurity"
+              : "AI Prevenzione - CIRY"
+        }
+        description={
+          (user as UserType)?.isDoctor 
+            ? "Gestisci i tuoi pazienti, crea referti medici e monitora la loro salute sulla piattaforma CIRY."
+            : (user as UserType)?.aiOnlyAccess
+              ? "Accedi ai tuoi quiz personalizzati su CISSP, CISM, ISO 27001, GDPR e altre certificazioni cybersecurity. Monitora i progressi, visualizza statistiche e continua la tua preparazione."
+              : "Assistente AI per la prevenzione salute. Carica referti medici, ricevi analisi personalizzate e monitora il tuo benessere con l'intelligenza artificiale."
         }
         keywords={(user as UserType)?.isDoctor 
           ? "portale medico, gestione pazienti, referti medici, prevenzione sanitaria"
@@ -355,7 +368,19 @@ export default function Home() {
             <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
               {t.welcome}, {(user as User)?.firstName || 'User'}!
             </h1>
-            {!(user as UserType)?.isDoctor && (
+            {!(user as UserType)?.isDoctor && !(user as UserType)?.aiOnlyAccess && (
+              <>
+                <p className="text-muted-foreground text-lg">
+                  Il tuo assistente AI per la prevenzione e il benessere
+                </p>
+                <div className="mt-4">
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                    💚 Carica referti, chatta con l'AI e monitora la tua salute
+                  </p>
+                </div>
+              </>
+            )}
+            {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
               <>
                 <p className="text-muted-foreground">
                   {t.subtitle}
@@ -373,7 +398,7 @@ export default function Home() {
               </p>
             )}
           </div>
-          {!(user as UserType)?.isDoctor && (
+          {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
             <Link href="/dashboard">
               <Button variant="outline" data-testid="button-view-dashboard">
                 {t.viewDashboard}
@@ -383,8 +408,8 @@ export default function Home() {
         </div>
 
 
-        {/* Recent Medical Reports - ONLY for Prevention users (admin, aiOnlyAccess), NOT for quiz users */}
-        {sortedReports.length > 0 && ((user as UserType)?.isAdmin || (user as UserType)?.aiOnlyAccess) && (
+        {/* Recent Medical Reports - For regular patients (prevention-only) and admins, NOT for aiOnlyAccess quiz users */}
+        {sortedReports.length > 0 && !(user as UserType)?.aiOnlyAccess && !(user as UserType)?.isDoctor && (
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">
@@ -713,137 +738,6 @@ export default function Home() {
         </div>
         )}
 
-        {/* Quick Actions - HIDDEN for regular patients and doctors */}
-        {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-3">{t.quickActions.continueLearning.title}</h3>
-              <p className="text-muted-foreground mb-4">
-                {t.quickActions.continueLearning.description}
-              </p>
-              <Button className="w-full" data-testid="button-continue-learning">
-                {t.quickActions.continueLearning.button}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-3">{t.quickActions.viewStats.title}</h3>
-              <p className="text-muted-foreground mb-4">
-                {t.quickActions.viewStats.description}
-              </p>
-              <Link href="/dashboard">
-                <Button variant="outline" className="w-full" data-testid="button-view-stats">
-                  {t.quickActions.viewStats.button}
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-        )}
-
-        {/* Learning Paths - HIDDEN for regular patients and doctors */}
-        {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-6">Percorsi di Formazione</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* On-Demand Courses */}
-              <Card className="hover-scale overflow-hidden">
-              <div className="gradient-premium-plus text-white p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <Video className="w-8 h-8" />
-                  </div>
-                  {(user as UserType)?.subscriptionTier === 'premium_plus' ? (
-                    <Badge className="bg-white/20 text-white">Disponibile</Badge>
-                  ) : (
-                    <Badge className="bg-white/20 text-white">Premium Plus</Badge>
-                  )}
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Corsi On-Demand</h3>
-                <p className="text-white/90 mb-6">
-                  Accedi a videocorsi professionali completi di quiz interattivi. Impara al tuo ritmo, quando e dove vuoi.
-                </p>
-                <ul className="space-y-2 mb-6">
-                  <li className="flex items-center space-x-2">
-                    <Play className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">Videolezioni HD di alta qualità</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <BookOpen className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">Quiz interattivi tra i video</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <ChartLine className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">Monitoraggio progressi dettagliato</span>
-                  </li>
-                </ul>
-                {(user as UserType)?.subscriptionTier === 'premium_plus' ? (
-                  <Link href="/corsi-on-demand">
-                    <Button className="w-full bg-white text-purple-600 hover:bg-white/90" data-testid="button-browse-courses">
-                      Esplora Corsi
-                      <Play className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href="/subscribe">
-                    <Button className="w-full bg-white text-purple-600 hover:bg-white/90" data-testid="button-upgrade-for-courses">
-                      Sblocca i Corsi
-                      <Crown className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </Card>
-
-            {/* Live Courses */}
-            <Card className="hover-scale overflow-hidden">
-              <div className="gradient-primary text-white p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <Calendar className="w-8 h-8" />
-                  </div>
-                  <Badge className="bg-white/20 text-white">Tutti gli Abbonati</Badge>
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Corsi Live</h3>
-                <p className="text-white/90 mb-6">
-                  Partecipa a sessioni live interattive con esperti del settore. Impara in tempo reale e fai domande direttamente.
-                </p>
-                <ul className="space-y-2 mb-6">
-                  <li className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">Sessioni programmate con esperti</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <Play className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">Interazione diretta e Q&A</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <Crown className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">Priorità per Premium Plus</span>
-                  </li>
-                </ul>
-                <Button 
-                  className="w-full bg-white text-primary hover:bg-white/90"
-                  onClick={() => {
-                    const firstLiveCourse = availableFeaturedQuizzes.find(q => hasLiveCourse(q.title)) || 
-                                           availableQuizzes.find(q => hasLiveCourse(q.title));
-                    if (firstLiveCourse) {
-                      handleLiveCourse(firstLiveCourse.id, firstLiveCourse.title);
-                    }
-                  }}
-                  data-testid="button-view-live-courses"
-                >
-                  Vedi Corsi Live
-                  <Play className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </div>
-        )}
       </div>
 
       <Footer />

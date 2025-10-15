@@ -889,7 +889,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) {
         return res.status(500).json({ message: "Errore durante il logout" });
       }
-      res.json({ message: "Logout effettuato con successo" });
+      // Destroy session completely
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          console.error('Session destroy error:', destroyErr);
+        }
+        // Clear cookie
+        res.clearCookie('connect.sid');
+        res.json({ message: "Logout effettuato con successo" });
+      });
     });
   });
 

@@ -1665,3 +1665,253 @@ Contattare il medico per completare la registrazione.
     textContent,
   });
 }
+
+// Appointment notification emails
+export async function sendAppointmentBookedToDoctorEmail(
+  doctorEmail: string,
+  appointmentData: {
+    patientName: string;
+    patientEmail: string;
+    appointmentDate: string;
+    appointmentTime: string;
+    notes?: string;
+  }
+): Promise<void> {
+  const { patientName, patientEmail, appointmentDate, appointmentTime, notes } = appointmentData;
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .info-box { background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .button { display: inline-block; padding: 12px 30px; background: #10b981; color: white !important; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>📅 Nuova Prenotazione</h1>
+        </div>
+        <div class="content">
+          <p>Buongiorno Dottore,</p>
+          <p>Un paziente ha prenotato una visita con lei attraverso la piattaforma CIRY.</p>
+          
+          <div class="info-box">
+            <p><strong>👤 Paziente:</strong> ${sanitizeUserInput(patientName)}</p>
+            <p><strong>📧 Email:</strong> ${sanitizeUserInput(patientEmail)}</p>
+            <p><strong>📅 Data:</strong> ${sanitizeUserInput(appointmentDate)}</p>
+            <p><strong>⏰ Orario:</strong> ${sanitizeUserInput(appointmentTime)}</p>
+            ${notes ? `<p><strong>📝 Note del paziente:</strong><br>${sanitizeUserInput(notes)}</p>` : ''}
+          </div>
+          
+          <p>Acceda alla piattaforma per confermare o gestire l'appuntamento:</p>
+          <p style="text-align: center;">
+            <a href="${getBaseUrl()}/doctor/appointments" class="button">Gestisci Appuntamenti</a>
+          </p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} CIRY - Sistema Prenotazione Visite</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const textContent = `
+NUOVA PRENOTAZIONE
+
+Buongiorno Dottore,
+
+Un paziente ha prenotato una visita con lei:
+
+Paziente: ${patientName}
+Email: ${patientEmail}
+Data: ${appointmentDate}
+Orario: ${appointmentTime}
+${notes ? `Note: ${notes}` : ''}
+
+Acceda alla piattaforma per confermare: ${getBaseUrl()}/doctor/appointments
+
+Il Team CIRY
+  `;
+  
+  await sendEmail({
+    to: doctorEmail,
+    subject: '📅 Nuova Prenotazione Visita - CIRY',
+    htmlContent,
+    textContent,
+  });
+}
+
+export async function sendAppointmentConfirmedToPatientEmail(
+  patientEmail: string,
+  appointmentData: {
+    doctorName: string;
+    appointmentDate: string;
+    appointmentTime: string;
+    videoMeetingUrl?: string;
+  }
+): Promise<void> {
+  const { doctorName, appointmentDate, appointmentTime, videoMeetingUrl } = appointmentData;
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .success-box { background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .button { display: inline-block; padding: 12px 30px; background: #10b981; color: white !important; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>✅ Appuntamento Confermato</h1>
+        </div>
+        <div class="content">
+          <p>Gentile paziente,</p>
+          <p>Il suo appuntamento è stato confermato dal medico.</p>
+          
+          <div class="success-box">
+            <p><strong>👨‍⚕️ Medico:</strong> ${sanitizeUserInput(doctorName)}</p>
+            <p><strong>📅 Data:</strong> ${sanitizeUserInput(appointmentDate)}</p>
+            <p><strong>⏰ Orario:</strong> ${sanitizeUserInput(appointmentTime)}</p>
+          </div>
+          
+          ${videoMeetingUrl ? `
+            <p>La visita si terrà online. Ecco il link per la videocall:</p>
+            <p style="text-align: center;">
+              <a href="${sanitizeUserInput(videoMeetingUrl)}" class="button">Accedi alla Videocall</a>
+            </p>
+          ` : ''}
+          
+          <p>Si ricordi di presentarsi puntuale all'appuntamento.</p>
+          <p style="text-align: center;">
+            <a href="${getBaseUrl()}/appointments" class="button">Vedi i Miei Appuntamenti</a>
+          </p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} CIRY - Sistema Prenotazione Visite</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const textContent = `
+APPUNTAMENTO CONFERMATO
+
+Gentile paziente,
+
+Il suo appuntamento è stato confermato:
+
+Medico: ${doctorName}
+Data: ${appointmentDate}
+Orario: ${appointmentTime}
+${videoMeetingUrl ? `Link videocall: ${videoMeetingUrl}` : ''}
+
+Vedi i tuoi appuntamenti: ${getBaseUrl()}/appointments
+
+Il Team CIRY
+  `;
+  
+  await sendEmail({
+    to: patientEmail,
+    subject: '✅ Appuntamento Confermato - CIRY',
+    htmlContent,
+    textContent,
+  });
+}
+
+export async function sendAppointmentCancelledToPatientEmail(
+  patientEmail: string,
+  appointmentData: {
+    doctorName: string;
+    appointmentDate: string;
+    appointmentTime: string;
+    cancellationReason?: string;
+  }
+): Promise<void> {
+  const { doctorName, appointmentDate, appointmentTime, cancellationReason } = appointmentData;
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .warning-box { background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .button { display: inline-block; padding: 12px 30px; background: #10b981; color: white !important; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>❌ Appuntamento Annullato</h1>
+        </div>
+        <div class="content">
+          <p>Gentile paziente,</p>
+          <p>Ci dispiace informarla che il medico ha dovuto annullare l'appuntamento programmato.</p>
+          
+          <div class="warning-box">
+            <p><strong>👨‍⚕️ Medico:</strong> ${sanitizeUserInput(doctorName)}</p>
+            <p><strong>📅 Data:</strong> ${sanitizeUserInput(appointmentDate)}</p>
+            <p><strong>⏰ Orario:</strong> ${sanitizeUserInput(appointmentTime)}</p>
+            ${cancellationReason ? `<p><strong>📝 Motivo:</strong><br>${sanitizeUserInput(cancellationReason)}</p>` : ''}
+          </div>
+          
+          <p>La invitiamo a prenotare un nuovo appuntamento sulla piattaforma.</p>
+          <p style="text-align: center;">
+            <a href="${getBaseUrl()}/appointments" class="button">Prenota Nuovo Appuntamento</a>
+          </p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} CIRY - Sistema Prenotazione Visite</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const textContent = `
+APPUNTAMENTO ANNULLATO
+
+Gentile paziente,
+
+Ci dispiace informarla che il medico ha dovuto annullare l'appuntamento:
+
+Medico: ${doctorName}
+Data: ${appointmentDate}
+Orario: ${appointmentTime}
+${cancellationReason ? `Motivo: ${cancellationReason}` : ''}
+
+Prenota un nuovo appuntamento: ${getBaseUrl()}/appointments
+
+Il Team CIRY
+  `;
+  
+  await sendEmail({
+    to: patientEmail,
+    subject: '❌ Appuntamento Annullato - CIRY',
+    htmlContent,
+    textContent,
+  });
+}

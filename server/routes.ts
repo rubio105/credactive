@@ -44,7 +44,7 @@ import crypto from "crypto";
 import passport from "passport";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail, sendAppointmentBookedToDoctorEmail, sendAppointmentConfirmedToPatientEmail, sendAppointmentCancelledToPatientEmail } from "./email";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import { generateAssessmentPDFBuffer } from "./assessmentPDFGenerator";
@@ -9885,7 +9885,30 @@ Format as JSON: {
 
       const booked = await storage.bookAppointment(id, user.id, notes);
 
-      // TODO: Send email notification to doctor
+      // Send email notification to doctor
+      try {
+        const doctor = await storage.getUserById(appointment.doctorId);
+        if (doctor && doctor.email) {
+          await sendAppointmentBookedToDoctorEmail(doctor.email, {
+            patientName: `${user.firstName} ${user.lastName}`,
+            patientEmail: user.email,
+            appointmentDate: new Date(booked.startTime).toLocaleDateString('it-IT', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }),
+            appointmentTime: new Date(booked.startTime).toLocaleTimeString('it-IT', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }),
+            notes,
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send appointment email to doctor:', emailError);
+        // Don't fail the booking if email fails
+      }
       
       res.json(booked);
     } catch (error: any) {
@@ -9921,7 +9944,44 @@ Format as JSON: {
 
       const updated = await storage.updateAppointmentStatus(id, status, user.id);
 
-      // TODO: Send email notification to patient
+      // Send email notification to patient
+      try {
+        if (appointment.patientId) {
+          const patient = await storage.getUserById(appointment.patientId);
+          if (patient && patient.email) {
+            const doctorName = `Dr. ${user.firstName} ${user.lastName}`;
+            const appointmentDate = new Date(updated.startTime).toLocaleDateString('it-IT', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            });
+            const appointmentTime = new Date(updated.startTime).toLocaleTimeString('it-IT', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            });
+
+            if (status === 'confirmed') {
+              await sendAppointmentConfirmedToPatientEmail(patient.email, {
+                doctorName,
+                appointmentDate,
+                appointmentTime,
+                videoMeetingUrl: updated.videoMeetingUrl || undefined,
+              });
+            } else if (status === 'cancelled') {
+              await sendAppointmentCancelledToPatientEmail(patient.email, {
+                doctorName,
+                appointmentDate,
+                appointmentTime,
+                cancellationReason: reason,
+              });
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send appointment status email to patient:', emailError);
+        // Don't fail the update if email fails
+      }
       
       res.json(updated);
     } catch (error: any) {

@@ -11,6 +11,12 @@ Preferred communication style: Simple, everyday language.
 ## Navigation & UX Improvements
 - **Patient Menu**: Enhanced horizontal navigation for standard users (non-admin, non-doctor, non-AI-only) with direct access to: Dashboard, Abbonamento (subscription plans), Webinar (health webinars), and Centrale Prohmed (AI prevention contact)
 - **Doctor Menu**: Streamlined medical professional navigation with focus on: I Miei Pazienti (patient list), Refertazione (medical reporting), and AI Prevenzione
+- **Doctor Dedicated Pages (October 15, 2025)**: Fixed non-functional doctor navigation by creating dedicated pages:
+  - `/doctor/patients` - Complete patient management interface with doctor code display/copy, linked patients list with create note action, and patient alerts monitoring
+  - `/doctor/reports` - Medical reporting workspace with statistics dashboard (total documents, official reports, clinical notes), documents organized by patient, and create new report dialog
+  - Updated navigation links from "/" to dedicated routes, ensuring doctor menu items are fully functional
+  - Added `GET /api/doctor/all-notes` endpoint to retrieve all doctor's notes enriched with patient information
+  - Implemented role-specific SEO: homepage displays "Portale Medico - CIRY" title for doctors instead of generic quiz dashboard title
 - **Admin UI**: Clean vertical sidebar-only interface with all features now fully implemented. Admin menu includes: Dashboard, Gestione Utenti, Webinar, Sistemi RAG, Mail, Marketing, Alert, Feedback, and Notifiche Push
 - **Role Labels Update**: Changed "AI Prevention" role label to "Accesso AI" throughout the platform for clearer terminology
 

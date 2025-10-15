@@ -342,13 +342,6 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* AI Chat Panel for regular patients (not aiOnlyAccess, not doctor, not admin) */}
-        {user && !(user as UserType)?.isDoctor && !(user as UserType)?.isAdmin && !(user as UserType)?.aiOnlyAccess && (
-          <div className="mb-8">
-            <AIChatPanel />
-          </div>
-        )}
-
         {/* Welcome Section */}
         <div className="mb-8 flex items-start justify-between">
           <div>

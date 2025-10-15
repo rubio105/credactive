@@ -10086,6 +10086,159 @@ Format as JSON: {
       res.status(500).json({ enabled: false });
     }
   });
+
+  // Push Notifications API
+  const webPush = require('web-push');
+  
+  // VAPID keys for push notifications - load from environment or database
+  const getVapidKeys = async () => {
+    // Try to get from environment first
+    let publicKey = process.env.VAPID_PUBLIC_KEY;
+    let privateKey = process.env.VAPID_PRIVATE_KEY;
+    
+    // If not in env, try to get from database settings
+    if (!publicKey || !privateKey) {
+      const publicKeySetting = await storage.getSetting('VAPID_PUBLIC_KEY');
+      const privateKeySetting = await storage.getSetting('VAPID_PRIVATE_KEY');
+      
+      if (publicKeySetting?.value && privateKeySetting?.value) {
+        publicKey = publicKeySetting.value;
+        privateKey = privateKeySetting.value;
+      }
+    }
+    
+    // Fallback to default keys ONLY in development
+    if (!publicKey || !privateKey) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️  VAPID keys not configured. Using temporary dev keys. Configure VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in production.');
+        publicKey = 'BNBQKcFGeOPRpePINPXRXJX8Zqtl3Y8qvCBwk_snhxis6K4of8ZXUg6v-HK3xX_2TqA4QuK5I3pQhGTbvW_LTes';
+        privateKey = 'fEQmlWTtfCQ2yjKvXxlNwPAyGcdLRHZp8geHhiUP4ig';
+      } else {
+        throw new Error('VAPID keys not configured. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables or configure in admin settings.');
+      }
+    }
+    
+    return { publicKey, privateKey };
+  };
+  
+  const vapidKeys = await getVapidKeys();
+  
+  webPush.setVapidDetails(
+    'mailto:info@ciry.app',
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+  );
+
+  // Get VAPID public key
+  app.get('/api/push/vapid-public-key', (req, res) => {
+    res.json({ publicKey: vapidKeys.publicKey });
+  });
+
+  // Subscribe to push notifications
+  app.post('/api/push/subscribe', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { endpoint, keys } = req.body;
+
+      if (!endpoint || !keys?.p256dh || !keys?.auth) {
+        return res.status(400).json({ message: 'Invalid subscription data' });
+      }
+
+      await storage.createPushSubscription({
+        userId: user.id,
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        userAgent: req.headers['user-agent'] || '',
+      });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Push subscribe error:', error);
+      res.status(500).json({ message: error.message || 'Failed to subscribe to push notifications' });
+    }
+  });
+
+  // Unsubscribe from push notifications
+  app.post('/api/push/unsubscribe', isAuthenticated, async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+
+      if (!endpoint) {
+        return res.status(400).json({ message: 'Endpoint required' });
+      }
+
+      await storage.deletePushSubscription(endpoint);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Push unsubscribe error:', error);
+      res.status(500).json({ message: error.message || 'Failed to unsubscribe from push notifications' });
+    }
+  });
+
+  // Send push notification (admin only)
+  app.post('/api/admin/push/send', isAdmin, async (req, res) => {
+    try {
+      const { title, body, url, targetUserId } = req.body;
+
+      if (!title || !body) {
+        return res.status(400).json({ message: 'Title and body required' });
+      }
+
+      let subscriptions;
+      if (targetUserId) {
+        subscriptions = await storage.getPushSubscriptionsByUser(targetUserId);
+      } else {
+        subscriptions = await storage.getAllPushSubscriptions();
+      }
+
+      const payload = JSON.stringify({
+        title,
+        body,
+        icon: '/images/ciry-main-logo.png',
+        badge: '/images/ciry-main-logo.png',
+        data: { url: url || '/' },
+      });
+
+      const results = await Promise.allSettled(
+        subscriptions.map(async (sub) => 
+          webPush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: {
+              p256dh: sub.p256dh,
+              auth: sub.auth,
+            },
+          }, payload)
+        )
+      );
+
+      // Clean up stale subscriptions
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        if (result.status === 'rejected') {
+          const error = result.reason as any;
+          // Delete subscription on permanent failures (410 Gone, 404 Not Found)
+          if (error?.statusCode === 410 || error?.statusCode === 404) {
+            console.log(`Deleting stale push subscription: ${subscriptions[i].endpoint}`);
+            await storage.deletePushSubscription(subscriptions[i].endpoint);
+          }
+        }
+      }
+
+      const sent = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      res.json({ 
+        success: true, 
+        sent, 
+        failed, 
+        total: subscriptions.length 
+      });
+    } catch (error: any) {
+      console.error('Send push notification error:', error);
+      res.status(500).json({ message: error.message || 'Failed to send push notifications' });
+    }
+  });
   
   return httpServer;
 }

@@ -68,3 +68,61 @@ self.addEventListener('activate', (event) => {
     })
   );
 });
+
+// Push notification event
+self.addEventListener('push', (event) => {
+  console.log('[Service Worker] Push notification received', event);
+  
+  let data = {
+    title: 'CIRY',
+    body: 'Hai una nuova notifica',
+    icon: '/images/ciry-main-logo.png',
+    badge: '/images/ciry-main-logo.png',
+  };
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      console.error('[Service Worker] Failed to parse push data', e);
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/images/ciry-main-logo.png',
+    badge: data.badge || '/images/ciry-main-logo.png',
+    vibrate: [200, 100, 200],
+    tag: data.tag || 'ciry-notification',
+    requireInteraction: data.requireInteraction || false,
+    data: data.data || {},
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Notification click event
+self.addEventListener('notificationclick', (event) => {
+  console.log('[Service Worker] Notification clicked', event);
+  event.notification.close();
+
+  // Open or focus the app
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // If a window is already open, focus it
+        for (const client of clientList) {
+          if (client.url === self.registration.scope && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Otherwise open a new window
+        if (clients.openWindow) {
+          const url = event.notification.data?.url || '/';
+          return clients.openWindow(url);
+        }
+      })
+  );
+});

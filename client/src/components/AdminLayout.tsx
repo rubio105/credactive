@@ -12,6 +12,7 @@ import {
   Megaphone, 
   AlertTriangle, 
   MessageSquare,
+  Bell,
   LogOut
 } from "lucide-react";
 
@@ -33,6 +34,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/marketing", icon: Megaphone, label: "Marketing", testId: "nav-admin-marketing" },
     { href: "/admin/alerts", icon: AlertTriangle, label: "Alert", testId: "nav-admin-alerts" },
     { href: "/admin/feedback", icon: MessageSquare, label: "Feedback", testId: "nav-admin-feedback" },
+    { href: "/admin/push-notifications", icon: Bell, label: "Notifiche Push", testId: "nav-admin-push" },
   ];
 
   const handleLogout = async () => {

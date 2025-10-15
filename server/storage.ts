@@ -201,6 +201,9 @@ import {
   auditLogs,
   type AuditLog,
   type InsertAuditLog,
+  pushSubscriptions,
+  type PushSubscription,
+  type InsertPushSubscription,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, sql, and, or, gte, lte } from "drizzle-orm";
@@ -676,6 +679,12 @@ export interface IStorage {
     confirmed: number;
     completed: number;
   }>;
+
+  // Push Notification operations
+  createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription>;
+  getPushSubscriptionsByUser(userId: string): Promise<PushSubscription[]>;
+  getAllPushSubscriptions(): Promise<PushSubscription[]>;
+  deletePushSubscription(endpoint: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4204,6 +4213,36 @@ export class DatabaseStorage implements IStorage {
       confirmed: allAppointments.filter(a => a.status === 'confirmed').length,
       completed: allAppointments.filter(a => a.status === 'completed').length,
     };
+  }
+
+  // Push Notification operations
+  async createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
+    const [created] = await db.insert(pushSubscriptions)
+      .values(subscription)
+      .onConflictDoUpdate({
+        target: pushSubscriptions.endpoint,
+        set: {
+          p256dh: subscription.p256dh,
+          auth: subscription.auth,
+          userAgent: subscription.userAgent,
+        },
+      })
+      .returning();
+    return created;
+  }
+
+  async getPushSubscriptionsByUser(userId: string): Promise<PushSubscription[]> {
+    return await db.select()
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.userId, userId));
+  }
+
+  async getAllPushSubscriptions(): Promise<PushSubscription[]> {
+    return await db.select().from(pushSubscriptions);
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<void> {
+    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
   }
 }
 

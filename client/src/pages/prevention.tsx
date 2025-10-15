@@ -83,9 +83,7 @@ export default function PreventionPage() {
   const [isListening, setIsListening] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
-  const [showAttentionPointsDialog, setShowAttentionPointsDialog] = useState(false);
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
-  const [attentionPointsData, setAttentionPointsData] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadQueue, setUploadQueue] = useState<Array<{ file: File; status: 'pending' | 'uploading' | 'completed' | 'error'; error?: string; result?: any }>>([]);
@@ -598,24 +596,6 @@ export default function PreventionPage() {
     },
   });
 
-  // Generate Attention Points Mutation
-  const generateAttentionPointsMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("/api/prevention/generate-attention-points", "POST", {});
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setAttentionPointsData(data);
-      toast({ title: "Analisi completata con successo!" });
-    },
-    onError: (error: any) => {
-      toast({ 
-        title: "Errore", 
-        description: error.message || "Errore durante l'analisi",
-        variant: "destructive" 
-      });
-    },
-  });
 
   // Upload Medical Report Mutation
   const uploadReportMutation = useMutation({
@@ -2051,48 +2031,40 @@ export default function PreventionPage() {
                 {/* Download App Section */}
                 <div className="mt-8 pt-6 border-t border-border">
                   <div className="text-center space-y-4">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      Scarica l'App CIRY
+                    <h3 className="text-lg font-semibold text-foreground flex items-center justify-center gap-2">
+                      <Smartphone className="w-5 h-5 text-purple-600" />
+                      Installa l'App CIRY
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Porta la prevenzione sempre con te. Installa l'app sul tuo dispositivo.
+                    <p className="text-sm text-muted-foreground max-w-lg mx-auto">
+                      Porta la prevenzione sempre con te. Aggiungi CIRY alla schermata Home del tuo smartphone per un accesso immediato.
                     </p>
-                    <div className="flex justify-center gap-4">
-                      <a
-                        href="https://play.google.com/store"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="transition-transform hover:scale-105"
-                        data-testid="link-google-play"
-                      >
-                        <img
-                          src="/images/google-play-badge.png"
-                          alt="Scarica su Google Play"
-                          className="h-12"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </a>
-                      <a
-                        href="https://apps.apple.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="transition-transform hover:scale-105"
-                        data-testid="link-app-store"
-                      >
-                        <img
-                          src="/images/app-store-badge.png"
-                          alt="Scarica su App Store"
-                          className="h-12"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </a>
+                    
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 rounded-lg p-6 max-w-md mx-auto">
+                      <div className="space-y-3 text-left">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-semibold text-sm">
+                            1
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">iOS (iPhone/iPad)</p>
+                            <p className="text-xs text-muted-foreground mt-1">Tocca il pulsante "Condividi" 📤 e seleziona "Aggiungi alla schermata Home"</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-sm">
+                            2
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">Android</p>
+                            <p className="text-xs text-muted-foreground mt-1">Tocca il menu ⋮ e seleziona "Installa app" o "Aggiungi a schermata Home"</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Oppure aggiungi questa pagina alla schermata Home del tuo dispositivo per un accesso rapido
+
+                    <p className="text-xs text-muted-foreground italic">
+                      ✨ Funziona offline e ricevi notifiche push per i tuoi referti medici
                     </p>
                   </div>
                 </div>

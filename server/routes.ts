@@ -704,7 +704,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isReport: isReport || false,
       });
 
-      // Send push notification to patient
+      // Send push notification to patient - TEMPORARILY DISABLED
+      // TODO: Configure VAPID keys before enabling push notifications
+      /*
       try {
         const subscriptions = await storage.getPushSubscriptionsByUser(patientId);
         const doctor = await storage.getUserById(req.user.id);
@@ -742,6 +744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error(`[Push] Failed to send notification for doctor note:`, pushError);
         // Don't fail the request if push fails
       }
+      */
 
       res.json(note);
     } catch (error) {
@@ -10333,7 +10336,9 @@ Format as JSON: {
     }
   });
 
-  // Push Notifications API
+  // Push Notifications API - TEMPORARILY DISABLED
+  // TODO: Configure VAPID keys before enabling push notifications
+  /*
   const webPush = require('web-push');
   
   // VAPID keys for push notifications - load from environment or database
@@ -10485,6 +10490,7 @@ Format as JSON: {
       res.status(500).json({ message: error.message || 'Failed to send push notifications' });
     }
   });
+  */
   
   return httpServer;
 }

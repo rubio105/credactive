@@ -202,6 +202,14 @@ export default function Home() {
     }
   }, [user]);
 
+  // Redirect aiOnlyAccess users to Prevention page (AI Chat)
+  useEffect(() => {
+    const typedUser = user as UserType;
+    if (typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin) {
+      setLocation('/prevention');
+    }
+  }, [user, setLocation]);
+
   // Check if user needs onboarding (only for patients, not doctors)
   useEffect(() => {
     const userWithOnboarding = user as UserType;

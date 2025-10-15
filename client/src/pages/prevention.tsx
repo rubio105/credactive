@@ -945,11 +945,27 @@ export default function PreventionPage() {
                   <div className="space-y-2">
                     <Button
                       className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
-                      onClick={() => setLocation('/subscribe')}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/create-payment-intent', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ tier: 'premium_plus' })
+                          });
+                          const data = await res.json();
+                          if (data.clientSecret) {
+                            setLocation('/subscribe?tier=premium_plus&clientSecret=' + data.clientSecret);
+                          }
+                        } catch (error) {
+                          console.error('Errore pagamento:', error);
+                          toast({ title: "Errore", description: "Impossibile avviare il pagamento", variant: "destructive" });
+                        }
+                      }}
                       data-testid="button-upgrade-premium-plus"
                     >
                       <Shield className="w-4 h-4 mr-2" />
-                      Passa a Premium Plus
+                      Passa a Premium Plus - €49/mese
                     </Button>
                     <p className="text-xs text-center text-muted-foreground">
                       Token illimitati • Assistenza medica Prohmed
@@ -1049,10 +1065,12 @@ export default function PreventionPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                       <Shield className="w-5 h-5" />
-                      Parla del Tuo Caso
+                      {userRole === 'doctor' ? 'Supporto alla Diagnosi' : 'Parla del Tuo Caso'}
                     </CardTitle>
                     <CardDescription>
-                      Conversazione educativa personalizzata sulla prevenzione
+                      {userRole === 'doctor' 
+                        ? 'Assistenza AI per analisi diagnostica e decision-making clinico'
+                        : 'Conversazione educativa personalizzata sulla prevenzione'}
                     </CardDescription>
                   </div>
                   {sessionId && (

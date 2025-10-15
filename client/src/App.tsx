@@ -47,6 +47,7 @@ import CrosswordPage from "@/pages/crossword";
 import PatientAI from "@/pages/patient-ai";
 import PacchettoProhmed from "@/pages/pacchetto-prohmed";
 import Security from "@/pages/security";
+import Guida from "@/pages/guida";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
@@ -119,6 +120,7 @@ function Router() {
       <Route path="/prevention" component={Prevention} />
       <Route path="/webinar-health" component={WebinarHealth} />
       <Route path="/pacchetto-prohmed" component={PacchettoProhmed} />
+      <Route path="/guida" component={Guida} />
       <Route path="/security">
         {() => <ProtectedRoute><Security /></ProtectedRoute>}
       </Route>

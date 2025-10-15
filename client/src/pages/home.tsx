@@ -215,10 +215,18 @@ export default function Home() {
     }
   }, [user, setLocation]);
 
-  // Redirect aiOnlyAccess to Prevention page
+  // Redirect doctor users to patients page
   useEffect(() => {
     const typedUser = user as UserType;
-    if (typedUser?.aiOnlyAccess) {
+    if (typedUser?.isDoctor && !typedUser?.isAdmin) {
+      setLocation('/doctor/patients');
+    }
+  }, [user, setLocation]);
+
+  // Redirect aiOnlyAccess to Prevention page (but not doctors or admins)
+  useEffect(() => {
+    const typedUser = user as UserType;
+    if (typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin) {
       setLocation('/prevention');
     }
   }, [user, setLocation]);

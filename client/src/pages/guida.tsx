@@ -524,7 +524,7 @@ const encryptedReport = encrypt(reportContent);`}
                       </div>
                       <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded border border-yellow-200 dark:border-yellow-800">
                         <p className="text-xs font-semibold">🔑 Setup Richiesto:</p>
-                        <p className="text-xs">Aggiungi <code className="bg-muted px-1 py-0.5 rounded">ENCRYPTION_KEY</code> e <code className="bg-muted px-1 py-0.5 rounded">ENCRYPTION_IV</code> ai secrets Replit</p>
+                        <p className="text-xs">Aggiungi <code className="bg-muted px-1 py-0.5 rounded">ENCRYPTION_KEY</code> e <code className="bg-muted px-1 py-0.5 rounded">ENCRYPTION_IV</code> alle variabili d'ambiente di sistema</p>
                       </div>
                     </AccordionContent>
                   </AccordionItem>

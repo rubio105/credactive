@@ -4796,7 +4796,7 @@ Restituisci SOLO un JSON con:
       // Update job status to processing
       await storage.updateGenerationJob(job.id, { status: 'processing' });
 
-      // Get user language preference (handle both Replit OIDC and local auth)
+      // Get user language preference (handle both OAuth and local auth)
       const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
       const user = userId ? await storage.getUser(userId) : null;
       const userLanguage = user?.language || 'it';
@@ -5601,7 +5601,7 @@ Restituisci SOLO un JSON con:
       const { id } = req.params;
       const { language = 'it', userAnswer, isCorrect, isFirstAudio = false } = req.body;
       
-      // Get user's first name from either Replit OIDC or local auth
+      // Get user's first name from either OAuth or local auth
       const userId = req.user?.claims?.sub || req.user?.id;
       const user = userId ? await storage.getUser(userId) : null;
       const userName = user?.firstName || req.user?.claims?.first_name || 'studente';

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, ArrowLeft, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, Sparkles, Stethoscope } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, Sparkles, Stethoscope } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -875,21 +875,6 @@ export default function PreventionPage() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
       <Navigation />
       <div className="container py-8 max-w-7xl">
-        {/* Back Button - Only for non-AI-only users */}
-        {!user?.aiOnlyAccess && (
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => setLocation('/')}
-              className="gap-2"
-              data-testid="button-back-home"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Torna alla Home
-            </Button>
-          </div>
-        )}
-
         {/* Compact Header */}
         <div className="mb-6 text-center px-2">
           <h1 className="text-xl sm:text-2xl font-bold">Fai prevenzione grazie a Ciry, modello AI di Prohmed</h1>

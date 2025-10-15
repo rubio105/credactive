@@ -353,8 +353,8 @@ export default function Home() {
         </div>
 
 
-        {/* Recent Medical Reports - Hidden for doctors */}
-        {sortedReports.length > 0 && !(user as UserType)?.isDoctor && (
+        {/* Recent Medical Reports - ONLY for Prevention users (admin, aiOnlyAccess), NOT for quiz users */}
+        {sortedReports.length > 0 && ((user as UserType)?.isAdmin || (user as UserType)?.aiOnlyAccess) && (
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">

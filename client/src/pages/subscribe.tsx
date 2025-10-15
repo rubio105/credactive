@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
-import { Crown, ArrowLeft, Video, Headphones } from "lucide-react";
+import { Crown, Video, Headphones } from "lucide-react";
 
 export default function Subscribe() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -43,16 +43,6 @@ export default function Subscribe() {
       <Navigation />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <Button 
-          variant="ghost" 
-          onClick={() => window.history.back()}
-          className="mb-6"
-          data-testid="button-back-home"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Torna Indietro
-        </Button>
-
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Abbonamento AI Prevenzione Plus</h1>
           <p className="text-xl text-muted-foreground">

@@ -4,15 +4,13 @@ import {
   BarChart3, 
   Users, 
   Video, 
-  Shield, 
   Database, 
   Mail, 
   Megaphone, 
   AlertTriangle, 
   MessageSquare,
   Bell,
-  LogOut,
-  Clock
+  LogOut
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -67,12 +65,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 >
                   <Icon className="w-5 h-5 mr-3" />
                   <span className="flex-1 text-left">{item.label}</span>
-                  {item.comingSoon && (
-                    <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Presto
-                    </span>
-                  )}
                 </Button>
               </Link>
             );

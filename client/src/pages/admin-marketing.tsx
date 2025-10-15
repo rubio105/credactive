@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { AdminLayout } from "@/components/AdminLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock } from "lucide-react";
+import { AdminMarketing } from "@/components/admin/AdminMarketing";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AdminMarketingPage() {
   const { user, isLoading } = useAuth();
@@ -34,27 +34,8 @@ export default function AdminMarketingPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Marketing</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Campagne e comunicazioni</p>
-        </div>
-
-        <Card className="border-yellow-200 dark:border-yellow-900/50">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-              <CardTitle>Disponibile a breve</CardTitle>
-            </div>
-            <CardDescription>Campagne email e comunicazioni marketing</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Questa funzionalità sarà disponibile a breve. Potrai creare e gestire campagne marketing, 
-              inviare comunicazioni mirate e analizzare le performance delle tue campagne.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="p-6">
+        <AdminMarketing />
       </div>
     </AdminLayout>
   );

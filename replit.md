@@ -52,7 +52,7 @@ PostgreSQL (Neon's serverless driver) is managed by Drizzle ORM. The schema supp
 *   **User Feedback System**: Intelligent collection and management of feedback.
 *   **Patient Onboarding System**: Collects health profile data from new patients.
 *   **Audit Log System**: GDPR-compliant access tracking for security and compliance.
-*   **Appointment Scheduling System**: Calendar system for doctor-patient consultations.
+*   **Appointment Scheduling System**: Complete calendar-based booking system for doctor-patient consultations with automated email workflow. Patients select dates and request visits via calendar UI, doctors manage availability slots and confirm/reject bookings, integrated Brevo email notifications (booking alerts to doctors, confirmation/cancellation to patients). Admin toggle control via settings panel. Features include patient notes, video meeting URLs, cancellation reasons, and status tracking (available/booked/confirmed/completed/cancelled).
 *   **Multi-Tenant B2B Infrastructure**: Clinic organizations with custom branding, subscription tiers, and feature flags.
 *   **Email Notification Queue**: Intelligent scheduling for automated notifications.
 

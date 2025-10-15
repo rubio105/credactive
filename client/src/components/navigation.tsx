@@ -242,15 +242,16 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     Contatti
                   </Button>
                 </Link>
+                {/* Show CMS pages only for non-authenticated users */}
+                {headerPages.map((page) => (
+                  <Link key={page.id} href={`/page/${page.slug}`}>
+                    <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid={`nav-${page.slug}`}>
+                      {page.title}
+                    </Button>
+                  </Link>
+                ))}
               </>
             )}
-            {headerPages.map((page) => (
-              <Link key={page.id} href={`/page/${page.slug}`}>
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid={`nav-${page.slug}`}>
-                  {page.title}
-                </Button>
-              </Link>
-            ))}
           </div>
 
           <div className="flex items-center space-x-4">

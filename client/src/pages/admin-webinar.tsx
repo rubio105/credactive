@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Clock } from "lucide-react";
 
 export default function AdminWebinarPage() {
   const { user, isLoading } = useAuth();
@@ -33,19 +34,25 @@ export default function AdminWebinarPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestione Webinar</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gestisci webinar e corsi live</p>
         </div>
 
-        <Card>
+        <Card className="border-yellow-200 dark:border-yellow-900/50">
           <CardHeader>
-            <CardTitle>Webinar e Corsi Live</CardTitle>
-            <CardDescription>Sezione in sviluppo</CardDescription>
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+              <CardTitle>Disponibile a breve</CardTitle>
+            </div>
+            <CardDescription>Webinar e corsi live per la formazione</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Questa funzionalità sarà disponibile a breve.</p>
+            <p className="text-muted-foreground">
+              Questa funzionalità sarà disponibile a breve. Potrai organizzare webinar, gestire registrazioni 
+              e offrire corsi live interattivi ai tuoi utenti.
+            </p>
           </CardContent>
         </Card>
       </div>

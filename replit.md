@@ -1,6 +1,6 @@
 # Overview
 
-CIRY (Care & Intelligence Ready for You) is a B2B platform designed for dual-domain education in health prevention and cybersecurity. It offers professional certification preparation, progress tracking, and AI-powered health prevention tools. The platform aims to be a leader by leveraging AI for content generation, comprehensive health prevention through conversational AI, and medical document analysis. Its ambitions include market expansion in both education sectors and continuous AI innovation to enhance user learning and well-being.
+CIRY (Care & Intelligence Ready for You) is a B2B platform focused on dual-domain education in health prevention and cybersecurity. It provides professional certification preparation, progress tracking, and AI-powered health prevention tools. The platform aims to be a leader by leveraging AI for content generation, comprehensive health prevention through conversational AI, and medical document analysis, with ambitions for market expansion and continuous AI innovation.
 
 # User Preferences
 
@@ -10,115 +10,90 @@ Preferred communication style: Simple, everyday language.
 
 ## UI/UX Decisions
 
-The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod for a modern and consistent interface. Design includes professional color wheel visualization for personality reports, modern chat interfaces with avatars, bubble-style messages, and typing indicators. Severity badges with icons and color-coding are used for medical reports. The UI supports role-based content display (patient vs. doctor) and features smooth transitions and hover effects. A comprehensive guide page (`/guida`) is mobile-first, using colored circular icons, hover effects, expandable FAQ accordions, and an admin-exclusive DLP implementation guide.
+The frontend utilizes React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod for a modern and consistent interface. Design elements include professional color wheel visualization, modern chat interfaces with avatars, bubble messages, typing indicators, and severity badges for medical reports. The UI supports role-based content display, smooth transitions, and hover effects. A mobile-first guide page includes circular icons, hover effects, expandable FAQs, and an admin-exclusive DLP guide.
 
-**AI Prevention Chat Design**: AI assistant avatar displays blue shield icon (`/images/ai-shield-icon.png`) without background, clean and minimal. User avatars show initials on blue→indigo gradient.
+**AI Prevention Chat Design**: AI assistant avatar displays a blue shield icon, user avatars show initials on a blue-indigo gradient.
 
-**Patient Navigation (October 2025 Update)**: Regular patients (non-aiOnlyAccess) experience a **prevention-only platform** with NO quiz/cybersecurity content. Home page displays AI Chat Panel integrated inline, medical reports section, and prevention-focused welcome banner. SEO metadata reflects "AI Prevenzione" focus. AI-only access users auto-redirect to `/prevention`. Clean navbar with logo and user menu only. Patient dropdown menu shows: AI Prevenzione, separator, Sicurezza, Webinari, Documenti, optional Corporate/Passa a Premium (if not premium). **Completely removed** for regular patients: Dashboard, Quiz, Classifica, Certificati, Analytics, Corsi sections, all quiz-related queries/data fetching.
+**Patient Navigation**: Regular patients (non-aiOnlyAccess) access a prevention-only platform, excluding quiz/cybersecurity content. The homepage features an integrated AI Chat Panel, medical reports section, and prevention-focused banner. SEO metadata emphasizes "AI Prevenzione." AI-only access users are redirected to `/prevention`. The navbar is clean, with a logo and user menu. Patient dropdown includes AI Prevenzione, Sicurezza, Webinari, Documenti, and optional Corporate/Passa a Premium. Quiz-related sections and data are completely removed for regular patients.
 
-**Token Limits System (Inverted Model - October 2025)**:
-- **Regular Patients (prevention-only)**: UNLIMITED AI tokens, NO limits enforced, NO token banner/UI displayed
-- **aiOnlyAccess Users (quiz/cybersecurity)**: Token limits enforced (120 free, 1000 premium, unlimited premium_plus)
-- **Implementation**: Frontend checks `user.aiOnlyAccess` to conditionally render token UI and enable query. Backend checks `!user.aiOnlyAccess` to return `tokenLimit: -1` (unlimited). Triage endpoint skips token validation entirely for regular patients.
-- **UI Behavior**: Token usage query and banner ONLY enabled when `user?.aiOnlyAccess === true`. Regular patients never fetch or see token data.
+**Token Limits System (Inverted Model)**:
+- Regular Patients (prevention-only): Unlimited AI tokens, no limits enforced, no token UI displayed.
+- aiOnlyAccess Users (quiz/cybersecurity): Token limits enforced (120 free, 1000 premium, unlimited premium_plus).
+- Implementation: Frontend checks `user.aiOnlyAccess` to conditionally render token UI; backend returns `tokenLimit: -1` for regular patients, and triage skips token validation for them.
 
-**Premium Subscription System (Self-Service Stripe Payment)**: `/subscribe` page allows patients to purchase Premium subscription (€29/month) directly via Stripe checkout. Flow: User → Stripe Elements payment form → /payment-success confirmation → user.isPremium updated. Navigation shows "Passa a Premium" for non-premium users. Backend `updateUserStripeInfo` handles both tier names ('premium', 'premium_plus') and Stripe subscription IDs ('sub_*'), automatically setting isPremium: true. Complete Stripe integration with payment intent creation, success confirmation, and cache invalidation.
+**Premium Subscription System**: A `/subscribe` page allows direct purchase of Premium (€29/month) via Stripe checkout, updating `user.isPremium` upon success. Premium benefits include 1000 monthly AI tokens, unlimited AI conversations, medical document upload, personalized reports, 2 weekly televisits, exclusive webinars, full platform access, and 24/7 medical contact.
 
-**Premium Benefits (€29/month)**:
-- 1000 token mensili AI (8x rispetto al piano Free da 120 token)
-- Conversazioni illimitate con l'AI
-- Caricamento documenti medici
-- Report personalizzati e analisi avanzate
-- 2 televisite a settimana (consulti medici in videochiamata)
-- Webinari ed eventi dedicati (accesso esclusivo a formazione)
-- Accesso completo alla piattaforma
-- Contatto medico H24 e analisi mediche prioritarie
+**Multi-Factor Authentication (MFA/2FA)**: Available to all users via `/security` page with backend endpoints for enabling, verifying, and disabling MFA.
 
-**Multi-Factor Authentication (MFA/2FA)**: Available to ALL users via `/security` page. Backend endpoints `/api/auth/mfa/{status,enable,verify,disable}` handle QR code generation, token verification, and MFA toggle for enhanced account security across all user types (patients, doctors, admins).
+**Prevention Index UI**: A visual placeholder on `/prevention` displays a circular score (static 85/100) when no alerts are present, with an emerald-themed design.
 
-**Prevention Index UI**: Visual placeholder on `/prevention` page showing circular score display (static value 85/100 when no alerts present). Replaces "Alert di Salute" section with emerald-themed design. Full calculation based on product usage (+), alert compliance (-), and doctor contact (+) requires backend telemetry implementation.
-
-**Role-Based Homepage Routing**: Home page (`/`) automatically redirects users to their role-specific dashboard:
-- **Admin** → `/admin` (Dashboard amministrazione)
-- **Dottori** (non-admin) → `/doctor/patients` (I Miei Pazienti)
-- **AI-only access** (non-dottori/admin) → `/prevention` (AI Prevenzione)
-- **Pazienti normali** → Home page with integrated AI Prevention content
-Logic implemented in `home.tsx` with sequential useEffect hooks to prevent redirect conflicts.
+**Role-Based Homepage Routing**: The home page (`/`) redirects users to their role-specific dashboard: Admin to `/admin`, Doctors to `/doctor/patients`, AI-only access to `/prevention`, and normal Patients to the integrated AI Prevention home page.
 
 ## Technical Implementations
 
 ### Frontend
-Built with React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, and React Hook Form with Zod. It includes Progressive Web App (PWA) capabilities with a service worker for offline functionality.
+Built with React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, and React Hook Form with Zod, including PWA capabilities.
 
 ### Backend
-Developed using Express.js, Node.js, and TypeScript, providing a RESTful API. Authentication is handled by Passport.js (local strategy with bcrypt) with persistent sessions. Drizzle ORM provides type-safe access to PostgreSQL. Security measures include rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.
+Developed using Express.js, Node.js, and TypeScript, offering a RESTful API. Authentication uses Passport.js (local strategy with bcrypt) and persistent sessions. Drizzle ORM provides type-safe access to PostgreSQL. Security features include rate limiting, Helmet.js, CORS, XSS, and SQL injection prevention.
 
 ### Data Storage
-PostgreSQL (Neon's serverless driver) is managed by Drizzle ORM. The schema supports various entities including users, subscriptions, quizzes, progress, reports, courses, content, email templates, prevention documents, and audit logs.
+PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. The schema supports users, subscriptions, quizzes, progress, reports, courses, content, email templates, prevention documents, and audit logs.
 
 ## Feature Specifications
 
 ### Core Features
-- **Comprehensive Quiz System**: Hierarchical structure, randomized questions, timed quizzes, and detailed reports.
-- **Insight Discovery Personality Reports**: 72-type assessment based on Jung/Hippocrates color theory.
+- **Comprehensive Quiz System**: Hierarchical, randomized, timed quizzes with detailed reports.
+- **Insight Discovery Personality Reports**: 72-type assessment based on Jung/Hippocrates.
 - **Premium Features**: Content access via Stripe subscription.
 - **AI Question Generation**: Admin functionality using OpenAI GPT-4o for bulk, context-aware question generation.
-- **Live Courses & Streaming**: System for purchasing and tracking live courses with real-time interactive learning.
-- **Content Management System (CMS)**: Manages static pages and dynamic navigation.
+- **Live Courses & Streaming**: Purchase and tracking of interactive live courses.
+- **Content Management System (CMS)**: Manages static and dynamic content.
 - **Internationalization**: Multi-language support with in-quiz language selection and real-time AI translation.
 - **Database-Driven Subscription Plans**: Dynamic management with configurable limits and Stripe integration.
-- **Analytics Dashboard**: Comprehensive business intelligence metrics.
-- **AI Email Marketing System**: Intelligent campaign management using OpenAI GPT-4o and Brevo integration.
+- **Analytics Dashboard**: Business intelligence metrics.
+- **AI Email Marketing System**: Intelligent campaign management using OpenAI GPT-4o and Brevo.
 - **SEO Optimization**: Dynamic meta tags and sitemap generation.
 - **Admin Dashboard**: Streamlined analytics-only dashboard.
-- **Corporate B2B Licensing System**: Enterprise solution for bulk license sales and corporate accounts.
-- **Leaderboard System**: Gamification features with global and corporate-exclusive leaderboards.
-- **AI Conversational Assistant**: Context-aware AI coaching using OpenAI GPT-4o for scenario-based learning.
-- **Interactive Crossword Game**: AI-generated medical crossword puzzles using Gemini AI.
-- **Health Score System**: AI-powered personal health scoring based on medical report analysis.
-- **Token Usage System**: Inverted tiered model - Regular patients have UNLIMITED tokens; only aiOnlyAccess users (quiz/cybersecurity) face monthly limits (120 free, 1000 premium, unlimited premium_plus). Frontend and backend both check `user.aiOnlyAccess` to enforce limits conditionally.
+- **Corporate B2B Licensing System**: Enterprise solution for bulk license sales.
+- **Leaderboard System**: Gamification features.
+- **AI Conversational Assistant**: Context-aware AI coaching using OpenAI GPT-4o.
+- **Interactive Crossword Game**: AI-generated medical crosswords using Gemini AI.
+- **Health Score System**: AI-powered personal health scoring from medical report analysis.
+- **Token Usage System**: Inverted tiered model; regular patients have unlimited tokens, `aiOnlyAccess` users have tiered limits.
 - **Webinar Health System**: Free webinar platform for prevention education.
 - **Professional Registration Workflow**: Doctor registration via contact request approval; public registration for personal access.
 - **Job Queue System**: Asynchronous processing for heavy tasks like medical document analysis.
-- **User Feedback System**: Allows users to submit feedback with type categorization and optional rating; admin can view all feedback.
-- **Patient Onboarding System**: Collects health profile data from new patients.
-- **Audit Log System**: GDPR-compliant access tracking for security and compliance.
-- **Appointment Scheduling System**: Calendar-based booking for doctor-patient consultations with automated email workflow and conditional routing.
-- **Multi-Tenant B2B Infrastructure**: Clinic organizations with custom branding, subscription tiers, and feature flags.
+- **User Feedback System**: Allows user feedback submission with admin viewing.
+- **Patient Onboarding System**: Collects health profile data.
+- **Audit Log System**: GDPR-compliant access tracking.
+- **Appointment Scheduling System**: Calendar-based booking for doctor-patient consultations with email workflow.
+- **Multi-Tenant B2B Infrastructure**: Clinic organizations with custom branding and features.
 - **Email Notification Queue**: Intelligent scheduling for automated notifications.
-- **Push Notification System**: Web Push API with VAPID for secure, real-time browser notifications, including admin broadcast capabilities.
-- **Admin User Management**: Comprehensive system for creating and managing all user types (Patients, Doctors, Admins, AI-Only Access) with role-based editing, search, and deletion capabilities.
-- **Admin Feature Management**: Full administration interfaces for Webinars, Email Templates (Brevo), AI Marketing (OpenAI GPT-4o), and RAG Knowledge Base management.
-- **Role-specific Navigation**: Enhanced navigation for patients, doctors, and admins with dedicated pages and content based on user roles.
+- **Push Notification System**: Web Push API for real-time browser notifications, including admin broadcasts.
+- **Admin User Management**: Comprehensive system for managing all user types with role-based editing, search, and deletion.
+- **Admin Feature Management**: Administration interfaces for Webinars, Email Templates, AI Marketing, and RAG Knowledge Base.
+- **Role-specific Navigation**: Enhanced navigation for patients, doctors, and admins based on user roles.
 
 ### Medical Prevention System (Prohmed Partnership)
-Powered by Google Gemini AI, featuring medical document upload/analysis, an AI educational assistant, and a medical alert system. Includes advanced UI for Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring. Enhanced with GDPR-compliant privacy, Prohmed branding, and role-based AI responses.
+Powered by Google Gemini AI, offering medical document upload/analysis, an AI educational assistant, and a medical alert system. Features include a Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring. Enhanced with GDPR compliance, Prohmed branding, and role-based AI responses.
 - **Role-Based AI Analysis**: Dual-content system with `patientSummary` and `doctorSummary`.
-- **Medical Report Viewer Dialog**: 5-tab interface for radiological images, summary, overview, prevention, and medical values.
-- **Contextual AI Conversations**: AI chat automatically includes the last 2 medical reports in conversation context. When a new report is uploaded during an active triage session, the system creates an automatic notification message and the report becomes immediately available in subsequent AI responses.
-- **Demographic-Aware AI Responses**: AI considers user's age and gender for personalized health recommendations.
-- **Medical Alert System (Alert Medici)**:
-  - **Purpose**: Triage-based medical alert system for urgent cases requiring doctor attention
-  - **Database Schema**: `medicalAlerts` table with userId, severity (low/medium/high/critical), triageData (JSON), message, isConfirmed, confirmedAt, and doctor assignment
-  - **API Endpoints**:
-    - `POST /api/prevention/alert` - Create alert from AI triage assessment
-    - `GET /api/alerts` - User retrieves their alerts
-    - `POST /api/alerts/:id/confirm` - User confirms alert receipt
-    - `GET /api/doctor/alerts` - Doctor retrieves assigned patient alerts
-  - **Workflow**: AI triage creates alerts for concerning health indicators → Patient notified → Doctor assigned → Patient confirms receipt → Doctor can track follow-up
-  - **Integration**: Connected to AI triage system, automatic severity assessment based on medical analysis
-  - **Admin Interface**: View all alerts, severity distribution, confirmation rates, and doctor assignment status
-  - **Status**: Backend infrastructure complete, admin UI placeholder ready for full alert management dashboard
+- **Medical Report Viewer Dialog**: 5-tab interface for various medical data.
+- **Contextual AI Conversations**: AI chat includes the last 2 medical reports; new reports during triage trigger notifications and are immediately available to AI.
+- **Demographic-Aware AI Responses**: AI considers user's age and gender for personalized recommendations.
+- **Medical Alert System**: Triage-based system for urgent cases, creating alerts from AI assessment, notifying patients, assigning doctors, and enabling patient confirmation and doctor follow-up. Backend infrastructure is complete, with an admin UI placeholder.
 - **Patient-Only AI Access System**: Dedicated access for Prohmed code-based authentication to AI prevention features.
-- **AI-Only Access User Management**: Admin capability to create users with restricted access to only AI Prevention features.
+- **AI-Only Access User Management**: Admin capability to create users with restricted access to AI Prevention.
 - **Doctor-Patient Linking System**: Medical referral system for doctors to monitor patients, generate linking codes, view linked patients, and create medical notes/reports.
-- **Patient Documents Page**: Centralized `/documenti` page for patients to manage doctor connections (via linking code input), view medical notes from linked doctors, and monitor medical alerts. Accessible via patient dropdown menu.
-- **RAG Knowledge Base System**: PostgreSQL + pgvector for semantic search, using Gemini text-embedding-004 to generate embeddings for scientific documents, enriching AI triage responses.
+- **Patient Documents Page**: Centralized `/documenti` page for managing doctor connections, viewing medical notes, and monitoring medical alerts.
+- **RAG Knowledge Base System**: PostgreSQL + pgvector for semantic search using Gemini text-embedding-004 to enrich AI triage responses with scientific documents.
+- **Enhanced Doctor Contact Flow**: After AI messages prompt "Contatta Medico Prohmed," the conversation continues, with AI asking a follow-up question. If the user responds negatively (e.g., "no", "basta"), the session automatically closes.
+- **Push Notifications for Medical Notes**: Doctors creating notes trigger real-time web push notifications for patients, directing them to the `/documenti` page.
 
 ## System Design Choices
 
 ### Deployment Architecture
-Production runs on `ciry.app` using a Hetzner VPS with PM2. Version control via GitHub. Neon PostgreSQL for the database. Build systems: esbuild (backend) and Vite (frontend).
+Production runs on `ciry.app` using a Hetzner VPS with PM2, GitHub for version control, and Neon PostgreSQL. Build systems include esbuild (backend) and Vite (frontend).
 
 # External Dependencies
 

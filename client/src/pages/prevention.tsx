@@ -1147,7 +1147,7 @@ export default function PreventionPage() {
                       data-testid="button-close-session"
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Esci
+                      Chiudi Conversazione
                     </Button>
                   )}
                 </div>

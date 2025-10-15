@@ -1625,7 +1625,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get or create token usage for current month
       const tokenUsage = await storage.getOrCreateTokenUsage(userId);
 
-      // Define token limits based on subscription tier
+      // Regular patients (NOT aiOnlyAccess) have NO token limits
+      // Only aiOnlyAccess users (quiz/cybersecurity) have token limits
+      if (!user.aiOnlyAccess) {
+        return res.json({
+          tokensUsed: tokenUsage.tokensUsed,
+          tokenLimit: -1, // Unlimited for regular patients
+          messageCount: tokenUsage.messageCount,
+          tier: user.subscriptionTier || 'free',
+          hasUnlimitedTokens: true,
+          tokensRemaining: -1,
+        });
+      }
+
+      // Define token limits based on subscription tier (for aiOnlyAccess users)
       const TOKEN_LIMITS = {
         free: 120,
         premium: 1000, // High limit for premium
@@ -8210,9 +8223,9 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
         return res.status(400).json({ message: 'Session is closed' });
       }
 
-      // Check token usage for authenticated users (monthly limits)
-      // EXCEPTION: Users with aiOnlyAccess have unlimited tokens for now
-      if (user?.id && !user.aiOnlyAccess) {
+      // Check token usage ONLY for aiOnlyAccess users (quiz/cybersecurity)
+      // Regular patients (prevention-only) have NO token limits
+      if (user?.id && user.aiOnlyAccess) {
         const tokenUsage = await storage.getOrCreateTokenUsage(user.id);
         const TOKEN_LIMITS = {
           free: 120,

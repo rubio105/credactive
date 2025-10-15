@@ -95,6 +95,24 @@ Powered by Google Gemini AI, offering medical document upload/analysis, an AI ed
 ### Deployment Architecture
 Production runs on `ciry.app` using a Hetzner VPS with PM2, GitHub for version control, and Neon PostgreSQL. Build systems include esbuild (backend) and Vite (frontend).
 
+**Production Configuration:**
+- **Server Path**: `/var/www/credactive` (NOT /var/www/ciry)
+- **Process Manager**: PM2 with `ecosystem.config.cjs` configuration
+- **Web Server**: Nginx reverse proxy on ports 80/443 with Cloudflare SSL
+- **Nginx Config**: `/etc/nginx/sites-available/credactive`
+- **Static Assets**: `/var/www/credactive/public/images/` served directly by Nginx
+- **Environment Variables**: Loaded from `.env` file via ecosystem.config.cjs
+- **Required Frontend Vars**: `VITE_STRIPE_PUBLIC_KEY` must be set during build time
+- **Push Notifications**: Temporarily disabled (requires VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY configuration)
+
+**Deployment Workflow:**
+1. Push code to GitHub repository
+2. SSH to server: `ssh root@157.180.21.147`
+3. Pull changes: `cd /var/www/credactive && git pull`
+4. Build: `npm run build` (compiles frontend with Vite + backend with esbuild)
+5. Restart: `pm2 restart credactive`
+6. Verify: `pm2 logs credactive --lines 30`
+
 # External Dependencies
 
 *   **Stripe**: Payment processing and subscription management.

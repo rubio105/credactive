@@ -29,7 +29,7 @@ export function AIChatPanel() {
   const recognitionRef = useRef<any>(null);
 
   const { data: session } = useQuery<TriageSession>({
-    queryKey: ["/api/prevention/triage-session"],
+    queryKey: ["/api/triage/session/active"],
   });
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function AIChatPanel() {
   }, [session]);
 
   const { data: messages = [] } = useQuery<TriageMessage[]>({
-    queryKey: ["/api/prevention/triage-messages", sessionId],
+    queryKey: ["/api/triage/messages", sessionId],
     enabled: !!sessionId,
   });
 
@@ -49,11 +49,11 @@ export function AIChatPanel() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      return await apiRequest(`/api/prevention/triage-message`, "POST", { sessionId, content });
+      return await apiRequest(`/api/triage/${sessionId}/message`, "POST", { content });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/prevention/triage-messages", sessionId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/prevention/triage-session"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/triage/session/active"] });
       setUserInput("");
     },
     onError: (error: Error) => {
@@ -115,7 +115,7 @@ export function AIChatPanel() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto h-[calc(100vh-8rem)] flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-xl border">
+    <div className="w-full max-w-6xl mx-auto h-[600px] flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-xl border">
       <div className="p-6 pb-4 border-b">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">

@@ -1467,8 +1467,8 @@ export default function PreventionPage() {
                             ) : (
                               <>
                                 {msg.role === 'assistant' && (
-                                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
-                                    <Sparkles className="w-5 h-5 text-white" />
+                                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md p-1.5">
+                                    <img src="/images/ai-shield-icon.png" alt="AI" className="w-full h-full object-contain" />
                                   </div>
                                 )}
                                 <div
@@ -1496,8 +1496,8 @@ export default function PreventionPage() {
                         
                         {sendMessageMutation.isPending && (
                           <div className="flex gap-3 justify-start" data-testid="typing-indicator">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
-                              <Sparkles className="w-5 h-5 text-white animate-pulse" />
+                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md p-1.5 animate-pulse">
+                              <img src="/images/ai-shield-icon.png" alt="AI" className="w-full h-full object-contain" />
                             </div>
                             <div className="max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-4 rounded-2xl shadow-md bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm">
                               <div className="flex gap-1">

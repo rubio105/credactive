@@ -1,129 +1,14 @@
-import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { useEffect, useState } from 'react';
-import { apiRequest } from "@/lib/queryClient";
+import { useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/navigation";
-import { CheckCircle, Crown, Shield, Star, ArrowLeft, Sparkles, Video, Calendar, Users, Headphones, Gift } from "lucide-react";
-
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  currency: string;
-  interval: string;
-  isActive: boolean;
-  sortOrder: number;
-  features: string[];
-  stripeEnabled: boolean;
-  stripeProductId: string | null;
-  stripePriceId: string | null;
-  maxCoursesPerMonth: number | null;
-  maxQuizGamingPerWeek: number | null;
-  aiTokensPerMonth: number | null;
-  includesWebinarHealth: boolean;
-  includesProhmedSupport: boolean;
-}
-
-// Stripe configuration - non-blocking check
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-if (!stripeKey) {
-  console.warn('⚠️ Stripe not configured: VITE_STRIPE_PUBLIC_KEY missing');
-}
-
-const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
-
-interface CheckoutFormProps {
-  amount: number;
-  currency: string;
-  tierName: string;
-}
-
-const CheckoutForm = ({ amount, currency, tierName }: CheckoutFormProps) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const formatPaymentAmount = (priceInCents: number, curr: string) => {
-    const amt = priceInCents / 100;
-    try {
-      return new Intl.NumberFormat('it-IT', {
-        style: 'currency',
-        currency: curr,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(amt);
-    } catch (error) {
-      return `${amt.toFixed(0)} ${curr}`;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setIsProcessing(true);
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/dashboard?payment=success`,
-      },
-    });
-
-    if (error) {
-      toast({
-        title: "Pagamento Fallito",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Pagamento Completato",
-        description: `Benvenuto in ${tierName}! Reindirizzamento...`,
-      });
-    }
-
-    setIsProcessing(false);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
-      <Button 
-        type="submit" 
-        disabled={!stripe || isProcessing} 
-        className="w-full py-4 font-bold text-lg"
-        data-testid="button-pay"
-      >
-        <Shield className="w-5 h-5 mr-2" />
-        {isProcessing ? "Processando..." : `Paga ${formatPaymentAmount(amount, currency)}`}
-      </Button>
-    </form>
-  );
-};
+import { Crown, ArrowLeft, Video, Headphones } from "lucide-react";
 
 export default function Subscribe() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-  const [clientSecret, setClientSecret] = useState("");
-  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
-
-  const { data: plans = [], isLoading: isLoadingPlans } = useQuery<SubscriptionPlan[]>({
-    queryKey: ["/api/subscription-plans"],
-  });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -139,81 +24,7 @@ export default function Subscribe() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const getPlanIcon = (planId: string) => {
-    if (planId === 'free') return Gift;
-    if (planId === 'premium') return Crown;
-    if (planId === 'premium_plus') return Sparkles;
-    return Crown;
-  };
-
-  const getPlanColor = (planId: string) => {
-    if (planId === 'free') return 'bg-green-500/10';
-    if (planId === 'premium') return 'bg-primary/10';
-    if (planId === 'premium_plus') return 'bg-gradient-to-br from-purple-500 to-pink-500';
-    return 'bg-primary/10';
-  };
-
-  const formatPrice = (priceInCents: number, currency: string) => {
-    const amount = priceInCents / 100;
-    try {
-      return new Intl.NumberFormat('it-IT', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(amount);
-    } catch (error) {
-      // Fallback if currency is invalid
-      return `${amount.toFixed(0)} ${currency}`;
-    }
-  };
-
-  const handleSelectPlan = (plan: SubscriptionPlan) => {
-    if (!isAuthenticated || !user) return;
-    
-    setSelectedPlan(plan);
-    setIsCreatingPayment(true);
-    
-    apiRequest("/api/create-subscription", "POST", { tier: plan.id })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 'active') {
-          toast({
-            title: "Abbonamento Attivo",
-            description: "Hai già un abbonamento attivo!",
-          });
-          window.location.href = '/dashboard';
-          return;
-        }
-        
-        setClientSecret(data.clientSecret);
-      })
-      .catch((error) => {
-        if (isUnauthorizedError(error)) {
-          toast({
-            title: "Sessione scaduta",
-            description: "Effettua nuovamente il login",
-            variant: "destructive",
-          });
-          setTimeout(() => {
-            window.location.href = "/login";
-          }, 500);
-          return;
-        }
-        
-        toast({
-          title: "Errore",
-          description: "Impossibile creare il pagamento. Riprova.",
-          variant: "destructive",
-        });
-        setSelectedPlan(null);
-      })
-      .finally(() => {
-        setIsCreatingPayment(false);
-      });
-  };
-
-  if (isLoading || isLoadingPlans) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -227,123 +38,11 @@ export default function Subscribe() {
     );
   }
 
-  if (isCreatingPayment) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Preparazione pagamento...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (clientSecret && selectedPlan) {
-    const tierName = selectedPlan.name;
-    const PlanIcon = getPlanIcon(selectedPlan.id);
-    const isPremiumPlus = selectedPlan.id === 'premium_plus';
-    const formattedPrice = formatPrice(selectedPlan.price, selectedPlan.currency);
-
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => {
-              setSelectedPlan(null);
-              setClientSecret("");
-            }}
-            className="mb-6"
-            data-testid="button-back"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna alla Selezione
-          </Button>
-
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
-            <div className={`${isPremiumPlus ? 'gradient-premium-plus' : 'gradient-primary'} text-white rounded-2xl p-8`}>
-              <div className="mb-6">
-                <div className="inline-block p-3 bg-white/20 rounded-lg mb-4">
-                  <PlanIcon className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Piano {tierName}</h3>
-                <p className="text-white/80">{selectedPlan.description || 'Il meglio per la tua formazione professionale'}</p>
-              </div>
-
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-8">
-                <CardContent className="p-6 text-center">
-                  <div className="text-5xl font-bold mb-2">{formattedPrice}</div>
-                  <p className="text-white/80">Abbonamento {selectedPlan.interval === 'year' ? 'annuale' : 'mensile'} • Rinnovo automatico</p>
-                </CardContent>
-              </Card>
-
-              <div className="mt-8 space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Shield className="w-5 h-5" />
-                  <span className="text-sm">Pagamento sicuro con Stripe</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Star className="w-5 h-5" />
-                  <span className="text-sm">Garanzia 30 giorni soddisfatti o rimborsati</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="text-sm">Cancellabile in qualsiasi momento</span>
-                </div>
-              </div>
-            </div>
-
-            <Card className="shadow-xl">
-              <CardContent className="p-8">
-                <div className="mb-6">
-                  <h4 className="text-xl font-bold mb-2">Completa il Pagamento</h4>
-                  <p className="text-muted-foreground">
-                    Inserisci i dettagli della tua carta per completare l'acquisto
-                  </p>
-                </div>
-
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm amount={selectedPlan.price} currency={selectedPlan.currency} tierName={tierName} />
-                </Elements>
-
-                <div className="mt-6 pt-6 border-t border-border">
-                  <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
-                    <Shield className="w-4 h-4" />
-                    <span>SSL sicuro</span>
-                    <span>•</span>
-                    <span>256-bit encryption</span>
-                    <span>•</span>
-                    <span>PCI compliant</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 text-center">
-                  <p className="text-xs text-muted-foreground mb-2">Metodi di pagamento accettati:</p>
-                  <div className="flex justify-center space-x-2">
-                    <Badge variant="outline" className="text-xs">Visa</Badge>
-                    <Badge variant="outline" className="text-xs">Mastercard</Badge>
-                    <Badge variant="outline" className="text-xs">American Express</Badge>
-                    <Badge variant="outline" className="text-xs">PayPal</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Button 
           variant="ghost" 
           onClick={() => window.history.back()}
@@ -355,165 +54,67 @@ export default function Subscribe() {
         </Button>
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Scegli il Tuo Piano</h1>
+          <h1 className="text-4xl font-bold mb-4">Abbonamento AI Prevenzione Plus</h1>
           <p className="text-xl text-muted-foreground">
-            Investi nella tua formazione professionale
+            Sblocca tutti i vantaggi della prevenzione salute
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => {
-            const PlanIcon = getPlanIcon(plan.id);
-            const isPremiumPlus = plan.id === 'premium_plus';
-            const isFree = plan.id === 'free';
-            
-            return (
-              <Card 
-                key={plan.id} 
-                className={`relative border-2 ${isPremiumPlus ? 'border-primary shadow-xl' : 'hover:border-primary'} transition-all`}
-                data-testid={`card-plan-${plan.id}`}
-              >
-                {isPremiumPlus && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="px-4 py-1 bg-primary text-primary-foreground">
-                      PIÙ POPOLARE
-                    </Badge>
-                  </div>
-                )}
-                
-                <CardContent className="p-8">
-                  <div className="mb-6">
-                    <div className={`inline-block p-3 ${isPremiumPlus ? 'bg-gradient-to-br from-purple-500 to-pink-500' : getPlanColor(plan.id)} rounded-lg mb-4`}>
-                      <PlanIcon className={`w-8 h-8 ${isPremiumPlus ? 'text-white' : isFree ? 'text-green-600' : 'text-primary'}`} />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                    <div className="flex items-baseline mb-4">
-                      <span className="text-5xl font-bold">{formatPrice(plan.price, plan.currency)}</span>
-                      <span className="text-muted-foreground ml-2">/{plan.interval === 'year' ? 'anno' : 'mese'}</span>
-                    </div>
-                    {plan.description && (
-                      <p className="text-muted-foreground">{plan.description}</p>
-                    )}
-                  </div>
+        {/* Benefits Cards - Simple 3-item display */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <Card className="border-2 border-emerald-200 dark:border-emerald-800">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <Crown className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-lg font-bold mb-2">Passa a Plus</h3>
+              <p className="text-sm text-muted-foreground">
+                Accesso illimitato all'AI Prevenzione
+              </p>
+            </CardContent>
+          </Card>
 
-                  <div className="space-y-4 mb-8 min-h-[300px]">
-                    {/* Usage limits */}
-                    {plan.maxCoursesPerMonth !== null && (
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
-                        <span className="text-sm">
-                          {plan.maxCoursesPerMonth === -1 ? 'Corsi illimitati al mese' : `${plan.maxCoursesPerMonth} corsi base al mese`}
-                        </span>
-                      </div>
-                    )}
-                    {plan.maxQuizGamingPerWeek !== null && (
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
-                        <span className="text-sm">
-                          {plan.maxQuizGamingPerWeek === -1 ? 'Quiz gaming illimitati' : `${plan.maxQuizGamingPerWeek} quiz gaming a settimana`}
-                        </span>
-                      </div>
-                    )}
-                    {plan.aiTokensPerMonth !== null && (
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
-                        <span className="text-sm">
-                          {plan.aiTokensPerMonth === -1 ? 'Token AI CIRY illimitati' : `${plan.aiTokensPerMonth} token AI CIRY al mese`}
-                        </span>
-                      </div>
-                    )}
-                    {plan.includesWebinarHealth && (
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
-                        <span className="text-sm font-semibold">Webinar prevenzione gratuiti</span>
-                      </div>
-                    )}
-                    {plan.includesProhmedSupport && (
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
-                        <span className="text-sm font-semibold">Assistenza Prohmed full</span>
-                      </div>
-                    )}
-                    
-                    {/* Additional features from array */}
-                    {plan.features?.map((feature, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <CheckCircle className={`w-5 h-5 ${isPremiumPlus ? 'text-purple-500' : 'text-primary'} flex-shrink-0 mt-0.5`} />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
+          <Card className="border-2 border-emerald-200 dark:border-emerald-800">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <Headphones className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-lg font-bold mb-2">Contatto medico H24</h3>
+              <p className="text-sm text-muted-foreground">
+                Assistenza medica sempre disponibile
+              </p>
+            </CardContent>
+          </Card>
 
-                  {!isFree && plan.stripeEnabled ? (
-                    <Button 
-                      onClick={() => handleSelectPlan(plan)}
-                      className={`w-full py-6 text-lg font-semibold ${
-                        isPremiumPlus 
-                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' 
-                          : ''
-                      }`}
-                      data-testid={`button-select-${plan.id}`}
-                    >
-                      Scegli {plan.name}
-                    </Button>
-                  ) : isFree ? (
-                    <Button 
-                      variant="outline"
-                      className="w-full py-6 text-lg font-semibold"
-                      disabled
-                      data-testid={`button-select-${plan.id}`}
-                    >
-                      Piano Attuale
-                    </Button>
-                  ) : null}
-                </CardContent>
-              </Card>
-            );
-          })}
+          <Card className="border-2 border-emerald-200 dark:border-emerald-800">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <Video className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-lg font-bold mb-2">Webinar sulla prevenzione</h3>
+              <p className="text-sm text-muted-foreground">
+                Partecipa ai webinar educativi gratuiti
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* FAQ Section */}
-        <Card className="mt-16 max-w-5xl mx-auto">
-          <CardContent className="p-8">
-            <h3 className="text-2xl font-bold mb-6 text-center">Domande Frequenti</h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <h4 className="font-semibold mb-2">Come funziona l'abbonamento?</h4>
-                <p className="text-sm text-muted-foreground">
-                  L'abbonamento è annuale e si rinnova automaticamente. Puoi cancellarlo in qualsiasi momento dal tuo profilo.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Posso richiedere un rimborso?</h4>
-                <p className="text-sm text-muted-foreground">
-                  Certamente! Offriamo una garanzia di rimborso completo entro 30 giorni dall'acquisto, senza domande.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Cosa include Premium Plus?</h4>
-                <p className="text-sm text-muted-foreground">
-                  Premium Plus include tutto in Premium, più accesso ai corsi on-demand, priorità per i corsi live, supporto dedicato e inviti esclusivi.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">È sicuro il pagamento?</h4>
-                <p className="text-sm text-muted-foreground">
-                  Utilizziamo Stripe per gestire i pagamenti in modo sicuro. I tuoi dati non vengono mai memorizzati sui nostri server.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Posso cambiare piano?</h4>
-                <p className="text-sm text-muted-foreground">
-                  Sì, puoi passare da Premium a Premium Plus in qualsiasi momento. Contattaci per l'upgrade.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">I contenuti vengono aggiornati?</h4>
-                <p className="text-sm text-muted-foreground">
-                  Sì, aggiungiamo regolarmente nuove domande, quiz e corsi per mantenere i contenuti sempre aggiornati e rilevanti.
-                </p>
-              </div>
-            </div>
+        {/* CTA Section */}
+        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800">
+          <CardContent className="p-8 text-center">
+            <h2 className="text-2xl font-bold mb-4">Contatta l'amministrazione per attivare il piano Plus</h2>
+            <p className="text-muted-foreground mb-6">
+              Per informazioni sui piani disponibili e per procedere con l'attivazione, contatta il team amministrativo
+            </p>
+            <Button 
+              size="lg" 
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => window.location.href = 'mailto:admin@ciry.app'}
+              data-testid="button-contact-admin"
+            >
+              <Headphones className="w-5 h-5 mr-2" />
+              Contatta Amministrazione
+            </Button>
           </CardContent>
         </Card>
       </div>

@@ -938,8 +938,8 @@ export default function PreventionPage() {
               </CardContent>
             </Card>
 
-            {/* Token Usage & Upgrade - Hidden for AI-only users */}
-            {!user?.aiOnlyAccess && (
+            {/* Token Usage & Upgrade - HIDDEN for regular patients, only for aiOnlyAccess quiz users */}
+            {user?.aiOnlyAccess && (
             <Card className="shadow-lg border-orange-100 dark:border-orange-900">
               <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950">
                 <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">

@@ -20,6 +20,16 @@ The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS)
 
 **Premium Subscription System (Self-Service Stripe Payment)**: `/subscribe` page allows patients to purchase Premium subscription (€29/month) directly via Stripe checkout. Flow: User → Stripe Elements payment form → /payment-success confirmation → user.isPremium updated. Navigation shows "Passa a Premium" for non-premium users. Backend `updateUserStripeInfo` handles both tier names ('premium', 'premium_plus') and Stripe subscription IDs ('sub_*'), automatically setting isPremium: true. Complete Stripe integration with payment intent creation, success confirmation, and cache invalidation.
 
+**Premium Benefits (€29/month)**:
+- 1000 token mensili AI (8x rispetto al piano Free da 120 token)
+- Conversazioni illimitate con l'AI
+- Caricamento documenti medici
+- Report personalizzati e analisi avanzate
+- 2 televisite a settimana (consulti medici in videochiamata)
+- Webinari ed eventi dedicati (accesso esclusivo a formazione)
+- Accesso completo alla piattaforma
+- Contatto medico H24 e analisi mediche prioritarie
+
 **Multi-Factor Authentication (MFA/2FA)**: Available to ALL users via `/security` page. Backend endpoints `/api/auth/mfa/{status,enable,verify,disable}` handle QR code generation, token verification, and MFA toggle for enhanced account security across all user types (patients, doctors, admins).
 
 **Prevention Index UI**: Visual placeholder on `/prevention` page showing circular score display (static value 85/100 when no alerts present). Replaces "Alert di Salute" section with emerald-themed design. Full calculation based on product usage (+), alert compliance (-), and doctor contact (+) requires backend telemetry implementation.

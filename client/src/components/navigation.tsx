@@ -135,59 +135,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {/* Admin Navigation - Sistema Amministrativo */}
-                {typedUser?.isAdmin && (
-                  <>
-                    <Link href="/admin">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-dashboard">
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        Dashboard
-                      </Button>
-                    </Link>
-                    <Link href="/admin/users">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-users">
-                        <Users className="w-4 h-4 mr-2" />
-                        Utenti
-                      </Button>
-                    </Link>
-                    <Link href="/prevention">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-prevention">
-                        <Stethoscope className="w-4 h-4 mr-2" />
-                        AI Prevention
-                      </Button>
-                    </Link>
-                    <Link href="/admin/rag">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-rag">
-                        <Database className="w-4 h-4 mr-2" />
-                        Sistemi RAG
-                      </Button>
-                    </Link>
-                    <Link href="/admin/mail">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-mail">
-                        <Send className="w-4 h-4 mr-2" />
-                        Mail
-                      </Button>
-                    </Link>
-                    <Link href="/admin/marketing">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-marketing">
-                        <Mail className="w-4 h-4 mr-2" />
-                        Marketing
-                      </Button>
-                    </Link>
-                    <Link href="/admin/alerts">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-alerts">
-                        <AlertTriangle className="w-4 h-4 mr-2" />
-                        Alert
-                      </Button>
-                    </Link>
-                    <Link href="/admin/feedback">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-feedback">
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        Feedback
-                      </Button>
-                    </Link>
-                  </>
-                )}
                 {/* Doctor Navigation - ONLY Prevention/Clinical tools (SEPARATE from quiz) */}
                 {typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
@@ -335,25 +282,13 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                       )}
                     </div>
                     <DropdownMenuSeparator />
-                    {/* Admin Menu Items - Full access to both systems */}
+                    {/* Admin Menu Items - Only Admin Panel */}
                     {typedUser?.isAdmin && (
                       <>
                         <Link href="/admin">
                           <DropdownMenuItem data-testid="menu-admin-main">
                             <Settings className="w-4 h-4 mr-2" />
                             Pannello Admin
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href="/dashboard">
-                          <DropdownMenuItem data-testid="menu-dashboard">
-                            <ChartLine className="w-4 h-4 mr-2" />
-                            Dashboard Quiz
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href="/prevention">
-                          <DropdownMenuItem data-testid="menu-prevention">
-                            <Stethoscope className="w-4 h-4 mr-2" />
-                            AI Prevenzione
                           </DropdownMenuItem>
                         </Link>
                       </>

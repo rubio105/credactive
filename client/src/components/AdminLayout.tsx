@@ -1,9 +1,20 @@
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { 
-  BarChart3, 
+  LayoutDashboard,
+  Users,
+  Crown,
+  AlertTriangle,
+  Video,
+  Mail,
+  Sparkles,
+  Database,
+  Bell,
+  Shield,
   BookOpen,
-  LogOut
+  LogOut,
+  ArrowLeft,
+  MessageSquare
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -11,10 +22,20 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
 
   const menuItems = [
-    { href: "/admin", icon: BarChart3, label: "Dashboard", testId: "nav-admin-dashboard" },
+    { href: "/admin", icon: LayoutDashboard, label: "Dashboard", testId: "nav-admin-dashboard" },
+    { href: "/admin/users", icon: Users, label: "Gestione Utenti", testId: "nav-admin-users" },
+    { href: "/admin/subscriptions", icon: Crown, label: "Abbonamenti", testId: "nav-admin-subscriptions" },
+    { href: "/admin/alerts", icon: AlertTriangle, label: "Alert Medici", testId: "nav-admin-alerts" },
+    { href: "/admin/webinar", icon: Video, label: "Webinar Health", testId: "nav-admin-webinar" },
+    { href: "/admin/feedback", icon: MessageSquare, label: "Feedback Utenti", testId: "nav-admin-feedback" },
+    { href: "/admin/mail", icon: Mail, label: "Email Templates", testId: "nav-admin-mail" },
+    { href: "/admin/marketing", icon: Sparkles, label: "AI Marketing", testId: "nav-admin-marketing" },
+    { href: "/admin/rag", icon: Database, label: "Knowledge Base", testId: "nav-admin-rag" },
+    { href: "/admin/push-notifications", icon: Bell, label: "Notifiche Push", testId: "nav-admin-push" },
+    { href: "/admin/audit", icon: Shield, label: "Audit Log", testId: "nav-admin-audit" },
     { href: "/admin/documentazione", icon: BookOpen, label: "Documentazione", testId: "nav-admin-docs" },
   ];
 
@@ -23,6 +44,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     window.location.href = '/login';
   };
 
+  const isHomePage = location === "/admin";
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar Verticale */}
@@ -30,6 +53,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Logo */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">CIRY Admin</h1>
+          <p className="text-xs text-muted-foreground mt-1">Pannello Amministrazione</p>
         </div>
 
         {/* Menu Items */}
@@ -73,6 +97,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Bar with Back Button */}
+        {!isHomePage && (
+          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/admin")}
+              className="text-muted-foreground hover:text-foreground"
+              data-testid="button-back-to-dashboard"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Torna alla Dashboard
+            </Button>
+          </div>
+        )}
+
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto">
           {children}

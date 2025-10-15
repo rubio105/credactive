@@ -21,7 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload, FileText, ArrowRight } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload, FileText, ArrowRight, Sparkles } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 const prohmedLogo = "/images/ciry-logo.png";
 
@@ -355,11 +355,33 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* AI Chat Panel for regular patients (not aiOnlyAccess, not doctor, not admin) */}
+        {/* AI Prevention Call-to-Action for regular patients */}
         {user && !(user as UserType)?.isDoctor && !(user as UserType)?.isAdmin && !(user as UserType)?.aiOnlyAccess && (
-          <div className="mb-8">
-            <AIChatPanel />
-          </div>
+          <Card className="mb-8 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold mb-3 text-emerald-900 dark:text-emerald-100">
+                    💚 Assistente AI Prevenzione
+                  </h2>
+                  <p className="text-emerald-700 dark:text-emerald-300 mb-4">
+                    Chatta con l'AI, carica referti medici e ricevi analisi personalizzate per monitorare il tuo benessere
+                  </p>
+                  <Link href="/prevention">
+                    <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white" data-testid="button-open-ai-prevention">
+                      Vai all'AI Prevenzione
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+                <div className="hidden md:block ml-8">
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                    <Sparkles className="w-16 h-16 text-white" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Welcome Section */}

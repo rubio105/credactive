@@ -456,8 +456,6 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4">Azienda</h4>
               <ul className="space-y-2 text-sm text-white/70">
-                <li><a href="#" className="hover:text-white transition-colors">Chi Siamo</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contatti</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Termini di Servizio</a></li>
               </ul>

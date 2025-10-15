@@ -236,12 +236,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     Guida
                   </Button>
                 </Link>
-                <Link href="/contatti">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-contact">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Contatti
-                  </Button>
-                </Link>
                 {/* Show CMS pages only for non-authenticated users */}
                 {headerPages.map((page) => (
                   <Link key={page.id} href={`/page/${page.slug}`}>

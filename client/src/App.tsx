@@ -8,7 +8,6 @@ import { HelmetProvider } from 'react-helmet-async';
 import CookieBanner from "@/components/cookie-banner";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import Landing from "@/pages/landing";
-import Home from "@/pages/home";
 import Quiz from "@/pages/quiz";
 import Dashboard from "@/pages/dashboard";
 import Subscribe from "@/pages/subscribe";
@@ -156,9 +155,7 @@ function Router() {
         <Route path="/" component={Login} />
       ) : (
         <>
-          <Route path="/">
-            {() => <ProtectedRoute requireNonAiOnly><Home /></ProtectedRoute>}
-          </Route>
+          <Route path="/" component={Prevention} />
           <Route path="/quiz/:quizId">
             {() => <ProtectedRoute requireNonAiOnly><Quiz /></ProtectedRoute>}
           </Route>

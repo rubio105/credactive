@@ -358,17 +358,29 @@ export default function PreventionPage() {
       
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/triage/session", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/prevention/index"] });
       setUserInput("");
       
-      // Riattiva automaticamente il microfono se era attivo (conversazione continua)
-      if (isListening && recognitionRef.current) {
+      // Auto-close session if backend indicates it was closed
+      if (data.sessionClosed) {
         setTimeout(() => {
-          recognitionRef.current?.start();
-        }, 1000); // Aspetta 1 sec per la risposta AI
+          queryClient.setQueryData(["/api/triage/session/active"], null);
+          setSessionId(null);
+          toast({ 
+            title: "Conversazione chiusa", 
+            description: "Torna quando vuoi per nuove domande sulla tua salute!" 
+          });
+        }, 2000); // Wait 2s to show final AI message first
+      } else {
+        // Riattiva automaticamente il microfono se era attivo (conversazione continua)
+        if (isListening && recognitionRef.current) {
+          setTimeout(() => {
+            recognitionRef.current?.start();
+          }, 1000); // Aspetta 1 sec per la risposta AI
+        }
       }
     },
     onError: (error: any) => {
@@ -504,6 +516,37 @@ export default function PreventionPage() {
         title: "Email inviata!",
         description: `Ti abbiamo inviato un'email con il codice promo ${data.promoCode} per un consulto gratuito con Prohmed. Controlla la tua casella di posta.`
       });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Impossibile inviare l'email",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Mutation per contattare medico direttamente (senza alert esistente)
+  const contactDoctorDirectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("/api/user/contact-doctor-prohmed", "POST", {});
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Impossibile inviare l'email");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Email inviata!",
+        description: `Ti abbiamo inviato un'email con il codice promo ${data.promoCode} per un consulto gratuito con Prohmed. Controlla la tua casella di posta.`,
+        duration: 6000,
+      });
+      
+      // Send follow-up AI message asking if user needs more help
+      if (sessionId) {
+        sendMessageMutation.mutate("Perfetto! Ti ho inviato l'email. Posso esserti ancora utile con qualche altra domanda sulla tua salute?");
+      }
     },
     onError: (error: any) => {
       toast({
@@ -1495,15 +1538,36 @@ export default function PreventionPage() {
                                   </div>
                                 )}
                                 <div
-                                  className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:shadow-lg ${
+                                  className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] ${
                                     msg.role === 'user'
                                       ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white rounded-tr-sm'
                                       : 'bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm'
-                                  }`}
+                                  } p-4 rounded-2xl shadow-md transition-all hover:shadow-lg`}
                                 >
                                   <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">
                                     {msg.content}
                                   </p>
+                                  
+                                  {/* Contact Doctor Button for patients when AI suggests it */}
+                                  {msg.role === 'assistant' && msg.aiSuggestDoctor && userRole === 'patient' && (
+                                    <div className="mt-4 pt-3 border-t border-emerald-200 dark:border-emerald-700">
+                                      <p className="text-xs text-emerald-700 dark:text-emerald-400 mb-2 font-semibold">
+                                        💡 Ti consigliamo di consultare un medico
+                                      </p>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          // Send email to user
+                                          contactDoctorDirectMutation.mutate();
+                                        }}
+                                        disabled={contactDoctorDirectMutation.isPending}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                                        data-testid="button-contact-doctor-message"
+                                      >
+                                        🩺 Contatta Medico Prohmed
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                                 {msg.role === 'user' && (
                                   <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">

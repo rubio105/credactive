@@ -704,6 +704,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isReport: isReport || false,
       });
 
+      // Send push notification to patient
+      try {
+        const subscriptions = await storage.getPushSubscriptionsByUser(patientId);
+        const doctor = await storage.getUserById(req.user.id);
+        
+        const payload = JSON.stringify({
+          title: `Nuova nota dal Dr. ${doctor?.lastName || 'medico'}`,
+          body: noteTitle || 'Il tuo medico ha aggiunto una nuova nota medica',
+          icon: '/images/ciry-main-logo.png',
+          badge: '/images/ciry-main-logo.png',
+          data: { url: '/documenti' },
+        });
+
+        const webPush = require('web-push');
+        const vapidKeys = await getVapidKeys();
+        webPush.setVapidDetails(
+          'mailto:support@ciry.app',
+          vapidKeys.publicKey,
+          vapidKeys.privateKey
+        );
+
+        await Promise.allSettled(
+          subscriptions.map(async (sub) => 
+            webPush.sendNotification({
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth,
+              },
+            }, payload)
+          )
+        );
+        
+        console.log(`[Push] Sent notification to patient ${patientId} for new doctor note`);
+      } catch (pushError) {
+        console.error(`[Push] Failed to send notification for doctor note:`, pushError);
+        // Don't fail the request if push fails
+      }
+
       res.json(note);
     } catch (error) {
       console.error("Error creating doctor note:", error);
@@ -8064,6 +8103,33 @@ Le risposte DEVONO essere in italiano.`;
       res.status(500).json({ message: error.message || 'Failed to send email' });
     }
   });
+
+  // Contact Prohmed doctor directly (POST /api/user/contact-doctor-prohmed) - No alert required
+  app.post('/api/user/contact-doctor-prohmed', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      
+      // Get user details
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Utente non trovato' });
+      }
+      
+      // Send Prohmed invite email with promo code
+      await sendProhmedInviteEmail(user.email, user.firstName);
+      
+      console.log(`[Prohmed Contact Direct] Email sent to ${user.email} (AI suggestion)`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Email inviata con successo',
+        promoCode: 'PROHMED2025'
+      });
+    } catch (error: any) {
+      console.error('Contact Prohmed direct error:', error);
+      res.status(500).json({ message: error.message || 'Failed to send email' });
+    }
+  });
   
   // Start new triage session (POST /api/triage/start) - Public endpoint for educational access
   app.post('/api/triage/start', aiGenerationLimiter, async (req, res) => {
@@ -8376,6 +8442,21 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
         }
       }
 
+      // Auto-close session when user declines further help
+      // Check if last AI message asked if user needs more help and user said no
+      const lastAiMessage = messages[messages.length - 1];
+      const userSaidNo = /\b(no|non?\s+(mi\s+serve|grazie|voglio)|basta|chiudi|esci|stop)\b/i.test(content.toLowerCase());
+      const aiAskedIfHelp = lastAiMessage && lastAiMessage.role === 'assistant' && 
+        /posso\s+esserti\s+(ancora\s+)?utile|altro\s+da\s+chieder|qualcos'?altro/i.test(lastAiMessage.content);
+      
+      let sessionClosed = false;
+      if (aiAskedIfHelp && userSaidNo) {
+        // Close the session automatically
+        await storage.updateTriageSession(sessionId, { status: 'closed' });
+        sessionClosed = true;
+        console.log(`[Auto-Close] Session ${sessionId} closed - user declined further help`);
+      }
+
       // Build response with upload instructions if needed
       const response: any = {
         userMessage,
@@ -8383,6 +8464,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
         suggestDoctor: aiResponse.suggestDoctor,
         urgencyLevel: aiResponse.urgencyLevel,
         needsReportUpload: aiResponse.needsReportUpload,
+        sessionClosed, // Let frontend know session was closed
       };
 
       // If user wants to upload reports, include upload endpoint info

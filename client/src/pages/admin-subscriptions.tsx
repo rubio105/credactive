@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,9 +29,14 @@ export default function AdminSubscriptionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
   const [selectedTier, setSelectedTier] = useState<string>("free");
+  const [doctorTokenLimit, setDoctorTokenLimit] = useState<string>("120");
 
   const { data: users = [], isLoading } = useQuery<UserData[]>({
     queryKey: ["/api/admin/users"],
+  });
+
+  const { data: subscriptionPlans = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/subscription-plans"],
   });
 
   const updateTierMutation = useMutation({
@@ -64,6 +69,45 @@ export default function AdminSubscriptionsPage() {
       });
     },
   });
+
+  const updateDoctorTokenMutation = useMutation({
+    mutationFn: async (tokenLimit: number) => {
+      const freePlan = subscriptionPlans.find((p: any) => p.id === 'free');
+      if (!freePlan) throw new Error("Piano Free non trovato");
+      
+      const response = await apiRequest(`/api/admin/subscription-plans/${freePlan.id}`, "PATCH", {
+        doctorFreeTokenLimit: tokenLimit,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Errore sconosciuto" }));
+        throw new Error(error.message || `HTTP ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/subscription-plans"] });
+      toast({
+        title: "Token aggiornati",
+        description: "Il limite token per i medici è stato aggiornato con successo",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile aggiornare il limite token",
+        variant: "destructive",
+      });
+    },
+  });
+
+  useEffect(() => {
+    const freePlan = subscriptionPlans.find((p: any) => p.id === 'free');
+    if (freePlan && freePlan.doctorFreeTokenLimit !== undefined) {
+      setDoctorTokenLimit(String(freePlan.doctorFreeTokenLimit));
+    }
+  }, [subscriptionPlans]);
 
   const stats = {
     total: users.length,
@@ -102,6 +146,19 @@ export default function AdminSubscriptionsPage() {
     updateTierMutation.mutate({ userId: editingUser.id, tier: selectedTier });
   };
 
+  const handleSaveDoctorTokenLimit = () => {
+    const limit = parseInt(doctorTokenLimit);
+    if (isNaN(limit) || limit < 0) {
+      toast({
+        title: "Errore",
+        description: "Inserisci un numero valido",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateDoctorTokenMutation.mutate(limit);
+  };
+
   return (
     <AdminLayout>
       <div className="p-8">
@@ -109,6 +166,40 @@ export default function AdminSubscriptionsPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestione Subscription</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Visualizza e modifica i piani degli utenti</p>
         </div>
+
+        <Card className="mb-6 border-blue-200 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-blue-600" />
+              Token Free per Medici
+            </CardTitle>
+            <CardDescription>
+              Configura il limite mensile di token AI per i medici con piano Free
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Limite Token Mensili</label>
+                <Input
+                  type="number"
+                  value={doctorTokenLimit}
+                  onChange={(e) => setDoctorTokenLimit(e.target.value)}
+                  placeholder="120"
+                  min="0"
+                  data-testid="input-doctor-token-limit"
+                />
+              </div>
+              <Button 
+                onClick={handleSaveDoctorTokenLimit}
+                disabled={updateDoctorTokenMutation.isPending}
+                data-testid="button-save-doctor-token-limit"
+              >
+                {updateDoctorTokenMutation.isPending ? "Salvataggio..." : "Salva"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card>

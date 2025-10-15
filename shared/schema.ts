@@ -1074,6 +1074,7 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   maxCoursesPerMonth: integer("max_courses_per_month"), // Max live courses per month, -1 for unlimited
   maxQuizGamingPerWeek: integer("max_quiz_gaming_per_week"), // Max crossword gaming per week, -1 for unlimited
   aiTokensPerMonth: integer("ai_tokens_per_month"), // Monthly AI token limit, -1 for unlimited
+  doctorFreeTokenLimit: integer("doctor_free_token_limit"), // Token limit for doctors on Free plan (configurable by admin)
   includesWebinarHealth: boolean("includes_webinar_health").default(false), // Access to free health webinars
   includesProhmedSupport: boolean("includes_prohmed_support").default(false), // Full Prohmed assistance
   createdAt: timestamp("created_at").defaultNow(),

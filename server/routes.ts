@@ -587,7 +587,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ========== DOCTOR-PATIENT SYSTEM ==========
   
-  // Generate doctor code (only for doctors)
+  // Get doctor linking code (only for doctors)
+  app.get('/api/doctor/linking-code', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
+      }
+
+      const code = await storage.generateDoctorCode(req.user.id);
+      res.json({ code });
+    } catch (error) {
+      console.error("Error getting doctor code:", error);
+      res.status(500).json({ message: "Errore durante il recupero del codice" });
+    }
+  });
+
+  // Generate doctor code (only for doctors) - kept for backward compatibility
   app.post('/api/doctor/generate-code', isAuthenticated, async (req, res) => {
     try {
       if (!req.user?.isDoctor) {
@@ -7956,6 +7971,52 @@ Le risposte DEVONO essere in italiano.`;
   });
 
   // *** USER ENDPOINTS ***
+  
+  // Get user's triage alerts (GET /api/user/alerts) - Only red/yellow urgency levels, not resolved
+  app.get('/api/user/alerts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const alerts = await storage.getUserTriageAlerts(userId);
+      
+      // Filter only red/yellow (high/medium urgency), not resolved
+      const filteredAlerts = alerts
+        .filter((alert: any) => 
+          (alert.urgencyLevel === 'high' || alert.urgencyLevel === 'medium') &&
+          !alert.userResolved &&
+          !alert.isReviewed
+        )
+        .slice(0, 5); // Only show last 5
+      
+      res.json(filteredAlerts);
+    } catch (error: any) {
+      console.error('Get user alerts error:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch alerts' });
+    }
+  });
+  
+  // Mark alert as resolved by user (POST /api/user/alerts/:id/resolve)
+  app.post('/api/user/alerts/:id/resolve', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { id } = req.params;
+      
+      const alert = await storage.getTriageAlertById(id);
+      if (!alert || alert.userId !== userId) {
+        return res.status(403).json({ message: 'Non autorizzato' });
+      }
+      
+      const updatedAlert = await storage.updateTriageAlert(id, {
+        userResolved: true,
+        userResolvedAt: new Date(),
+        status: 'user_resolved',
+      });
+      
+      res.json({ success: true, alert: updatedAlert });
+    } catch (error: any) {
+      console.error('Resolve alert error:', error);
+      res.status(500).json({ message: error.message || 'Failed to resolve alert' });
+    }
+  });
   
   // Start new triage session (POST /api/triage/start) - Public endpoint for educational access
   app.post('/api/triage/start', aiGenerationLimiter, async (req, res) => {

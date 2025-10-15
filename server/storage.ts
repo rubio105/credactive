@@ -502,6 +502,7 @@ export interface IStorage {
   createTriageAlert(alert: InsertTriageAlert): Promise<TriageAlert>;
   getTriageAlertById(id: string): Promise<TriageAlert | undefined>; // Get alert by ID
   getTriageAlertsBySession(sessionId: string): Promise<TriageAlert[]>;
+  getUserTriageAlerts(userId: string): Promise<TriageAlert[]>; // Get all alerts for a user
   getUnreviewedTriageAlerts(): Promise<TriageAlert[]>;
   getAllTriageAlerts(): Promise<TriageAlert[]>; // Admin: fetch all alerts
   getAllTriageAlertsWithDetails(): Promise<Array<TriageAlert & { session?: TriageSession; user?: User }>>; // Optimized with JOIN
@@ -3024,6 +3025,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(triageAlerts)
       .where(eq(triageAlerts.sessionId, sessionId))
+      .orderBy(desc(triageAlerts.createdAt));
+  }
+
+  async getUserTriageAlerts(userId: string): Promise<TriageAlert[]> {
+    return await db
+      .select()
+      .from(triageAlerts)
+      .where(eq(triageAlerts.userId, userId))
       .orderBy(desc(triageAlerts.createdAt));
   }
 

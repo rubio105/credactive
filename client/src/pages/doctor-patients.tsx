@@ -42,14 +42,10 @@ export default function DoctorPatientsPage() {
   const [isReport, setIsReport] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
 
-  // Get doctor code - using mutation to generate on demand
-  const generateCodeMutation = useMutation<{ code: string }>({
-    mutationFn: async () => {
-      return apiRequest("/api/doctor/generate-code", "POST", {}) as unknown as Promise<{ code: string }>;
-    },
+  // Get doctor code automatically
+  const { data: doctorCode } = useQuery<{ code: string }>({
+    queryKey: ["/api/doctor/linking-code"],
   });
-
-  const doctorCode = generateCodeMutation.data;
 
   // Get linked patients
   const { data: patients = [], isLoading: patientsLoading } = useQuery<Patient[]>({

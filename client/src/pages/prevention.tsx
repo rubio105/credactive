@@ -109,6 +109,11 @@ export default function PreventionPage() {
     retry: false,
   });
 
+  const { data: userAlerts = [], refetch: refetchAlerts } = useQuery<TriageAlert[]>({
+    queryKey: ["/api/user/alerts"],
+    retry: false,
+  });
+
   const { data: documents } = useQuery<PreventionDocument[]>({
     queryKey: ["/api/prevention/documents"],
   });
@@ -470,6 +475,28 @@ export default function PreventionPage() {
       toast({
         title: "Errore",
         description: error?.message || "Impossibile aggiornare lo stato",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Mutation per risolvere alert dalla lista
+  const markAlertResolvedMutation = useMutation({
+    mutationFn: async (alertId: string) => {
+      const res = await apiRequest(`/api/user/alerts/${alertId}/resolve`, "POST", {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/alerts"] });
+      toast({
+        title: "Alert risolto",
+        description: "L'alert è stato contrassegnato come risolto"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Impossibile risolvere l'alert",
         variant: "destructive"
       });
     },
@@ -849,59 +876,65 @@ export default function PreventionPage() {
 
         <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">
           <div className="lg:col-span-1 space-y-6 order-2 lg:order-1 max-w-full">
-            {/* Indicatore Prevenzione */}
-            <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
-              <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-8">
+            {/* Alert Recenti */}
+            <Card className="shadow-xl border-2 border-orange-200 dark:border-orange-800 overflow-hidden">
+              <CardHeader className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 text-white pb-6">
                 <CardTitle className="flex items-center gap-3 text-2xl">
                   <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <Activity className="w-6 h-6" />
+                    <AlertTriangle className="w-6 h-6" />
                   </div>
-                  Indice di Prevenzione
+                  Alert di Salute
                 </CardTitle>
                 <CardDescription className="text-white/90 text-base mt-2">
-                  Il tuo percorso verso la salute preventiva
+                  Situazioni che richiedono attenzione
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6 pb-8">
-                <div className="space-y-6">
-                  {/* Score e Tier - Design circolare */}
-                  <div className="flex flex-col items-center justify-center py-4">
-                    <div className="relative">
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900 dark:to-teal-900 flex items-center justify-center border-4 border-emerald-200 dark:border-emerald-700 shadow-lg">
-                        <div className="text-center">
-                          <div className="text-5xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent" data-testid="text-prevention-score">
-                            {preventionIndex?.score || 0}
+              <CardContent className="pt-4 pb-4">
+                {userAlerts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Shield className="w-12 h-12 mx-auto mb-3 text-green-500" />
+                    <p className="text-sm">Nessun alert attivo</p>
+                    <p className="text-xs mt-1">La tua salute è sotto controllo</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {userAlerts.map((alert) => (
+                      <div 
+                        key={alert.id} 
+                        className={`p-3 rounded-lg border-2 ${
+                          alert.urgencyLevel === 'high' 
+                            ? 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800' 
+                            : 'bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-800'
+                        }`}
+                        data-testid={`alert-${alert.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <AlertTriangle className={`w-4 h-4 ${
+                                alert.urgencyLevel === 'high' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
+                              }`} />
+                              <Badge variant={alert.urgencyLevel === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                                {alert.urgencyLevel === 'high' ? 'URGENTE' : 'ATTENZIONE'}
+                              </Badge>
+                            </div>
+                            <p className="text-sm font-medium">{alert.reason}</p>
                           </div>
-                          <div className="text-xs font-semibold text-muted-foreground -mt-1">/ 100</div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => markAlertResolvedMutation.mutate(alert.id)}
+                            disabled={markAlertResolvedMutation.isPending}
+                            className="shrink-0"
+                            data-testid={`button-resolve-${alert.id}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
-                      {/* Decorative ring */}
-                      <div className="absolute inset-0 -z-10">
-                        <div className={`w-36 h-36 rounded-full border-4 ${
-                          preventionIndex?.tier === 'high' 
-                            ? 'border-green-500 animate-pulse' 
-                            : preventionIndex?.tier === 'medium'
-                            ? 'border-yellow-500' 
-                            : 'border-gray-400'
-                        } -translate-x-2 -translate-y-2 opacity-30`}></div>
-                      </div>
-                    </div>
-                    <Badge 
-                      variant="outline" 
-                      className={`mt-4 px-6 py-1.5 text-base font-bold ${
-                        preventionIndex?.tier === 'high' 
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-md' 
-                          : preventionIndex?.tier === 'medium'
-                          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-md'
-                          : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0 shadow-md'
-                      }`}
-                      data-testid="badge-prevention-tier"
-                    >
-                      {preventionIndex?.tier === 'high' ? '🏆 Livello Alto' : preventionIndex?.tier === 'medium' ? '⭐ Livello Medio' : '🌱 Livello Base'}
-                    </Badge>
+                    ))}
                   </div>
-
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -964,7 +997,7 @@ export default function PreventionPage() {
                       data-testid="button-upgrade-premium"
                     >
                       <Crown className="w-4 h-4 mr-2" />
-                      Passa a Premium
+                      {(user as any)?.isDoctor ? 'Passa a Pro' : 'Passa a Premium'}
                     </Button>
                     <p className="text-xs text-center text-muted-foreground">
                       Strumento AI disponibile • 1000 token/mese

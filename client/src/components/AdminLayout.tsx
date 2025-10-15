@@ -2,15 +2,7 @@ import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { 
   BarChart3, 
-  Users, 
-  Video, 
-  Database, 
-  Mail, 
-  Megaphone, 
-  AlertTriangle, 
-  MessageSquare,
-  Bell,
-  Crown,
+  BookOpen,
   LogOut
 } from "lucide-react";
 
@@ -23,15 +15,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const menuItems = [
     { href: "/admin", icon: BarChart3, label: "Dashboard", testId: "nav-admin-dashboard" },
-    { href: "/admin/users", icon: Users, label: "Gestione Utenti", testId: "nav-admin-users" },
-    { href: "/admin/subscriptions", icon: Crown, label: "Subscription", testId: "nav-admin-subscriptions" },
-    { href: "/admin/webinar", icon: Video, label: "Webinar", testId: "nav-admin-webinar" },
-    { href: "/admin/rag", icon: Database, label: "Sistemi RAG", testId: "nav-admin-rag" },
-    { href: "/admin/mail", icon: Mail, label: "Mail", testId: "nav-admin-mail" },
-    { href: "/admin/marketing", icon: Megaphone, label: "Marketing", testId: "nav-admin-marketing" },
-    { href: "/admin/alerts", icon: AlertTriangle, label: "Alert", testId: "nav-admin-alerts" },
-    { href: "/admin/feedback", icon: MessageSquare, label: "Feedback", testId: "nav-admin-feedback" },
-    { href: "/admin/push-notifications", icon: Bell, label: "Notifiche Push", testId: "nav-admin-push" },
+    { href: "/admin/documentazione", icon: BookOpen, label: "Documentazione", testId: "nav-admin-docs" },
   ];
 
   const handleLogout = async () => {

@@ -763,6 +763,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all doctor's notes
+  app.get('/api/doctor/all-notes', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
+      }
+
+      const notes = await storage.getDoctorNotesByDoctor(req.user.id);
+      
+      // Enrich notes with patient information
+      const patients = await storage.getDoctorPatients(req.user.id);
+      const enrichedNotes = notes.map(note => {
+        const patient = patients.find(p => p.id === note.patientId);
+        return {
+          ...note,
+          patientName: patient ? `${patient.firstName} ${patient.lastName}` : undefined,
+          patientEmail: patient?.email,
+        };
+      });
+
+      res.json(enrichedNotes);
+    } catch (error) {
+      console.error("Error getting all doctor notes:", error);
+      res.status(500).json({ message: "Errore durante il recupero delle note" });
+    }
+  });
+
   // Resend verification code
   app.post('/api/auth/resend-verification', authLimiter, async (req, res) => {
     try {

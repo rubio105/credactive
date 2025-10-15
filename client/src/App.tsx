@@ -48,6 +48,7 @@ import PatientAI from "@/pages/patient-ai";
 import PacchettoProhmed from "@/pages/pacchetto-prohmed";
 import Security from "@/pages/security";
 import Guida from "@/pages/guida";
+import AppointmentsPage from "@/pages/appointments";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
@@ -71,6 +72,9 @@ function Router() {
       </Route>
       <Route path="/settings">
         {() => <ProtectedRoute requireNonAiOnly><Settings /></ProtectedRoute>}
+      </Route>
+      <Route path="/appointments">
+        {() => <ProtectedRoute requireNonAiOnly><AppointmentsPage /></ProtectedRoute>}
       </Route>
       <Route path="/leaderboard">
         {() => <ProtectedRoute requireNonAiOnly><Leaderboard /></ProtectedRoute>}

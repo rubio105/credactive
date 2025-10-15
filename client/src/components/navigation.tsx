@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare } from "lucide-react";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
 
@@ -113,25 +113,55 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {/* Admin Navigation - Full access to both systems */}
+                {/* Admin Navigation - Sistema Amministrativo */}
                 {typedUser?.isAdmin && (
                   <>
                     <Link href="/admin">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-panel">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Admin
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-dashboard">
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Dashboard
                       </Button>
                     </Link>
-                    <Link href="/dashboard">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
-                        <ChartLine className="w-4 h-4 mr-2" />
-                        Dashboard Quiz
+                    <Link href="/admin/users">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-users">
+                        <Users className="w-4 h-4 mr-2" />
+                        Utenti
                       </Button>
                     </Link>
                     <Link href="/prevention">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-prevention">
                         <Stethoscope className="w-4 h-4 mr-2" />
-                        AI Prevenzione
+                        AI Prevention
+                      </Button>
+                    </Link>
+                    <Link href="/admin/rag">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-rag">
+                        <Database className="w-4 h-4 mr-2" />
+                        Sistemi RAG
+                      </Button>
+                    </Link>
+                    <Link href="/admin/mail">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-mail">
+                        <Send className="w-4 h-4 mr-2" />
+                        Mail
+                      </Button>
+                    </Link>
+                    <Link href="/admin/marketing">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-marketing">
+                        <Mail className="w-4 h-4 mr-2" />
+                        Marketing
+                      </Button>
+                    </Link>
+                    <Link href="/admin/alerts">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-alerts">
+                        <AlertTriangle className="w-4 h-4 mr-2" />
+                        Alert
+                      </Button>
+                    </Link>
+                    <Link href="/admin/feedback">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-admin-feedback">
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Feedback
                       </Button>
                     </Link>
                   </>

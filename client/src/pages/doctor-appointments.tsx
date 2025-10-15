@@ -102,6 +102,7 @@ export default function DoctorAppointmentsPage() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all appointment queries to refresh all views
       queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
       toast({
         title: "Stato aggiornato",

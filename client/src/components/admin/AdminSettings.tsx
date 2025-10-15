@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { DollarSign, Save, Plus, Edit, Trash2, Wand2, Check, X } from "lucide-react";
+import { DollarSign, Save, Plus, Edit, Trash2, Wand2, Check, X, Calendar } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface Setting {
@@ -43,6 +43,7 @@ export function AdminSettings() {
   const { toast } = useToast();
   const [price, setPrice] = useState('90');
   const [currency, setCurrency] = useState('EUR');
+  const [appointmentsEnabled, setAppointmentsEnabled] = useState(false);
   
   // Subscription plan form state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -66,6 +67,10 @@ export function AdminSettings() {
     queryKey: ["/api/admin/subscription-plans"],
   });
 
+  const { data: appointmentsStatus } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/settings/appointments-enabled"],
+  });
+
   // Transform array of settings into an object
   const settings: Settings | undefined = settingsArray ? {
     subscriptionPrice: parseFloat(settingsArray.find(s => s.key === 'subscriptionPrice')?.value || '90'),
@@ -78,6 +83,12 @@ export function AdminSettings() {
       setCurrency(settings.currency);
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (appointmentsStatus) {
+      setAppointmentsEnabled(appointmentsStatus.enabled);
+    }
+  }, [appointmentsStatus]);
 
   const updateMutation = useMutation({
     mutationFn: (data: Settings) => apiRequest("/api/admin/settings", "POST", data),
@@ -141,6 +152,30 @@ export function AdminSettings() {
     },
     onError: () => {
       toast({ title: "Errore durante la formattazione", variant: "destructive" });
+    },
+  });
+
+  const toggleAppointmentsMutation = useMutation({
+    mutationFn: (enabled: boolean) => 
+      apiRequest("/api/admin/settings/appointments/toggle", "POST", { enabled }),
+    onSuccess: (_, newValue) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/appointments-enabled"] });
+      toast({ 
+        title: newValue ? "Appuntamenti abilitati" : "Appuntamenti disabilitati",
+        description: newValue 
+          ? "Il sistema di prenotazione visite è ora attivo" 
+          : "Il sistema di prenotazione visite è stato disabilitato"
+      });
+    },
+    onError: (_, failedValue) => {
+      // Rollback to previous value on error
+      setAppointmentsEnabled(!failedValue);
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/appointments-enabled"] });
+      toast({ 
+        title: "Errore durante l'aggiornamento", 
+        description: "Impossibile aggiornare le impostazioni. Riprova.",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -229,6 +264,11 @@ export function AdminSettings() {
     setPlanFeatures(planFeatures.filter((_, i) => i !== index));
   };
 
+  const handleToggleAppointments = (checked: boolean) => {
+    setAppointmentsEnabled(checked);
+    toggleAppointmentsMutation.mutate(checked);
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -281,6 +321,38 @@ export function AdminSettings() {
                   <Save className="w-4 h-4 mr-2" />
                   {updateMutation.isPending ? "Salvataggio..." : "Salva Impostazioni"}
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Sistema Prenotazione Visite
+                </CardTitle>
+                <CardDescription>
+                  Abilita o disabilita il sistema di prenotazione appuntamenti
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="appointments-toggle">Prenotazione Visite</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {appointmentsEnabled 
+                        ? "Il sistema di prenotazione è attivo. Pazienti e medici possono gestire gli appuntamenti." 
+                        : "Il sistema è disabilitato. Le funzionalità di prenotazione non sono disponibili."
+                      }
+                    </p>
+                  </div>
+                  <Switch
+                    id="appointments-toggle"
+                    checked={appointmentsEnabled}
+                    onCheckedChange={handleToggleAppointments}
+                    disabled={toggleAppointmentsMutation.isPending}
+                    data-testid="switch-appointments"
+                  />
+                </div>
               </CardContent>
             </Card>
 

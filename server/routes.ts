@@ -8411,7 +8411,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
     }
   });
 
-  // Request medical contact - Send Prohmed invite email (POST /api/triage/request-medical-contact)
+  // Request medical contact - Check appointments flag and route accordingly (POST /api/triage/request-medical-contact)
   app.post('/api/triage/request-medical-contact', async (req, res) => {
     try {
       const user = req.user as any;
@@ -8420,16 +8420,30 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
         return res.status(401).json({ message: 'Authentication required' });
       }
 
-      // Send Prohmed invite email with promo code
-      await sendProhmedInviteEmail(user.email, user.firstName);
+      // Check if appointments system is enabled
+      const appointmentsEnabled = await storage.getSetting('appointments_enabled');
       
-      console.log(`[Medical Contact] Prohmed invite email sent to ${user.email}`);
-      
-      res.json({ 
-        success: true, 
-        message: 'Email inviata con successo',
-        promoCode: 'PROHMED2025'
-      });
+      if (appointmentsEnabled?.value === 'true') {
+        // Appointments enabled: redirect to appointments page
+        console.log(`[Medical Contact] Redirecting ${user.email} to appointments system`);
+        
+        res.json({ 
+          success: true, 
+          redirectTo: '/appointments',
+          message: 'Ti reindirizziamo alla pagina appuntamenti per prenotare una visita con il medico'
+        });
+      } else {
+        // Appointments disabled: send Prohmed invite email with promo code
+        await sendProhmedInviteEmail(user.email, user.firstName);
+        
+        console.log(`[Medical Contact] Prohmed invite email sent to ${user.email}`);
+        
+        res.json({ 
+          success: true, 
+          message: 'Email inviata con successo',
+          promoCode: 'PROHMED2025'
+        });
+      }
     } catch (error: any) {
       console.error('Send medical contact email error:', error);
       res.status(500).json({ message: error.message || 'Failed to send email' });

@@ -1685,6 +1685,8 @@ export default function PreventionPage() {
                 <li>Conversazioni illimitate con l'AI</li>
                 <li>Caricamento documenti medici</li>
                 <li>Report personalizzati e analisi avanzate</li>
+                <li>2 televisite a settimana</li>
+                <li>Webinari ed eventi dedicati</li>
                 <li>Accesso completo alla piattaforma</li>
               </ul>
             </AlertDialogDescription>

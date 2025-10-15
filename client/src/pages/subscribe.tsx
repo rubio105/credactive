@@ -195,8 +195,18 @@ export default function Subscribe() {
                     <Check className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Webinar sulla prevenzione</h3>
-                    <p className="text-sm text-muted-foreground">Partecipa ai webinar educativi gratuiti</p>
+                    <h3 className="font-semibold">2 televisite a settimana</h3>
+                    <p className="text-sm text-muted-foreground">Consulti medici in videochiamata inclusi</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                    <Check className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Webinari ed eventi dedicati</h3>
+                    <p className="text-sm text-muted-foreground">Accesso esclusivo a formazione e eventi</p>
                   </div>
                 </div>
 

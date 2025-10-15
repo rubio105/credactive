@@ -24,7 +24,7 @@ type Appointment = {
   title: string;
   type: string;
   status: string;
-  notes: string | null;
+  description: string | null;
   videoMeetingUrl: string | null;
   cancellationReason: string | null;
   patient?: {
@@ -250,10 +250,10 @@ export default function DoctorAppointmentsPage() {
                           </div>
                         )}
 
-                        {apt.notes && (
+                        {apt.description && (
                           <div className="text-sm bg-blue-50 dark:bg-blue-950 p-3 rounded">
                             <p className="font-medium mb-1">Note del paziente:</p>
-                            <p className="text-muted-foreground">{apt.notes}</p>
+                            <p className="text-muted-foreground">{apt.description}</p>
                           </div>
                         )}
                       </div>

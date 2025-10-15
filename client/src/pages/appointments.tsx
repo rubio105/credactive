@@ -22,7 +22,7 @@ type Appointment = {
   title: string;
   type: string;
   status: string;
-  notes: string | null;
+  description: string | null;
   videoMeetingUrl: string | null;
   cancellationReason: string | null;
   doctor?: {
@@ -254,8 +254,8 @@ export default function AppointmentsPage() {
                         </Button>
                       )}
 
-                      {apt.notes && (
-                        <p className="text-sm bg-muted p-2 rounded">{apt.notes}</p>
+                      {apt.description && (
+                        <p className="text-sm bg-muted p-2 rounded">{apt.description}</p>
                       )}
 
                       {apt.status === 'cancelled' && apt.cancellationReason && (

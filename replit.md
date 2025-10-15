@@ -62,7 +62,7 @@ PostgreSQL (Neon's serverless driver) is managed by Drizzle ORM. The schema supp
 Powered by Google Gemini AI, featuring medical document upload/analysis, an AI educational assistant, and a medical alert system. Includes advanced UI for Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring. Enhanced with GDPR-compliant privacy, Prohmed branding, and role-based AI responses.
 - **Role-Based AI Analysis**: Dual-content system with `patientSummary` and `doctorSummary`.
 - **Medical Report Viewer Dialog**: 5-tab interface for radiological images, summary, overview, prevention, and medical values.
-- **Contextual AI Conversations**: AI chat includes the last 2 medical reports in conversation context.
+- **Contextual AI Conversations**: AI chat automatically includes the last 2 medical reports in conversation context. When a new report is uploaded during an active triage session, the system creates an automatic notification message and the report becomes immediately available in subsequent AI responses.
 - **Demographic-Aware AI Responses**: AI considers user's age and gender for personalized health recommendations.
 - **Medical Alert System (Alert Medici)**:
   - **Purpose**: Triage-based medical alert system for urgent cases requiring doctor attention

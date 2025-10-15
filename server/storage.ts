@@ -123,6 +123,9 @@ import {
   type InsertScenarioConversation,
   type InsertScenarioMessage,
   userFeedback,
+  appointments,
+  type Appointment,
+  type InsertAppointment,
   type UserFeedback,
   type InsertUserFeedback,
   // Prevention system
@@ -200,7 +203,7 @@ import {
   type InsertAuditLog,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and, or, gte } from "drizzle-orm";
+import { eq, desc, asc, sql, and, or, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -657,6 +660,22 @@ export interface IStorage {
     startDate?: Date;
     endDate?: Date;
   }): Promise<number>;
+
+  // Appointment operations
+  createAppointment(appointment: InsertAppointment): Promise<Appointment>;
+  getAppointmentById(id: string): Promise<Appointment | undefined>;
+  getAppointmentsByDoctor(doctorId: string, startDate?: Date, endDate?: Date): Promise<Appointment[]>;
+  getAppointmentsByPatient(patientId: string, status?: string): Promise<Appointment[]>;
+  updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment>;
+  deleteAppointment(id: string): Promise<void>;
+  bookAppointment(appointmentId: string, patientId: string, notes?: string): Promise<Appointment>;
+  updateAppointmentStatus(id: string, status: string, updatedBy: string): Promise<Appointment>;
+  getAppointmentsSummary(doctorId: string): Promise<{
+    total: number;
+    pending: number;
+    confirmed: number;
+    completed: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4086,6 +4105,105 @@ export class DatabaseStorage implements IStorage {
 
     const [result] = await query;
     return result?.count || 0;
+  }
+
+  // Appointment operations
+  async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
+    const [newAppointment] = await db.insert(appointments).values(appointment).returning();
+    return newAppointment;
+  }
+
+  async getAppointmentById(id: string): Promise<Appointment | undefined> {
+    const [appointment] = await db.select().from(appointments).where(eq(appointments.id, id));
+    return appointment;
+  }
+
+  async getAppointmentsByDoctor(doctorId: string, startDate?: Date, endDate?: Date): Promise<Appointment[]> {
+    const conditions = [eq(appointments.doctorId, doctorId)];
+    
+    if (startDate && endDate) {
+      conditions.push(gte(appointments.startTime, startDate));
+      conditions.push(lte(appointments.startTime, endDate));
+    }
+    
+    return await db.select()
+      .from(appointments)
+      .where(and(...conditions))
+      .orderBy(asc(appointments.startTime));
+  }
+
+  async getAppointmentsByPatient(patientId: string, status?: string): Promise<Appointment[]> {
+    const conditions = [eq(appointments.patientId, patientId)];
+    
+    if (status) {
+      conditions.push(eq(appointments.status, status));
+    }
+    
+    return await db.select()
+      .from(appointments)
+      .where(and(...conditions))
+      .orderBy(desc(appointments.startTime));
+  }
+
+  async updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment> {
+    const [updated] = await db.update(appointments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(appointments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAppointment(id: string): Promise<void> {
+    await db.delete(appointments).where(eq(appointments.id, id));
+  }
+
+  async bookAppointment(appointmentId: string, patientId: string, notes?: string): Promise<Appointment> {
+    const [updated] = await db.update(appointments)
+      .set({
+        patientId,
+        description: notes,
+        status: 'booked',
+        updatedAt: new Date(),
+      })
+      .where(eq(appointments.id, appointmentId))
+      .returning();
+    return updated;
+  }
+
+  async updateAppointmentStatus(id: string, status: string, updatedBy: string): Promise<Appointment> {
+    const updateData: any = {
+      status,
+      updatedAt: new Date(),
+    };
+
+    if (status === 'cancelled') {
+      updateData.cancelledBy = updatedBy;
+      updateData.cancelledAt = new Date();
+    }
+
+    const [updated] = await db.update(appointments)
+      .set(updateData)
+      .where(eq(appointments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getAppointmentsSummary(doctorId: string): Promise<{
+    total: number;
+    pending: number;
+    confirmed: number;
+    completed: number;
+  }> {
+    const allAppointments = await db.select()
+      .from(appointments)
+      .where(eq(appointments.doctorId, doctorId));
+
+    return {
+      total: allAppointments.length,
+      pending: allAppointments.filter(a => a.status === 'booked').length,
+      confirmed: allAppointments.filter(a => a.status === 'confirmed').length,
+      completed: allAppointments.filter(a => a.status === 'completed').length,
+    };
   }
 }
 

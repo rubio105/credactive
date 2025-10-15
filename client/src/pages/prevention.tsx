@@ -44,7 +44,7 @@ interface PreventionDocument {
 
 interface TriageMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt: string;
   aiSuggestDoctor?: boolean;
@@ -1422,31 +1422,43 @@ export default function PreventionPage() {
                         {messages?.map((msg) => (
                           <div
                             key={msg.id}
-                            className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex gap-3 ${
+                              msg.role === 'system' ? 'justify-center' : msg.role === 'user' ? 'justify-end' : 'justify-start'
+                            }`}
                             data-testid={`message-${msg.id}`}
                           >
-                            {msg.role === 'assistant' && (
-                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
-                                <Sparkles className="w-5 h-5 text-white" />
+                            {msg.role === 'system' ? (
+                              <div className="max-w-[90%] p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200">
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">
+                                  {msg.content}
+                                </p>
                               </div>
-                            )}
-                            <div
-                              className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:shadow-lg ${
-                                msg.role === 'user'
-                                  ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white rounded-tr-sm'
-                                  : 'bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm'
-                              }`}
-                            >
-                              <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">
-                                {msg.content}
-                              </p>
-                            </div>
-                            {msg.role === 'user' && (
-                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-                                <span className="text-white font-semibold text-sm">
-                                  {user?.firstName ? user.firstName[0].toUpperCase() : 'U'}
-                                </span>
-                              </div>
+                            ) : (
+                              <>
+                                {msg.role === 'assistant' && (
+                                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                                    <Sparkles className="w-5 h-5 text-white" />
+                                  </div>
+                                )}
+                                <div
+                                  className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:shadow-lg ${
+                                    msg.role === 'user'
+                                      ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white rounded-tr-sm'
+                                      : 'bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm'
+                                  }`}
+                                >
+                                  <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">
+                                    {msg.content}
+                                  </p>
+                                </div>
+                                {msg.role === 'user' && (
+                                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                                    <span className="text-white font-semibold text-sm">
+                                      {user?.firstName ? user.firstName[0].toUpperCase() : 'U'}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                         ))}

@@ -134,7 +134,34 @@ export class JobWorker {
       hasRadiologicalAnalysis: radiologicalAnalysis !== null,
     });
 
-    // Step 6: Cleanup temporary file
+    // Step 6: If report was uploaded during a triage session, notify AI automatically
+    if (triageSessionId) {
+      try {
+        const session = await storage.getTriageSessionById(triageSessionId);
+        if (session && session.status !== 'closed') {
+          // Create system message to inform AI about the new report
+          const reportInfo = `[SISTEMA] Un nuovo referto è stato caricato e analizzato:
+- Tipo: ${ocrResult.reportType}
+- Data: ${ocrResult.reportDate ? new Date(ocrResult.reportDate).toLocaleDateString('it-IT') : 'Non disponibile'}
+- Valori estratti: ${Object.keys(ocrResult.extractedValues || {}).join(', ') || 'Nessuno'}
+
+Il referto è ora disponibile nel contesto della conversazione e verrà incluso automaticamente nelle prossime risposte dell'AI.`;
+
+          await storage.createTriageMessage({
+            sessionId: triageSessionId,
+            role: 'system',
+            content: reportInfo,
+          });
+
+          console.log('[JobWorker] Created system message in triage session:', triageSessionId, 'for new report:', healthReport.id);
+        }
+      } catch (triageError) {
+        console.error('[JobWorker] Failed to create triage notification:', triageError);
+        // Don't fail the job if notification fails
+      }
+    }
+
+    // Step 7: Cleanup temporary file
     try {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

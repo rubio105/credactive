@@ -408,10 +408,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             AI Prevenzione
                           </DropdownMenuItem>
                         </Link>
-                        <DropdownMenuItem onClick={handlePlansClick} data-testid="menu-subscription">
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Abbonamento
-                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <Link href="/security">
                           <DropdownMenuItem data-testid="menu-security">

@@ -14,7 +14,7 @@ import { LiveCourseModal } from "@/components/LiveCourseModal";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import { DoctorDashboard } from "@/components/DoctorDashboard";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
-import { AIChatDialog } from "@/components/AIChatDialog";
+import { AIChatPanel } from "@/components/AIChatPanel";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
@@ -211,9 +211,6 @@ export default function Home() {
     }
   }, [user, setLocation]);
 
-  // State for AI Chat Dialog
-  const [showAIChatDialog, setShowAIChatDialog] = useState(false);
-  
   // Redirect aiOnlyAccess to Prevention page
   useEffect(() => {
     const typedUser = user as UserType;
@@ -221,18 +218,6 @@ export default function Home() {
       setLocation('/prevention');
     }
   }, [user, setLocation]);
-  
-  // Open AI Chat Dialog automatically for regular patients (not aiOnlyAccess, not doctor, not admin)
-  useEffect(() => {
-    const typedUser = user as UserType;
-    if (typedUser && !typedUser?.isDoctor && !typedUser?.isAdmin && !typedUser?.aiOnlyAccess) {
-      // Delay to let page load first
-      const timer = setTimeout(() => {
-        setShowAIChatDialog(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
 
   // Check if user needs onboarding (only for patients, not doctors)
   useEffect(() => {
@@ -357,6 +342,13 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* AI Chat Panel for regular patients (not aiOnlyAccess, not doctor, not admin) */}
+        {user && !(user as UserType)?.isDoctor && !(user as UserType)?.isAdmin && !(user as UserType)?.aiOnlyAccess && (
+          <div className="mb-8">
+            <AIChatPanel />
+          </div>
+        )}
+
         {/* Welcome Section */}
         <div className="mb-8 flex items-start justify-between">
           <div>
@@ -860,12 +852,6 @@ export default function Home() {
       <OnboardingDialog 
         open={showOnboarding} 
         onOpenChange={setShowOnboarding}
-      />
-
-      {/* AI Chat Dialog */}
-      <AIChatDialog
-        open={showAIChatDialog}
-        onOpenChange={setShowAIChatDialog}
       />
 
       {/* Medical Report Upload Dialog */}

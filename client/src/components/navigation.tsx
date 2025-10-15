@@ -455,31 +455,31 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             Documenti
                           </DropdownMenuItem>
                         </Link>
+                        {typedUser?.corporateAgreementId && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <Link href="/corporate">
+                              <DropdownMenuItem className="text-blue-600" data-testid="menu-corporate">
+                                <Building2 className="w-4 h-4 mr-2" />
+                                Portale Aziendale
+                              </DropdownMenuItem>
+                            </Link>
+                          </>
+                        )}
+                        {!typedUser?.isPremium && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <Link href="/subscribe">
+                              <DropdownMenuItem className="text-primary" data-testid="menu-upgrade">
+                                <Crown className="w-4 h-4 mr-2" />
+                                Upgrade to Premium
+                              </DropdownMenuItem>
+                            </Link>
+                          </>
+                        )}
                       </>
                     )}
-                    {typedUser?.corporateAgreementId && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <Link href="/corporate">
-                          <DropdownMenuItem className="text-blue-600" data-testid="menu-corporate">
-                            <Building2 className="w-4 h-4 mr-2" />
-                            Portale Aziendale
-                          </DropdownMenuItem>
-                        </Link>
-                      </>
-                    )}
-                    {!typedUser?.isPremium && !typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <Link href="/subscribe">
-                          <DropdownMenuItem className="text-primary" data-testid="menu-upgrade">
-                            <Crown className="w-4 h-4 mr-2" />
-                            Upgrade to Premium
-                          </DropdownMenuItem>
-                        </Link>
-                      </>
-                    )}
-                    {typedUser?.aiOnlyAccess && (
+                    {typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
                       <>
                         <DropdownMenuSeparator />
                         <Link href="/pacchetto-prohmed">
@@ -490,13 +490,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         </Link>
                       </>
                     )}
-                    <DropdownMenuSeparator />
-                    <Link href="/security">
-                      <DropdownMenuItem data-testid="menu-security">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Sicurezza
-                      </DropdownMenuItem>
-                    </Link>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
                       <LogOut className="w-4 h-4 mr-2" />

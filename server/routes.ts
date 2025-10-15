@@ -1952,7 +1952,7 @@ ${JSON.stringify(questionsToTranslate)}`;
 
       // Determine amount and tier based on request
       const selectedTier = tier === 'premium_plus' ? 'premium_plus' : 'premium';
-      const amount = selectedTier === 'premium_plus' ? 4900 : 9900; // €49 or €99 in cents (monthly)
+      const amount = selectedTier === 'premium_plus' ? 4900 : 2900; // €49 or €29 in cents (monthly)
 
       // Create a one-time payment intent
       const paymentIntent = await (await getStripe()).paymentIntents.create({

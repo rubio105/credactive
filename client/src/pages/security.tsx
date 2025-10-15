@@ -28,10 +28,10 @@ export default function Security() {
   const [qrCodeData, setQrCodeData] = useState<string>("");
   const [manualKey, setManualKey] = useState<string>("");
 
-  // Query 2FA status (doctor only)
-  const { data: mfaStatus } = useQuery<{ enabled: boolean; configured: boolean }>({
-    queryKey: ["/api/doctor/2fa/status"],
-    enabled: !!user?.isDoctor,
+  // Query MFA status for all users
+  const { data: mfaStatus } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/auth/mfa/status"],
+    enabled: !!user,
   });
 
   // Change password mutation
@@ -55,40 +55,40 @@ export default function Security() {
     },
   });
 
-  // Setup 2FA mutation (doctor only)
+  // Setup MFA mutation for all users
   const setupMfaMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/doctor/2fa/setup", "POST", {});
+      const response = await apiRequest("/api/auth/mfa/enable", "POST", {});
       return response.json();
     },
-    onSuccess: (data: { qrCode: string; manualEntryKey: string }) => {
+    onSuccess: (data: { qrCode: string; secret: string }) => {
       setQrCodeData(data.qrCode);
-      setManualKey(data.manualEntryKey);
+      setManualKey(data.secret);
       setShowMfaSetup(true);
-      toast({ title: "2FA configurato", description: "Scansiona il QR code con l'app" });
+      toast({ title: "MFA configurato", description: "Scansiona il QR code con l'app" });
     },
     onError: (error: any) => {
       toast({ 
         title: "Errore", 
-        description: error.message || "Errore durante il setup 2FA",
+        description: error.message || "Errore durante il setup MFA",
         variant: "destructive" 
       });
     },
   });
 
-  // Enable 2FA mutation (doctor only)
+  // Verify and enable MFA mutation for all users
   const enableMfaMutation = useMutation({
     mutationFn: async (token: string) => {
-      const response = await apiRequest("/api/doctor/2fa/enable", "POST", { token });
+      const response = await apiRequest("/api/auth/mfa/verify", "POST", { code: token });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/doctor/2fa/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/mfa/status"] });
       setShowMfaSetup(false);
       setMfaCode("");
       setQrCodeData("");
       setManualKey("");
-      toast({ title: "✅ 2FA attivato con successo!" });
+      toast({ title: "✅ MFA attivato con successo!" });
     },
     onError: (error: any) => {
       toast({ 
@@ -99,20 +99,20 @@ export default function Security() {
     },
   });
 
-  // Disable 2FA mutation (doctor only)
+  // Disable MFA mutation for all users
   const disableMfaMutation = useMutation({
     mutationFn: async (token: string) => {
-      const response = await apiRequest("/api/doctor/2fa/disable", "POST", { token });
+      const response = await apiRequest("/api/auth/mfa/disable", "POST", { code: token });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/doctor/2fa/status"] });
-      toast({ title: "2FA disattivato" });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/mfa/status"] });
+      toast({ title: "MFA disattivato" });
     },
     onError: (error: any) => {
       toast({ 
         title: "Errore", 
-        description: error.message || "Errore durante la disattivazione 2FA",
+        description: error.message || "Errore durante la disattivazione MFA",
         variant: "destructive" 
       });
     },
@@ -239,48 +239,47 @@ export default function Security() {
           </CardContent>
         </Card>
 
-        {/* 2FA Section (Doctor Only) */}
-        {user?.isDoctor && (
-          <Card data-testid="card-mfa">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Smartphone className="w-5 h-5" />
-                Autenticazione a Due Fattori (2FA)
-              </CardTitle>
-              <CardDescription>
-                Protezione obbligatoria per account medici - richiede app authenticator
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* 2FA Status */}
-              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                <div className="flex items-center gap-3">
-                  {mfaStatus?.enabled ? (
-                    <>
-                      <Check className="w-5 h-5 text-green-500" />
-                      <div>
-                        <p className="font-medium">2FA Attivo</p>
-                        <p className="text-sm text-muted-foreground">
-                          Account protetto con autenticazione a due fattori
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <X className="w-5 h-5 text-amber-500" />
-                      <div>
-                        <p className="font-medium">2FA Non Attivo</p>
-                        <p className="text-sm text-muted-foreground">
-                          Configura 2FA per proteggere il tuo account medico
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <Badge variant={mfaStatus?.enabled ? "default" : "outline"} data-testid="badge-mfa-status">
-                  {mfaStatus?.enabled ? "Abilitato" : "Disabilitato"}
-                </Badge>
+        {/* MFA Section - Available for all users */}
+        <Card data-testid="card-mfa">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5" />
+              Autenticazione a Due Fattori (MFA)
+            </CardTitle>
+            <CardDescription>
+              Proteggi il tuo account con un ulteriore livello di sicurezza - richiede app authenticator
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* MFA Status */}
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-3">
+                {mfaStatus?.enabled ? (
+                  <>
+                    <Check className="w-5 h-5 text-green-500" />
+                    <div>
+                      <p className="font-medium">MFA Attivo</p>
+                      <p className="text-sm text-muted-foreground">
+                        Account protetto con autenticazione a due fattori
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <X className="w-5 h-5 text-amber-500" />
+                    <div>
+                      <p className="font-medium">MFA Non Attivo</p>
+                      <p className="text-sm text-muted-foreground">
+                        Configura MFA per proteggere il tuo account
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
+              <Badge variant={mfaStatus?.enabled ? "default" : "outline"} data-testid="badge-mfa-status">
+                {mfaStatus?.enabled ? "Abilitato" : "Disabilitato"}
+              </Badge>
+            </div>
 
               {/* 2FA Setup Button */}
               {!mfaStatus?.enabled && !showMfaSetup && (
@@ -367,20 +366,19 @@ export default function Security() {
                 </div>
               )}
 
-              {/* Disable 2FA */}
-              {mfaStatus?.enabled && (
-                <Button 
-                  variant="destructive" 
-                  onClick={handleDisable2FA}
-                  disabled={disableMfaMutation.isPending}
-                  data-testid="button-disable-mfa"
-                >
-                  {disableMfaMutation.isPending ? "Disattivazione..." : "Disattiva 2FA"}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
+            {/* Disable MFA */}
+            {mfaStatus?.enabled && (
+              <Button 
+                variant="destructive" 
+                onClick={handleDisable2FA}
+                disabled={disableMfaMutation.isPending}
+                data-testid="button-disable-mfa"
+              >
+                {disableMfaMutation.isPending ? "Disattivazione..." : "Disattiva MFA"}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

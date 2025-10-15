@@ -883,25 +883,33 @@ export default function PreventionPage() {
 
         <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">
           <div className="lg:col-span-1 space-y-6 order-2 lg:order-1 max-w-full">
-            {/* Alert Recenti */}
-            <Card className="shadow-xl border-2 border-orange-200 dark:border-orange-800 overflow-hidden">
-              <CardHeader className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 text-white pb-6">
+            {/* Indice di Prevenzione */}
+            <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
+              <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-6">
                 <CardTitle className="flex items-center gap-3 text-2xl">
                   <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <AlertTriangle className="w-6 h-6" />
+                    <Shield className="w-6 h-6" />
                   </div>
-                  Alert di Salute
+                  Indice di Prevenzione
                 </CardTitle>
                 <CardDescription className="text-white/90 text-base mt-2">
-                  Situazioni che richiedono attenzione
+                  Il tuo livello di prevenzione basato sull'utilizzo
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-4 pb-4">
                 {userAlerts.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Shield className="w-12 h-12 mx-auto mb-3 text-green-500" />
-                    <p className="text-sm">Nessun alert attivo</p>
-                    <p className="text-xs mt-1">La tua salute è sotto controllo</p>
+                  <div className="text-center py-6">
+                    <div className="relative w-24 h-24 mx-auto mb-4">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-4xl font-bold text-emerald-600">85</div>
+                      </div>
+                      <svg className="w-24 h-24 transform -rotate-90">
+                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200 dark:text-gray-700" />
+                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" strokeDasharray="251.2" strokeDashoffset="62.8" className="text-emerald-500" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-emerald-600">Ottimo livello di prevenzione!</p>
+                    <p className="text-xs mt-2 text-muted-foreground">Continua ad usare l'AI e contatta il medico quando necessario</p>
                   </div>
                 ) : (
                   <div className="space-y-3">

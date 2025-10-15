@@ -421,6 +421,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             Documenti
                           </DropdownMenuItem>
                         </Link>
+                        <Link href="/webinar-health">
+                          <DropdownMenuItem data-testid="menu-webinars">
+                            <Video className="w-4 h-4 mr-2" />
+                            Webinari
+                          </DropdownMenuItem>
+                        </Link>
                         {typedUser?.corporateAgreementId && (
                           <>
                             <DropdownMenuSeparator />

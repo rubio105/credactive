@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, Sparkles, Stethoscope } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, Sparkles, Stethoscope, Info } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -1132,6 +1133,23 @@ export default function PreventionPage() {
                     <div>
                       <CardTitle className="flex items-center gap-2 text-white text-2xl font-bold">
                         {userRole === 'doctor' ? 'Supporto alla Diagnosi AI' : 'Assistente AI Personalizzato'}
+                        {/* Info tooltip for regular patients about unlimited tokens */}
+                        {!user?.aiOnlyAccess && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="w-5 h-5 text-white/80 hover:text-white cursor-help ml-1" data-testid="icon-token-info" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs bg-white dark:bg-gray-900 p-3" side="bottom">
+                                <p className="text-sm font-semibold mb-1">✨ Token Illimitati</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Come paziente, hai accesso <strong>illimitato</strong> all'AI senza costi aggiuntivi. 
+                                  Usa l'assistente quando vuoi, senza limiti mensili.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </CardTitle>
                       <CardDescription className="text-white/90 text-sm font-medium mt-1">
                         {userRole === 'doctor' 

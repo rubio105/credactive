@@ -269,30 +269,70 @@ export default function GuidaPage() {
               <AccordionItem value="tokens">
                 <AccordionTrigger className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  <span>Come funzionano i token AI?</span>
+                  <span>Come funziona il sistema dei token AI?</span>
                 </AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm">
-                  <p className="text-muted-foreground">
-                    I token misurano l'utilizzo dell'AI. Ogni interazione (domanda, analisi referto) consuma token.
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 bg-muted rounded">
-                      <span>Piano Free</span>
-                      <span className="font-semibold">30 token/mese</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-muted rounded">
-                      <span>Piano Premium</span>
-                      <span className="font-semibold">1000 token/mese</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-950 dark:to-amber-950 rounded">
-                      <span className="font-semibold">Piano Premium Plus</span>
-                      <span className="font-bold text-orange-600 dark:text-orange-400">Token Illimitati</span>
+                <AccordionContent className="space-y-4 text-sm">
+                  <Alert className="border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950">
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                    <AlertDescription className="text-emerald-800 dark:text-emerald-200">
+                      <strong>Buone notizie!</strong> Se sei un paziente normale che usa la prevenzione AI, 
+                      hai <strong>token ILLIMITATI</strong> – nessun limite, nessun costo aggiuntivo!
+                    </AlertDescription>
+                  </Alert>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">🎯 Chi ha token illimitati?</h4>
+                    <p className="text-muted-foreground">
+                      Tutti i <strong>pazienti normali</strong> che usano l'AI per prevenzione sanitaria hanno accesso 
+                      illimitato. Puoi chattare con l'AI, analizzare referti e ricevere consigli senza alcun limite mensile.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">📊 Limiti token (solo per utenti specializzati)</h4>
+                    <p className="text-muted-foreground mb-2">
+                      I limiti si applicano SOLO agli utenti con accesso specializzato (es. formazione cybersecurity/quiz):
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span>Piano Free (accesso quiz)</span>
+                        <span className="font-semibold">120 token/mese</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span>Piano Premium (accesso quiz)</span>
+                        <span className="font-semibold">1000 token/mese</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-950 dark:to-amber-950 rounded">
+                        <span className="font-semibold">Piano Premium Plus</span>
+                        <span className="font-bold text-orange-600 dark:text-orange-400">Token Illimitati</span>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-muted-foreground mt-3">
-                    <strong>Consumo approssimativo:</strong> Domanda semplice (2-5 token), 
-                    Analisi referto (10-20 token), Conversazione complessa (20-50 token)
-                  </p>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">💡 Come funzionano i token?</h4>
+                    <p className="text-muted-foreground">
+                      I token misurano l'utilizzo dell'AI per garantire un servizio di qualità. 
+                      Ogni interazione (domanda, analisi referto, conversazione) consuma una certa quantità di token.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">📈 Consumo approssimativo</h4>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                      <li>Domanda semplice: 2-5 token</li>
+                      <li>Analisi referto medico: 10-20 token</li>
+                      <li>Conversazione complessa: 20-50 token</li>
+                    </ul>
+                  </div>
+
+                  <Alert className="mt-3">
+                    <HelpCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      <strong>Non vedi il contatore token?</strong> Significa che hai accesso illimitato! 
+                      Solo gli utenti con limiti vedono il contatore nella loro interfaccia.
+                    </AlertDescription>
+                  </Alert>
                 </AccordionContent>
               </AccordionItem>
 

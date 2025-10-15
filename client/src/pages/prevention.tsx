@@ -1432,7 +1432,7 @@ export default function PreventionPage() {
                     {/* Action Buttons */}
                     <div className="space-y-3">
                       <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Strumenti Avanzati:</p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <Button
                           variant="outline"
                           className="group border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 h-auto py-4 hover:shadow-lg transition-all duration-200"
@@ -1457,21 +1457,7 @@ export default function PreventionPage() {
                             <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg group-hover:scale-110 transition-transform">
                               <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                             </div>
-                            <span className="text-xs font-semibold">Percorso Prevenzione</span>
-                          </div>
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          className="group border-2 border-orange-200 dark:border-orange-800 hover:border-orange-400 dark:hover:border-orange-600 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 h-auto py-4 hover:shadow-lg transition-all duration-200"
-                          onClick={() => setShowAttentionPointsDialog(true)}
-                          data-testid="button-attention-points"
-                        >
-                          <div className="flex flex-col items-center gap-2 w-full">
-                            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg group-hover:scale-110 transition-transform">
-                              <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                            </div>
-                            <span className="text-xs font-semibold">Punti di Attenzione</span>
+                            <span className="text-xs font-semibold">Percorso di Prevenzione</span>
                           </div>
                         </Button>
                       </div>
@@ -2062,7 +2048,56 @@ export default function PreventionPage() {
                   );
                 })()}
 
-                <div className="flex justify-end gap-2">
+                {/* Download App Section */}
+                <div className="mt-8 pt-6 border-t border-border">
+                  <div className="text-center space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Scarica l'App CIRY
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Porta la prevenzione sempre con te. Installa l'app sul tuo dispositivo.
+                    </p>
+                    <div className="flex justify-center gap-4">
+                      <a
+                        href="https://play.google.com/store"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-transform hover:scale-105"
+                        data-testid="link-google-play"
+                      >
+                        <img
+                          src="/images/google-play-badge.png"
+                          alt="Scarica su Google Play"
+                          className="h-12"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </a>
+                      <a
+                        href="https://apps.apple.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-transform hover:scale-105"
+                        data-testid="link-app-store"
+                      >
+                        <img
+                          src="/images/app-store-badge.png"
+                          alt="Scarica su App Store"
+                          className="h-12"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </a>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Oppure aggiungi questa pagina alla schermata Home del tuo dispositivo per un accesso rapido
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -2080,123 +2115,6 @@ export default function PreventionPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Attention Points Dialog */}
-      <Dialog open={showAttentionPointsDialog} onOpenChange={setShowAttentionPointsDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-orange-600" />
-              Analisi Punti di Attenzione
-            </DialogTitle>
-            <DialogDescription>
-              Scopri le aree di miglioramento e i punti su cui focalizzare la tua attenzione
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {!user ? (
-              <Alert>
-                <AlertDescription>
-                  Effettua il login per analizzare i tuoi punti di attenzione
-                </AlertDescription>
-              </Alert>
-            ) : !attentionPointsData ? (
-              <div className="text-center py-8">
-                <Button
-                  size="lg"
-                  disabled={generateAttentionPointsMutation.isPending}
-                  className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
-                  onClick={() => generateAttentionPointsMutation.mutate()}
-                  data-testid="button-analyze-attention"
-                >
-                  <AlertTriangle className="w-4 h-4 mr-2" />
-                  {generateAttentionPointsMutation.isPending ? "Analisi in corso..." : "Analizza Punti di Attenzione"}
-                </Button>
-                <p className="text-sm text-muted-foreground mt-4">
-                  L'AI identificherà le aree che richiedono maggiore attenzione nella tua prevenzione
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Parse and display attention points graphically */}
-                {(() => {
-                  const text = attentionPointsData.attentionPoints;
-                  // Extract sections using regex - match all numbered sections
-                  const sections = text.split(/\n(?=\d+\.\s)/).filter((s: string) => /^\d+\.\s/.test(s.trim()));
-                  
-                  return (
-                    <div className="grid gap-4">
-                      {sections.map((section: string, index: number) => {
-                        const titleMatch = section.match(/\d+\.\s\*?\*?(.+?)\*?\*?(?:\n|$)/);
-                        const title = titleMatch ? titleMatch[1] : `Sezione ${index + 1}`;
-                        const content = section.replace(/\d+\.\s\*?\*?.+?\*?\*?(?:\n|$)/, '').trim();
-                        
-                        // Extract emoji and clean title
-                        const emojiMatch = title.match(/([\u1F300-\u1F9FF⚠️📊🎯✅⏰])/);
-                        const emoji = emojiMatch ? emojiMatch[1] : ['⚠️', '📊', '🎯', '✅', '⏰'][index] || '📌';
-                        const cleanTitle = title.replace(/([\u1F300-\u1F9FF⚠️📊🎯✅⏰])/g, '').trim();
-                        
-                        // Determine urgency badge and color
-                        const urgencyColors = [
-                          { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-800', badge: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300', label: 'Urgente' },
-                          { bg: 'bg-orange-50 dark:bg-orange-950/20', border: 'border-orange-200 dark:border-orange-800', badge: 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300', label: 'Attenzione' },
-                          { bg: 'bg-yellow-50 dark:bg-yellow-950/20', border: 'border-yellow-200 dark:border-yellow-800', badge: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300', label: 'Monitorare' },
-                          { bg: 'bg-green-50 dark:bg-green-950/20', border: 'border-green-200 dark:border-green-800', badge: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300', label: 'Azioni' },
-                          { bg: 'bg-blue-50 dark:bg-blue-950/20', border: 'border-blue-200 dark:border-blue-800', badge: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300', label: 'Pianifica' },
-                        ];
-                        const colorScheme = urgencyColors[index] || urgencyColors[0];
-                        
-                        return (
-                          <Card key={index} className={`${colorScheme.bg} border-2 ${colorScheme.border}`}>
-                            <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2 text-lg">
-                                  <span className="text-2xl">{emoji}</span>
-                                  {cleanTitle}
-                                </CardTitle>
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${colorScheme.badge}`}>
-                                  {colorScheme.label}
-                                </span>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="prose prose-sm max-w-none dark:prose-invert text-sm">
-                                {content.split('\n').map((line: string, i: number) => {
-                                  if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
-                                    return (
-                                      <div key={i} className="flex items-start gap-2 my-1">
-                                        <span className="text-primary mt-1">▪</span>
-                                        <span>{line.replace(/^[-•]\s*/, '')}</span>
-                                      </div>
-                                    );
-                                  }
-                                  return line && <p key={i} className="mb-2">{line}</p>;
-                                })}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setAttentionPointsData(null);
-                      setShowAttentionPointsDialog(false);
-                    }}
-                    data-testid="button-close-attention"
-                  >
-                    Chiudi
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

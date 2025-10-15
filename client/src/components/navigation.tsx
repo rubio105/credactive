@@ -297,13 +297,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                   </Badge>
                 )}
                 
-                {/* Premium Badge - Hide for AI-only users and doctors */}
-                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && typedUser?.isPremium && (
-                  <Badge className="bg-accent/10 text-accent border-accent/20" data-testid="badge-premium">
-                    <Crown className="w-3 h-3 mr-1" />
-                    Premium
-                  </Badge>
-                )}
 
                 {/* User Menu */}
                 <DropdownMenu>

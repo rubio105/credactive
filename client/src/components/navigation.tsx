@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText } from "lucide-react";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
 
@@ -37,6 +37,16 @@ interface ContentPage {
   isPublished: boolean;
 }
 
+interface DoctorNote {
+  id: string;
+  doctorId: string;
+  patientId: string;
+  title: string;
+  content: string;
+  isReport: boolean;
+  createdAt: string;
+}
+
 interface NavigationProps {
   useLandingLogo?: boolean;
 }
@@ -50,6 +60,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const { data: headerPages = [] } = useQuery<ContentPage[]>({
     queryKey: ["/api/content-pages"],
     select: (pages) => pages.filter(page => page.placement === 'header' && page.isPublished && page.slug !== 'chi-siamo'),
+  });
+
+  // Get patient notes count (for aiOnlyAccess patients only)
+  const { data: patientNotes = [] } = useQuery<DoctorNote[]>({
+    queryKey: ["/api/patient/notes"],
+    enabled: !!typedUser?.aiOnlyAccess && !typedUser?.isDoctor,
   });
 
   const handleLogout = async () => {
@@ -278,6 +294,16 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
             ) : (
               /* Authenticated State */
               <div className="flex items-center space-x-4">
+                {/* Documents Badge - For AI-only patients (show medical notes from doctor) */}
+                {typedUser?.aiOnlyAccess && !typedUser?.isDoctor && patientNotes && patientNotes.length > 0 && (
+                  <Link href="/prevention">
+                    <Badge className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" data-testid="badge-documents">
+                      <FileText className="w-3 h-3 mr-1" />
+                      Documenti ({patientNotes.length})
+                    </Badge>
+                  </Link>
+                )}
+
                 {/* Credits Badge - Hide for AI-only users and doctors */}
                 {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
                   <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800" data-testid="badge-credits">

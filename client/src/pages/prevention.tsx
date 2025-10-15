@@ -92,7 +92,8 @@ export default function PreventionPage() {
   const [reportFilter, setReportFilter] = useState<string>('all');
   const [reportSort, setReportSort] = useState<'recent' | 'oldest' | 'type'>('recent');
   const [reportSearch, setReportSearch] = useState<string>('');
-  const [userRole, setUserRole] = useState<'patient' | 'doctor'>('patient');
+  // Auto-detect role based on user type: doctor for diagnosis, patient for prevention
+  const userRole = (user as any)?.isDoctor ? 'doctor' : 'patient';
   const [showArchive, setShowArchive] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -1127,33 +1128,6 @@ export default function PreventionPage() {
                         </AlertDescription>
                       </Alert>
                     )}
-                    
-                    {/* User Role Selection */}
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-center">Seleziona il tuo ruolo:</p>
-                      <div className="flex gap-2 justify-center">
-                        <Button
-                          variant={userRole === 'patient' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setUserRole('patient')}
-                          className={userRole === 'patient' ? 'bg-gradient-to-r from-emerald-600 to-teal-600' : ''}
-                          data-testid="button-role-patient"
-                        >
-                          <User className="w-4 h-4 mr-2" />
-                          Sono un Paziente
-                        </Button>
-                        <Button
-                          variant={userRole === 'doctor' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setUserRole('doctor')}
-                          className={userRole === 'doctor' ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : ''}
-                          data-testid="button-role-doctor"
-                        >
-                          <Stethoscope className="w-4 h-4 mr-2" />
-                          Sono un Medico
-                        </Button>
-                      </div>
-                    </div>
                     
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Esempi di casi pratici:</p>

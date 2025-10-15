@@ -15,7 +15,12 @@ import Subscribe from "@/pages/subscribe";
 import Report from "@/pages/report";
 import Admin from "@/pages/admin";
 import AdminAudit from "@/pages/admin-audit";
-import ChiSiamo from "@/pages/chi-siamo";
+import AdminUsers from "@/pages/admin-users";
+import AdminRAG from "@/pages/admin-rag";
+import AdminMail from "@/pages/admin-mail";
+import AdminMarketing from "@/pages/admin-marketing";
+import AdminAlerts from "@/pages/admin-alerts";
+import AdminFeedback from "@/pages/admin-feedback";
 import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
 import Login from "@/pages/login";
@@ -47,7 +52,6 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/chi-siamo" component={ChiSiamo} />
       <Route path="/contatti" component={Contatti} />
       <Route path="/patient-ai" component={PatientAI} />
       <Route path="/login" component={Login} />
@@ -79,6 +83,24 @@ function Router() {
       </Route>
       <Route path="/admin/audit">
         {() => <ProtectedRoute requireNonAiOnly><AdminAudit /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/users">
+        {() => <ProtectedRoute requireNonAiOnly><AdminUsers /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/rag">
+        {() => <ProtectedRoute requireNonAiOnly><AdminRAG /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/mail">
+        {() => <ProtectedRoute requireNonAiOnly><AdminMail /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/marketing">
+        {() => <ProtectedRoute requireNonAiOnly><AdminMarketing /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/alerts">
+        {() => <ProtectedRoute requireNonAiOnly><AdminAlerts /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/feedback">
+        {() => <ProtectedRoute requireNonAiOnly><AdminFeedback /></ProtectedRoute>}
       </Route>
       <Route path="/corporate">
         {() => <ProtectedRoute requireNonAiOnly><CorporatePortal /></ProtectedRoute>}

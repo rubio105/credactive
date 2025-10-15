@@ -11,7 +11,8 @@ Preferred communication style: Simple, everyday language.
 ## Navigation & UX Improvements
 - **Patient Menu**: Enhanced horizontal navigation for standard users (non-admin, non-doctor, non-AI-only) with direct access to: Dashboard, Abbonamento (subscription plans), Webinar (health webinars), and Centrale Prohmed (AI prevention contact)
 - **Doctor Menu**: Streamlined medical professional navigation with focus on: I Miei Pazienti (patient list), Refertazione (medical reporting), and AI Prevenzione
-- **Admin UI**: Clean vertical sidebar-only interface with all features now fully implemented. AI Prevention removed from admin menu as it's patient-facing functionality already available in patient dashboard
+- **Admin UI**: Clean vertical sidebar-only interface with all features now fully implemented. Admin menu includes: Dashboard, Gestione Utenti, Webinar, Sistemi RAG, Mail, Marketing, Alert, Feedback, and Notifiche Push
+- **Role Labels Update**: Changed "AI Prevention" role label to "Accesso AI" throughout the platform for clearer terminology
 
 ## Admin User Management Overhaul
 - **Complete User Creation System**: Admin can now create all user types (Patients, Doctors, Admins, AI-Only Access) from unified creation dialog with email, password, and optional name fields
@@ -23,6 +24,7 @@ Preferred communication style: Simple, everyday language.
 - **Webinar Management**: Full admin interface for managing free health prevention webinars with session creation, streaming URL setup, enrollment tracking, and participant viewing
 - **Email Template Management**: Complete CRUD system for transactional email templates via Brevo integration with HTML/text content, variable support ({{firstName}}, {{lastName}}), test sending, and active/inactive toggle
 - **AI Marketing System**: Fully functional AI-powered email marketing campaign generator using OpenAI GPT-4o for profession-targeted content with audience preview and Brevo integration for sending
+- **RAG Knowledge Base Management**: Complete admin interface for managing scientific documents used to enrich AI responses. Features include PDF/TXT/MD document upload with automatic chunking (500 tokens/chunk, 50 overlap), embedding generation via Gemini text-embedding-004, semantic search integration, document listing with statistics (total docs, processed, chunks count), and document deletion. Backend uses PostgreSQL + pgvector for vector storage
 
 ## Backend Enhancements
 - **Auto-generated Doctor Codes**: When admin assigns `isDoctor=true` to a user, the system automatically generates a unique 8-character doctor code for patient linking, eliminating manual code generation step

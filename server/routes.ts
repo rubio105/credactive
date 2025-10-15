@@ -3015,8 +3015,20 @@ Restituisci SOLO un JSON con:
   // Admin - Get all knowledge base documents
   app.get('/api/admin/knowledge-base', isAdmin, async (req, res) => {
     try {
-      const documents = await storage.getAllMedicalDocuments();
-      res.json(documents);
+      const documents = await storage.getMedicalDocuments();
+      
+      // Get chunk counts for each document
+      const documentsWithCounts = await Promise.all(
+        documents.map(async (doc) => {
+          const chunks = await storage.getChunksByDocument(doc.id);
+          return {
+            ...doc,
+            chunksCount: chunks.length
+          };
+        })
+      );
+      
+      res.json(documentsWithCounts);
     } catch (error: any) {
       console.error("Error fetching knowledge base documents:", error);
       res.status(500).json({ message: error.message || "Failed to fetch documents" });
@@ -3029,23 +3041,16 @@ Restituisci SOLO un JSON con:
       const { id } = req.params;
       
       // Get document to find file path
-      const documents = await storage.getAllMedicalDocuments();
-      const document = documents.find(d => d.id === id);
+      const document = await storage.getMedicalDocumentById(id);
       
-      if (document?.filePath) {
-        const fullPath = path.join(process.cwd(), 'public', document.filePath);
+      if (document?.fileUrl) {
+        const fullPath = path.join(process.cwd(), 'public', document.fileUrl);
         if (fs.existsSync(fullPath)) {
           fs.unlinkSync(fullPath);
         }
       }
 
-      // Delete chunks first (foreign key constraint)
-      const chunks = await storage.getChunksByDocument(id);
-      for (const chunk of chunks) {
-        await storage.deleteChunk(chunk.id);
-      }
-
-      // Delete document
+      // Delete document (storage method handles chunks deletion)
       await storage.deleteMedicalDocument(id);
 
       res.json({ success: true, message: "Document and all chunks deleted successfully" });

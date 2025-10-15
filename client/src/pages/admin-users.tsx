@@ -1,8 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Home } from "lucide-react";
-import { Link } from "wouter";
-import Navigation from "@/components/navigation";
 
 export default function AdminUsersPage() {
   const { user, isLoading } = useAuth();
@@ -18,7 +16,7 @@ export default function AdminUsersPage() {
     );
   }
 
-  if (!user?.isAdmin) {
+  if (!(user as any)?.isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md">
@@ -34,27 +32,13 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <div className="border-b bg-background sticky top-0 z-10">
-        <div className="container mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Gestione Utenti</h1>
-              <p className="text-muted-foreground mt-1">Gestisci utenti e permessi</p>
-            </div>
-            <Link 
-              href="/admin" 
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Home className="w-4 h-4" />
-              Torna al Dashboard
-            </Link>
-          </div>
+    <AdminLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestione Utenti</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Gestisci utenti e permessi</p>
         </div>
-      </div>
-
-      <div className="container mx-auto p-8">
+        
         <Card>
           <CardHeader>
             <CardTitle>Gestione Utenti</CardTitle>
@@ -65,6 +49,6 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

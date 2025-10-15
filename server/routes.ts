@@ -8018,6 +8018,40 @@ Le risposte DEVONO essere in italiano.`;
     }
   });
   
+  // Contact Prohmed doctor for alert (POST /api/user/alerts/:id/contact-prohmed)
+  app.post('/api/user/alerts/:id/contact-prohmed', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { id } = req.params;
+      
+      // Verify alert belongs to user
+      const alert = await storage.getTriageAlertById(id);
+      if (!alert || alert.userId !== userId) {
+        return res.status(403).json({ message: 'Non autorizzato' });
+      }
+      
+      // Get user details
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Utente non trovato' });
+      }
+      
+      // Send Prohmed invite email with promo code
+      await sendProhmedInviteEmail(user.email, user.firstName);
+      
+      console.log(`[Prohmed Contact] Email sent to ${user.email} for alert ${id}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Email inviata con successo',
+        promoCode: 'PROHMED2025'
+      });
+    } catch (error: any) {
+      console.error('Contact Prohmed error:', error);
+      res.status(500).json({ message: error.message || 'Failed to send email' });
+    }
+  });
+  
   // Start new triage session (POST /api/triage/start) - Public endpoint for educational access
   app.post('/api/triage/start', aiGenerationLimiter, async (req, res) => {
     try {

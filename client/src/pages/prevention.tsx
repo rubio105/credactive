@@ -480,6 +480,28 @@ export default function PreventionPage() {
     },
   });
 
+  // Mutation per contattare medico Prohmed (invia email con codice)
+  const contactProhmedMutation = useMutation({
+    mutationFn: async (alertId: string) => {
+      const res = await apiRequest(`/api/user/alerts/${alertId}/contact-prohmed`, "POST", {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      toast({
+        title: "Email inviata!",
+        description: `Ti abbiamo inviato un'email con il codice promo ${data.promoCode} per un consulto gratuito con Prohmed. Controlla la tua casella di posta.`
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Impossibile inviare l'email",
+        variant: "destructive"
+      });
+    },
+  });
+
   // Mutation per risolvere alert dalla lista
   const markAlertResolvedMutation = useMutation({
     mutationFn: async (alertId: string) => {
@@ -1168,14 +1190,14 @@ export default function PreventionPage() {
                               : `Hai risolto la situazione che avevamo segnalato? (${pendingAlert.reason})`
                             }
                           </p>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               size="sm"
                               onClick={() => resolveAlertMutation.mutate({ 
                                 alertId: pendingAlert.id, 
                                 response: "Sì, risolto" 
                               })}
-                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
+                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
                               className="bg-green-600 hover:bg-green-700 text-white"
                               data-testid="button-resolve-yes"
                             >
@@ -1197,11 +1219,20 @@ export default function PreventionPage() {
                                   setUserInput(followupMessage);
                                 }, 500);
                               }}
-                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
+                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
                               className="border-gray-400 dark:border-gray-600"
                               data-testid="button-resolve-no"
                             >
                               ✗ No
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => contactProhmedMutation.mutate(pendingAlert.id)}
+                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              data-testid="button-contact-prohmed"
+                            >
+                              🩺 Contatta Medico Prohmed
                             </Button>
                           </div>
                         </AlertDescription>

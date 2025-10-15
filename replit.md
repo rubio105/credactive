@@ -54,7 +54,7 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. The schema support
 - **Analytics Dashboard**: Business intelligence metrics.
 - **AI Email Marketing System**: Intelligent campaign management using OpenAI GPT-4o and Brevo.
 - **SEO Optimization**: Dynamic meta tags and sitemap generation.
-- **Admin Dashboard**: Streamlined analytics-only dashboard.
+- **Admin Dashboard**: Comprehensive vertical sidebar menu with 12 sections (Dashboard, Gestione Utenti, Abbonamenti, Alert Medici, Webinar Health, Feedback Utenti, Email Templates, AI Marketing, Knowledge Base, Notifiche Push, Audit Log, Documentazione). All pages include "Torna alla Dashboard" button. Admin navigation excludes AI Prevention/quiz to maintain separation between admin and clinical systems.
 - **Corporate B2B Licensing System**: Enterprise solution for bulk license sales.
 - **Leaderboard System**: Gamification features.
 - **AI Conversational Assistant**: Context-aware AI coaching using OpenAI GPT-4o.
@@ -64,7 +64,7 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. The schema support
 - **Webinar Health System**: Free webinar platform for prevention education.
 - **Professional Registration Workflow**: Doctor registration via contact request approval; public registration for personal access.
 - **Job Queue System**: Asynchronous processing for heavy tasks like medical document analysis.
-- **User Feedback System**: Allows user feedback submission with admin viewing.
+- **User Feedback System**: Complete feedback management at `/admin/feedback` with filtering by category/status, admin notes, resolution tracking, and user details display.
 - **Patient Onboarding System**: Collects health profile data.
 - **Audit Log System**: GDPR-compliant access tracking.
 - **Appointment Scheduling System**: Calendar-based booking for doctor-patient consultations with email workflow.
@@ -81,7 +81,7 @@ Powered by Google Gemini AI, offering medical document upload/analysis, an AI ed
 - **Medical Report Viewer Dialog**: 5-tab interface for various medical data.
 - **Contextual AI Conversations**: AI chat includes the last 2 medical reports; new reports during triage trigger notifications and are immediately available to AI.
 - **Demographic-Aware AI Responses**: AI considers user's age and gender for personalized recommendations.
-- **Medical Alert System**: Triage-based system for urgent cases, creating alerts from AI assessment, notifying patients, assigning doctors, and enabling patient confirmation and doctor follow-up. Backend infrastructure is complete, with an admin UI placeholder.
+- **Medical Alert System**: Triage-based system for urgent cases, creating alerts from AI assessment, notifying patients, assigning doctors, and enabling patient confirmation and doctor follow-up. Complete admin interface at `/admin/alerts` with tabs for unreviewed/reviewed alerts, urgency badges, review dialog with notes, and integration with triage endpoints.
 - **Patient-Only AI Access System**: Dedicated access for Prohmed code-based authentication to AI prevention features.
 - **AI-Only Access User Management**: Admin capability to create users with restricted access to AI Prevention.
 - **Doctor-Patient Linking System**: Medical referral system for doctors to monitor patients, generate linking codes, view linked patients, and create medical notes/reports.

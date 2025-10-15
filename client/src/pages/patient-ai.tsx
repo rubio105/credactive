@@ -148,20 +148,34 @@ export default function PatientAIPage() {
         alertId, 
         response: "Richiesta contatto medico Prohmed" 
       });
-      // Poi invia email Prohmed
+      // Poi richiedi contatto medico (email Prohmed o redirect appuntamenti)
       const res = await apiRequest("/api/triage/request-medical-contact", "POST", {});
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       // Clear dismissed alert ID when contacting doctor
       setDismissedAlertId(null);
       localStorage.removeItem('dismissedAlertId');
       
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
-      toast({
-        title: "✉️ Email inviata!",
-        description: "Riceverai presto un'email da Prohmed con le istruzioni per prenotare una visita medica."
-      });
+      
+      // Check if we need to redirect to appointments
+      if (data.redirectTo) {
+        toast({
+          title: "📅 Prenota Visita",
+          description: data.message || "Ti reindirizziamo alla pagina appuntamenti"
+        });
+        // Redirect after a short delay to show the toast
+        setTimeout(() => {
+          window.location.href = data.redirectTo;
+        }, 1500);
+      } else {
+        // Email Prohmed sent
+        toast({
+          title: "✉️ Email inviata!",
+          description: data.message || "Riceverai presto un'email da Prohmed con le istruzioni per prenotare una visita medica."
+        });
+      }
     },
     onError: (error: any) => {
       toast({

@@ -115,7 +115,8 @@ export default function Subscribe() {
 
     // Create payment intent
     if (isAuthenticated && !user?.isPremium) {
-      apiRequest("POST", "/api/create-subscription", { tier: "premium" })
+      apiRequest("/api/create-subscription", "POST", { tier: "premium" })
+        .then((response) => response.json())
         .then((data) => {
           setClientSecret(data.clientSecret);
           setLoadingPayment(false);

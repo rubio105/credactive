@@ -710,12 +710,17 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User> {
+  async updateUserStripeInfo(userId: string, stripeCustomerId: string, tierOrSubscriptionId?: string): Promise<User> {
+    // If tierOrSubscriptionId is a tier (premium or premium_plus), use it as subscriptionTier
+    // If it starts with "sub_", it's a Stripe subscription ID
+    const isTier = tierOrSubscriptionId && !tierOrSubscriptionId.startsWith('sub_');
+    
     const [user] = await db
       .update(users)
       .set({
         stripeCustomerId,
-        stripeSubscriptionId,
+        ...(tierOrSubscriptionId && !isTier && { stripeSubscriptionId: tierOrSubscriptionId }),
+        ...(isTier && { subscriptionTier: tierOrSubscriptionId }),
         isPremium: true,
         updatedAt: new Date(),
       })

@@ -1015,47 +1015,6 @@ export default function PreventionPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* App Prohmed */}
-            <Card className="shadow-lg border-blue-100 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <img src="/images/prohmed-logo.jpg" alt="Prohmed - Medical Intelligence Prevention" className="w-16 h-16 object-contain" />
-                  <div>
-                    <CardTitle className="text-blue-900 dark:text-blue-100 text-lg">Prohmed App</CardTitle>
-                    <CardDescription className="text-blue-700 dark:text-blue-300">Telemedicina sempre con te</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <a 
-                  href="https://play.google.com/store/apps/details?id=com.prohmed.prohmedApp&pcampaignid=web_share" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block"
-                  data-testid="link-android-app"
-                >
-                  <img 
-                    src="https://play.google.com/intl/en_us/badges/static/images/badges/it_badge_web_generic.png"
-                    alt="Disponibile su Google Play"
-                    className="h-14 w-auto hover:opacity-80 transition-opacity"
-                  />
-                </a>
-                <a 
-                  href="https://apps.apple.com/it/app/prohmed/id6449252498" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block"
-                  data-testid="link-ios-app"
-                >
-                  <img 
-                    src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/it-it?size=250x83&releaseDate=1280620800"
-                    alt="Scarica su App Store"
-                    className="h-14 w-auto hover:opacity-80 transition-opacity"
-                  />
-                </a>
-              </CardContent>
-            </Card>
           </div>
 
           <div className="lg:col-span-2 order-1 lg:order-2 max-w-full">
@@ -1796,45 +1755,6 @@ export default function PreventionPage() {
                     </div>
                   );
                 })()}
-                
-                {/* Prohmed App Invitation */}
-                <Alert className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
-                  <Smartphone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <AlertDescription className="ml-2">
-                    <p className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                      📱 Richiedi un Consulto Gratuito con Prohmed
-                    </p>
-                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                      Scarica l'app Prohmed e prenota un consulto gratuito con un medico specialista per discutere insieme il tuo percorso di prevenzione personalizzato.
-                    </p>
-                    <div className="flex gap-3 mt-3">
-                      <a 
-                        href="https://play.google.com/store/apps/details?id=com.prohmed.prohmedApp&pcampaignid=web_share" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-block"
-                      >
-                        <img 
-                          src="https://play.google.com/intl/en_us/badges/static/images/badges/it_badge_web_generic.png"
-                          alt="Disponibile su Google Play"
-                          className="h-12 w-auto hover:opacity-80 transition-opacity"
-                        />
-                      </a>
-                      <a 
-                        href="https://apps.apple.com/it/app/prohmed/id6449252498" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-block"
-                      >
-                        <img 
-                          src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/it-it?size=250x83&releaseDate=1280620800"
-                          alt="Scarica su App Store"
-                          className="h-12 w-auto hover:opacity-80 transition-opacity"
-                        />
-                      </a>
-                    </div>
-                  </AlertDescription>
-                </Alert>
 
                 <div className="flex justify-end gap-2">
                   <Button

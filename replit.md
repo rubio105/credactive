@@ -12,6 +12,8 @@ Preferred communication style: Simple, everyday language.
 
 The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod for a modern and consistent interface. Design includes professional color wheel visualization for personality reports, modern chat interfaces with avatars, bubble-style messages, and typing indicators. Severity badges with icons and color-coding are used for medical reports. The UI supports role-based content display (patient vs. doctor) and features smooth transitions and hover effects. A comprehensive guide page (`/guida`) is mobile-first, using colored circular icons, hover effects, expandable FAQ accordions, and an admin-exclusive DLP implementation guide.
 
+**Patient Navigation (October 2025 Update)**: Regular patients (non-aiOnlyAccess) now remain on home page with AI Chat Dialog auto-opening after 500ms. AI-only access users continue to redirect to `/prevention`. Clean navbar with logo and user menu; all patient links (Dashboard, Abbonamento, Webinar, Quiz, etc.) moved to dropdown menu. Added "Sicurezza" (MFA security) and "Documenti" (medical notes, doctor linking, alerts) to patient menu.
+
 ## Technical Implementations
 
 ### Frontend
@@ -79,6 +81,7 @@ Powered by Google Gemini AI, featuring medical document upload/analysis, an AI e
 - **Patient-Only AI Access System**: Dedicated access for Prohmed code-based authentication to AI prevention features.
 - **AI-Only Access User Management**: Admin capability to create users with restricted access to only AI Prevention features.
 - **Doctor-Patient Linking System**: Medical referral system for doctors to monitor patients, generate linking codes, view linked patients, and create medical notes/reports.
+- **Patient Documents Page**: Centralized `/documenti` page for patients to manage doctor connections (via linking code input), view medical notes from linked doctors, and monitor medical alerts. Accessible via patient dropdown menu.
 - **RAG Knowledge Base System**: PostgreSQL + pgvector for semantic search, using Gemini text-embedding-004 to generate embeddings for scientific documents, enriching AI triage responses.
 
 ## System Design Choices

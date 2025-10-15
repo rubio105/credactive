@@ -2014,7 +2014,19 @@ ${JSON.stringify(questionsToTranslate)}`;
   app.patch('/api/admin/users/:id', isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
+      
+      // Check if user is becoming a doctor
+      const currentUser = await storage.getUser(id);
+      const isBecomingDoctor = req.body.isDoctor === true && currentUser?.isDoctor !== true;
+      
       const user = await storage.updateUser(id, req.body);
+      
+      // Auto-generate doctor code when user becomes a doctor
+      if (isBecomingDoctor) {
+        const doctorCode = await storage.generateDoctorCode(id);
+        console.log(`[Admin] Auto-generated doctor code ${doctorCode} for user ${user.email}`);
+      }
+      
       res.json(user);
     } catch (error) {
       console.error("Error updating user:", error);

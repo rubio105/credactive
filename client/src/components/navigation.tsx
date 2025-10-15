@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle, Video, Phone, FileCheck } from "lucide-react";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
 
@@ -191,6 +191,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         I Miei Pazienti
                       </Button>
                     </Link>
+                    <Link href="/">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reporting">
+                        <FileCheck className="w-4 h-4 mr-2" />
+                        Refertazione
+                      </Button>
+                    </Link>
                     <Link href="/prevention">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
                         <Stethoscope className="w-4 h-4 mr-2" />
@@ -219,28 +225,20 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         Dashboard
                       </Button>
                     </Link>
-                    <Link href="/">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-quizzes">
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        I miei Quiz
+                    <Button variant="ghost" onClick={handlePlansClick} className="text-muted-foreground hover:text-foreground" data-testid="nav-subscription">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Abbonamento
+                    </Button>
+                    <Link href="/webinar-health">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-webinar">
+                        <Video className="w-4 h-4 mr-2" />
+                        Webinar
                       </Button>
                     </Link>
-                    <Link href="/leaderboard">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-leaderboard">
-                        <Trophy className="w-4 h-4 mr-2" />
-                        Classifica
-                      </Button>
-                    </Link>
-                    <Link href="/certificates">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-certificates">
-                        <Award className="w-4 h-4 mr-2" />
-                        Certificati
-                      </Button>
-                    </Link>
-                    <Link href="/analytics">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-analytics">
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        Analytics
+                    <Link href="/prevention">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-medical-contact">
+                        <Phone className="w-4 h-4 mr-2" />
+                        Centrale Prohmed
                       </Button>
                     </Link>
                   </>

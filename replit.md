@@ -13,6 +13,12 @@ Preferred communication style: Simple, everyday language.
 - **Doctor Menu**: Streamlined medical professional navigation with focus on: I Miei Pazienti (patient list), Refertazione (medical reporting), and AI Prevenzione
 - **Admin UI**: Removed horizontal top bar from AdminLayout for cleaner vertical sidebar-only interface. Added "Presto" badges to incomplete features (Webinar, Mail, Marketing) in sidebar menu
 
+## Admin User Management Overhaul
+- **Complete User Creation System**: Admin can now create all user types (Patients, Doctors, Admins, AI-Only Access) from unified creation dialog with email, password, and optional name fields
+- **Universal User Management**: Redesigned admin users page shows ALL users (not just doctors) with role-based badges, statistics cards by user type, and comprehensive search functionality
+- **Role Editing with Auto-Save**: Edit dialog allows toggling multiple roles (Doctor, Admin, AI-Only Access) with automatic save and persistent dialog for batch updates. Uses functional state updates to prevent race conditions when switching roles rapidly
+- **User Deletion**: Added user deletion capability with confirmation dialog
+
 ## Backend Enhancements
 - **Auto-generated Doctor Codes**: When admin assigns `isDoctor=true` to a user, the system automatically generates a unique 8-character doctor code for patient linking, eliminating manual code generation step
 

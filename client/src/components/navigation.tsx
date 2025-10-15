@@ -222,33 +222,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     </Link>
                   </>
                 )}
-                {/* Quiz Users - ONLY Quiz system (SEPARATE from prevention) */}
-                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
-                  <>
-                    <Link href="/dashboard">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
-                        <ChartLine className="w-4 h-4 mr-2" />
-                        Dashboard
-                      </Button>
-                    </Link>
-                    <Button variant="ghost" onClick={handlePlansClick} className="text-muted-foreground hover:text-foreground" data-testid="nav-subscription">
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Abbonamento
-                    </Button>
-                    <Link href="/webinar-health">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-webinar">
-                        <Video className="w-4 h-4 mr-2" />
-                        Webinar
-                      </Button>
-                    </Link>
-                    <Link href="/prevention">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-medical-contact">
-                        <Phone className="w-4 h-4 mr-2" />
-                        Centrale Prohmed
-                      </Button>
-                    </Link>
-                  </>
-                )}
+                {/* Patients - All links moved to dropdown menu */}
               </>
             ) : (
               <>
@@ -424,13 +398,23 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         </Link>
                       </>
                     )}
-                    {/* Quiz Users Menu Items - ONLY Quiz system (SEPARATE from prevention) */}
+                    {/* Patient Menu Items */}
                     {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
                       <>
                         <Link href="/dashboard">
                           <DropdownMenuItem data-testid="menu-dashboard">
                             <ChartLine className="w-4 h-4 mr-2" />
                             Dashboard
+                          </DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuItem onClick={handlePlansClick} data-testid="menu-subscription">
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Abbonamento
+                        </DropdownMenuItem>
+                        <Link href="/webinar-health">
+                          <DropdownMenuItem data-testid="menu-webinar">
+                            <Video className="w-4 h-4 mr-2" />
+                            Webinar
                           </DropdownMenuItem>
                         </Link>
                         <Link href="/">

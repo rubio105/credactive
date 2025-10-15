@@ -210,10 +210,10 @@ export default function Home() {
     }
   }, [user, setLocation]);
 
-  // Redirect aiOnlyAccess users to Prevention page (AI Chat)
+  // Redirect all patients (including aiOnlyAccess) to Prevention page (AI Chat)
   useEffect(() => {
     const typedUser = user as UserType;
-    if (typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin) {
+    if (typedUser && !typedUser?.isDoctor && !typedUser?.isAdmin) {
       setLocation('/prevention');
     }
   }, [user, setLocation]);

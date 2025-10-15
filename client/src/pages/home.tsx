@@ -202,6 +202,14 @@ export default function Home() {
     }
   }, [user]);
 
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    const typedUser = user as UserType;
+    if (typedUser?.isAdmin) {
+      setLocation('/admin');
+    }
+  }, [user, setLocation]);
+
   // Redirect aiOnlyAccess users to Prevention page (AI Chat)
   useEffect(() => {
     const typedUser = user as UserType;

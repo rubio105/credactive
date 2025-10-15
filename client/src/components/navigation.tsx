@@ -71,10 +71,16 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-      window.location.href = '/';
+      // Clear any cached data
+      localStorage.clear();
+      sessionStorage.clear();
+      // Redirect to login page
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
-      window.location.href = '/';
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/login';
     }
   };
 

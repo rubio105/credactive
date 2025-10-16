@@ -725,26 +725,27 @@ export default function PreventionPage() {
     
     // Auto-start upload immediately (fix for state timing issue)
     setTimeout(() => {
-      processUploadQueue();
+      processUploadQueue(newQueue);
     }, 100);
   };
 
   // Process upload queue
-  const processUploadQueue = async () => {
-    console.log('[DEBUG] processUploadQueue called, queue:', uploadQueue);
+  const processUploadQueue = async (queueOverride?: typeof uploadQueue) => {
+    const activeQueue = queueOverride || uploadQueue;
+    console.log('[DEBUG] processUploadQueue called, queue:', activeQueue);
     
     // DEBUG: Show queue info in toast with status details
-    const statusInfo = uploadQueue.map(q => `${q.file.name}: ${q.status}`).join(', ');
+    const statusInfo = activeQueue.map(q => `${q.file.name}: ${q.status}`).join(', ');
     toast({
       title: "Debug Upload",
-      description: `Queue: ${uploadQueue.length} - ${statusInfo}`,
+      description: `Queue: ${activeQueue.length} - ${statusInfo}`,
     });
     
     let completedCount = 0;
     let errorCount = 0;
 
     // Get current queue snapshot
-    const currentQueue = uploadQueue.filter(q => q.status === 'pending');
+    const currentQueue = activeQueue.filter(q => q.status === 'pending');
     console.log('[DEBUG] Current queue to process:', currentQueue);
     
     for (const item of currentQueue) {

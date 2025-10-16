@@ -59,7 +59,11 @@ export const users = pgTable("users", {
   // Patient health profile
   heightCm: integer("height_cm"), // Height in centimeters
   weightKg: integer("weight_kg"), // Weight in kilograms
+  smokingStatus: varchar("smoking_status", { length: 20 }), // non-smoker, former-smoker, occasional-smoker, regular-smoker
+  physicalActivity: varchar("physical_activity", { length: 20 }), // sedentary, light, moderate, active, very-active
+  userBio: text("user_bio"), // Free text "tell me about yourself" for prevention
   onboardingCompleted: boolean("onboarding_completed").default(false), // Tracks if initial onboarding popup was completed
+  onboardingPromptCount: integer("onboarding_prompt_count").default(0), // Number of times onboarding popup has been shown
   profession: varchar("profession", { length: 100 }), // Deprecated - kept for backward compatibility
   education: varchar("education", { length: 100 }), // Deprecated - kept for backward compatibility
   company: varchar("company", { length: 200 }),

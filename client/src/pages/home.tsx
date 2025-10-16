@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,6 +67,7 @@ export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [userConsent, setUserConsent] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingPromptShown, setOnboardingPromptShown] = useState(false); // Track if prompt was already shown this session
   const CATEGORIES_PER_PAGE = 12;
   
   const userLanguage = (user as UserType)?.language;
@@ -232,16 +234,33 @@ export default function Home() {
   }, [user, setLocation]);
 
   // Check if user needs onboarding (only for patients, not doctors)
+  // Show popup max 4 times if not completed, but only once per session
   useEffect(() => {
     const userWithOnboarding = user as UserType;
-    if (userWithOnboarding && !userWithOnboarding.isDoctor && !userWithOnboarding.onboardingCompleted) {
+    const promptCount = userWithOnboarding?.onboardingPromptCount || 0;
+    
+    if (userWithOnboarding && !userWithOnboarding.isDoctor && !userWithOnboarding.onboardingCompleted && promptCount < 4 && !onboardingPromptShown) {
       // Small delay to let the user settle in before showing the dialog
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
         setShowOnboarding(true);
+        setOnboardingPromptShown(true); // Mark as shown for this session
+        
+        // Increment the prompt count in background (don't block UI)
+        try {
+          await fetch("/api/user/increment-onboarding-prompt", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          });
+          // Silently refresh user data in background
+          queryClient.invalidateQueries({ queryKey: ["/api/user/me"] });
+        } catch (error) {
+          console.error("Failed to increment onboarding prompt:", error);
+        }
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [user, onboardingPromptShown]);
 
   // Sort categories: pinned first, then by sortOrder
   const sortedCategories = [...categoriesWithQuizzes].sort((a, b) => {

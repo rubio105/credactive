@@ -1725,6 +1725,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Zod schema for onboarding validation with string-to-number coercion
       const onboardingSchema = z.object({
+        age: z.union([
+          z.number().int().min(1).max(120),
+          z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(1).max(120)),
+        ]).optional(),
         heightCm: z.union([
           z.number().int().min(50).max(300),
           z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(50).max(300)),
@@ -1733,6 +1737,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           z.number().int().min(10).max(500),
           z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(10).max(500)),
         ]).optional(),
+        smokingStatus: z.enum(['non-smoker', 'former-smoker', 'occasional-smoker', 'regular-smoker']).optional(),
+        physicalActivity: z.enum(['sedentary', 'light', 'moderate', 'active', 'very-active']).optional(),
+        userBio: z.string().max(2000).optional(),
       });
 
       // Validate request body
@@ -1744,12 +1751,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { heightCm, weightKg } = validation.data;
+      const { age, heightCm, weightKg, smokingStatus, physicalActivity, userBio } = validation.data;
+
+      // Calculate dateOfBirth from age if provided
+      let dateOfBirth: Date | null = null;
+      if (age) {
+        const currentYear = new Date().getFullYear();
+        const birthYear = currentYear - age;
+        dateOfBirth = new Date(birthYear, 0, 1); // January 1st of birth year
+      }
 
       // Update user profile - only for authenticated non-doctor user
       await storage.updateUser(userId, {
+        dateOfBirth: dateOfBirth ?? undefined,
         heightCm: heightCm ?? null,
         weightKg: weightKg ?? null,
+        smokingStatus: smokingStatus ?? null,
+        physicalActivity: physicalActivity ?? null,
+        userBio: userBio ?? null,
         onboardingCompleted: true,
       });
 
@@ -1761,6 +1780,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error completing onboarding:", error);
       res.status(500).json({ message: "Failed to complete onboarding" });
+    }
+  });
+
+  // Increment onboarding prompt count (POST /api/user/increment-onboarding-prompt)
+  app.post('/api/user/increment-onboarding-prompt', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Increment the prompt count
+      const newCount = (user.onboardingPromptCount || 0) + 1;
+      await storage.updateUser(userId, {
+        onboardingPromptCount: newCount,
+      });
+
+      res.json({ success: true, promptCount: newCount });
+    } catch (error) {
+      console.error("Error incrementing onboarding prompt count:", error);
+      res.status(500).json({ message: "Failed to increment prompt count" });
     }
   });
 
@@ -8214,7 +8259,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
         : undefined;
 
-      // Get AI response (pass user's first name, age, and gender for personalization if available)
+      // Get AI response (pass complete health profile for personalization)
       const aiResponse = await generateTriageResponse(
         initialSymptom, 
         [], 
@@ -8224,7 +8269,12 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         session.userRole as 'patient' | 'doctor', // Pass user role to customize response style
         language || 'it',
         userAge,
-        user?.gender
+        user?.gender,
+        user?.heightCm,
+        user?.weightKg,
+        user?.smokingStatus,
+        user?.physicalActivity,
+        user?.userBio
       );
 
       // Save AI response
@@ -8413,7 +8463,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
         : undefined;
 
-      // Get AI response (pass user's first name, age, and gender for personalization if available)
+      // Get AI response (pass complete health profile for personalization)
       const aiResponse = await generateTriageResponse(
         content, 
         history, 
@@ -8423,7 +8473,12 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         session.userRole as 'patient' | 'doctor', // Pass user role to customize response style
         language || 'it', // Pass user's language for consistent AI responses
         userAge,
-        user?.gender
+        user?.gender,
+        user?.heightCm,
+        user?.weightKg,
+        user?.smokingStatus,
+        user?.physicalActivity,
+        user?.userBio
       );
 
       // Save AI response

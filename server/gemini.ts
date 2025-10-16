@@ -362,7 +362,12 @@ export async function generateTriageResponse(
   userRole?: 'patient' | 'doctor',
   language?: string,
   userAge?: number,
-  userGender?: string
+  userGender?: string,
+  heightCm?: number | null,
+  weightKg?: number | null,
+  smokingStatus?: string | null,
+  physicalActivity?: string | null,
+  userBio?: string | null
 ): Promise<TriageResponse> {
   try {
     const contextInfo = documentContext 
@@ -377,15 +382,16 @@ export async function generateTriageResponse(
       ? `\n\nUSER CONTEXT: The user's name is ${userName}. When appropriate, address them by name to personalize the conversation (e.g., "Ciao ${userName}, capisco la tua preoccupazione...").`
       : "\n\nUSER CONTEXT: This is an anonymous user. Use general greetings without names.";
 
-    // Build demographic context for patients
-    const demographicContext = userRole !== 'doctor' && (userAge || userGender)
-      ? `\n\nPATIENT DEMOGRAPHICS:${userAge ? `\n- Age: ${userAge} years old` : ''}${userGender ? `\n- Gender: ${userGender}` : ''}
-IMPORTANT: Consider age and gender when:
-- Assessing risk factors (age-specific conditions, gender-specific health concerns)
-- Recommending screening schedules (mammography, prostate, colonoscopy based on age/gender)
-- Discussing prevention strategies (menopause, andropause, age-related concerns)
-- Evaluating symptoms (pediatric vs adult vs elderly considerations)
-- Providing personalized health education tailored to their demographic profile`
+    // Build demographic and health profile context for patients
+    const demographicContext = userRole !== 'doctor' && (userAge || userGender || heightCm || weightKg || smokingStatus || physicalActivity || userBio)
+      ? `\n\nPATIENT HEALTH PROFILE:${userAge ? `\n- Age: ${userAge} years old` : ''}${userGender ? `\n- Gender: ${userGender}` : ''}${heightCm && weightKg ? `\n- BMI: ${(weightKg / ((heightCm / 100) ** 2)).toFixed(1)} (Height: ${heightCm}cm, Weight: ${weightKg}kg)` : heightCm ? `\n- Height: ${heightCm}cm` : weightKg ? `\n- Weight: ${weightKg}kg` : ''}${smokingStatus ? `\n- Smoking Status: ${smokingStatus.replace('-', ' ')}` : ''}${physicalActivity ? `\n- Physical Activity Level: ${physicalActivity.replace('-', ' ')}` : ''}${userBio ? `\n- Patient's Story: ${userBio}` : ''}
+IMPORTANT: Consider this complete health profile when:
+- Assessing risk factors (age, BMI, smoking, lifestyle)
+- Recommending personalized prevention strategies based on their specific situation
+- Discussing screening schedules appropriate for their age, gender, and risk factors
+- Evaluating cardiovascular, metabolic, and respiratory health considering smoking and activity levels
+- Providing tailored lifestyle modifications based on their current habits and goals
+- Connecting their personal story and health concerns to evidence-based prevention advice`
       : '';
 
     const roleContext = userRole === 'doctor' 

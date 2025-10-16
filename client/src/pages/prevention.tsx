@@ -458,6 +458,8 @@ export default function PreventionPage() {
       return res.json();
     },
     onSuccess: () => {
+      // Chiudi immediatamente l'alert impostando la cache a null
+      queryClient.setQueryData(["/api/triage/pending-alert"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       toast({
         title: "Ottimo!",
@@ -480,6 +482,8 @@ export default function PreventionPage() {
       return res.json();
     },
     onSuccess: () => {
+      // Chiudi immediatamente l'alert impostando la cache a null
+      queryClient.setQueryData(["/api/triage/pending-alert"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       toast({
         title: "Registrato",
@@ -511,6 +515,8 @@ export default function PreventionPage() {
       return data;
     },
     onSuccess: (data) => {
+      // Chiudi immediatamente l'alert impostando la cache a null
+      queryClient.setQueryData(["/api/triage/pending-alert"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       toast({
         title: "Email inviata!",
@@ -1857,8 +1863,7 @@ export default function PreventionPage() {
                       <input
                         ref={cameraInputRef}
                         type="file"
-                        accept="image/*"
-                        capture="environment"
+                        accept="image/*,.heic,.heif"
                         onChange={handleFileSelect}
                         className="hidden"
                         data-testid="input-camera-capture"

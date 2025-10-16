@@ -672,11 +672,19 @@ export default function PreventionPage() {
     const validFiles: File[] = [];
     
     for (const file of files) {
-      // Validate file type
-      if (!validTypes.includes(file.type.toLowerCase())) {
+      // Check file extension for mobile camera photos (iOS may send empty MIME type)
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
+      const validExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+      
+      // Accept if MIME type matches OR if it's an image with valid extension (for iOS camera)
+      const isValidMimeType = validTypes.includes(file.type.toLowerCase());
+      const isValidExtension = validExtensions.includes(fileExt);
+      const isImageFile = file.type.startsWith('image/') || fileExt.match(/jpe?g|png|heic|heif|webp/i);
+      
+      if (!isValidMimeType && !isValidExtension && !isImageFile) {
         toast({ 
           title: "Formato non valido", 
-          description: `${file.name}: Formato non supportato`, 
+          description: `${file.name}: Tipo ${file.type || 'sconosciuto'} non supportato`, 
           variant: "destructive" 
         });
         continue;

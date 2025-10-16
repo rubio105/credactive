@@ -199,7 +199,9 @@ const uploadMedicalReport = multer({
     const allowedMimetypes = /application\/pdf|image\/jpeg|image\/jpg|image\/png|image\/heic|image\/heif|image\/webp/;
     const mimetype = allowedMimetypes.test(file.mimetype);
     
-    if (extname && mimetype) {
+    // Accept if extension is valid (for iOS camera which may send empty/different MIME type)
+    // OR if both extension and mimetype match
+    if (extname) {
       return cb(null, true);
     } else {
       cb(new Error('Only PDF and images (JPEG, JPG, PNG, HEIC, HEIF, WEBP) are allowed for medical reports!'));

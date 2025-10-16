@@ -725,11 +725,13 @@ export default function PreventionPage() {
 
   // Process upload queue
   const processUploadQueue = async () => {
+    console.log('[DEBUG] processUploadQueue called, queue:', uploadQueue);
     let completedCount = 0;
     let errorCount = 0;
 
     // Get current queue snapshot
     const currentQueue = uploadQueue.filter(q => q.status === 'pending');
+    console.log('[DEBUG] Current queue to process:', currentQueue);
     
     for (const item of currentQueue) {
       // Update status to uploading using functional update
@@ -740,6 +742,7 @@ export default function PreventionPage() {
       ));
 
       try {
+        console.log('[DEBUG] Starting upload for file:', item.file.name);
         const formData = new FormData();
         formData.append('report', item.file);
         formData.append('userConsent', 'true');
@@ -747,11 +750,13 @@ export default function PreventionPage() {
           formData.append('triageSessionId', sessionId);
         }
 
+        console.log('[DEBUG] Sending fetch request to /api/health-score/upload');
         const response = await fetch('/api/health-score/upload', {
           method: 'POST',
           body: formData,
           credentials: 'include',
         });
+        console.log('[DEBUG] Fetch response received:', response.status);
 
         if (!response.ok) {
           const error = await response.json();

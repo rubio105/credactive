@@ -10358,15 +10358,9 @@ Format as JSON: {
       }
     }
     
-    // Fallback to default keys ONLY in development
+    // VAPID keys are required - no fallback allowed
     if (!publicKey || !privateKey) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('⚠️  VAPID keys not configured. Using temporary dev keys. Configure VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in production.');
-        publicKey = 'BNBQKcFGeOPRpePINPXRXJX8Zqtl3Y8qvCBwk_snhxis6K4of8ZXUg6v-HK3xX_2TqA4QuK5I3pQhGTbvW_LTes';
-        privateKey = 'fEQmlWTtfCQ2yjKvXxlNwPAyGcdLRHZp8geHhiUP4ig';
-      } else {
-        throw new Error('VAPID keys not configured. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables or configure in admin settings.');
-      }
+      throw new Error('VAPID keys not configured. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables or configure in admin settings. Generate keys using: npx web-push generate-vapid-keys');
     }
     
     return { publicKey, privateKey };

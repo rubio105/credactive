@@ -384,6 +384,16 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         </Link>
                       </>
                     )}
+                    {/* Piano Sanitario - visible to all users */}
+                    <>
+                      <DropdownMenuSeparator />
+                      <Link href="/#subscriptions">
+                        <DropdownMenuItem className="text-emerald-600 dark:text-emerald-400 font-semibold" data-testid="menu-healthcare-plan">
+                          <Stethoscope className="w-4 h-4 mr-2" />
+                          Piano Sanitario €29/mese
+                        </DropdownMenuItem>
+                      </Link>
+                    </>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
                       <LogOut className="w-4 h-4 mr-2" />

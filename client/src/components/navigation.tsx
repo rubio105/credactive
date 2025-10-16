@@ -230,15 +230,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                   </Link>
                 )}
 
-                {/* Credits Badge - Hide for AI-only users and doctors */}
-                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && (
-                  <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800" data-testid="badge-credits">
-                    <Coins className="w-3 h-3 mr-1" />
-                    {typedUser?.credits || 0}
-                  </Badge>
-                )}
-                
-
                 {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -266,20 +257,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     <div className="px-2 py-1.5">
                       <p className="text-sm font-medium">{getUserName()}</p>
                       <p className="text-xs text-muted-foreground">{typedUser?.email}</p>
-                      {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
-                        <div className="flex items-center gap-1 mt-2">
-                          <Badge className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 text-xs py-0.5">
-                            <Coins className="w-3 h-3 mr-1" />
-                            {typedUser?.credits || 0} Crediti
-                          </Badge>
-                          {typedUser?.isPremium && (
-                            <Badge className="bg-accent/10 text-accent border-accent/20 text-xs py-0.5">
-                              <Crown className="w-3 h-3 mr-1" />
-                              Premium
-                            </Badge>
-                          )}
-                        </div>
-                      )}
                     </div>
                     <DropdownMenuSeparator />
                     {/* Admin Menu Items - Only Admin Panel */}
@@ -401,11 +378,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-
-                {/* Mobile Menu Button */}
-                <Button variant="ghost" size="sm" className="md:hidden" data-testid="mobile-menu">
-                  <Menu className="w-5 h-5" />
-                </Button>
               </div>
             )}
           </div>

@@ -8188,11 +8188,18 @@ Le risposte DEVONO essere in italiano.`;
               const summary = report.aiAnalysis?.patientSummary || report.aiAnalysis?.doctorSummary || report.aiSummary || 'No summary available';
               const diagnosis = report.aiAnalysis?.diagnosis ? `\nDiagnosi: ${report.aiAnalysis.diagnosis}` : '';
               const prevention = report.aiAnalysis?.prevention ? `\nPrevenzione: ${report.aiAnalysis.prevention}` : '';
+              const radiologicalAnalysis = report.radiologicalAnalysis 
+                ? `\n\nREFERTAZIONE IMMAGINE RADIOLOGICA:
+Analisi Tecnica: ${report.radiologicalAnalysis.technicalAnalysis || 'N/A'}
+Spiegazione Paziente: ${report.radiologicalAnalysis.patientFriendlyExplanation || 'N/A'}
+Findings Chiave: ${report.radiologicalAnalysis.keyFindings?.join(', ') || 'N/A'}
+Raccomandazioni: ${report.radiologicalAnalysis.recommendations?.join(', ') || 'N/A'}` 
+                : '';
               
               return `[REFERTO ${index + 1}: ${report.reportType || report.fileName}]
 Data: ${new Date(report.createdAt).toLocaleDateString('it-IT')}
 Tipo: ${report.reportType}
-Riepilogo: ${summary}${diagnosis}${prevention}`;
+Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
             }).join('\n\n---\n\n');
             console.log(`[Context] Included ${recentReports.length} recent medical reports in conversation context`);
           }
@@ -8380,11 +8387,18 @@ Riepilogo: ${summary}${diagnosis}${prevention}`;
               const summary = report.aiAnalysis?.patientSummary || report.aiAnalysis?.doctorSummary || report.aiSummary || 'No summary available';
               const diagnosis = report.aiAnalysis?.diagnosis ? `\nDiagnosi: ${report.aiAnalysis.diagnosis}` : '';
               const prevention = report.aiAnalysis?.prevention ? `\nPrevenzione: ${report.aiAnalysis.prevention}` : '';
+              const radiologicalAnalysis = report.radiologicalAnalysis 
+                ? `\n\nREFERTAZIONE IMMAGINE RADIOLOGICA:
+Analisi Tecnica: ${report.radiologicalAnalysis.technicalAnalysis || 'N/A'}
+Spiegazione Paziente: ${report.radiologicalAnalysis.patientFriendlyExplanation || 'N/A'}
+Findings Chiave: ${report.radiologicalAnalysis.keyFindings?.join(', ') || 'N/A'}
+Raccomandazioni: ${report.radiologicalAnalysis.recommendations?.join(', ') || 'N/A'}` 
+                : '';
               
               return `[REFERTO ${index + 1}: ${report.reportType || report.fileName}]
 Data: ${new Date(report.createdAt).toLocaleDateString('it-IT')}
 Tipo: ${report.reportType}
-Riepilogo: ${summary}${diagnosis}${prevention}`;
+Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
             }).join('\n\n---\n\n');
             console.log(`[Context] Included ${recentReports.length} recent medical reports in conversation context`);
           }

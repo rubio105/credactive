@@ -74,6 +74,39 @@ export class JobWorker {
     await storage.updateJobProgress(jobId, 20, 'Extracting text from document...');
     const ocrResult = await extractTextFromMedicalReport(filePath, fileType);
 
+    // Step 1.5: Rename file with category + date
+    let renamedFileName = fileName;
+    let renamedFilePath = filePath;
+    
+    if (ocrResult.reportType) {
+      try {
+        // Sanitize report type to prevent path traversal attacks
+        const sanitizedReportType = ocrResult.reportType
+          .replace(/[^a-zA-Z0-9\s\-_àèéìòùÀÈÉÌÒÙ]/g, '') // Remove special chars except spaces, hyphens, underscores, Italian accents
+          .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+          .trim()
+          .slice(0, 100); // Limit length to 100 chars
+        
+        if (!sanitizedReportType) {
+          throw new Error('Report type is empty after sanitization');
+        }
+        
+        const reportDate = ocrResult.reportDate ? new Date(ocrResult.reportDate) : new Date();
+        const formattedDate = reportDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        const ext = path.extname(fileName);
+        const newFileName = `${sanitizedReportType} ${formattedDate}${ext}`;
+        const newFilePath = path.join(path.dirname(filePath), newFileName);
+        
+        fs.renameSync(filePath, newFilePath);
+        renamedFileName = newFileName;
+        renamedFilePath = newFilePath;
+        console.log('[JobWorker] Renamed file:', fileName, '→', newFileName);
+      } catch (renameError) {
+        console.error('[JobWorker] Failed to rename file:', renameError);
+        // Continue with original name if rename fails
+      }
+    }
+
     // Step 2: PII anonymization
     await storage.updateJobProgress(jobId, 40, 'Anonymizing personal information...');
     const anonymizationResult = await anonymizeMedicalText(ocrResult.extractedText);
@@ -94,7 +127,7 @@ export class JobWorker {
     if (isRadiologicalImage) {
       try {
         await storage.updateJobProgress(jobId, 60, 'Analyzing radiological image...');
-        radiologicalAnalysis = await analyzeRadiologicalImage(filePath, fileType);
+        radiologicalAnalysis = await analyzeRadiologicalImage(renamedFilePath, fileType);
       } catch (radiologyError) {
         console.error('[JobWorker] Radiological analysis failed:', radiologyError);
       }
@@ -106,10 +139,10 @@ export class JobWorker {
       userId,
       triageSessionId: triageSessionId || null,
       reportType: ocrResult.reportType,
-      fileName,
+      fileName: renamedFileName,
       fileType,
       fileSize,
-      filePath: `medical-reports/${path.basename(filePath)}`,
+      filePath: `medical-reports/${path.basename(renamedFilePath)}`,
       originalText: ocrResult.extractedText,
       anonymizedText: anonymizationResult.anonymizedText,
       detectedLanguage: ocrResult.detectedLanguage,
@@ -163,9 +196,9 @@ Il referto è ora disponibile nel contesto della conversazione e verrà incluso 
 
     // Step 7: Cleanup temporary file
     try {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        console.log('[JobWorker] Cleaned up temporary file:', filePath);
+      if (fs.existsSync(renamedFilePath)) {
+        fs.unlinkSync(renamedFilePath);
+        console.log('[JobWorker] Cleaned up temporary file:', renamedFilePath);
       }
     } catch (cleanupError) {
       console.error('[JobWorker] Failed to cleanup file:', cleanupError);

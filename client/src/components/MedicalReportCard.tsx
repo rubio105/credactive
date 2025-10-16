@@ -152,12 +152,12 @@ export function MedicalReportCard({ report }: { report: MedicalReport }) {
 
         {/* Riepilogo */}
         {(report.aiAnalysis?.patientSummary || report.aiAnalysis?.doctorSummary || report.aiSummary) && (
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3" data-testid="ai-summary">
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4" data-testid="ai-summary">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
               <Activity className="w-4 h-4" />
               Riepilogo
             </p>
-            <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed line-clamp-2">
+            <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed whitespace-pre-wrap">
               {isDoctor 
                 ? (report.aiAnalysis?.doctorSummary || report.aiSummary)
                 : (report.aiAnalysis?.patientSummary || report.aiSummary)

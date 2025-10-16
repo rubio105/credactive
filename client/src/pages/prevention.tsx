@@ -713,14 +713,20 @@ export default function PreventionPage() {
 
     // Add files to queue
     setSelectedFiles(validFiles);
-    setUploadQueue(validFiles.map(file => ({
+    const newQueue = validFiles.map(file => ({
       file,
       status: 'pending' as const
-    })));
+    }));
+    setUploadQueue(newQueue);
     
     // Reset upload options and open upload dialog
     setShowUploadOptions(false);
     setShowUploadDialog(true);
+    
+    // Auto-start upload immediately (fix for state timing issue)
+    setTimeout(() => {
+      processUploadQueue();
+    }, 100);
   };
 
   // Process upload queue

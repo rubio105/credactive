@@ -101,6 +101,7 @@ export default function PreventionPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const doctorAutoStartedRef = useRef<boolean>(false);
+  const uploadQueueRef = useRef<Array<{ file: File; status: 'pending' | 'uploading' | 'completed' | 'error'; error?: string; result?: any }>>([]);
 
   // Prevention page is publicly accessible - both authenticated and anonymous users can use it
   // Anonymous users have limited features, authenticated users see token limits and personalized features
@@ -133,6 +134,11 @@ export default function PreventionPage() {
     queryKey: ["/api/health-score/reports"],
     enabled: !!user,
   });
+
+  // Sync uploadQueue state with ref for reliable access
+  useEffect(() => {
+    uploadQueueRef.current = uploadQueue;
+  }, [uploadQueue]);
 
   // Get doctor notes from prevention documents (fileType: 'doctor_note')
   const doctorNotes = (documents || []).filter((doc: any) => doc.fileType === 'doctor_note');
@@ -711,7 +717,7 @@ export default function PreventionPage() {
 
     if (validFiles.length === 0) return;
 
-    // Add files to queue
+    // Add files to queue (ref synced via useEffect)
     setSelectedFiles(validFiles);
     const newQueue = validFiles.map(file => ({
       file,
@@ -722,16 +728,11 @@ export default function PreventionPage() {
     // Reset upload options and open upload dialog
     setShowUploadOptions(false);
     setShowUploadDialog(true);
-    
-    // Auto-start upload immediately (fix for state timing issue)
-    setTimeout(() => {
-      processUploadQueue(newQueue);
-    }, 100);
   };
 
-  // Process upload queue
-  const processUploadQueue = async (queueOverride?: typeof uploadQueue) => {
-    const activeQueue = queueOverride || uploadQueue;
+  // Process upload queue - always use ref for most current data
+  const processUploadQueue = async () => {
+    const activeQueue = uploadQueueRef.current;
     console.log('[DEBUG] processUploadQueue called, queue:', activeQueue);
     
     // DEBUG: Show queue info in toast with status details

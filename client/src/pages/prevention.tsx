@@ -712,8 +712,9 @@ export default function PreventionPage() {
       status: 'pending' as const
     })));
     
-    // Reset upload options to show primary button on next open
+    // Reset upload options and open upload dialog
     setShowUploadOptions(false);
+    setShowUploadDialog(true);
   };
 
   // Process upload queue

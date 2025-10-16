@@ -658,12 +658,17 @@ Respond ONLY with the extracted text, no additional commentary.`;
 
       extractedText = response.text || "";
       console.log("[Gemini] Image OCR completed:", extractedText.length, "characters");
+      console.log("[Gemini] Extracted text:", extractedText.substring(0, 200)); // Log first 200 chars for debug
     } else {
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
 
-    if (!extractedText || extractedText.trim().length < 10) {
-      throw new Error("No text could be extracted from the medical report");
+    if (!extractedText || extractedText.trim().length < 5) {
+      throw new Error("No text could be extracted from the medical report. Please ensure the image is clear and well-lit.");
+    }
+    
+    if (extractedText.trim().length < 20) {
+      console.warn("[Gemini] WARNING: Very little text extracted (", extractedText.length, "chars). Image quality may be poor.");
     }
 
     // Analyze extracted text with Gemini to structure medical data

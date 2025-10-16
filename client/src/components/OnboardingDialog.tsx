@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Scale, Ruler, FileText, Sparkles, Calendar, Activity, Cigarette } from "lucide-react";
+import { Scale, Ruler, FileText, Sparkles, Calendar, Activity, Cigarette, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface OnboardingDialogProps {
@@ -27,6 +27,7 @@ interface OnboardingDialogProps {
 export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) {
   const { toast } = useToast();
   const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
   const [heightCm, setHeightCm] = useState("");
   const [weightKg, setWeightKg] = useState("");
   const [smokingStatus, setSmokingStatus] = useState("");
@@ -60,6 +61,10 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
 
     if (age && parseInt(age) > 0) {
       data.age = parseInt(age);
+    }
+
+    if (gender) {
+      data.gender = gender;
     }
 
     if (heightCm && parseInt(heightCm) > 0) {
@@ -123,6 +128,25 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
               className="text-lg"
               data-testid="input-age"
             />
+          </div>
+
+          {/* Gender */}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2 text-base font-semibold">
+              <Users className="w-4 h-4 text-emerald-600" />
+              Sesso
+            </Label>
+            <Select value={gender} onValueChange={setGender}>
+              <SelectTrigger className="text-base" data-testid="select-gender">
+                <SelectValue placeholder="Seleziona..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">Maschio</SelectItem>
+                <SelectItem value="female">Femmina</SelectItem>
+                <SelectItem value="other">Altro</SelectItem>
+                <SelectItem value="prefer_not_to_say">Preferisco non dirlo</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Height & Weight in a grid */}

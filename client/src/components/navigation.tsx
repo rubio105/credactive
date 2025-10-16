@@ -343,7 +343,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             <Link href="/subscribe">
                               <DropdownMenuItem className="text-primary" data-testid="menu-upgrade">
                                 <Crown className="w-4 h-4 mr-2" />
-                                Upgrade to Premium
+                                Passa a Premium
                               </DropdownMenuItem>
                             </Link>
                           </>

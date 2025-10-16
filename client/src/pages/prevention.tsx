@@ -727,10 +727,11 @@ export default function PreventionPage() {
   const processUploadQueue = async () => {
     console.log('[DEBUG] processUploadQueue called, queue:', uploadQueue);
     
-    // DEBUG: Show queue info in toast
+    // DEBUG: Show queue info in toast with status details
+    const statusInfo = uploadQueue.map(q => `${q.file.name}: ${q.status}`).join(', ');
     toast({
       title: "Debug Upload",
-      description: `Queue length: ${uploadQueue.length}, Pending: ${uploadQueue.filter(q => q.status === 'pending').length}`,
+      description: `Queue: ${uploadQueue.length} - ${statusInfo}`,
     });
     
     let completedCount = 0;

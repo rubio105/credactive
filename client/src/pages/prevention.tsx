@@ -1801,6 +1801,26 @@ export default function PreventionPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* File inputs outside dialog for iOS compatibility */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,image/*"
+        onChange={handleFileSelect}
+        multiple
+        className="hidden"
+        data-testid="input-file-report"
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*,.heic,.heif"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+        data-testid="input-camera-capture"
+      />
+
       {/* Upload Documents Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1871,23 +1891,6 @@ export default function PreventionPage() {
                       <p className="text-sm font-medium text-foreground mb-4">
                         Scegli come caricare il referto:
                       </p>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,image/*"
-                        onChange={handleFileSelect}
-                        multiple
-                        className="hidden"
-                        data-testid="input-file-report"
-                      />
-                      <input
-                        ref={cameraInputRef}
-                        type="file"
-                        accept="image/*,.heic,.heif"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        data-testid="input-camera-capture"
-                      />
                       <div className="flex gap-3 justify-center flex-wrap mt-2">
                         <Button 
                           variant="outline"

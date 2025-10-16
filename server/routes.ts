@@ -194,15 +194,15 @@ const uploadMedicalReport = multer({
   storage: medicalReportStorage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for medical reports
   fileFilter: (req, file, cb) => {
-    const allowedExtensions = /pdf|jpeg|jpg|png/;
+    const allowedExtensions = /pdf|jpeg|jpg|png|heic|heif|webp/;
     const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
-    const allowedMimetypes = /application\/pdf|image\/jpeg|image\/jpg|image\/png/;
+    const allowedMimetypes = /application\/pdf|image\/jpeg|image\/jpg|image\/png|image\/heic|image\/heif|image\/webp/;
     const mimetype = allowedMimetypes.test(file.mimetype);
     
     if (extname && mimetype) {
       return cb(null, true);
     } else {
-      cb(new Error('Only PDF and images (JPEG, JPG, PNG) are allowed for medical reports!'));
+      cb(new Error('Only PDF and images (JPEG, JPG, PNG, HEIC, HEIF, WEBP) are allowed for medical reports!'));
     }
   }
 });

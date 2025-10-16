@@ -57,15 +57,15 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
 
   const handleSubmit = () => {
     const data: any = {};
-    
+
     if (age && parseInt(age) > 0) {
       data.age = parseInt(age);
     }
-    
+
     if (heightCm && parseInt(heightCm) > 0) {
       data.heightCm = parseInt(heightCm);
     }
-    
+
     if (weightKg && parseInt(weightKg) > 0) {
       data.weightKg = parseInt(weightKg);
     }

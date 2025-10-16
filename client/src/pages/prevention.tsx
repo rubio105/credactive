@@ -773,20 +773,27 @@ export default function PreventionPage() {
 
         const result = await response.json();
         console.log('[DEBUG] Upload result:', result);
-        
-        // DEBUG: Show result in toast
-        toast({
-          title: "Upload Result",
-          description: `Success: ${result.success}, JobID: ${result.jobId?.substring(0,8)}`,
-        });
 
-        // Update status to completed
-        setUploadQueue(prev => prev.map(q => 
-          q.file === item.file && q.status === 'uploading'
-            ? { ...q, status: 'completed' as const, result } 
-            : q
-        ));
-        completedCount++;
+        // Handle async job response (new system)
+        if (result.jobId) {
+          // Async job - mark as completed (job running in background)
+          setUploadQueue(prev => prev.map(q => 
+            q.file === item.file && q.status === 'uploading'
+              ? { ...q, status: 'completed' as const, result } 
+              : q
+          ));
+          completedCount++;
+        } else if (result.report) {
+          // Old sync response - mark as completed
+          setUploadQueue(prev => prev.map(q => 
+            q.file === item.file && q.status === 'uploading'
+              ? { ...q, status: 'completed' as const, result } 
+              : q
+          ));
+          completedCount++;
+        } else {
+          throw new Error('Risposta non valida dal server');
+        }
       } catch (error: any) {
         // DEBUG: Show error in toast
         toast({

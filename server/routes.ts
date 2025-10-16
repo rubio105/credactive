@@ -1729,6 +1729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           z.number().int().min(1).max(120),
           z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(1).max(120)),
         ]).optional(),
+        gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
         heightCm: z.union([
           z.number().int().min(50).max(300),
           z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(50).max(300)),
@@ -1751,7 +1752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { age, heightCm, weightKg, smokingStatus, physicalActivity, userBio } = validation.data;
+      const { age, gender, heightCm, weightKg, smokingStatus, physicalActivity, userBio } = validation.data;
 
       // Calculate dateOfBirth from age if provided
       let dateOfBirth: Date | null = null;
@@ -1764,6 +1765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user profile - only for authenticated non-doctor user
       await storage.updateUser(userId, {
         dateOfBirth: dateOfBirth ?? undefined,
+        gender: gender ?? null,
         heightCm: heightCm ?? null,
         weightKg: weightKg ?? null,
         smokingStatus: smokingStatus ?? null,

@@ -1635,15 +1635,15 @@ export default function PreventionPage() {
                     </ScrollArea>
 
                     {session?.status === 'active' && (
-                      <div className="space-y-3 mt-4">
-                        <div className="flex gap-2 items-end">
-                          <div className="relative flex-1">
+                      <div className="space-y-3 mt-4 px-1">
+                        <div className="flex gap-3 items-end">
+                          <div className="relative flex-1 min-w-0">
                             <Input
                               placeholder="Scrivi un messaggio..."
                               value={userInput}
                               onChange={(e) => setUserInput(e.target.value)}
                               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                              className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 pr-12 py-6 rounded-xl shadow-sm transition-all"
+                              className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 pr-12 py-6 rounded-xl shadow-sm transition-all w-full"
                               data-testid="input-triage-message"
                             />
                             <Button
@@ -1660,7 +1660,7 @@ export default function PreventionPage() {
                           <Button
                             onClick={handleSend}
                             disabled={sendMessageMutation.isPending || !userInput.trim()}
-                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all"
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all flex-shrink-0"
                             data-testid="button-send-message"
                           >
                             <Send className="w-5 h-5" />

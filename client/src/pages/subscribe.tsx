@@ -74,7 +74,7 @@ const CheckoutForm = () => {
         ) : (
           <>
             <Crown className="w-5 h-5 mr-2" />
-            Attiva Premium - €29/mese
+            Attiva Premium - €29,90/mese
           </>
         )}
       </Button>
@@ -175,8 +175,8 @@ export default function Subscribe() {
                     <Check className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Accesso illimitato AI Prevenzione</h3>
-                    <p className="text-sm text-muted-foreground">Usa l'AI senza limiti di token mensili</p>
+                    <h3 className="font-semibold">Consulto medico settimanale</h3>
+                    <p className="text-sm text-muted-foreground">Consulenza medica personalizzata ogni settimana</p>
                   </div>
                 </div>
                 
@@ -185,8 +185,8 @@ export default function Subscribe() {
                     <Check className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Contatto medico H24</h3>
-                    <p className="text-sm text-muted-foreground">Assistenza medica sempre disponibile</p>
+                    <h3 className="font-semibold">Webinar sulla prevenzione</h3>
+                    <p className="text-sm text-muted-foreground">Accedi a webinar esclusivi su salute e prevenzione</p>
                   </div>
                 </div>
 
@@ -195,8 +195,8 @@ export default function Subscribe() {
                     <Check className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">2 televisite a settimana</h3>
-                    <p className="text-sm text-muted-foreground">Consulti medici in videochiamata inclusi</p>
+                    <h3 className="font-semibold">Eventi esclusivi sulla prevenzione</h3>
+                    <p className="text-sm text-muted-foreground">Partecipa a eventi riservati ai membri Premium</p>
                   </div>
                 </div>
 
@@ -205,8 +205,8 @@ export default function Subscribe() {
                     <Check className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Webinari ed eventi dedicati</h3>
-                    <p className="text-sm text-muted-foreground">Accesso esclusivo a formazione e eventi</p>
+                    <h3 className="font-semibold">Accesso illimitato AI Prevenzione</h3>
+                    <p className="text-sm text-muted-foreground">Usa l'intelligenza artificiale senza limiti</p>
                   </div>
                 </div>
 
@@ -215,8 +215,8 @@ export default function Subscribe() {
                     <Check className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Analisi mediche prioritarie</h3>
-                    <p className="text-sm text-muted-foreground">Report e analisi elaborati con priorità</p>
+                    <h3 className="font-semibold">Supporto medico prioritario</h3>
+                    <p className="text-sm text-muted-foreground">Assistenza e risposte rapide dal team medico</p>
                   </div>
                 </div>
               </CardContent>
@@ -225,7 +225,7 @@ export default function Subscribe() {
             <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800">
               <CardContent className="p-6">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-emerald-600 mb-2">€29</div>
+                  <div className="text-4xl font-bold text-emerald-600 mb-2">€29,90</div>
                   <div className="text-sm text-muted-foreground">al mese</div>
                   <p className="text-xs text-muted-foreground mt-4">
                     Cancella in qualsiasi momento

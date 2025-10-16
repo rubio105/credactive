@@ -1313,7 +1313,7 @@ export default function PreventionPage() {
                                 <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg group-hover:scale-110 transition-transform">
                                   <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <span className="text-sm flex-1">Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?</span>
+                                <span className="text-sm flex-1 whitespace-normal break-words">Paziente con familiarità per diabete tipo 2, quali protocolli preventivi?</span>
                               </div>
                             </Button>
                             <Button 
@@ -1331,7 +1331,7 @@ export default function PreventionPage() {
                                 <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg group-hover:scale-110 transition-transform">
                                   <Activity className="w-4 h-4 text-red-600 dark:text-red-400" />
                                 </div>
-                                <span className="text-sm flex-1">Gestione prevenzione secondaria post-IMA in paziente 55 anni</span>
+                                <span className="text-sm flex-1 whitespace-normal break-words">Gestione prevenzione secondaria post-IMA in paziente 55 anni</span>
                               </div>
                             </Button>
                             <Button 
@@ -1349,7 +1349,7 @@ export default function PreventionPage() {
                                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg group-hover:scale-110 transition-transform">
                                   <Stethoscope className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                 </div>
-                                <span className="text-sm flex-1">Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida</span>
+                                <span className="text-sm flex-1 whitespace-normal break-words">Screening oncologico raccomandato per fascia 40-50 anni secondo linee guida</span>
                               </div>
                             </Button>
                           </>
@@ -1370,7 +1370,7 @@ export default function PreventionPage() {
                                 <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg group-hover:scale-110 transition-transform">
                                   <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <span className="text-sm flex-1">Ho familiarità con il diabete, come posso prevenirlo?</span>
+                                <span className="text-sm flex-1 whitespace-normal break-words">Ho familiarità con il diabete, come posso prevenirlo?</span>
                               </div>
                             </Button>
                             <Button 
@@ -1388,7 +1388,7 @@ export default function PreventionPage() {
                                 <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg group-hover:scale-110 transition-transform">
                                   <Activity className="w-4 h-4 text-red-600 dark:text-red-400" />
                                 </div>
-                                <span className="text-sm flex-1">Lavoro molto seduto, cosa posso fare per la salute cardiovascolare?</span>
+                                <span className="text-sm flex-1 whitespace-normal break-words">Lavoro molto seduto, cosa posso fare per la salute cardiovascolare?</span>
                               </div>
                             </Button>
                             <Button 
@@ -1406,7 +1406,7 @@ export default function PreventionPage() {
                                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg group-hover:scale-110 transition-transform">
                                   <Stethoscope className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                 </div>
-                                <span className="text-sm flex-1">Ho 45 anni, quali screening preventivi dovrei fare?</span>
+                                <span className="text-sm flex-1 whitespace-normal break-words">Ho 45 anni, quali screening preventivi dovrei fare?</span>
                               </div>
                             </Button>
                           </>

@@ -8,7 +8,7 @@ import QuizCard from "@/components/quiz-card";
 import { SEO } from "@/components/SEO";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount } from "@shared/schema";
-import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Calendar, Users, Video, Sparkles, Headphones } from "lucide-react";
+import { Star, CheckCircle, PlayCircle, Crown, Trophy, ChartLine, Calendar, Users, Video, Sparkles, Headphones, Stethoscope, Clock, Shield } from "lucide-react";
 import { featuredImages } from "@/lib/stockImages";
 const logoImage = "/images/ciry-logo.png";
 const certificationsImage = "/images/certifications.png";
@@ -304,7 +304,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {/* Premium Plan */}
             <Card className="relative border-2 hover:border-primary transition-all shadow-xl">
               <CardContent className="p-8">
@@ -407,6 +407,62 @@ export default function Landing() {
                   data-testid="button-select-premium-plus-home"
                 >
                   Inizia con Premium Plus
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Piano Sanitario */}
+            <Card className="relative border-2 border-emerald-500 hover:border-emerald-600 transition-all shadow-xl">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <Badge className="px-4 py-1 bg-emerald-600 text-white">
+                  PER SANITARI
+                </Badge>
+              </div>
+              
+              <CardContent className="p-8">
+                <div className="mb-6">
+                  <div className="inline-block p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg mb-4">
+                    <Stethoscope className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Piano Sanitario</h3>
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-bold">€29</span>
+                    <span className="text-muted-foreground ml-2">/mese</span>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Supporto medico completo per i professionisti della salute
+                  </p>
+                </div>
+
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start space-x-3">
+                    <Clock className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span><strong>Consultazione Medica H24</strong> - Supporto sempre disponibile</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Video className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span><strong>Webinar Sanitari</strong> - Formazione continua specializzata</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Users className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span><strong>Eventi Esclusivi</strong> - Networking professionale</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Shield className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span><strong>Sconti Assicurazioni</strong> - Convenzioni con partner selezionati</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>Accesso prioritario alle risorse</span>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={() => window.location.href = '/register'}
+                  className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                  data-testid="button-select-healthcare-home"
+                >
+                  Abbonati al Piano Sanitario
                 </Button>
               </CardContent>
             </Card>

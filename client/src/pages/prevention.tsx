@@ -676,12 +676,15 @@ export default function PreventionPage() {
       const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
       const validExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
       
-      // Accept if MIME type matches OR if it's an image with valid extension (for iOS camera)
+      // iOS camera: accept ANY image type or file from camera input (very permissive)
+      const isFromCamera = event.target === cameraInputRef.current;
       const isValidMimeType = validTypes.includes(file.type.toLowerCase());
       const isValidExtension = validExtensions.includes(fileExt);
       const isImageFile = file.type.startsWith('image/') || fileExt.match(/jpe?g|png|heic|heif|webp/i);
+      const isPdf = file.type === 'application/pdf' || fileExt === 'pdf';
       
-      if (!isValidMimeType && !isValidExtension && !isImageFile) {
+      // Accept if: camera photo OR valid type OR valid extension OR any image
+      if (!isFromCamera && !isValidMimeType && !isValidExtension && !isImageFile && !isPdf) {
         toast({ 
           title: "Formato non valido", 
           description: `${file.name}: Tipo ${file.type || 'sconosciuto'} non supportato`, 

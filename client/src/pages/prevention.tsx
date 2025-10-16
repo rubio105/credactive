@@ -771,6 +771,13 @@ export default function PreventionPage() {
         }
 
         const result = await response.json();
+        console.log('[DEBUG] Upload result:', result);
+        
+        // DEBUG: Show result in toast
+        toast({
+          title: "Upload Result",
+          description: `Success: ${result.success}, JobID: ${result.jobId?.substring(0,8)}`,
+        });
 
         // Update status to completed
         setUploadQueue(prev => prev.map(q => 

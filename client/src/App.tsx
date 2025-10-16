@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { HelmetProvider } from 'react-helmet-async';
 import CookieBanner from "@/components/cookie-banner";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import Landing from "@/pages/landing";
 import Quiz from "@/pages/quiz";
 import Dashboard from "@/pages/dashboard";
@@ -192,6 +193,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
+          <PWAInstallBanner />
           <CookieBanner />
           <FeedbackDialog />
           <Router />

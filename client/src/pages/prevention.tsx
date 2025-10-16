@@ -726,6 +726,13 @@ export default function PreventionPage() {
   // Process upload queue
   const processUploadQueue = async () => {
     console.log('[DEBUG] processUploadQueue called, queue:', uploadQueue);
+    
+    // DEBUG: Show queue info in toast
+    toast({
+      title: "Debug Upload",
+      description: `Queue length: ${uploadQueue.length}, Pending: ${uploadQueue.filter(q => q.status === 'pending').length}`,
+    });
+    
     let completedCount = 0;
     let errorCount = 0;
 
@@ -773,6 +780,13 @@ export default function PreventionPage() {
         ));
         completedCount++;
       } catch (error: any) {
+        // DEBUG: Show error in toast
+        toast({
+          title: "Upload Error",
+          description: error.message || 'Errore sconosciuto',
+          variant: "destructive",
+        });
+        
         // Update status to error
         setUploadQueue(prev => prev.map(q => 
           q.file === item.file && q.status === 'uploading'

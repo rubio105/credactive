@@ -15,6 +15,7 @@ import { useLocation } from "wouter";
 import PreventionAssessment from "@/components/PreventionAssessment";
 import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
+import { OnboardingDialog } from "@/components/OnboardingDialog";
 import Navigation from "@/components/navigation";
 const ciryMainLogo = "/images/ciry-main-logo.png";
 import {
@@ -79,6 +80,8 @@ export default function PreventionPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userInput, setUserInput] = useState("");
   const [showAssessment, setShowAssessment] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingPromptShown, setOnboardingPromptShown] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -298,6 +301,31 @@ export default function PreventionPage() {
       return () => clearTimeout(timer);
     }
   }, [user, sessionId, activeSession]);
+
+  // Check if user needs onboarding (only for patients, not doctors)
+  useEffect(() => {
+    const userWithOnboarding = user as any;
+    const promptCount = userWithOnboarding?.onboardingPromptCount || 0;
+    
+    if (userWithOnboarding && !userWithOnboarding.isDoctor && !userWithOnboarding.onboardingCompleted && promptCount < 4 && !onboardingPromptShown) {
+      const timer = setTimeout(async () => {
+        setShowOnboarding(true);
+        setOnboardingPromptShown(true);
+        
+        try {
+          await fetch("/api/user/increment-onboarding-prompt", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (error) {
+          console.error("Failed to increment onboarding prompt:", error);
+        }
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, onboardingPromptShown]);
 
   const startTriageMutation = useMutation({
     mutationFn: async (data: { symptom: string; role: 'patient' | 'doctor' }) => {
@@ -2221,6 +2249,11 @@ export default function PreventionPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <OnboardingDialog 
+        open={showOnboarding} 
+        onOpenChange={setShowOnboarding}
+      />
 
     </div>
   );

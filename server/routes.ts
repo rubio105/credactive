@@ -8037,6 +8037,89 @@ Le risposte DEVONO essere in italiano.`;
     }
   });
 
+  // Contact Doctor Request (POST /api/prevention/contact-doctor) - AUTHENTICATED
+  app.post('/api/prevention/contact-doctor', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Get user details
+      const userDetails = await storage.getUserById(user.id);
+      if (!userDetails) {
+        return res.status(404).json({ message: 'Utente non trovato' });
+      }
+
+      const userName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim() || 'Utente';
+      const userEmail = userDetails.email;
+
+      // Send email to prenotazioni@ciry.app
+      await sendEmail({
+        to: 'prenotazioni@ciry.app',
+        subject: `Richiesta Consulto Medico Prohmed - ${userName}`,
+        htmlContent: `
+          <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+                .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+                .info-box { background: white; padding: 15px; border-left: 4px solid #10b981; margin: 15px 0; }
+                .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #6b7280; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h2 style="margin: 0;">🩺 Nuova Richiesta Consulto Medico</h2>
+                </div>
+                <div class="content">
+                  <div class="info-box">
+                    <h3 style="margin-top: 0;">Dati Paziente</h3>
+                    <p><strong>Nome:</strong> ${userName}</p>
+                    <p><strong>Email:</strong> ${userEmail}</p>
+                    <p><strong>Data richiesta:</strong> ${new Date().toLocaleString('it-IT')}</p>
+                  </div>
+                  <p>Il paziente ha richiesto di essere contattato da un medico Prohmed per approfondire il proprio percorso di prevenzione personalizzato.</p>
+                  <p><strong>Azione richiesta:</strong> Contattare il paziente per programmare una consulenza gratuita.</p>
+                </div>
+                <div class="footer">
+                  <p>Questa email è stata generata automaticamente dalla piattaforma CIRY</p>
+                  <p>© ${new Date().getFullYear()} CIRY - Prevenzione & Salute</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+        textContent: `
+Nuova Richiesta Consulto Medico Prohmed
+
+Dati Paziente:
+Nome: ${userName}
+Email: ${userEmail}
+Data richiesta: ${new Date().toLocaleString('it-IT')}
+
+Il paziente ha richiesto di essere contattato da un medico Prohmed per approfondire il proprio percorso di prevenzione personalizzato.
+
+Azione richiesta: Contattare il paziente per programmare una consulenza gratuita.
+
+---
+Questa email è stata generata automaticamente dalla piattaforma CIRY
+© ${new Date().getFullYear()} CIRY - Prevenzione & Salute
+        `.trim()
+      });
+
+      console.log(`[Contact Doctor] Request sent from ${userEmail} to prenotazioni@ciry.app`);
+
+      res.json({ 
+        success: true,
+        message: 'Richiesta inviata con successo. Un medico Prohmed ti contatterà al più presto.'
+      });
+    } catch (error: any) {
+      console.error('Contact doctor error:', error);
+      res.status(500).json({ message: error.message || 'Errore durante l\'invio della richiesta' });
+    }
+  });
+
   // ========== TRIAGE CONVERSATION ROUTES ==========
   
   // *** ADMIN ENDPOINTS (must be before parametric routes) ***

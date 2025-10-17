@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { TrendingUp, Lightbulb, Activity, Calendar, User, Stethoscope, Target, CheckCircle2, AlertCircle, Heart } from "lucide-react";
+import { TrendingUp, Lightbulb, Activity, Calendar, User, Stethoscope, Target, CheckCircle2, AlertCircle, Heart, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface PreventionPathDialogProps {
   open: boolean;
@@ -25,7 +28,29 @@ export function PreventionPathDialog({
   isGenerating
 }: PreventionPathDialogProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const isDoctor = (user as any)?.isDoctor;
+
+  // Contact doctor mutation
+  const contactDoctorMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/prevention/contact-doctor", "POST", {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Richiesta inviata!",
+        description: "Un medico Prohmed ti contatterà al più presto.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: error.message || "Impossibile inviare la richiesta. Riprova più tardi.",
+      });
+    },
+  });
 
   if (!preventionPathData) {
     return (
@@ -142,8 +167,22 @@ export function PreventionPathDialog({
           <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
             <Heart className="w-4 h-4 text-blue-600" />
             <AlertDescription className="text-blue-800 dark:text-blue-200">
-              <p className="font-medium mb-1">Ricorda</p>
-              <p className="text-sm">Questi suggerimenti sono basati sul tuo profilo e sulle tue conversazioni. Contatta sempre il team medico Prohmed per approfondimenti.</p>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="font-medium mb-1">Vuoi parlare con un medico?</p>
+                  <p className="text-sm mb-3">Consulta gratuitamente un medico Prohmed per approfondire il tuo percorso di prevenzione personalizzato.</p>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white shrink-0"
+                  onClick={() => contactDoctorMutation.mutate()}
+                  disabled={contactDoctorMutation.isPending}
+                  data-testid="button-contact-doctor"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  {contactDoctorMutation.isPending ? "Invio..." : "Richiedi Contatto"}
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         </TabsContent>

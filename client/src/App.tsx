@@ -151,10 +151,18 @@ function Router() {
       <Route path="/corporate/join/:token">
         {(params) => <ProtectedRoute requireNonAiOnly><CorporateJoin params={params} /></ProtectedRoute>}
       </Route>
-      <Route path="/prevention" component={Prevention} />
-      <Route path="/webinar-health" component={WebinarHealth} />
-      <Route path="/pacchetto-prohmed" component={PacchettoProhmed} />
-      <Route path="/guida" component={Guida} />
+      <Route path="/prevention">
+        {() => <ProtectedRoute><Prevention /></ProtectedRoute>}
+      </Route>
+      <Route path="/webinar-health">
+        {() => <ProtectedRoute><WebinarHealth /></ProtectedRoute>}
+      </Route>
+      <Route path="/pacchetto-prohmed">
+        {() => <ProtectedRoute><PacchettoProhmed /></ProtectedRoute>}
+      </Route>
+      <Route path="/guida">
+        {() => <ProtectedRoute><Guida /></ProtectedRoute>}
+      </Route>
       <Route path="/security">
         {() => <ProtectedRoute><Security /></ProtectedRoute>}
       </Route>

@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { Redirect } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
@@ -9,21 +8,20 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, requireNonAiOnly = false }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    if (isLoading) return;
-
-    // If route requires non-AI-only access and user has AI-only access
-    if (requireNonAiOnly && user?.aiOnlyAccess) {
-      // Redirect AI-only users to prevention page
-      setLocation("/prevention");
-    }
-  }, [user, isLoading, requireNonAiOnly, setLocation]);
-
-  // Show nothing while checking or redirecting
-  if (isLoading || (requireNonAiOnly && user?.aiOnlyAccess)) {
+  // Show loading while checking auth
+  if (isLoading) {
     return null;
+  }
+
+  // If not authenticated, redirect to login immediately
+  if (!user) {
+    return <Redirect to="/login" />;
+  }
+
+  // If route requires non-AI-only access and user has AI-only access, redirect
+  if (requireNonAiOnly && user?.aiOnlyAccess) {
+    return <Redirect to="/prevention" />;
   }
 
   return <>{children}</>;

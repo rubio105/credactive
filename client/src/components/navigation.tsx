@@ -279,6 +279,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             AI Prevenzione
                           </DropdownMenuItem>
                         </Link>
+                        <Link href="/guida">
+                          <DropdownMenuItem data-testid="menu-guide">
+                            <HelpCircle className="w-4 h-4 mr-2" />
+                            Guida
+                          </DropdownMenuItem>
+                        </Link>
                       </>
                     )}
                     {/* AI-Only Prevention Patients - ONLY Prevention (SEPARATE from quiz) */}

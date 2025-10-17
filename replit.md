@@ -16,7 +16,7 @@ The frontend utilizes React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind 
 
 **Patient Navigation**: Regular patients (non-aiOnlyAccess) access a prevention-only platform, excluding quiz/cybersecurity content. The homepage features an integrated AI Chat Panel, medical reports section, and prevention-focused banner. SEO metadata emphasizes "AI Prevenzione." AI-only access users are redirected to `/prevention`. The navbar is clean, with a logo and user menu (Premium badge removed from avatar area for cleaner UI). Patient dropdown includes AI Prevenzione, Piano Sanitario (€29/month subscription), Sicurezza, Webinari, Documenti, and optional Corporate/Passa a Premium. Quiz-related sections and data are completely removed for regular patients.
 
-**Patient Alert Display**: Only critical/urgent alerts (high/emergency urgency level) are shown in the Prevention Index card. Non-critical alerts (low/medium) are hidden. When no critical alerts exist, the circular prevention score is displayed.
+**Patient Alert Display**: Only EMERGENCY urgency alerts are shown in the Prevention Index card. All other alerts (high/medium/low) are hidden. When no emergency alerts exist, the circular prevention score is displayed.
 
 **Token Limits System (Inverted Model)**:
 - Regular Patients (prevention-only): Unlimited AI tokens, no limits enforced, no token UI displayed.
@@ -107,7 +107,7 @@ Production runs on `ciry.app` using a Hetzner VPS with PM2, GitHub for version c
 - **Static Assets**: `/var/www/credactive/public/images/` served directly by Nginx
 - **Environment Variables**: Loaded from `.env` file via ecosystem.config.cjs
 - **Required Frontend Vars**: `VITE_STRIPE_PUBLIC_KEY` must be set during build time
-- **Push Notifications**: ACTIVE (configured via VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY secrets) - Doctors sending notes trigger real-time push notifications to patients
+- **Push Notifications**: FULLY ACTIVE (configured via VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY secrets in Replit Secrets) - All endpoints enabled: vapid-public-key, subscribe, unsubscribe, admin/push/send. Doctors sending notes trigger real-time web push notifications to patients. Admin broadcast available at `/admin/push-notifications`
 
 **Deployment Workflow:**
 1. Push code to GitHub repository

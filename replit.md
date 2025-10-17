@@ -10,7 +10,9 @@ Preferred communication style: Simple, everyday language.
 
 ## UI/UX Decisions
 
-The frontend utilizes React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod for a modern and consistent interface. Design elements include professional color wheel visualization, modern chat interfaces with avatars, bubble messages, typing indicators, and severity badges for medical reports. The UI supports role-based content display, smooth transitions, and hover effects. A mobile-first guide page includes circular icons, hover effects, expandable FAQs, and an admin-exclusive DLP guide.
+The frontend utilizes React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod for a modern and consistent interface. Design elements include professional color wheel visualization, modern chat interfaces with avatars, bubble messages, typing indicators, and severity badges for medical reports. The UI supports role-based content display, smooth transitions, and hover effects.
+
+**User Guide Page** (`/guida`): Fully redesigned visual guide with gradient hero header, 3-step timeline for patients (Upload → AI Analysis → Chat), hover-animated feature cards with gradient backgrounds, numbered example questions, simplified FAQ accordion with circular icons, and dual CTA buttons. Accessible to all users (including non-authenticated), with role-specific sections for doctors vs patients. Navigation includes "Guida" link in patient dropdowns (both regular and aiOnlyAccess).
 
 **AI Prevention Chat Design**: AI assistant avatar displays a blue shield icon, user avatars show initials on a blue-indigo gradient.
 

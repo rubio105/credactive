@@ -16,6 +16,7 @@ import PreventionAssessment from "@/components/PreventionAssessment";
 import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
+import { PreventionPathDialog } from "@/components/PreventionPathDialog";
 import Navigation from "@/components/navigation";
 const ciryMainLogo = "/images/ciry-main-logo.png";
 import {
@@ -2204,156 +2205,14 @@ export default function PreventionPage() {
       </Dialog>
 
       {/* Prevention Path Dialog */}
-      <Dialog open={showPreventionPathDialog} onOpenChange={setShowPreventionPathDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
-              Percorso di Prevenzione Personalizzato
-            </DialogTitle>
-            <DialogDescription>
-              Un piano di prevenzione su misura basato sul tuo profilo e le tue conversazioni
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {!user ? (
-              <Alert>
-                <AlertDescription>
-                  Effettua il login per generare il tuo percorso di prevenzione personalizzato
-                </AlertDescription>
-              </Alert>
-            ) : !preventionPathData ? (
-              <div className="text-center py-8">
-                <Button
-                  size="lg"
-                  disabled={generatePreventionPathMutation.isPending}
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                  onClick={() => generatePreventionPathMutation.mutate()}
-                  data-testid="button-generate-path"
-                >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  {generatePreventionPathMutation.isPending ? "Generazione in corso..." : "Genera Percorso"}
-                </Button>
-                <p className="text-sm text-muted-foreground mt-4">
-                  L'AI analizzerà il tuo profilo per creare un percorso di prevenzione personalizzato
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Parse and display prevention path graphically */}
-                {(() => {
-                  const text = preventionPathData.preventionPath;
-                  // Extract sections using regex - match all numbered sections
-                  const sections = text.split(/\n(?=\d+\.\s\*\*)/).filter((s: string) => /^\d+\.\s\*\*/.test(s.trim()));
-                  
-                  return (
-                    <div className="grid gap-4">
-                      {sections.map((section: string, index: number) => {
-                        const titleMatch = section.match(/\d+\.\s\*\*(.+?)\*\*/);
-                        const title = titleMatch ? titleMatch[1] : `Sezione ${index + 1}`;
-                        const content = section.replace(/\d+\.\s\*\*.+?\*\*/, '').trim();
-                        
-                        // Extract emoji and clean title
-                        const emojiMatch = title.match(/([\u1F300-\u1F9FF])/);
-                        const emoji = emojiMatch ? emojiMatch[1] : ['🎯', '📋', '🏥', '🍎', '📅'][index] || '📌';
-                        const cleanTitle = title.replace(/([\u1F300-\u1F9FF])/g, '').trim();
-                        
-                        const colors = [
-                          'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800',
-                          'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800',
-                          'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800',
-                          'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800',
-                          'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800',
-                        ];
-                        
-                        return (
-                          <Card key={index} className={`${colors[index]} border-2`}>
-                            <CardHeader className="pb-3">
-                              <CardTitle className="flex items-center gap-2 text-lg">
-                                <span className="text-2xl">{emoji}</span>
-                                {cleanTitle}
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="prose prose-sm max-w-none dark:prose-invert text-sm">
-                                {content.split('\n').map((line: string, i: number) => {
-                                  if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
-                                    return (
-                                      <div key={i} className="flex items-start gap-2 my-1">
-                                        <span className="text-primary mt-1">▪</span>
-                                        <span>{line.replace(/^[-•]\s*/, '')}</span>
-                                      </div>
-                                    );
-                                  }
-                                  return line && <p key={i} className="mb-2">{line}</p>;
-                                })}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-
-                {/* Download App Section */}
-                <div className="mt-8 pt-6 border-t border-border">
-                  <div className="text-center space-y-4">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center justify-center gap-2">
-                      <Smartphone className="w-5 h-5 text-purple-600" />
-                      Installa l'App CIRY
-                    </h3>
-                    <p className="text-sm text-muted-foreground max-w-lg mx-auto">
-                      Porta la prevenzione sempre con te. Aggiungi CIRY alla schermata Home del tuo smartphone per un accesso immediato.
-                    </p>
-                    
-                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 rounded-lg p-6 max-w-md mx-auto">
-                      <div className="space-y-3 text-left">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-semibold text-sm">
-                            1
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">iOS (iPhone/iPad)</p>
-                            <p className="text-xs text-muted-foreground mt-1">Tocca il pulsante "Condividi" 📤 e seleziona "Aggiungi alla schermata Home"</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-sm">
-                            2
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">Android</p>
-                            <p className="text-xs text-muted-foreground mt-1">Tocca il menu ⋮ e seleziona "Installa app" o "Aggiungi a schermata Home"</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground italic">
-                      ✨ Funziona offline e ricevi notifiche push per i tuoi referti medici
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2 mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setPreventionPathData(null);
-                      setShowPreventionPathDialog(false);
-                    }}
-                    data-testid="button-close-path"
-                  >
-                    Chiudi
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PreventionPathDialog
+        open={showPreventionPathDialog}
+        onOpenChange={setShowPreventionPathDialog}
+        preventionPathData={preventionPathData}
+        onReset={() => setPreventionPathData(null)}
+        onGenerate={() => generatePreventionPathMutation.mutate()}
+        isGenerating={generatePreventionPathMutation.isPending}
+      />
 
       <OnboardingDialog 
         open={showOnboarding} 

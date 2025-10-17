@@ -1,7 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Calendar, Activity, TrendingUp, Hospital, CheckCircle, AlertTriangle, AlertCircle, Stethoscope, Shield, Heart, Lightbulb, BarChart3, Pill, Eye, Image as ImageIcon, User } from "lucide-react";
+import { FileText, Calendar, Activity, TrendingUp, Hospital, CheckCircle, AlertTriangle, AlertCircle, Stethoscope, Shield, Heart, Lightbulb, BarChart3, Pill, Eye, Image as ImageIcon, User, Phone, Mail, Smartphone, Download, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { RadiologicalImageViewer } from "./RadiologicalImageViewer";
@@ -150,7 +151,14 @@ export function MedicalReportViewerDialog({
   // Patient-focused tabs
   const renderPatientTabs = () => (
     <>
-      <TabsList className="grid w-full my-4" style={{ gridTemplateColumns: hasRadiologicalImage ? "repeat(4, 1fr)" : "repeat(3, 1fr)" }}>
+      <TabsList className="grid w-full my-4" style={{ 
+        gridTemplateColumns: `repeat(${
+          3 + 
+          (hasAttentionPoints ? 1 : 0) + 
+          (report.medicalValues && report.medicalValues.length > 0 ? 1 : 0) + 
+          (hasRadiologicalImage ? 1 : 0)
+        }, 1fr)` 
+      }}>
         <TabsTrigger value="overview" data-testid="tab-patient-overview">
           <FileText className="w-4 h-4 mr-2" />
           Cosa Dice
@@ -164,6 +172,10 @@ export function MedicalReportViewerDialog({
         <TabsTrigger value="prevention" data-testid="tab-patient-prevention">
           <Shield className="w-4 h-4 mr-2" />
           Piano Prevenzione
+        </TabsTrigger>
+        <TabsTrigger value="contact" data-testid="tab-patient-contact">
+          <Phone className="w-4 h-4 mr-2" />
+          Contatta Prohmed
         </TabsTrigger>
         {report.medicalValues && report.medicalValues.length > 0 && (
           <TabsTrigger value="values" data-testid="tab-patient-values">
@@ -376,6 +388,154 @@ export function MedicalReportViewerDialog({
             </CardContent>
           </Card>
         )}
+      </TabsContent>
+
+      {/* Patient Contact Prohmed Tab */}
+      <TabsContent value="contact" className="flex-1 overflow-y-auto pb-6 space-y-4" data-testid="content-patient-contact">
+        <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+              <Phone className="w-6 h-6" />
+              Team Medico Prohmed
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h4 className="font-semibold text-emerald-900 dark:text-emerald-100 mb-3">
+                Hai bisogno di chiarimenti sul referto?
+              </h4>
+              <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">
+                Il team medico Prohmed è a tua disposizione per spiegarti nel dettaglio i risultati e guidarti nel percorso di prevenzione.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Button 
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => window.open('tel:+393408012929', '_self')}
+                  data-testid="button-call-prohmed"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Chiama Ora
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  onClick={() => window.open('mailto:info@prohmed.it', '_self')}
+                  data-testid="button-email-prohmed"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Invia Email
+                </Button>
+              </div>
+            </div>
+
+            <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+              <AlertDescription className="text-blue-800 dark:text-blue-200">
+                <p className="font-medium mb-2 flex items-center gap-2">
+                  <Heart className="w-4 h-4" />
+                  Consulenza Medica Personalizzata
+                </p>
+                <p className="text-sm">
+                  Il nostro team di medici specializzati in prevenzione ti aiuta a capire i tuoi referti e a creare un piano di salute su misura per te.
+                </p>
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
+        <Card className="border-purple-200 dark:border-purple-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <Smartphone className="w-5 h-5" />
+              App Prohmed - Porta la Salute con Te
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              Scarica l'app Prohmed per avere accesso immediato a:
+            </p>
+            
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-purple-900 dark:text-purple-100 text-sm">Referti Sempre Disponibili</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                    Tutti i tuoi esami medici organizzati e accessibili ovunque
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-purple-900 dark:text-purple-100 text-sm">Chat Diretta con i Medici</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                    Risposte rapide e consigli professionali quando ne hai bisogno
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-purple-900 dark:text-purple-100 text-sm">Promemoria Esami</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                    Non dimenticare mai gli screening periodici importanti
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-purple-900 dark:text-purple-100 text-sm">Prenotazioni Online</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                    Prenota visite e consulenze in pochi tap
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Scarica Gratis da:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Button 
+                  variant="outline"
+                  className="border-gray-300 hover:border-purple-400 hover:bg-purple-50"
+                  onClick={() => window.open('https://apps.apple.com/app/prohmed', '_blank')}
+                  data-testid="button-download-ios"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  App Store (iOS)
+                  <ExternalLink className="w-3 h-3 ml-2" />
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="border-gray-300 hover:border-purple-400 hover:bg-purple-50"
+                  onClick={() => window.open('https://play.google.com/store/apps/details?id=com.prohmed', '_blank')}
+                  data-testid="button-download-android"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Google Play
+                  <ExternalLink className="w-3 h-3 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Alert className="border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20">
+          <Heart className="w-4 h-4 text-emerald-600" />
+          <AlertDescription className="text-emerald-800 dark:text-emerald-200">
+            <p className="font-medium mb-1">La Tua Salute, la Nostra Priorità</p>
+            <p className="text-sm">
+              Prohmed è il tuo partner nella prevenzione. Siamo qui per supportarti in ogni momento del tuo percorso verso una vita più sana.
+            </p>
+          </AlertDescription>
+        </Alert>
       </TabsContent>
 
       {/* Patient Values Tab */}

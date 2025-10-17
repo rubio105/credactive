@@ -1600,13 +1600,13 @@ export default function PreventionPage() {
                                   </div>
                                 )}
                                 <div
-                                  className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] ${
+                                  className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] ${
                                     msg.role === 'user'
                                       ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white rounded-tr-sm'
                                       : 'bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm'
                                   } p-4 rounded-2xl shadow-md transition-all hover:shadow-lg`}
                                 >
-                                  <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">
+                                  <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words text-justify">
                                     {msg.content}
                                   </p>
                                   

@@ -297,6 +297,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             Piano Sanitario
                           </DropdownMenuItem>
                         </Link>
+                        <Link href="/guida">
+                          <DropdownMenuItem data-testid="menu-guide">
+                            <HelpCircle className="w-4 h-4 mr-2" />
+                            Guida
+                          </DropdownMenuItem>
+                        </Link>
                       </>
                     )}
                     {/* Patient Menu Items - Only Prevention related */}
@@ -331,6 +337,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                           <DropdownMenuItem data-testid="menu-webinars">
                             <Video className="w-4 h-4 mr-2" />
                             Webinari
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/guida">
+                          <DropdownMenuItem data-testid="menu-guide">
+                            <HelpCircle className="w-4 h-4 mr-2" />
+                            Guida
                           </DropdownMenuItem>
                         </Link>
                         {typedUser?.corporateAgreementId && (

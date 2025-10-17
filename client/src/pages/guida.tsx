@@ -53,9 +53,20 @@ export default function GuidaPage() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             {isDoctor 
               ? "La tua assistente AI per il supporto diagnostico e la gestione pazienti"
-              : "La tua piattaforma intelligente per la prevenzione sanitaria con AI"}
+              : "Il tuo assistente personale per la prevenzione sanitaria, con il supporto costante della centrale medica Prohmed"}
           </p>
         </div>
+
+        {/* Prohmed Medical Support Badge */}
+        {!isDoctor && (
+          <Alert className="mb-8 border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/50">
+            <Stethoscope className="h-5 w-5 text-blue-600" />
+            <AlertDescription className="text-blue-900 dark:text-blue-100 font-medium">
+              🏥 <strong>Centrale Medica Prohmed:</strong> Il nostro obiettivo è aiutarti nella prevenzione sanitaria. 
+              La centrale medica Prohmed è sempre disponibile per supportarti nelle emergenze e per rispondere ai tuoi alert medici.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Security Badge */}
         <Alert className="mb-12 border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50">
@@ -589,6 +600,59 @@ export default function GuidaPage() {
                   </Alert>
                 </AccordionContent>
               </AccordionItem>
+
+              {!isDoctor && (
+                <AccordionItem value="notifications">
+                  <AccordionTrigger className="text-left hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                        <Activity className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      </div>
+                      <span className="font-semibold">Come attivo le notifiche push?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 pl-13">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Le notifiche push ti avvisano in tempo reale quando il medico crea note cliniche o in caso di alert urgenti. Per attivarle:
+                    </p>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">1</div>
+                        <div>
+                          <p className="text-sm font-medium">Clicca sull'icona 🔒 o ⓘ nella barra degli indirizzi del browser</p>
+                          <p className="text-xs text-muted-foreground mt-1">Di solito si trova accanto all'URL del sito</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">2</div>
+                        <div>
+                          <p className="text-sm font-medium">Trova la voce "Notifiche" nelle impostazioni del sito</p>
+                          <p className="text-xs text-muted-foreground mt-1">Cambia da "Blocca" a "Consenti"</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">3</div>
+                        <div>
+                          <p className="text-sm font-medium">Ricarica la pagina</p>
+                          <p className="text-xs text-muted-foreground mt-1">Il sistema si attiverà automaticamente</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Alert className="mt-4 border-blue-200 bg-blue-50 dark:bg-blue-950/50">
+                      <Activity className="h-4 w-4 text-blue-600" />
+                      <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
+                        <strong>Cosa riceverai:</strong> Notifiche quando un medico crea una nota medica per te o in caso di alert sanitari urgenti.
+                        Le notifiche funzionano anche quando il browser è chiuso!
+                      </AlertDescription>
+                    </Alert>
+                    <div className="mt-4 p-3 bg-muted rounded-lg">
+                      <p className="text-xs">
+                        <strong>💡 Suggerimento:</strong> Su mobile, aggiungi CIRY alla schermata Home per ricevere notifiche come un'app nativa
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
               {isDoctor && (
                 <AccordionItem value="patient-linking">

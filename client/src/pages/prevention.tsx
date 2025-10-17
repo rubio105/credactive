@@ -1093,10 +1093,10 @@ export default function PreventionPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4 pb-4">
-                  {/* Mostra SOLO alert critici (high/emergency), altrimenti mostra indice prevenzione */}
+                  {/* Mostra SOLO alert URGENTI (emergency), altrimenti mostra indice prevenzione */}
                   {(() => {
                     const criticalAlerts = userAlerts.filter(
-                      alert => alert.urgencyLevel === 'high' || alert.urgencyLevel === 'emergency'
+                      alert => alert.urgencyLevel === 'emergency'
                     );
                     
                     if (criticalAlerts.length === 0) {
@@ -1156,21 +1156,15 @@ export default function PreventionPage() {
                         {criticalAlerts.map((alert) => (
                         <div 
                           key={alert.id} 
-                          className={`p-3 rounded-lg border-2 ${
-                            alert.urgencyLevel === 'high' 
-                              ? 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800' 
-                              : 'bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-800'
-                          }`}
+                          className="p-3 rounded-lg border-2 bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800"
                           data-testid={`alert-${alert.id}`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <AlertTriangle className={`w-4 h-4 ${
-                                  alert.urgencyLevel === 'high' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
-                                }`} />
-                                <Badge variant={alert.urgencyLevel === 'high' ? 'destructive' : 'secondary'} className="text-xs">
-                                  {alert.urgencyLevel === 'high' ? 'URGENTE' : 'ATTENZIONE'}
+                                <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                <Badge variant="destructive" className="text-xs">
+                                  URGENTE
                                 </Badge>
                               </div>
                               <p className="text-sm font-medium">{alert.reason}</p>

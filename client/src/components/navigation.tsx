@@ -290,6 +290,13 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             AI Prevenzione
                           </DropdownMenuItem>
                         </Link>
+                        <DropdownMenuSeparator />
+                        <Link href="/subscribe">
+                          <DropdownMenuItem className="text-emerald-600 dark:text-emerald-400 font-semibold" data-testid="menu-healthcare-plan">
+                            <HeartPulse className="w-4 h-4 mr-2" />
+                            Piano Sanitario
+                          </DropdownMenuItem>
+                        </Link>
                       </>
                     )}
                     {/* Patient Menu Items - Only Prevention related */}

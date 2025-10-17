@@ -10423,9 +10423,7 @@ Format as JSON: {
     }
   });
 
-  // Push Notifications API - TEMPORARILY DISABLED
-  // TODO: Configure VAPID keys before enabling push notifications
-  /*
+  // Push Notifications API
   const webPush = require('web-push');
   
   // VAPID keys for push notifications - load from environment or database
@@ -10571,7 +10569,6 @@ Format as JSON: {
       res.status(500).json({ message: error.message || 'Failed to send push notifications' });
     }
   });
-  */
   
   return httpServer;
 }

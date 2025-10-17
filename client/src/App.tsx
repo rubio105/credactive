@@ -8,6 +8,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import CookieBanner from "@/components/cookie-banner";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
+import { IOSInstallPrompt } from "@/components/IOSInstallPrompt";
 import Landing from "@/pages/landing";
 import Quiz from "@/pages/quiz";
 import Dashboard from "@/pages/dashboard";
@@ -194,6 +195,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <PWAInstallBanner />
+          <IOSInstallPrompt />
           <CookieBanner />
           <FeedbackDialog />
           <Router />

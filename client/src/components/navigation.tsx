@@ -358,10 +358,10 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     {/* Piano Sanitario - visible to all users */}
                     <>
                       <DropdownMenuSeparator />
-                      <Link href="/#subscriptions">
+                      <Link href="/subscribe">
                         <DropdownMenuItem className="text-emerald-600 dark:text-emerald-400 font-semibold" data-testid="menu-healthcare-plan">
                           <Stethoscope className="w-4 h-4 mr-2" />
-                          Piano Sanitario €29/mese
+                          Piano Sanitario €29,90/mese
                         </DropdownMenuItem>
                       </Link>
                     </>

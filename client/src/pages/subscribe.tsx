@@ -87,27 +87,16 @@ export default function Subscribe() {
   const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState("");
   const [loadingPayment, setLoadingPayment] = useState(true);
+  const [premiumCheckDone, setPremiumCheckDone] = useState(false);
 
   useEffect(() => {
-    // Force refresh user data to avoid stale cache
-    queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Non autorizzato",
-        description: "Devi effettuare il login",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 500);
+    if (isLoading || !isAuthenticated) {
       return;
     }
 
-    // Check if user is already premium
-    if (user?.isPremium) {
+    // Check if user is already premium (solo una volta)
+    if (!premiumCheckDone && user?.isPremium) {
+      setPremiumCheckDone(true);
       toast({
         title: "Sei già Premium!",
         description: "Il tuo abbonamento Premium è attivo",
@@ -118,8 +107,9 @@ export default function Subscribe() {
       return;
     }
 
-    // Create payment intent
-    if (isAuthenticated && !user?.isPremium) {
+    // Create payment intent only if not premium
+    if (!premiumCheckDone && !user?.isPremium) {
+      setPremiumCheckDone(true);
       apiRequest("/api/create-subscription", "POST", { tier: "premium" })
         .then((response) => response.json())
         .then((data) => {
@@ -136,7 +126,7 @@ export default function Subscribe() {
           setLoadingPayment(false);
         });
     }
-  }, [isAuthenticated, isLoading, user, toast]);
+  }, [isAuthenticated, isLoading, user, premiumCheckDone, toast]);
 
   if (isLoading || loadingPayment) {
     return (

@@ -77,6 +77,8 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. The schema support
 
 ### Medical Prevention System (Prohmed Partnership)
 Powered by Google Gemini AI, offering medical document upload/analysis, an AI educational assistant, and a medical alert system. Features include a Prevention Index, Medical Reports, and Radiological Image Analysis with structured findings and AI confidence scoring. Enhanced with GDPR compliance, Prohmed branding, and role-based AI responses.
+
+**Gemini Vision Medical Image Analysis**: Automatic detection and AI analysis for radiological images including: X-Ray, MRI, CT/TAC, Ecografia/Ultrasound, ECG/Elettrocardiogramma, Ecocardiografia, Mammografia, PET, Scintigrafia. Uses word-boundary detection to avoid false positives.
 - **Role-Based AI Analysis**: Dual-content system with `patientSummary` and `doctorSummary`.
 - **Medical Report Viewer Dialog**: 5-tab interface for various medical data.
 - **Contextual AI Conversations**: AI chat includes the last 2 medical reports; new reports during triage trigger notifications and are immediately available to AI.
@@ -103,7 +105,7 @@ Production runs on `ciry.app` using a Hetzner VPS with PM2, GitHub for version c
 - **Static Assets**: `/var/www/credactive/public/images/` served directly by Nginx
 - **Environment Variables**: Loaded from `.env` file via ecosystem.config.cjs
 - **Required Frontend Vars**: `VITE_STRIPE_PUBLIC_KEY` must be set during build time
-- **Push Notifications**: Temporarily disabled (requires VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY configuration)
+- **Push Notifications**: ACTIVE (configured via VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY secrets) - Doctors sending notes trigger real-time push notifications to patients
 
 **Deployment Workflow:**
 1. Push code to GitHub repository

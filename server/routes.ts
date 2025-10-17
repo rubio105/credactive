@@ -706,47 +706,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isReport: isReport || false,
       });
 
-      // Send push notification to patient - TEMPORARILY DISABLED
-      // TODO: Configure VAPID keys before enabling push notifications
-      /*
+      // Send push notification to patient
       try {
-        const subscriptions = await storage.getPushSubscriptionsByUser(patientId);
-        const doctor = await storage.getUserById(req.user.id);
-        
-        const payload = JSON.stringify({
-          title: `Nuova nota dal Dr. ${doctor?.lastName || 'medico'}`,
-          body: noteTitle || 'Il tuo medico ha aggiunto una nuova nota medica',
-          icon: '/images/ciry-main-logo.png',
-          badge: '/images/ciry-main-logo.png',
-          data: { url: '/documenti' },
-        });
+        // Check if VAPID keys are configured
+        if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+          console.warn('[Push] VAPID keys not configured - skipping push notification');
+        } else {
+          const subscriptions = await storage.getPushSubscriptionsByUser(patientId);
+          const doctor = await storage.getUserById(req.user.id);
+          
+          const payload = JSON.stringify({
+            title: `Nuova nota dal Dr. ${doctor?.lastName || 'medico'}`,
+            body: noteTitle || 'Il tuo medico ha aggiunto una nuova nota medica',
+            icon: '/images/ciry-main-logo.png',
+            badge: '/images/ciry-main-logo.png',
+            data: { url: '/documenti' },
+          });
 
-        const webPush = require('web-push');
-        const vapidKeys = await getVapidKeys();
-        webPush.setVapidDetails(
-          'mailto:support@ciry.app',
-          vapidKeys.publicKey,
-          vapidKeys.privateKey
-        );
+          const webPush = require('web-push');
+          webPush.setVapidDetails(
+            'mailto:support@ciry.app',
+            process.env.VAPID_PUBLIC_KEY,
+            process.env.VAPID_PRIVATE_KEY
+          );
 
-        await Promise.allSettled(
-          subscriptions.map(async (sub) => 
-            webPush.sendNotification({
-              endpoint: sub.endpoint,
-              keys: {
-                p256dh: sub.p256dh,
-                auth: sub.auth,
-              },
-            }, payload)
-          )
-        );
-        
-        console.log(`[Push] Sent notification to patient ${patientId} for new doctor note`);
+          await Promise.allSettled(
+            subscriptions.map(async (sub) => 
+              webPush.sendNotification({
+                endpoint: sub.endpoint,
+                keys: {
+                  p256dh: sub.p256dh,
+                  auth: sub.auth,
+                },
+              }, payload)
+            )
+          );
+          
+          console.log(`[Push] Sent notification to patient ${patientId} for new doctor note`);
+        }
       } catch (pushError) {
         console.error(`[Push] Failed to send notification for doctor note:`, pushError);
         // Don't fail the request if push fails
       }
-      */
 
       res.json(note);
     } catch (error) {

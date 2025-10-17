@@ -117,6 +117,8 @@ export class JobWorker {
     // Step 3: Radiological analysis (if applicable)
     let radiologicalAnalysis = null;
     const reportTypeLower = (ocrResult.reportType || '').toLowerCase();
+    // Use word boundaries for short acronyms to avoid false positives (e.g., "pet" in "competenza")
+    const petMatch = /\bpet\b/.test(reportTypeLower);
     const isRadiologicalImage = fileType.startsWith('image/') && 
       (reportTypeLower.includes('radiol') || 
        reportTypeLower.includes('imaging') ||
@@ -125,7 +127,13 @@ export class JobWorker {
        reportTypeLower.includes('ct') ||
        reportTypeLower.includes('tac') ||
        reportTypeLower.includes('ecografia') ||
-       reportTypeLower.includes('ultrasound'));
+       reportTypeLower.includes('ultrasound') ||
+       reportTypeLower.includes('ecg') ||
+       reportTypeLower.includes('elettrocardiogramma') ||
+       reportTypeLower.includes('ecocardio') ||
+       reportTypeLower.includes('mammografia') ||
+       petMatch ||
+       reportTypeLower.includes('scintigrafia'));
 
     if (isRadiologicalImage) {
       try {

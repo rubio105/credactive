@@ -25,6 +25,7 @@ import AdminMail from "@/pages/admin-mail";
 import AdminMarketing from "@/pages/admin-marketing";
 import AdminAlerts from "@/pages/admin-alerts";
 import AdminFeedback from "@/pages/admin-feedback";
+import AdminInAppNotifications from "@/pages/admin-in-app-notifications";
 import AdminPushNotifications from "@/pages/admin-push-notifications";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import AdminDocumentazione from "@/pages/admin-documentazione";
@@ -135,6 +136,9 @@ function Router() {
       </Route>
       <Route path="/admin/feedback">
         {() => <ProtectedRoute requireNonAiOnly><AdminFeedback /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/in-app-notifications">
+        {() => <ProtectedRoute requireNonAiOnly><AdminInAppNotifications /></ProtectedRoute>}
       </Route>
       <Route path="/admin/push-notifications">
         {() => <ProtectedRoute requireNonAiOnly><AdminPushNotifications /></ProtectedRoute>}

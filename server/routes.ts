@@ -8408,6 +8408,57 @@ Questa email è stata generata automaticamente dalla piattaforma CIRY
       res.status(500).json({ message: error.message || 'Failed to mark all notifications as read' });
     }
   });
+
+  // Create notification as admin (POST /api/admin/notifications/create) - ADMIN ONLY
+  app.post('/api/admin/notifications/create', isAdmin, async (req: any, res) => {
+    try {
+      const { title, message, type, targetUserId, priority, relatedUrl } = req.body;
+
+      if (!title || !message) {
+        return res.status(400).json({ message: 'Title and message are required' });
+      }
+
+      // If targetUserId is provided, send to specific user
+      // Otherwise, send to all users (broadcast)
+      if (targetUserId) {
+        const notification = await storage.createNotification({
+          userId: targetUserId,
+          title,
+          message,
+          type: type || 'admin_broadcast',
+          priority: priority || 'normal',
+          read: false,
+          relatedUrl: relatedUrl || null,
+        });
+        
+        console.log(`[Admin Notification] Sent to user ${targetUserId}: ${title}`);
+        res.json({ success: true, notification, count: 1 });
+      } else {
+        // Broadcast to all users
+        const allUsers = await storage.getAllUsers();
+        let count = 0;
+        
+        for (const user of allUsers) {
+          await storage.createNotification({
+            userId: user.id,
+            title,
+            message,
+            type: type || 'admin_broadcast',
+            priority: priority || 'normal',
+            read: false,
+            relatedUrl: relatedUrl || null,
+          });
+          count++;
+        }
+        
+        console.log(`[Admin Notification] Broadcast to ${count} users: ${title}`);
+        res.json({ success: true, count });
+      }
+    } catch (error: any) {
+      console.error('Create admin notification error:', error);
+      res.status(500).json({ message: error.message || 'Failed to create notification' });
+    }
+  });
   
   // Start new triage session (POST /api/triage/start) - Public endpoint for educational access
   app.post('/api/triage/start', aiGenerationLimiter, async (req, res) => {

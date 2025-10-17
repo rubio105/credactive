@@ -34,6 +34,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/mail", icon: Mail, label: "Email Templates", testId: "nav-admin-mail" },
     { href: "/admin/marketing", icon: Sparkles, label: "AI Marketing", testId: "nav-admin-marketing" },
     { href: "/admin/rag", icon: Database, label: "Knowledge Base", testId: "nav-admin-rag" },
+    { href: "/admin/in-app-notifications", icon: Bell, label: "Notifiche In-App", testId: "nav-admin-in-app-notifications" },
     { href: "/admin/push-notifications", icon: Bell, label: "Notifiche Push", testId: "nav-admin-push" },
     { href: "/admin/audit", icon: Shield, label: "Audit Log", testId: "nav-admin-audit" },
     { href: "/admin/documentazione", icon: BookOpen, label: "Documentazione", testId: "nav-admin-docs" },

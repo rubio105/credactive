@@ -80,7 +80,7 @@ function Router() {
         {() => <ProtectedRoute requireNonAiOnly><Dashboard /></ProtectedRoute>}
       </Route>
       <Route path="/subscribe">
-        {() => <ProtectedRoute requireNonAiOnly><Subscribe /></ProtectedRoute>}
+        {() => <ProtectedRoute><Subscribe /></ProtectedRoute>}
       </Route>
       <Route path="/payment-success">
         {() => <ProtectedRoute requireNonAiOnly><PaymentSuccess /></ProtectedRoute>}

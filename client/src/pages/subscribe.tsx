@@ -200,7 +200,7 @@ export default function Subscribe() {
                     <Check className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Accesso illimitato AI Prevenzione</h3>
+                    <h3 className="font-semibold">Accesso illimitato a CIRY</h3>
                     <p className="text-sm text-muted-foreground">Usa l'intelligenza artificiale senza limiti</p>
                   </div>
                 </div>

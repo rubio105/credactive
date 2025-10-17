@@ -159,7 +159,7 @@ export function PreventionPathDialog({
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 italic">Continua a usare l'AI per ricevere suggerimenti personalizzati</p>
+                <p className="text-gray-500 dark:text-gray-400 italic">Continua a usare CIRY per ricevere suggerimenti personalizzati</p>
               )}
             </CardContent>
           </Card>
@@ -221,7 +221,7 @@ export function PreventionPathDialog({
                 ))
               ) : (
                 <div className="space-y-3">
-                  <p className="text-gray-500 dark:text-gray-400 italic">Carica referti medici e parla con l'AI per avere una valutazione completa</p>
+                  <p className="text-gray-500 dark:text-gray-400 italic">Carica referti medici e parla con CIRY per avere una valutazione completa</p>
                   <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
                     <Target className="w-4 h-4 text-orange-600" />
                     <AlertDescription className="text-orange-800 dark:text-orange-200">
@@ -359,7 +359,7 @@ export function PreventionPathDialog({
           <DialogDescription>
             {isDoctor
               ? "Piano personalizzato per supportare il paziente nella prevenzione"
-              : "Piano personalizzato basato sul tuo profilo e conversazioni con l'AI"
+              : "Piano personalizzato basato sul tuo profilo e conversazioni con CIRY"
             }
           </DialogDescription>
         </DialogHeader>

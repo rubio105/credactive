@@ -1368,7 +1368,7 @@ export default function PreventionPage() {
                               <TooltipContent className="max-w-xs bg-white dark:bg-gray-900 p-3" side="bottom">
                                 <p className="text-sm font-semibold mb-1">✨ Token Illimitati</p>
                                 <p className="text-xs text-muted-foreground">
-                                  Come paziente, hai accesso <strong>illimitato</strong> all'AI senza costi aggiuntivi. 
+                                  Come paziente, hai accesso <strong>illimitato</strong> a CIRY senza costi aggiuntivi. 
                                   Usa l'assistente quando vuoi, senza limiti mensili.
                                 </p>
                               </TooltipContent>
@@ -1937,14 +1937,14 @@ export default function PreventionPage() {
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base space-y-3">
               <p>
-                Hai raggiunto il <strong>limite mensile di token</strong> per l'AI di Prevenzione.
+                Hai raggiunto il <strong>limite mensile di token</strong> per CIRY.
               </p>
               <p>
-                Passa a Premium per continuare a usare l'AI Prohmed senza limiti e accedere a tutte le funzionalità:
+                Passa a Premium per continuare a usare CIRY senza limiti e accedere a tutte le funzionalità:
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>1000 token mensili (8x rispetto al piano Free)</li>
-                <li>Conversazioni illimitate con l'AI</li>
+                <li>Conversazioni illimitate con CIRY</li>
                 <li>Caricamento documenti medici</li>
                 <li>Report personalizzati e analisi avanzate</li>
                 <li>2 televisite a settimana</li>

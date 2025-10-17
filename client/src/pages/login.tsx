@@ -182,16 +182,7 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
-            Non hai un account?{" "}
-            <Link 
-              href="/register" 
-              className="text-primary font-medium hover:underline" 
-              data-testid="link-register"
-            >
-              Registrati
-            </Link>
-          </div>
+          {/* Registrazione disabilitata - solo admin può censire utenti */}
         </CardContent>
       </Card>
     </div>

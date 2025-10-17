@@ -209,13 +209,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     Accedi
                   </Button>
                 </Link>
-                <Link href="/register">
-                  <Button 
-                    data-testid="button-register"
-                  >
-                    Registrati
-                  </Button>
-                </Link>
+                {/* Registrazione disabilitata - solo admin può censire */}
               </div>
             ) : (
               /* Authenticated State */

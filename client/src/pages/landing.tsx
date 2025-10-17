@@ -201,21 +201,13 @@ export default function Landing() {
                   <Button 
                     size="lg"
                     className="bg-white text-primary hover:bg-white/90 shadow-xl font-bold text-lg px-12 py-6 h-auto"
-                    onClick={() => window.location.href = '/register'}
+                    onClick={() => window.location.href = '/login'}
                     data-testid="button-view-live-courses"
                   >
                     <Calendar className="w-5 h-5 mr-2" />
                     Scopri i Corsi Live
                   </Button>
-                  <Button 
-                    size="lg"
-                    variant="outline"
-                    className="bg-white/10 border-white text-white hover:bg-white/20 font-bold text-lg px-12 py-6 h-auto backdrop-blur-sm"
-                    onClick={() => window.location.href = '/register'}
-                    data-testid="button-register-for-course"
-                  >
-                    Registrati Ora
-                  </Button>
+                  {/* Registrazione disabilitata - pulsante rimosso */}
                 </div>
               </div>
             </div>

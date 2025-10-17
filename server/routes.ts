@@ -8048,13 +8048,45 @@ Le risposte DEVONO essere in italiano.`;
         return res.status(404).json({ message: 'Utente non trovato' });
       }
 
-      const userName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim() || 'Utente';
+      // Get recent triage sessions to include symptoms/context
+      const sessions = await storage.getTriageSessionsByUser(user.id);
+      let recentSymptoms = '';
+      
+      if (sessions.length > 0) {
+        const latestSession = sessions[0];
+        const messages = await storage.getTriageMessagesBySession(latestSession.id);
+        const userMessages = messages
+          .filter(msg => msg.role === 'user')
+          .slice(0, 5)
+          .map(msg => msg.content);
+        
+        if (userMessages.length > 0) {
+          recentSymptoms = userMessages.join('\n• ');
+        }
+      }
+
+      const userName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim();
       const userEmail = userDetails.email;
+      
+      // Calculate age from dateOfBirth
+      let userAge = 'Non specificata';
+      if (userDetails.dateOfBirth) {
+        const birthDate = new Date(userDetails.dateOfBirth);
+        const today = new Date();
+        const age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        const finalAge = (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) 
+          ? age - 1 
+          : age;
+        userAge = `${finalAge} anni`;
+      }
+      
+      const userGender = userDetails.gender === 'M' ? 'Maschio' : userDetails.gender === 'F' ? 'Femmina' : 'Non specificato';
 
       // Send email to prenotazioni@ciry.app
       await sendEmail({
         to: 'prenotazioni@ciry.app',
-        subject: `Richiesta Consulto Medico Prohmed - ${userName}`,
+        subject: `Richiesta Consulto Medico Prohmed${userName ? ` - ${userName}` : ` - ${userEmail}`}`,
         htmlContent: `
           <html>
             <head>
@@ -8064,6 +8096,7 @@ Le risposte DEVONO essere in italiano.`;
                 .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
                 .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
                 .info-box { background: white; padding: 15px; border-left: 4px solid #10b981; margin: 15px 0; }
+                .symptoms-box { background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 15px 0; }
                 .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #6b7280; }
               </style>
             </head>
@@ -8074,13 +8107,28 @@ Le risposte DEVONO essere in italiano.`;
                 </div>
                 <div class="content">
                   <div class="info-box">
-                    <h3 style="margin-top: 0;">Dati Paziente</h3>
-                    <p><strong>Nome:</strong> ${userName}</p>
+                    <h3 style="margin-top: 0;">📋 Dati Paziente</h3>
+                    ${userName ? `<p><strong>Nome e Cognome:</strong> ${userName}</p>` : ''}
                     <p><strong>Email:</strong> ${userEmail}</p>
-                    <p><strong>Data richiesta:</strong> ${new Date().toLocaleString('it-IT')}</p>
+                    <p><strong>Età:</strong> ${userAge}</p>
+                    <p><strong>Sesso:</strong> ${userGender}</p>
+                    <p><strong>Data richiesta:</strong> ${new Date().toLocaleString('it-IT', { 
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</p>
                   </div>
+                  ${recentSymptoms ? `
+                  <div class="symptoms-box">
+                    <h3 style="margin-top: 0;">⚠️ Sintomi/Preoccupazioni Recenti</h3>
+                    <p style="margin: 0; white-space: pre-line;">• ${recentSymptoms}</p>
+                  </div>
+                  ` : ''}
                   <p>Il paziente ha richiesto di essere contattato da un medico Prohmed per approfondire il proprio percorso di prevenzione personalizzato.</p>
-                  <p><strong>Azione richiesta:</strong> Contattare il paziente per programmare una consulenza gratuita.</p>
+                  <p><strong>✅ Azione richiesta:</strong> Contattare il paziente all'indirizzo <a href="mailto:${userEmail}">${userEmail}</a> per programmare una consulenza gratuita.</p>
                 </div>
                 <div class="footer">
                   <p>Questa email è stata generata automaticamente dalla piattaforma CIRY</p>
@@ -8091,16 +8139,31 @@ Le risposte DEVONO essere in italiano.`;
           </html>
         `,
         textContent: `
-Nuova Richiesta Consulto Medico Prohmed
+🩺 Nuova Richiesta Consulto Medico Prohmed
 
-Dati Paziente:
-Nome: ${userName}
+📋 DATI PAZIENTE:
+${userName ? `Nome e Cognome: ${userName}` : ''}
 Email: ${userEmail}
-Data richiesta: ${new Date().toLocaleString('it-IT')}
+Età: ${userAge}
+Sesso: ${userGender}
+Data richiesta: ${new Date().toLocaleString('it-IT', { 
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})}
+
+${recentSymptoms ? `
+⚠️ SINTOMI/PREOCCUPAZIONI RECENTI:
+• ${recentSymptoms}
+` : ''}
 
 Il paziente ha richiesto di essere contattato da un medico Prohmed per approfondire il proprio percorso di prevenzione personalizzato.
 
-Azione richiesta: Contattare il paziente per programmare una consulenza gratuita.
+✅ AZIONE RICHIESTA: 
+Contattare il paziente all'indirizzo ${userEmail} per programmare una consulenza gratuita.
 
 ---
 Questa email è stata generata automaticamente dalla piattaforma CIRY
@@ -8108,7 +8171,7 @@ Questa email è stata generata automaticamente dalla piattaforma CIRY
         `.trim()
       });
 
-      console.log(`[Contact Doctor] Request sent from ${userEmail} to prenotazioni@ciry.app`);
+      console.log(`[Contact Doctor] Request sent from ${userEmail} to prenotazioni@ciry.app with symptoms context`);
 
       res.json({ 
         success: true,

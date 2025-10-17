@@ -206,7 +206,7 @@ import {
   type InsertPushSubscription,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, asc, sql, and, or, gte, lte } from "drizzle-orm";
+import { eq, desc, asc, sql, and, or, gte, lte, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -4008,7 +4008,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(triageAlerts)
       .innerJoin(users, eq(triageAlerts.userId, users.id))
-      .where(sql`${triageAlerts.userId} = ANY(${patientIds})`)
+      .where(inArray(triageAlerts.userId, patientIds))
       .orderBy(desc(triageAlerts.createdAt));
 
     return results.map(r => ({

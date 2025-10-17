@@ -109,9 +109,13 @@ Production runs on `ciry.app` using a Hetzner VPS with PM2, GitHub for version c
 1. Push code to GitHub repository
 2. SSH to server: `ssh root@157.180.21.147`
 3. Pull changes: `cd /var/www/credactive && git pull`
-4. Build: `npm run build` (compiles frontend with Vite + backend with esbuild)
-5. Restart: `pm2 restart credactive`
-6. Verify: `pm2 logs credactive --lines 30`
+4. **Load environment variables**: `export $(grep -v '^#' .env | xargs)` (CRITICAL: VITE_* vars must be loaded before build)
+5. Build: `npm run build` (compiles frontend with Vite + backend with esbuild)
+6. Restart: `pm2 restart credactive`
+7. **Purge Cloudflare Cache**: Dashboard → Caching → Purge Everything (to serve updated assets)
+8. Verify: `pm2 logs credactive --lines 30`
+
+**Important**: Step 4 is mandatory because Vite embeds `VITE_*` environment variables during build time. Without exporting them first, the build will fail to include values like `VITE_STRIPE_PUBLIC_KEY`.
 
 # External Dependencies
 

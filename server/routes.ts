@@ -2171,6 +2171,9 @@ ${JSON.stringify(questionsToTranslate)}`;
       if (isBecomingDoctor) {
         const doctorCode = await storage.generateDoctorCode(id);
         console.log(`[Admin] Auto-generated doctor code ${doctorCode} for user ${user.email}`);
+        // Reload user to include the doctor code
+        const updatedUser = await storage.getUser(id);
+        return res.json(updatedUser || user);
       }
       
       res.json(user);
@@ -2252,6 +2255,10 @@ ${JSON.stringify(questionsToTranslate)}`;
       if (isDoctor) {
         const doctorCode = await storage.generateDoctorCode(user.id);
         console.log(`[Admin] Auto-generated doctor code ${doctorCode} for new user ${user.email}`);
+        // Reload user to include the doctor code
+        const updatedUser = await storage.getUser(user.id);
+        const { password: _, ...userWithoutPassword } = updatedUser || user;
+        return res.json(userWithoutPassword);
       }
 
       // Return user without password
@@ -8494,12 +8501,18 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
 
       // Check for sensitive flags and create alerts (only for authenticated users)
       if ((aiResponse.isSensitive || aiResponse.suggestDoctor) && user?.id) {
+        // Extract key symptom from patient message (first sentence or up to 80 chars)
+        const symptomExtract = content.split(/[.!?]/)[0].trim().substring(0, 80);
+        const alertReason = symptomExtract 
+          ? `Sintomi: ${symptomExtract}${symptomExtract.length >= 80 ? '...' : ''}`
+          : `Urgenza: ${aiResponse.urgencyLevel}`;
+        
         await storage.createTriageAlert({
           userId: user.id,
           sessionId,
           urgencyLevel: aiResponse.urgencyLevel,
           alertType: aiResponse.isSensitive ? 'sensitive_topic' : 'doctor_referral',
-          reason: `Urgency: ${aiResponse.urgencyLevel}. Related topics: ${aiResponse.relatedTopics.join(', ')}`,
+          reason: alertReason,
           isReviewed: false,
         });
       }

@@ -144,12 +144,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         I Miei Pazienti
                       </Button>
                     </Link>
-                    <Link href="/doctor/reports">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reporting">
-                        <FileCheck className="w-4 h-4 mr-2" />
-                        Refertazione
-                      </Button>
-                    </Link>
                     <Link href="/prevention">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
                         <Stethoscope className="w-4 h-4 mr-2" />

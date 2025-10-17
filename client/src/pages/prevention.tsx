@@ -119,6 +119,12 @@ export default function PreventionPage() {
     retry: false,
   });
 
+  // Query for doctor to get patient alerts
+  const { data: doctorPatientAlerts = [] } = useQuery<any[]>({
+    queryKey: ["/api/doctor/alerts"],
+    enabled: !!(user as any)?.isDoctor,
+  });
+
   const { data: documents } = useQuery<PreventionDocument[]>({
     queryKey: ["/api/prevention/documents"],
   });
@@ -1014,107 +1020,167 @@ export default function PreventionPage() {
 
         <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">
           <div className="lg:col-span-1 space-y-6 order-2 lg:order-1 max-w-full">
-            {/* Indice di Prevenzione */}
-            <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
-              <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-6">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <Shield className="w-6 h-6" />
-                  </div>
-                  Indice di Prevenzione
-                </CardTitle>
-                <CardDescription className="text-white/90 text-base mt-2">
-                  Il tuo livello di prevenzione basato sull'utilizzo
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4 pb-4">
-                {userAlerts.length === 0 ? (
-                  <div className="text-center py-6">
-                    <div className="relative w-24 h-24 mx-auto mb-4">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className={`text-4xl font-bold ${
-                          (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
-                          (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
-                          'text-orange-600'
-                        }`}>
-                          {preventionIndex?.score ?? 0}
-                        </div>
-                      </div>
-                      <svg className="w-24 h-24 transform -rotate-90">
-                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200 dark:text-gray-700" />
-                        <circle 
-                          cx="48" 
-                          cy="48" 
-                          r="40" 
-                          stroke="currentColor" 
-                          strokeWidth="8" 
-                          fill="none" 
-                          strokeDasharray="251.2" 
-                          strokeDashoffset={251.2 - (251.2 * (preventionIndex?.score ?? 0) / 100)} 
-                          className={
-                            (preventionIndex?.tier === 'high') ? 'text-emerald-500' :
-                            (preventionIndex?.tier === 'medium') ? 'text-yellow-500' :
-                            'text-orange-500'
-                          } 
-                        />
-                      </svg>
+            {/* Alert Pazienti Collegati (SOLO per Medici) */}
+            {(user as any)?.isDoctor ? (
+              <Card className="shadow-xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden">
+                <CardHeader className="bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white pb-6">
+                  <CardTitle className="flex items-center gap-3 text-2xl">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <AlertTriangle className="w-6 h-6" />
                     </div>
-                    <p className={`text-sm font-medium ${
-                      (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
-                      (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
-                      'text-orange-600'
-                    }`}>
-                      {preventionIndex?.tier === 'high' ? 'Ottimo livello di prevenzione!' :
-                       preventionIndex?.tier === 'medium' ? 'Buon livello di prevenzione' :
-                       'Inizia il tuo percorso di prevenzione'}
-                    </p>
-                    <p className="text-xs mt-2 text-muted-foreground">
-                      {preventionIndex?.tier === 'high' ? 'Continua così!' :
-                       preventionIndex?.tier === 'medium' ? 'Continua ad usare l\'AI regolarmente' :
-                       'Inizia a chattare con l\'AI e carica i tuoi documenti'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {userAlerts.map((alert) => (
-                      <div 
-                        key={alert.id} 
-                        className={`p-3 rounded-lg border-2 ${
-                          alert.urgencyLevel === 'high' 
-                            ? 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800' 
-                            : 'bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-800'
-                        }`}
-                        data-testid={`alert-${alert.id}`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <AlertTriangle className={`w-4 h-4 ${
-                                alert.urgencyLevel === 'high' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
-                              }`} />
-                              <Badge variant={alert.urgencyLevel === 'high' ? 'destructive' : 'secondary'} className="text-xs">
-                                {alert.urgencyLevel === 'high' ? 'URGENTE' : 'ATTENZIONE'}
-                              </Badge>
+                    Alert Pazienti Collegati
+                  </CardTitle>
+                  <CardDescription className="text-white/90 text-base mt-2">
+                    Monitoraggio alert dei tuoi pazienti
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 pb-4">
+                  {doctorPatientAlerts.length === 0 ? (
+                    <div className="text-center py-6">
+                      <p className="text-sm text-muted-foreground">Nessun alert dai tuoi pazienti</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {doctorPatientAlerts.map((alert) => (
+                        <div 
+                          key={alert.id} 
+                          className={`p-3 rounded-lg border-2 ${
+                            alert.urgencyLevel === 'high' 
+                              ? 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800' 
+                              : 'bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-800'
+                          }`}
+                          data-testid={`doctor-alert-${alert.id}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <AlertTriangle className={`w-4 h-4 ${
+                                  alert.urgencyLevel === 'high' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
+                                }`} />
+                                <Badge variant={alert.urgencyLevel === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                                  {alert.urgencyLevel === 'high' ? 'URGENTE' : 'ATTENZIONE'}
+                                </Badge>
+                              </div>
+                              <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1">
+                                Paziente: {alert.patientName || 'Non disponibile'}
+                              </p>
+                              <p className="text-sm font-medium">{alert.reason}</p>
+                              {alert.createdAt && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {new Date(alert.createdAt).toLocaleDateString('it-IT')} - {new Date(alert.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              )}
                             </div>
-                            <p className="text-sm font-medium">{alert.reason}</p>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => markAlertResolvedMutation.mutate(alert.id)}
-                            disabled={markAlertResolvedMutation.isPending}
-                            className="shrink-0"
-                            data-testid={`button-resolve-${alert.id}`}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              /* Indice di Prevenzione (SOLO per Pazienti) */
+              <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
+                <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-6">
+                  <CardTitle className="flex items-center gap-3 text-2xl">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <Shield className="w-6 h-6" />
+                    </div>
+                    Indice di Prevenzione
+                  </CardTitle>
+                  <CardDescription className="text-white/90 text-base mt-2">
+                    Il tuo livello di prevenzione basato sull'utilizzo
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 pb-4">
+                  {userAlerts.length === 0 ? (
+                    <div className="text-center py-6">
+                      <div className="relative w-24 h-24 mx-auto mb-4">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className={`text-4xl font-bold ${
+                            (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
+                            (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
+                            'text-orange-600'
+                          }`}>
+                            {preventionIndex?.score ?? 0}
+                          </div>
+                        </div>
+                        <svg className="w-24 h-24 transform -rotate-90">
+                          <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200 dark:text-gray-700" />
+                          <circle 
+                            cx="48" 
+                            cy="48" 
+                            r="40" 
+                            stroke="currentColor" 
+                            strokeWidth="8" 
+                            fill="none" 
+                            strokeDasharray="251.2" 
+                            strokeDashoffset={251.2 - (251.2 * (preventionIndex?.score ?? 0) / 100)} 
+                            className={
+                              (preventionIndex?.tier === 'high') ? 'text-emerald-500' :
+                              (preventionIndex?.tier === 'medium') ? 'text-yellow-500' :
+                              'text-orange-500'
+                            } 
+                          />
+                        </svg>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <p className={`text-sm font-medium ${
+                        (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
+                        (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
+                        'text-orange-600'
+                      }`}>
+                        {preventionIndex?.tier === 'high' ? 'Ottimo livello di prevenzione!' :
+                         preventionIndex?.tier === 'medium' ? 'Buon livello di prevenzione' :
+                         'Inizia il tuo percorso di prevenzione'}
+                      </p>
+                      <p className="text-xs mt-2 text-muted-foreground">
+                        {preventionIndex?.tier === 'high' ? 'Continua così!' :
+                         preventionIndex?.tier === 'medium' ? 'Continua ad usare l\'AI regolarmente' :
+                         'Inizia a chattare con l\'AI e carica i tuoi documenti'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {userAlerts.map((alert) => (
+                        <div 
+                          key={alert.id} 
+                          className={`p-3 rounded-lg border-2 ${
+                            alert.urgencyLevel === 'high' 
+                              ? 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800' 
+                              : 'bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-800'
+                          }`}
+                          data-testid={`alert-${alert.id}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <AlertTriangle className={`w-4 h-4 ${
+                                  alert.urgencyLevel === 'high' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
+                                }`} />
+                                <Badge variant={alert.urgencyLevel === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                                  {alert.urgencyLevel === 'high' ? 'URGENTE' : 'ATTENZIONE'}
+                                </Badge>
+                              </div>
+                              <p className="text-sm font-medium">{alert.reason}</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => markAlertResolvedMutation.mutate(alert.id)}
+                              disabled={markAlertResolvedMutation.isPending}
+                              className="shrink-0"
+                              data-testid={`button-resolve-${alert.id}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Token Usage & Upgrade - HIDDEN for regular patients, only for aiOnlyAccess quiz users */}
             {user?.aiOnlyAccess && (

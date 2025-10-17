@@ -669,12 +669,15 @@ Respond ONLY with the extracted text, no additional commentary.`;
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
 
+    // For radiological images, very little text is expected (they're mostly visual)
+    // Don't fail if text is minimal - radiological analysis will happen later
     if (!extractedText || extractedText.trim().length < 5) {
-      throw new Error("No text could be extracted from the medical report. Please ensure the image is clear and well-lit.");
+      console.warn("[Gemini] Very little text extracted from image - may be radiological/visual report");
+      extractedText = "[Immagine medica - contenuto principalmente visivo]";
     }
     
-    if (extractedText.trim().length < 20) {
-      console.warn("[Gemini] WARNING: Very little text extracted (", extractedText.length, "chars). Image quality may be poor.");
+    if (extractedText.trim().length < 20 && !extractedText.includes("contenuto principalmente visivo")) {
+      console.warn("[Gemini] WARNING: Very little text extracted (", extractedText.length, "chars). Image quality may be poor or it's a radiological image.");
     }
 
     // Analyze extracted text with Gemini to structure medical data

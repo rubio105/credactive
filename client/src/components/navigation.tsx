@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle, Video, Phone, FileCheck } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle, Video, Phone, FileCheck, HeartPulse } from "lucide-react";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
 
@@ -142,6 +142,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
                         <User className="w-4 h-4 mr-2" />
                         I Miei Pazienti
+                      </Button>
+                    </Link>
+                    <Link href="/doctor/reports">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reporting">
+                        <FileCheck className="w-4 h-4 mr-2" />
+                        Refertazione
                       </Button>
                     </Link>
                     <Link href="/prevention">
@@ -296,6 +302,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                           </DropdownMenuItem>
                         </Link>
                         <DropdownMenuSeparator />
+                        <Link href="/subscribe">
+                          <DropdownMenuItem className="text-emerald-600 dark:text-emerald-400 font-semibold" data-testid="menu-healthcare-plan">
+                            <HeartPulse className="w-4 h-4 mr-2" />
+                            Piano Sanitario
+                          </DropdownMenuItem>
+                        </Link>
                         <Link href="/security">
                           <DropdownMenuItem data-testid="menu-security">
                             <Shield className="w-4 h-4 mr-2" />

@@ -1093,55 +1093,67 @@ export default function PreventionPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4 pb-4">
-                  {userAlerts.length === 0 ? (
-                    <div className="text-center py-6">
-                      <div className="relative w-24 h-24 mx-auto mb-4">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className={`text-4xl font-bold ${
+                  {/* Mostra SOLO alert critici (high/emergency), altrimenti mostra indice prevenzione */}
+                  {(() => {
+                    const criticalAlerts = userAlerts.filter(
+                      alert => alert.urgencyLevel === 'high' || alert.urgencyLevel === 'emergency'
+                    );
+                    
+                    if (criticalAlerts.length === 0) {
+                      // Nessun alert critico -> mostra indice prevenzione
+                      return (
+                        <div className="text-center py-6">
+                          <div className="relative w-24 h-24 mx-auto mb-4">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className={`text-4xl font-bold ${
+                                (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
+                                (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
+                                'text-orange-600'
+                              }`}>
+                                {preventionIndex?.score ?? 0}
+                              </div>
+                            </div>
+                            <svg className="w-24 h-24 transform -rotate-90">
+                              <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200 dark:text-gray-700" />
+                              <circle 
+                                cx="48" 
+                                cy="48" 
+                                r="40" 
+                                stroke="currentColor" 
+                                strokeWidth="8" 
+                                fill="none" 
+                                strokeDasharray="251.2" 
+                                strokeDashoffset={251.2 - (251.2 * (preventionIndex?.score ?? 0) / 100)} 
+                                className={
+                                  (preventionIndex?.tier === 'high') ? 'text-emerald-500' :
+                                  (preventionIndex?.tier === 'medium') ? 'text-yellow-500' :
+                                  'text-orange-500'
+                                } 
+                              />
+                            </svg>
+                          </div>
+                          <p className={`text-sm font-medium ${
                             (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
                             (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
                             'text-orange-600'
                           }`}>
-                            {preventionIndex?.score ?? 0}
-                          </div>
+                            {preventionIndex?.tier === 'high' ? 'Ottimo livello di prevenzione!' :
+                             preventionIndex?.tier === 'medium' ? 'Buon livello di prevenzione' :
+                             'Inizia il tuo percorso di prevenzione'}
+                          </p>
+                          <p className="text-xs mt-2 text-muted-foreground">
+                            {preventionIndex?.tier === 'high' ? 'Continua così!' :
+                             preventionIndex?.tier === 'medium' ? 'Continua ad usare l\'AI regolarmente' :
+                             'Inizia a chattare con l\'AI e carica i tuoi documenti'}
+                          </p>
                         </div>
-                        <svg className="w-24 h-24 transform -rotate-90">
-                          <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200 dark:text-gray-700" />
-                          <circle 
-                            cx="48" 
-                            cy="48" 
-                            r="40" 
-                            stroke="currentColor" 
-                            strokeWidth="8" 
-                            fill="none" 
-                            strokeDasharray="251.2" 
-                            strokeDashoffset={251.2 - (251.2 * (preventionIndex?.score ?? 0) / 100)} 
-                            className={
-                              (preventionIndex?.tier === 'high') ? 'text-emerald-500' :
-                              (preventionIndex?.tier === 'medium') ? 'text-yellow-500' :
-                              'text-orange-500'
-                            } 
-                          />
-                        </svg>
-                      </div>
-                      <p className={`text-sm font-medium ${
-                        (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
-                        (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
-                        'text-orange-600'
-                      }`}>
-                        {preventionIndex?.tier === 'high' ? 'Ottimo livello di prevenzione!' :
-                         preventionIndex?.tier === 'medium' ? 'Buon livello di prevenzione' :
-                         'Inizia il tuo percorso di prevenzione'}
-                      </p>
-                      <p className="text-xs mt-2 text-muted-foreground">
-                        {preventionIndex?.tier === 'high' ? 'Continua così!' :
-                         preventionIndex?.tier === 'medium' ? 'Continua ad usare l\'AI regolarmente' :
-                         'Inizia a chattare con l\'AI e carica i tuoi documenti'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {userAlerts.map((alert) => (
+                      );
+                    }
+                    
+                    // Mostra SOLO alert critici
+                    return (
+                      <div className="space-y-3">
+                        {criticalAlerts.map((alert) => (
                         <div 
                           key={alert.id} 
                           className={`p-3 rounded-lg border-2 ${
@@ -1177,7 +1189,8 @@ export default function PreventionPage() {
                         </div>
                       ))}
                     </div>
-                  )}
+                    );
+                  })()}
                 </CardContent>
               </Card>
             )}

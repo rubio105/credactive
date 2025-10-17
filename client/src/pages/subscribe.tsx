@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
@@ -85,6 +86,7 @@ const CheckoutForm = () => {
 export default function Subscribe() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [clientSecret, setClientSecret] = useState("");
   const [loadingPayment, setLoadingPayment] = useState(true);
   const [premiumCheckDone, setPremiumCheckDone] = useState(false);
@@ -102,7 +104,7 @@ export default function Subscribe() {
         description: "Il tuo abbonamento Premium è attivo",
       });
       setTimeout(() => {
-        window.location.href = "/";
+        setLocation("/");
       }, 1000);
       return;
     }

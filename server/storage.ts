@@ -638,7 +638,7 @@ export interface IStorage {
   
   // Doctor Notes operations
   createDoctorNote(note: InsertDoctorNote): Promise<DoctorNote>;
-  getDoctorNotesByPatient(patientId: string): Promise<Array<DoctorNote & { doctorName: string }>>;
+  getDoctorNotesByPatient(patientId: string): Promise<Array<DoctorNote & { doctor: { firstName: string | null, lastName: string | null }, doctorName: string }>>;
   getDoctorNotesByDoctor(doctorId: string): Promise<DoctorNote[]>;
   getDoctorNoteById(id: string): Promise<DoctorNote | undefined>;
   deleteDoctorNote(id: string): Promise<void>;
@@ -3948,7 +3948,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getDoctorNotesByPatient(patientId: string): Promise<Array<DoctorNote & { doctorName: string }>> {
+  async getDoctorNotesByPatient(patientId: string): Promise<Array<DoctorNote & { doctor: { firstName: string | null, lastName: string | null }, doctorName: string }>> {
     const results = await db
       .select({
         note: doctorNotes,
@@ -3962,7 +3962,11 @@ export class DatabaseStorage implements IStorage {
 
     return results.map(r => ({
       ...r.note,
-      doctorName: `Dr. ${r.doctorFirstName} ${r.doctorLastName}`,
+      doctor: {
+        firstName: r.doctorFirstName,
+        lastName: r.doctorLastName,
+      },
+      doctorName: `Dr. ${r.doctorFirstName || ''} ${r.doctorLastName || ''}`.trim(),
     }));
   }
 

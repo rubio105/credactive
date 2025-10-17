@@ -781,7 +781,14 @@ Rispondi con JSON in questo formato esatto:
     return result;
   } catch (error) {
     console.error("[Gemini] Failed to extract text from medical report:", error);
-    throw new Error(`Failed to extract text from medical report: ${error}`);
+    throw new Error(
+      `Impossibile analizzare il documento. Riprova caricando una foto più chiara con:\n` +
+      `• Buona illuminazione (evita ombre e riflessi)\n` +
+      `• Documento a fuoco (non sfocato)\n` +
+      `• Testo leggibile (non troppo piccolo)\n` +
+      `• Foto dritta (non storta o angolata)\n\n` +
+      `Se il problema persiste, prova a caricare il documento in formato PDF invece che come immagine.`
+    );
   }
 }
 

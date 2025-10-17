@@ -7,7 +7,7 @@ import Navigation from "@/components/navigation";
 import { Crown, Video, Headphones, Check, Loader2 } from "lucide-react";
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Load Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
@@ -87,6 +87,11 @@ export default function Subscribe() {
   const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState("");
   const [loadingPayment, setLoadingPayment] = useState(true);
+
+  useEffect(() => {
+    // Force refresh user data to avoid stale cache
+    queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

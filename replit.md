@@ -62,7 +62,7 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. The schema support
 - **Health Score System**: AI-powered personal health scoring from medical report analysis.
 - **Token Usage System**: Inverted tiered model; regular patients have unlimited tokens, `aiOnlyAccess` users have tiered limits.
 - **Webinar Health System**: Free webinar platform for prevention education.
-- **Professional Registration Workflow**: Doctor registration via contact request approval; public registration for personal access.
+- **Professional Registration Workflow**: Doctor registration via contact request approval; public patient registration **disabled** (admin-only user creation via AdminUsers panel).
 - **Job Queue System**: Asynchronous processing for heavy tasks like medical document analysis.
 - **User Feedback System**: Complete feedback management at `/admin/feedback` with filtering by category/status, admin notes, resolution tracking, and user details display.
 - **Patient Onboarding System**: Collects health profile data.

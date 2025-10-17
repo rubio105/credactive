@@ -706,6 +706,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isReport: isReport || false,
       });
 
+      // Create in-app notification for patient
+      try {
+        const doctor = await storage.getUserById(req.user.id);
+        const doctorName = doctor?.lastName ? `Dr. ${doctor.lastName}` : 'il tuo medico';
+        
+        await storage.createNotification({
+          userId: patientId,
+          title: `Nuova nota da ${doctorName}`,
+          message: noteTitle || 'Il tuo medico ha aggiunto una nuova nota medica al tuo profilo',
+          type: 'doctor_note',
+          read: false,
+          relatedResourceType: 'doctor_note',
+          relatedResourceId: note.id,
+          relatedUrl: '/documenti',
+          iconType: 'stethoscope',
+          priority: isReport ? 'high' : 'normal',
+        });
+        
+        console.log(`[Notification] Created in-app notification for patient ${patientId} for new doctor note`);
+      } catch (notificationError) {
+        console.error(`[Notification] Failed to create in-app notification:`, notificationError);
+        // Don't fail the request if notification creation fails
+      }
+
       // Send push notification to patient
       try {
         // Check if VAPID keys are configured
@@ -8188,6 +8212,54 @@ Le risposte DEVONO essere in italiano.`;
     } catch (error: any) {
       console.error('Contact Prohmed direct error:', error);
       res.status(500).json({ message: error.message || 'Failed to send email' });
+    }
+  });
+
+  // *** IN-APP NOTIFICATIONS ENDPOINTS ***
+  
+  // Get user's notifications (GET /api/notifications)
+  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const notifications = await storage.getNotificationsByUser(userId);
+      res.json(notifications);
+    } catch (error: any) {
+      console.error('Get notifications error:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch notifications' });
+    }
+  });
+
+  // Mark notification as read (POST /api/notifications/:id/read)
+  app.post('/api/notifications/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { id } = req.params;
+      
+      // Verify notification belongs to user
+      const notifications = await storage.getNotificationsByUser(userId);
+      const notification = notifications.find((n: any) => n.id === id);
+      
+      if (!notification) {
+        return res.status(403).json({ message: 'Non autorizzato' });
+      }
+      
+      await storage.markNotificationAsRead(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Mark notification read error:', error);
+      res.status(500).json({ message: error.message || 'Failed to mark notification as read' });
+    }
+  });
+
+  // Mark all notifications as read (POST /api/notifications/mark-all-read)
+  app.post('/api/notifications/mark-all-read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Mark all notifications read error:', error);
+      res.status(500).json({ message: error.message || 'Failed to mark all notifications as read' });
     }
   });
   

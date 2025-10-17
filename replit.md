@@ -75,6 +75,7 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. The schema support
 - **Multi-Tenant B2B Infrastructure**: Clinic organizations with custom branding and features.
 - **Email Notification Queue**: Intelligent scheduling for automated notifications.
 - **Push Notification System**: Web Push API for real-time browser notifications, including admin broadcasts.
+- **In-App Notification System**: Real-time notification bell component in navigation showing unread count badge. Automatically creates notifications for doctor notes with patient-friendly titles and click-to-navigate functionality. Supports multiple notification types (doctor_note, admin_broadcast, new_report, alert, system) with priority levels and custom icons. Features include mark as read, mark all as read, and auto-refresh every 30 seconds.
 - **Admin User Management**: Comprehensive system for managing all user types with role-based editing, search, and deletion.
 - **Admin Feature Management**: Administration interfaces for Webinars, Email Templates, AI Marketing, and RAG Knowledge Base.
 - **Role-specific Navigation**: Enhanced navigation for patients, doctors, and admins based on user roles.

@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle, Video, Phone, FileCheck, HeartPulse } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
 
@@ -223,6 +224,9 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     </Badge>
                   </Link>
                 )}
+
+                {/* In-App Notifications Bell */}
+                <NotificationBell />
 
                 {/* User Menu */}
                 <DropdownMenu>

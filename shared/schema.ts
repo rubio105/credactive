@@ -2168,5 +2168,43 @@ export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions
 });
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
 
+// In-App Notifications (Bell icon notifications)
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  
+  // Notification content
+  title: varchar("title", { length: 200 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // doctor_note, admin_broadcast, new_report, alert, system
+  
+  // State
+  read: boolean("read").default(false).notNull(),
+  readAt: timestamp("read_at"),
+  
+  // Related resource (optional)
+  relatedResourceType: varchar("related_resource_type", { length: 50 }), // doctor_note, health_report, alert
+  relatedResourceId: uuid("related_resource_id"),
+  relatedUrl: varchar("related_url", { length: 500 }), // URL to navigate when clicked (e.g., /documenti, /prevention)
+  
+  // Metadata
+  iconType: varchar("icon_type", { length: 50 }), // stethoscope, file, alert, info
+  priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, urgent
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_notification_user").on(table.userId),
+  index("idx_notification_read").on(table.read),
+  index("idx_notification_type").on(table.type),
+  index("idx_notification_created").on(table.createdAt),
+]);
+
+export type Notification = typeof notifications.$inferSelect;
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

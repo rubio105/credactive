@@ -945,6 +945,8 @@ Rispondi SOLO con JSON in questo formato:
       bodyPart: analysis.bodyPart || 'non identificato',
       findings: analysis.findings || [],
       overallAssessment: analysis.overallAssessment || '',
+      technicalAssessment: analysis.technicalAssessment,
+      patientAssessment: analysis.patientAssessment,
       recommendations: analysis.recommendations || [],
       confidence: analysis.confidence || 70,
     };

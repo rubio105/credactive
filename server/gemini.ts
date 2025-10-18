@@ -669,15 +669,50 @@ Respond ONLY with the extracted text, no additional commentary.`;
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
 
-    // For radiological images, very little text is expected (they're mostly visual)
-    // Don't fail if text is minimal - radiological analysis will happen later
-    if (!extractedText || extractedText.trim().length < 5) {
-      console.warn("[Gemini] Very little text extracted from image - may be radiological/visual report");
-      extractedText = "[Immagine medica - contenuto principalmente visivo]";
+    // For radiological images (X-ray, MRI, CT, Ultrasound), very little text is expected
+    // If minimal text (<20 chars) AND it's an image, use direct vision analysis instead of OCR
+    const isRadiological = mimeType.startsWith("image/") && extractedText.trim().length < 20;
+    
+    if (isRadiological) {
+      console.log("[Gemini] Detected radiological image (minimal text). Using direct vision analysis...");
+      
+      // Use radiological analysis for visual medical images
+      const radioAnalysis = await analyzeRadiologicalImage(filePath, mimeType);
+      
+      // Convert radiological analysis to MedicalReportOCR format
+      const reportTypeMap: Record<string, string> = {
+        'xray': 'radiografia',
+        'mri': 'risonanza',
+        'ct': 'tac',
+        'ultrasound': 'ecografia',
+        'other': 'imaging_medico'
+      };
+      
+      return {
+        extractedText: `[Immagine Radiologica - ${radioAnalysis.imageType.toUpperCase()}]\n\nParte del corpo: ${radioAnalysis.bodyPart}\n\nReperti:\n${radioAnalysis.findings.map(f => `- ${f.patientDescription || f.technicalDescription || f.description}`).join('\n')}`,
+        reportType: reportTypeMap[radioAnalysis.imageType] || 'radiologia',
+        detectedLanguage: 'it',
+        issuer: undefined,
+        reportDate: undefined,
+        extractedValues: {},
+        medicalKeywords: [radioAnalysis.imageType, radioAnalysis.bodyPart, ...radioAnalysis.findings.map(f => f.category)],
+        summary: radioAnalysis.patientAssessment || radioAnalysis.overallAssessment,
+        aiAnalysis: {
+          patientSummary: radioAnalysis.patientAssessment || radioAnalysis.overallAssessment,
+          doctorSummary: radioAnalysis.technicalAssessment || radioAnalysis.overallAssessment,
+          diagnosis: radioAnalysis.findings.filter(f => f.category !== 'normal').map(f => f.technicalDescription || f.description).join('; ') || 'Nessuna anomalia rilevata',
+          prevention: radioAnalysis.recommendations.join('\n'),
+          severity: radioAnalysis.findings.some(f => f.category === 'urgent') ? 'urgent' : 
+                    radioAnalysis.findings.some(f => f.category === 'attention') ? 'moderate' : 'normal'
+        },
+        confidence: radioAnalysis.confidence
+      };
     }
     
-    if (extractedText.trim().length < 20 && !extractedText.includes("contenuto principalmente visivo")) {
-      console.warn("[Gemini] WARNING: Very little text extracted (", extractedText.length, "chars). Image quality may be poor or it's a radiological image.");
+    // For text-based medical reports, proceed with text analysis
+    if (!extractedText || extractedText.trim().length < 5) {
+      console.warn("[Gemini] Very little text extracted - this shouldn't happen if radiological path worked");
+      extractedText = "[Testo non riconoscibile]";
     }
 
     // Analyze extracted text with Gemini to structure medical data

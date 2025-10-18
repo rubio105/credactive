@@ -94,8 +94,8 @@ export class JobWorker {
         const reportDate = ocrResult.reportDate ? new Date(ocrResult.reportDate) : new Date();
         const day = reportDate.getDate().toString().padStart(2, '0');
         const month = (reportDate.getMonth() + 1).toString().padStart(2, '0');
-        const year = reportDate.getFullYear();
-        const formattedDate = `${day}-${month}-${year}`; // DD-MM-YYYY (formato italiano)
+        const year = reportDate.getFullYear().toString().slice(-2); // Last 2 digits
+        const formattedDate = `${day}-${month}-${year}`; // DD-MM-YY (formato italiano breve)
         const ext = path.extname(fileName);
         const newFileName = `${sanitizedReportType} ${formattedDate}${ext}`;
         const newFilePath = path.join(path.dirname(filePath), newFileName);

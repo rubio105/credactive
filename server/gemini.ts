@@ -866,29 +866,50 @@ export async function analyzeRadiologicalImage(
 
     const imageBytes = fs.readFileSync(filePath);
     
-    const radiologyPrompt = `Sei un radiologo esperto. Analizza questa immagine medica radiologica e fornisci un referto dettagliato IN ITALIANO.
+    const radiologyPrompt = `Sei un radiologo esperto con 20+ anni di esperienza. Analizza questa immagine medica radiologica e fornisci un referto DETTAGLIATO e PRECISO IN ITALIANO.
 
-IMPORTANTE: Fornisci DOPPIA DESCRIZIONE per ogni elemento - una tecnica per medici e una comprensibile per pazienti.
+REQUISITI DI QUALITÀ:
+- MASSIMA PRECISIONE: Analizza l'immagine con attenzione ai minimi dettagli
+- MISURAZIONI: Quando possibile, stima dimensioni, estensione, spessore (es. "nodulo di circa 2.5cm")
+- LOCALIZZAZIONE ANATOMICA PRECISA: Usa terminologia anatomica accurata (lobi, segmenti, quadranti, ecc.)
+- CONFRONTO CON NORMALITÀ: Indica cosa è normale e cosa devia dagli standard radiologici
+- SEVERITÀ QUANTIFICATA: Specifica il grado di severità quando rilevante (lieve, moderato, severo)
 
-Analizza e identifica:
+DOPPIA DESCRIZIONE OBBLIGATORIA:
+Per OGNI finding, fornisci:
+1. "technicalDescription": Descrizione medico-scientifica DETTAGLIATA con:
+   - Terminologia medica precisa
+   - Misurazioni stimate quando visibili
+   - Localizzazione anatomica specifica
+   - Caratteristiche morfologiche (forma, densità, margini, ecc.)
+   
+2. "patientDescription": Spiegazione chiara e comprensibile che:
+   - Evita tecnicismi eccessivi
+   - Spiega il significato clinico in modo rassicurante
+   - Usa analogie comprensibili quando utile
+   - Mantiene un tono professionale ma empatico
+
+ANALISI RICHIESTA:
 1. Tipo di imaging (xray, mri, ct, ultrasound, other)
-2. Parte del corpo visualizzata (es. "torace", "cranio", "ginocchio sinistro", "addome")
-3. Reperti radiologici (findings) con DUE DESCRIZIONI per ogni reperto:
-   - "technicalDescription": Descrizione medico-scientifica precisa con terminologia tecnica (per professionisti sanitari)
-   - "patientDescription": Spiegazione comprensibile e rassicurante (per il paziente e familiari)
+2. Parte del corpo con precisione anatomica (es. "torace AP, emitoraci simmetrici", "ginocchio sinistro in proiezione laterale")
+3. Reperti radiologici - ALMENO 3-5 findings dettagliati per ogni area anatomica principale:
+   - Strutture ossee: densità, allineamento, fratture, lesioni
+   - Tessuti molli: edema, masse, calcificazioni
+   - Spazi articolari, organi interni, vasi, ecc.
+   - ANCHE reperti normali importanti (es. "cuore di dimensioni normali", "campi polmonari liberi")
    - Categorizzati come: "normal", "attention", "urgent"
 4. Valutazione complessiva in DUE VERSIONI:
-   - "technicalAssessment": Valutazione professionale con terminologia medica
-   - "patientAssessment": Spiegazione chiara e comprensibile per il paziente
-5. Raccomandazioni pratiche in italiano
-6. Livello di confidenza (0-100) basato sulla qualità dell'immagine
+   - "technicalAssessment": Sintesi professionale completa con impressione diagnostica
+   - "patientAssessment": Spiegazione comprensibile della situazione complessiva
+5. Raccomandazioni pratiche e specifiche (es. "Controllo radiografico tra 3 mesi", "Consulenza pneumologica per approfondimento")
+6. Livello di confidenza (0-100) basato su qualità immagine e chiarezza dei reperti
 
-ESEMPIO DI FINDING:
+ESEMPIO DI FINDING DETTAGLIATO:
 {
   "category": "attention",
-  "technicalDescription": "Ispessimento pleurico basale destro con minimo versamento pleurico. Disventilazione parenchimale basale.",
-  "patientDescription": "Si nota un leggero accumulo di liquido nella parte bassa del polmone destro. Questo può essere dovuto a infiammazione o irritazione della membrana che riveste il polmone. Nulla di grave, ma da monitorare.",
-  "location": "base polmonare destra",
+  "technicalDescription": "Ispessimento pleurico basale destro di circa 3-4mm con minimo versamento pleurico stimato in 50-100ml. Disventilazione parenchimale basale con ridotta trasparenza e trama interstiziale accentuata. Angolo costofrenico parzialmente obliterato.",
+  "patientDescription": "Si nota un leggero accumulo di liquido (circa mezzo bicchiere) nella parte bassa del polmone destro, tra il polmone e la parete toracica. La membrana che riveste il polmone appare leggermente ispessita. Questo può essere dovuto a una recente infiammazione o irritazione. Non è grave, ma va monitorato con un controllo tra qualche settimana.",
+  "location": "base polmonare destra, angolo costofrenico destro",
   "confidence": 85
 }
 

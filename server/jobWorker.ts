@@ -141,7 +141,21 @@ export class JobWorker {
       if (isRadiologicalImage) {
         try {
           await storage.updateJobProgress(jobId, 60, 'Analyzing radiological image...');
-          radiologicalAnalysis = await analyzeRadiologicalImage(renamedFilePath, fileType);
+          
+          // Get user data for ML training
+          const user = userId ? await storage.getUserById(userId) : null;
+          const userAge = user?.dateOfBirth 
+            ? new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()
+            : undefined;
+          const userGender = user?.gender || undefined;
+          
+          radiologicalAnalysis = await analyzeRadiologicalImage(
+            renamedFilePath, 
+            fileType, 
+            userId, 
+            userAge, 
+            userGender
+          );
         } catch (radiologyError) {
           console.error('[JobWorker] Radiological analysis failed:', radiologyError);
         }

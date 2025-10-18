@@ -1959,6 +1959,16 @@ export const doctorNotes = pgTable("doctor_notes", {
   noteTitle: varchar("note_title", { length: 200 }),
   noteText: text("note_text").notNull(),
   isReport: boolean("is_report").default(false), // True if this is a formal medical report
+  
+  // Category for organizing notes
+  category: varchar("category", { length: 50 }).default('Generico'), // 'Ricetta Medica', 'Refertazione', 'Consiglio', 'Generico'
+  
+  // File attachment support
+  attachmentPath: text("attachment_path"), // Server file path
+  attachmentName: varchar("attachment_name", { length: 255 }), // Original filename
+  attachmentType: varchar("attachment_type", { length: 100 }), // MIME type
+  attachmentSize: integer("attachment_size"), // File size in bytes
+  
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_doctor_notes_doctor").on(table.doctorId),
@@ -2205,6 +2215,63 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// ========== ML TRAINING DATA COLLECTION ==========
+
+// ML Training Data (for building custom models)
+export const mlTrainingData = pgTable("ml_training_data", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Request metadata
+  requestType: varchar("request_type", { length: 100 }).notNull(), // 'radiological_analysis', 'medical_triage', 'document_analysis', 'prevention_chat'
+  modelUsed: varchar("model_used", { length: 50 }).notNull(), // 'gemini-2.5-pro', 'gemini-2.5-flash', etc.
+  
+  // Input data
+  inputImagePath: text("input_image_path"), // Path to stored image (for radiological analysis)
+  inputImageHash: varchar("input_image_hash", { length: 64 }), // SHA-256 of image for de-duplication
+  inputText: text("input_text"), // Text input (for triage, chat, etc.)
+  inputPrompt: text("input_prompt").notNull(), // Full prompt sent to Gemini
+  
+  // Output data
+  outputJson: jsonb("output_json").notNull(), // Full Gemini response (JSON parsed)
+  outputRaw: text("output_raw"), // Raw text response from Gemini
+  
+  // User context
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
+  userAge: integer("user_age"),
+  userGender: varchar("user_gender", { length: 10 }),
+  
+  // Performance metrics
+  responseTimeMs: integer("response_time_ms"), // Time taken to get response from Gemini
+  tokensUsed: integer("tokens_used"), // Estimated tokens consumed
+  confidenceScore: integer("confidence_score"), // AI confidence (0-100)
+  
+  // Quality feedback (for supervised learning)
+  userFeedback: varchar("user_feedback", { length: 20 }), // 'positive', 'negative', 'corrected', null
+  doctorCorrectionJson: jsonb("doctor_correction_json"), // If doctor corrected the AI response
+  doctorNotes: text("doctor_notes"), // Doctor's comments on the analysis
+  
+  // Training flags
+  includedInTraining: boolean("included_in_training").default(false), // Whether this data has been used for training
+  qualityRating: integer("quality_rating"), // 1-5 stars rating for dataset curation
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  exportedAt: timestamp("exported_at"), // When data was exported for training
+}, (table) => [
+  index("idx_ml_training_request_type").on(table.requestType),
+  index("idx_ml_training_model").on(table.modelUsed),
+  index("idx_ml_training_created").on(table.createdAt),
+  index("idx_ml_training_feedback").on(table.userFeedback),
+  index("idx_ml_training_included").on(table.includedInTraining),
+]);
+
+export type MLTrainingData = typeof mlTrainingData.$inferSelect;
+export const insertMLTrainingDataSchema = createInsertSchema(mlTrainingData).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMLTrainingData = z.infer<typeof insertMLTrainingDataSchema>;
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

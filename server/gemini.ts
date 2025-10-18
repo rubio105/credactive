@@ -857,8 +857,13 @@ export interface RadiologicalAnalysis {
  */
 export async function analyzeRadiologicalImage(
   filePath: string,
-  mimeType: string
+  mimeType: string,
+  userId?: string,
+  userAge?: number,
+  userGender?: string
 ): Promise<RadiologicalAnalysis> {
+  const startTime = Date.now();
+  
   try {
     if (!mimeType.startsWith("image/")) {
       throw new Error(`Unsupported file type for radiological analysis: ${mimeType}`);
@@ -973,6 +978,25 @@ Rispondi SOLO con JSON in questo formato:
     };
 
     console.log("[Gemini] Radiological analysis completed:", result.imageType, result.bodyPart, result.findings.length, "findings");
+    
+    // Save training data for ML (async, don't wait)
+    const responseTime = Date.now() - startTime;
+    import("./mlDataCollector").then(({ saveTrainingData }) => {
+      saveTrainingData({
+        requestType: 'radiological_analysis',
+        modelUsed: 'gemini-2.5-pro',
+        inputImagePath: filePath,
+        inputPrompt: radiologyPrompt,
+        outputJson: analysis,
+        outputRaw: rawJson,
+        userId,
+        userAge,
+        userGender,
+        responseTimeMs: responseTime,
+        confidenceScore: result.confidence,
+      }).catch(err => console.error('[ML] Failed to save training data:', err));
+    });
+    
     return result;
   } catch (error) {
     console.error("[Gemini] Failed to analyze radiological image:", error);

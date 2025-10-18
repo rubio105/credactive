@@ -10840,6 +10840,49 @@ Format as JSON: {
       res.status(500).json({ message: error.message || 'Failed to send push notifications' });
     }
   });
+
+  // ========== ML TRAINING DATA ENDPOINTS ==========
+  
+  // Get ML training statistics (admin only)
+  app.get('/api/admin/ml-training/stats', isAdmin, async (req, res) => {
+    try {
+      const { getMLTrainingStats } = await import('./mlDataCollector');
+      const stats = await getMLTrainingStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error('ML training stats error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get ML training stats' });
+    }
+  });
+  
+  // Export ML training data to file (admin only)
+  app.post('/api/admin/ml-training/export', isAdmin, async (req, res) => {
+    try {
+      const { exportTrainingDataToFile } = await import('./mlDataCollector');
+      const { requestType, minQualityRating, excludeAlreadyIncluded } = req.body;
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const outputPath = path.join(process.cwd(), 'ml-exports', `training-data-${timestamp}.json`);
+      
+      // Ensure directory exists
+      const fs = require('fs');
+      const exportDir = path.dirname(outputPath);
+      if (!fs.existsSync(exportDir)) {
+        fs.mkdirSync(exportDir, { recursive: true });
+      }
+      
+      const result = await exportTrainingDataToFile(outputPath, {
+        requestType,
+        minQualityRating,
+        excludeAlreadyIncluded,
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error('ML training export error:', error);
+      res.status(500).json({ message: error.message || 'Failed to export ML training data' });
+    }
+  });
   
   return httpServer;
 }

@@ -18,6 +18,7 @@ import PaymentSuccess from "@/pages/payment-success";
 import Report from "@/pages/report";
 import Admin from "@/pages/admin";
 import AdminAudit from "@/pages/admin-audit";
+import AdminMLTraining from "@/pages/admin-ml-training";
 import AdminUsers from "@/pages/admin-users";
 import AdminWebinar from "@/pages/admin-webinar";
 import AdminRAG from "@/pages/admin-rag";
@@ -115,6 +116,9 @@ function Router() {
       </Route>
       <Route path="/admin/audit">
         {() => <ProtectedRoute requireNonAiOnly><AdminAudit /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/ml-training">
+        {() => <ProtectedRoute requireNonAiOnly><AdminMLTraining /></ProtectedRoute>}
       </Route>
       <Route path="/admin/users">
         {() => <ProtectedRoute requireNonAiOnly><AdminUsers /></ProtectedRoute>}

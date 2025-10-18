@@ -14,7 +14,8 @@ import {
   BookOpen,
   LogOut,
   ArrowLeft,
-  MessageSquare
+  MessageSquare,
+  Brain
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -37,6 +38,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/in-app-notifications", icon: Bell, label: "Notifiche In-App", testId: "nav-admin-in-app-notifications" },
     { href: "/admin/push-notifications", icon: Bell, label: "Notifiche Push", testId: "nav-admin-push" },
     { href: "/admin/audit", icon: Shield, label: "Audit Log", testId: "nav-admin-audit" },
+    { href: "/admin/ml-training", icon: Brain, label: "ML Training Data", testId: "nav-admin-ml" },
     { href: "/admin/documentazione", icon: BookOpen, label: "Documentazione", testId: "nav-admin-docs" },
   ];
 

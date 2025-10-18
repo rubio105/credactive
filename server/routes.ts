@@ -10,15 +10,15 @@ import fs from "fs";
 import { createRequire } from "module";
 import { storage } from "./storage";
 import { db } from "./db";
-import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData } from "@shared/schema";
+import { eq, desc, and, count } from "drizzle-orm";
 import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
 import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent, analyzeRadiologicalImage, generateEmbedding } from "./gemini";
 import { clearBrevoInstance } from "./email";
-import { saveOpenAIData, saveMedicalData } from "./mlDataCollector";
+import { saveOpenAIData, saveMedicalData, getMLTrainingStats, exportTrainingDataToFile } from "./mlDataCollector";
 import { 
   insertUserQuizAttemptSchema, 
   insertContentPageSchema, 
@@ -3431,6 +3431,122 @@ Restituisci SOLO un JSON con:
     } catch (error: any) {
       console.error('Error exporting audit logs:', error);
       res.status(500).json({ message: 'Failed to export audit logs' });
+    }
+  });
+
+  // *** ML TRAINING DATA COLLECTION - Admin Analytics & Export ***
+
+  // Admin - Get ML training data statistics
+  app.get('/api/ml/training/stats', isAdmin, async (req, res) => {
+    try {
+      const stats = await getMLTrainingStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error('Error fetching ML training stats:', error);
+      res.status(500).json({ message: 'Failed to fetch ML training statistics' });
+    }
+  });
+
+  // Admin - Export ML training data as JSON
+  app.get('/api/ml/training/export', isAdmin, async (req, res) => {
+    try {
+      const { requestType, minQualityRating, excludeAlreadyIncluded } = req.query;
+
+      const filters: any = {};
+      if (requestType) filters.requestType = requestType as string;
+      if (minQualityRating) filters.minQualityRating = parseInt(minQualityRating as string);
+      if (excludeAlreadyIncluded === 'true') filters.excludeAlreadyIncluded = true;
+
+      // Generate temporary export file
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `ml_training_data_${timestamp}.json`;
+      const outputPath = path.join(process.cwd(), 'public', 'exports', filename);
+
+      // Ensure exports directory exists
+      const exportsDir = path.join(process.cwd(), 'public', 'exports');
+      if (!fs.existsSync(exportsDir)) {
+        fs.mkdirSync(exportsDir, { recursive: true });
+      }
+
+      const result = await exportTrainingDataToFile(outputPath, filters);
+
+      // Send file as download
+      res.download(outputPath, filename, (err) => {
+        if (err) {
+          console.error('Error downloading ML training data:', err);
+        }
+        // Clean up file after download
+        setTimeout(() => {
+          if (fs.existsSync(outputPath)) {
+            fs.unlinkSync(outputPath);
+          }
+        }, 5000);
+      });
+    } catch (error: any) {
+      console.error('Error exporting ML training data:', error);
+      res.status(500).json({ message: 'Failed to export ML training data' });
+    }
+  });
+
+  // Admin - Get paginated ML training data records
+  app.get('/api/ml/training/records', isAdmin, async (req, res) => {
+    try {
+      const { 
+        requestType, 
+        modelUsed,
+        page = '1',
+        limit = '20'
+      } = req.query;
+
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const offset = (pageNum - 1) * limitNum;
+
+      // Build query conditions
+      const conditions: any[] = [];
+      if (requestType) {
+        conditions.push(eq(mlTrainingData.requestType, requestType as string));
+      }
+      if (modelUsed) {
+        conditions.push(eq(mlTrainingData.modelUsed, modelUsed as string));
+      }
+
+      // Fetch records with filters and pagination
+      const records = conditions.length > 0
+        ? await db.select()
+            .from(mlTrainingData)
+            .where(and(...conditions))
+            .orderBy(mlTrainingData.createdAt)
+            .limit(limitNum)
+            .offset(offset)
+        : await db.select()
+            .from(mlTrainingData)
+            .orderBy(mlTrainingData.createdAt)
+            .limit(limitNum)
+            .offset(offset);
+
+      // Get total count for pagination
+      const totalResult = conditions.length > 0
+        ? await db.select({ count: count() })
+            .from(mlTrainingData)
+            .where(and(...conditions))
+        : await db.select({ count: count() })
+            .from(mlTrainingData);
+      
+      const total = Number(totalResult[0]?.count || 0);
+
+      res.json({
+        records,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      });
+    } catch (error: any) {
+      console.error('Error fetching ML training records:', error);
+      res.status(500).json({ message: 'Failed to fetch ML training records' });
     }
   });
 

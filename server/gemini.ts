@@ -614,6 +614,7 @@ export interface MedicalReportOCR {
     severity: "normal" | "moderate" | "urgent"; // Livello di gravità
   };
   confidence: number; // 0-100 OCR confidence
+  radiologicalAnalysis?: RadiologicalAnalysis; // Include radiological analysis if already performed
 }
 
 export async function extractTextFromMedicalReport(
@@ -705,7 +706,8 @@ Respond ONLY with the extracted text, no additional commentary.`;
           severity: radioAnalysis.findings.some(f => f.category === 'urgent') ? 'urgent' : 
                     radioAnalysis.findings.some(f => f.category === 'attention') ? 'moderate' : 'normal'
         },
-        confidence: radioAnalysis.confidence
+        confidence: radioAnalysis.confidence,
+        radiologicalAnalysis: radioAnalysis // Include full radiological analysis
       };
     }
     

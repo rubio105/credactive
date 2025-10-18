@@ -115,33 +115,40 @@ export class JobWorker {
     const anonymizationResult = await anonymizeMedicalText(ocrResult.extractedText);
 
     // Step 3: Radiological analysis (if applicable)
-    let radiologicalAnalysis = null;
-    const reportTypeLower = (ocrResult.reportType || '').toLowerCase();
-    // Use word boundaries for short acronyms to avoid false positives (e.g., "pet" in "competenza")
-    const petMatch = /\bpet\b/.test(reportTypeLower);
-    const isRadiologicalImage = fileType.startsWith('image/') && 
-      (reportTypeLower.includes('radiol') || 
-       reportTypeLower.includes('imaging') ||
-       reportTypeLower.includes('xray') ||
-       reportTypeLower.includes('mri') ||
-       reportTypeLower.includes('ct') ||
-       reportTypeLower.includes('tac') ||
-       reportTypeLower.includes('ecografia') ||
-       reportTypeLower.includes('ultrasound') ||
-       reportTypeLower.includes('ecg') ||
-       reportTypeLower.includes('elettrocardiogramma') ||
-       reportTypeLower.includes('ecocardio') ||
-       reportTypeLower.includes('mammografia') ||
-       petMatch ||
-       reportTypeLower.includes('scintigrafia'));
+    // Check if radiological analysis was already performed during OCR extraction
+    let radiologicalAnalysis = ocrResult.radiologicalAnalysis || null;
+    
+    // Only perform radiological analysis if NOT already done AND file type suggests it's needed
+    if (!radiologicalAnalysis && fileType.startsWith('image/')) {
+      const reportTypeLower = (ocrResult.reportType || '').toLowerCase();
+      // Use word boundaries for short acronyms to avoid false positives (e.g., "pet" in "competenza")
+      const petMatch = /\bpet\b/.test(reportTypeLower);
+      const isRadiologicalImage = reportTypeLower.includes('radiol') || 
+         reportTypeLower.includes('imaging') ||
+         reportTypeLower.includes('xray') ||
+         reportTypeLower.includes('mri') ||
+         reportTypeLower.includes('ct') ||
+         reportTypeLower.includes('tac') ||
+         reportTypeLower.includes('ecografia') ||
+         reportTypeLower.includes('ultrasound') ||
+         reportTypeLower.includes('ecg') ||
+         reportTypeLower.includes('elettrocardiogramma') ||
+         reportTypeLower.includes('ecocardio') ||
+         reportTypeLower.includes('mammografia') ||
+         petMatch ||
+         reportTypeLower.includes('scintigrafia');
 
-    if (isRadiologicalImage) {
-      try {
-        await storage.updateJobProgress(jobId, 60, 'Analyzing radiological image...');
-        radiologicalAnalysis = await analyzeRadiologicalImage(renamedFilePath, fileType);
-      } catch (radiologyError) {
-        console.error('[JobWorker] Radiological analysis failed:', radiologyError);
+      if (isRadiologicalImage) {
+        try {
+          await storage.updateJobProgress(jobId, 60, 'Analyzing radiological image...');
+          radiologicalAnalysis = await analyzeRadiologicalImage(renamedFilePath, fileType);
+        } catch (radiologyError) {
+          console.error('[JobWorker] Radiological analysis failed:', radiologyError);
+        }
       }
+    } else if (radiologicalAnalysis) {
+      console.log('[JobWorker] Using radiological analysis from OCR step (avoiding duplicate API call)');
+      await storage.updateJobProgress(jobId, 60, 'Using existing radiological analysis...');
     }
 
     // Step 4: Create health report

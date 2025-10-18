@@ -243,6 +243,39 @@ const uploadKnowledgeBase = multer({
   }
 });
 
+// Configure multer for doctor note attachments
+const doctorNoteAttachmentsDir = path.join(process.cwd(), 'public', 'doctor-note-attachments');
+if (!fs.existsSync(doctorNoteAttachmentsDir)) {
+  fs.mkdirSync(doctorNoteAttachmentsDir, { recursive: true });
+}
+
+const doctorNoteAttachmentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, doctorNoteAttachmentsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'note-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadDoctorNoteAttachment = multer({
+  storage: doctorNoteAttachmentStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for attachments
+  fileFilter: (req, file, cb) => {
+    const allowedExtensions = /pdf|docx|doc|jpg|jpeg|png/;
+    const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
+    const allowedMimetypes = /application\/pdf|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/msword|image\/jpeg|image\/jpg|image\/png/;
+    const mimetype = allowedMimetypes.test(file.mimetype) || file.mimetype === 'application/octet-stream';
+    
+    if (extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only PDF, DOC, DOCX, JPG, PNG files are allowed for note attachments!'));
+    }
+  }
+});
+
 // Utility function to shuffle array (Fisher-Yates algorithm)
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -679,13 +712,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create doctor note
-  app.post('/api/doctor/notes', isAuthenticated, async (req, res) => {
+  app.post('/api/doctor/notes', isAuthenticated, uploadDoctorNoteAttachment.single('attachment'), async (req, res) => {
     try {
       if (!req.user?.isDoctor) {
         return res.status(403).json({ message: "Solo i medici possono creare note" });
       }
 
-      const { patientId, preventionDocumentId, alertId, noteTitle, noteText, isReport } = req.body;
+      const { patientId, preventionDocumentId, alertId, noteTitle, noteText, isReport, category } = req.body;
       
       if (!patientId || !noteText) {
         return res.status(400).json({ message: "PatientId e noteText sono obbligatori" });
@@ -697,6 +730,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Paziente non collegato a questo medico" });
       }
 
+      // Handle attachment if present
+      const attachmentData: any = {};
+      if (req.file) {
+        attachmentData.attachmentPath = `/doctor-note-attachments/${req.file.filename}`;
+        attachmentData.attachmentName = req.file.originalname;
+        attachmentData.attachmentType = req.file.mimetype;
+        attachmentData.attachmentSize = req.file.size;
+      }
+
       const note = await storage.createDoctorNote({
         doctorId: req.user.id,
         patientId,
@@ -704,7 +746,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         alertId: alertId || null,
         noteTitle: noteTitle || null,
         noteText,
-        isReport: isReport || false,
+        isReport: isReport === 'true' || isReport === true || false,
+        category: category || 'Generico',
+        ...attachmentData,
       });
 
       // Create in-app notification for patient

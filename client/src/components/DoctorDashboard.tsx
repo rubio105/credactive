@@ -39,6 +39,8 @@ export function DoctorDashboard() {
   const [noteText, setNoteText] = useState("");
   const [isReport, setIsReport] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
+  const [noteCategory, setNoteCategory] = useState<string>("Generico");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Get doctor code - using mutation to generate on demand
   const generateCodeMutation = useMutation<{ code: string }>({
@@ -124,16 +126,54 @@ export function DoctorDashboard() {
     }
   };
 
-  const handleCreateNote = () => {
+  const handleCreateNote = async () => {
     if (!selectedPatient || !noteText) return;
 
-    createNoteMutation.mutate({
-      patientId: selectedPatient.id,
-      noteTitle: noteTitle || null,
-      noteText,
-      isReport,
-      alertId: selectedAlert || null,
-    });
+    const formData = new FormData();
+    formData.append('patientId', selectedPatient.id);
+    formData.append('noteTitle', noteTitle || '');
+    formData.append('noteText', noteText);
+    formData.append('isReport', String(isReport));
+    formData.append('category', noteCategory);
+    if (selectedAlert) {
+      formData.append('alertId', selectedAlert);
+    }
+    if (selectedFile) {
+      formData.append('attachment', selectedFile);
+    }
+
+    try {
+      const response = await fetch('/api/doctor/notes', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore durante la creazione della nota');
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/alerts"] });
+      toast({
+        title: "Nota creata",
+        description: "La nota è stata inviata al paziente",
+      });
+      setShowNoteDialog(false);
+      setNoteTitle("");
+      setNoteText("");
+      setIsReport(false);
+      setSelectedAlert(null);
+      setSelectedPatient(null);
+      setNoteCategory("Generico");
+      setSelectedFile(null);
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const openNoteDialog = (patient: Patient, alert?: Alert) => {
@@ -351,6 +391,37 @@ export function DoctorDashboard() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="note-category">Categoria</Label>
+              <Select value={noteCategory} onValueChange={setNoteCategory}>
+                <SelectTrigger id="note-category" data-testid="select-note-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Ricetta Medica">Ricetta Medica</SelectItem>
+                  <SelectItem value="Refertazione">Refertazione</SelectItem>
+                  <SelectItem value="Consiglio">Consiglio</SelectItem>
+                  <SelectItem value="Generico">Generico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="attachment">Allegato (opzionale)</Label>
+              <Input
+                id="attachment"
+                type="file"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                data-testid="input-note-attachment"
+              />
+              {selectedFile && (
+                <p className="text-sm text-muted-foreground">
+                  File selezionato: {selectedFile.name}
+                </p>
+              )}
+            </div>
+
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -376,6 +447,8 @@ export function DoctorDashboard() {
                 setIsReport(false);
                 setSelectedAlert(null);
                 setSelectedPatient(null);
+                setNoteCategory("Generico");
+                setSelectedFile(null);
               }}
               data-testid="button-cancel-note"
             >

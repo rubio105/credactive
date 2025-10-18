@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, Download, Database, TrendingUp, FileJson, Filter, Home, Zap, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
-import AdminLayout from "@/components/AdminLayout";
+import { AdminLayout } from "@/components/AdminLayout";
 
 interface MLStats {
   totalRecords: number;

@@ -82,6 +82,8 @@ export default function PatientAIPage() {
   const [dismissedAlertId, setDismissedAlertId] = useState<string | null>(
     localStorage.getItem('dismissedAlertId')
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const REPORTS_PER_PAGE = 2;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -107,6 +109,14 @@ export default function PatientAIPage() {
     queryKey: ["/api/health-score/reports/my"],
     enabled: !!user,
   });
+
+  // Reset current page if it exceeds total pages (e.g., after report deletion)
+  useEffect(() => {
+    const totalPages = Math.ceil(healthReports.length / REPORTS_PER_PAGE);
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [healthReports.length, currentPage]);
 
   // Query per alert pendente
   const { data: pendingAlert } = useQuery<TriageAlert | null>({
@@ -699,39 +709,94 @@ export default function PatientAIPage() {
                       />
                       
                       <div className="space-y-4">
-                        {healthReports.map((report) => (
-                          <div key={report.id} className="space-y-4">
-                            <MedicalReportCard 
-                              report={{
-                                id: report.id,
-                                title: report.fileName,
-                                reportType: report.reportType,
-                                uploadDate: report.createdAt,
-                                aiSummary: report.aiSummary,
-                                medicalValues: Object.entries(report.extractedValues || {}).map(([name, value]) => ({
-                                  name,
-                                  value: String(value)
-                                })),
-                                hospitalName: report.issuer || undefined
-                              }}
-                            />
-                            
-                            {report.radiologicalAnalysis && (
-                              <MedicalImageAnalysis 
-                                analysis={{
-                                  id: report.id,
-                                  uploadDate: report.createdAt,
-                                  imageType: report.radiologicalAnalysis.imageType as 'xray' | 'mri' | 'ct' | 'ultrasound' | 'general',
-                                  bodyPart: report.radiologicalAnalysis.bodyPart,
-                                  findings: report.radiologicalAnalysis.findings,
-                                  overallAssessment: report.radiologicalAnalysis.overallAssessment,
-                                  recommendations: report.radiologicalAnalysis.recommendations,
-                                  confidence: report.radiologicalAnalysis.confidence
-                                }}
-                              />
-                            )}
-                          </div>
-                        ))}
+                        {(() => {
+                          const totalPages = Math.ceil(healthReports.length / REPORTS_PER_PAGE);
+                          const startIndex = (currentPage - 1) * REPORTS_PER_PAGE;
+                          const endIndex = startIndex + REPORTS_PER_PAGE;
+                          const paginatedReports = healthReports.slice(startIndex, endIndex);
+
+                          return (
+                            <>
+                              {paginatedReports.map((report) => (
+                                <div key={report.id} className="space-y-4">
+                                  <MedicalReportCard 
+                                    report={{
+                                      id: report.id,
+                                      title: report.fileName,
+                                      reportType: report.reportType,
+                                      uploadDate: report.createdAt,
+                                      aiSummary: report.aiSummary,
+                                      medicalValues: Object.entries(report.extractedValues || {}).map(([name, value]) => ({
+                                        name,
+                                        value: String(value)
+                                      })),
+                                      hospitalName: report.issuer || undefined
+                                    }}
+                                  />
+                                  
+                                  {report.radiologicalAnalysis && (
+                                    <MedicalImageAnalysis 
+                                      analysis={{
+                                        id: report.id,
+                                        uploadDate: report.createdAt,
+                                        imageType: report.radiologicalAnalysis.imageType as 'xray' | 'mri' | 'ct' | 'ultrasound' | 'general',
+                                        bodyPart: report.radiologicalAnalysis.bodyPart,
+                                        findings: report.radiologicalAnalysis.findings,
+                                        overallAssessment: report.radiologicalAnalysis.overallAssessment,
+                                        recommendations: report.radiologicalAnalysis.recommendations,
+                                        confidence: report.radiologicalAnalysis.confidence
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                              
+                              {totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20"
+                                    data-testid="button-prev-page"
+                                  >
+                                    ← Precedente
+                                  </Button>
+                                  
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                      <Button
+                                        key={page}
+                                        variant={currentPage === page ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setCurrentPage(page)}
+                                        className={currentPage === page 
+                                          ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
+                                          : "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20"
+                                        }
+                                        data-testid={`button-page-${page}`}
+                                      >
+                                        {page}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                  
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20"
+                                    data-testid="button-next-page"
+                                  >
+                                    Successivo →
+                                  </Button>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}

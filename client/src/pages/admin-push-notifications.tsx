@@ -32,11 +32,13 @@ export default function AdminPushNotifications() {
         title,
         body,
         url: url || undefined,
-      }) as unknown as { sent: number; failed: number };
+      }) as unknown as { sent: number; failed: number; success: boolean; total: number };
+
+      console.log('[Push Admin] Response:', result);
 
       toast({
         title: "Notifiche inviate",
-        description: `${result.sent} notifiche inviate con successo (${result.failed} fallite)`,
+        description: `${result.sent ?? 0} notifiche inviate con successo (${result.failed ?? 0} fallite)`,
       });
 
       // Reset form

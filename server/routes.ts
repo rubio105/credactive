@@ -10827,6 +10827,8 @@ Format as JSON: {
       const sent = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
 
+      console.log(`[Push] Sending response: sent=${sent}, failed=${failed}, total=${subscriptions.length}`);
+
       res.json({ 
         success: true, 
         sent, 

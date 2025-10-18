@@ -2218,13 +2218,20 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // ========== ML TRAINING DATA COLLECTION ==========
 
-// ML Training Data (for building custom models)
+// ML Training Data (for building custom models - COLLECTS ALL PLATFORM DATA)
+// Intercepts ALL AI interactions: Gemini, OpenAI, medical notes, documents, conversations
 export const mlTrainingData = pgTable("ml_training_data", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   
-  // Request metadata
-  requestType: varchar("request_type", { length: 100 }).notNull(), // 'radiological_analysis', 'medical_triage', 'document_analysis', 'prevention_chat'
-  modelUsed: varchar("model_used", { length: 50 }).notNull(), // 'gemini-2.5-pro', 'gemini-2.5-flash', etc.
+  // Request metadata - ALL interaction types
+  requestType: varchar("request_type", { length: 100 }).notNull(), 
+  // AI Interactions: 'radiological_analysis', 'medical_triage', 'prevention_chat', 'crossword_generation',
+  // 'conversational_assistant', 'email_marketing', 'ai_translation'
+  // Medical Data: 'doctor_note', 'medical_report', 'ecg_upload', 'document_upload'
+  // Other: 'user_feedback', 'health_assessment'
+  
+  modelUsed: varchar("model_used", { length: 50 }).notNull(), 
+  // Models: 'gemini-2.5-pro', 'gemini-2.5-flash', 'gpt-4o', 'gpt-4o-mini', 'tts-1', 'manual' (for non-AI data)
   
   // Input data
   inputImagePath: text("input_image_path"), // Path to stored image (for radiological analysis)

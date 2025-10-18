@@ -18,6 +18,7 @@ import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
 import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent, analyzeRadiologicalImage, generateEmbedding } from "./gemini";
 import { clearBrevoInstance } from "./email";
+import { saveOpenAIData, saveMedicalData } from "./mlDataCollector";
 import { 
   insertUserQuizAttemptSchema, 
   insertContentPageSchema, 
@@ -1987,18 +1988,21 @@ ${JSON.stringify(questionsToTranslate)}`;
         return res.status(500).json({ message: "OpenAI API key not configured" });
       }
       const openai = new OpenAI({ apiKey });
+      const startTime = Date.now();
+      const messages = [
+        {
+          role: "system",
+          content: `You are a professional translator. Translate quiz content to ${languageNames[targetLanguage]}. Maintain technical accuracy and clarity.`
+        },
+        {
+          role: "user",
+          content: translationContent
+        }
+      ];
+      
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a professional translator. Translate quiz content to ${languageNames[targetLanguage]}. Maintain technical accuracy and clarity.`
-          },
-          {
-            role: "user",
-            content: translationContent
-          }
-        ],
+        messages,
         response_format: { type: "json_object" },
         max_tokens: 16000
       });
@@ -2011,6 +2015,18 @@ ${JSON.stringify(questionsToTranslate)}`;
       const parsed = JSON.parse(content);
       const translatedQuestions = Array.isArray(parsed) ? parsed : parsed.questions || [];
       const translatedQuizTitle = parsed.quizTitle || '';
+
+      // ML: Collect translation data
+      saveOpenAIData({
+        requestType: 'ai_translation',
+        model: 'gpt-4o',
+        inputPrompt: translationContent,
+        messages,
+        outputJson: parsed,
+        outputText: content,
+        responseTimeMs: Date.now() - startTime,
+        tokensUsed: response.usage?.total_tokens,
+      }).catch(err => console.error('[ML] Failed to save translation data:', err));
 
       res.json({ translatedQuestions, translatedQuizTitle });
     } catch (error) {
@@ -2839,16 +2855,32 @@ Restituisci SOLO un JSON con:
   "recommendedCourses": ["Nome corso 1", "Nome corso 2"]
 }`;
 
+      const startTime = Date.now();
+      const messages = [
+        { role: "system", content: "Sei un esperto email marketer per piattaforme di formazione professionale. Crei email coinvolgenti, personalizzate e ad alto tasso di conversione." },
+        { role: "user", content: prompt }
+      ];
+      
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: [
-          { role: "system", content: "Sei un esperto email marketer per piattaforme di formazione professionale. Crei email coinvolgenti, personalizzate e ad alto tasso di conversione." },
-          { role: "user", content: prompt }
-        ],
+        messages,
         response_format: { type: "json_object" }
       });
       
       const result = JSON.parse(completion.choices[0].message.content || "{}");
+      
+      // ML: Collect email marketing data
+      saveOpenAIData({
+        requestType: 'email_marketing',
+        model: 'gpt-4o',
+        inputPrompt: prompt,
+        messages,
+        outputJson: result,
+        outputText: completion.choices[0].message.content || '',
+        responseTimeMs: Date.now() - startTime,
+        tokensUsed: completion.usage?.total_tokens,
+      }).catch(err => console.error('[ML] Failed to save email marketing data:', err));
+      
       res.json(result);
     } catch (error) {
       console.error("Error generating AI email:", error);
@@ -5650,6 +5682,7 @@ Restituisci SOLO un JSON con:
       const voice = voiceMap[language] || 'alloy';
 
       // Generate TTS audio
+      const startTime = Date.now();
       const mp3Response = await openai.audio.speech.create({
         model: "tts-1",
         voice: voice,
@@ -5668,6 +5701,15 @@ Restituisci SOLO un JSON con:
       // Update question with audio URL
       const audioUrl = `/audio-explanations/${filename}`;
       await storage.updateQuestion(id, { explanationAudioUrl: audioUrl });
+      
+      // ML: Collect TTS audio data
+      saveOpenAIData({
+        requestType: 'tts_audio',
+        model: 'tts-1',
+        inputPrompt: `TTS ${language}: ${question.explanation.substring(0, 100)}...`,
+        outputJson: { voice, language, questionId: id, audioUrl },
+        responseTimeMs: Date.now() - startTime,
+      }).catch(err => console.error('[ML] Failed to save TTS data:', err));
       
       res.json({ 
         message: "Audio generated successfully",

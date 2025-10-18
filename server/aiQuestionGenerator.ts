@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { getApiKey } from "./config";
+import { saveOpenAIData } from "./mlDataCollector";
 
 // OpenAI instance - initialized lazily to support database-stored keys
 let openaiInstance: OpenAI | null = null;

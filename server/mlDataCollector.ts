@@ -6,22 +6,35 @@ import fs from "fs/promises"; // Use async fs
 import { createReadStream } from "fs";
 
 /**
- * ML Training Data Collector
- * Intercepts all Gemini API calls and stores them for future model training
+ * ML Training Data Collector - UNIVERSAL
+ * Intercepts ALL platform data: Gemini, OpenAI, medical notes, documents, conversations
+ * Part of Active Learning strategy for gradual migration to proprietary ML models
  */
 
+// ALL possible request types across the platform
+type MLRequestType = 
+  // AI Interactions (Gemini)
+  | 'radiological_analysis' | 'medical_triage' | 'prevention_chat' | 'crossword_generation'
+  // AI Interactions (OpenAI)
+  | 'conversational_assistant' | 'email_marketing' | 'ai_translation' | 'tts_audio' 
+  | 'question_generation' | 'scenario_generation'
+  // Medical Data (non-AI)
+  | 'doctor_note' | 'medical_report' | 'ecg_upload' | 'document_upload'
+  // Other
+  | 'user_feedback' | 'health_assessment';
+
 interface MLTrainingDataInput {
-  requestType: 'radiological_analysis' | 'medical_triage' | 'document_analysis' | 'prevention_chat' | 'crossword_generation';
-  modelUsed: string; // e.g., 'gemini-2.5-pro', 'gemini-2.5-flash'
+  requestType: MLRequestType;
+  modelUsed: string; // 'gemini-2.5-pro', 'gpt-4o', 'tts-1', 'manual' (non-AI data)
   
-  // Input data
-  inputImagePath?: string; // Path to image file (for radiological analysis)
-  inputText?: string; // Text input (for triage, chat, etc.)
-  inputPrompt: string; // Full prompt sent to Gemini
+  // Input data (flexible for all types)
+  inputImagePath?: string; // Path to any file (radiology, ECG, documents)
+  inputText?: string; // Text input (chat, notes, prompts)
+  inputPrompt: string; // Full prompt or content description
   
   // Output data
-  outputJson: any; // Parsed JSON response from Gemini
-  outputRaw?: string; // Raw text response
+  outputJson: any; // Parsed JSON response or structured data
+  outputRaw?: string; // Raw text response or content
   
   // User context
   userId?: string;
@@ -198,6 +211,62 @@ export async function getMLTrainingStats(): Promise<{
       includedInTraining: 0,
     };
   }
+}
+
+/**
+ * HELPER: Save OpenAI API call for ML training
+ */
+export async function saveOpenAIData(data: {
+  requestType: MLRequestType;
+  model: string; // 'gpt-4o', 'gpt-4o-mini', 'tts-1'
+  inputPrompt: string;
+  messages?: any[]; // OpenAI messages array
+  outputText?: string;
+  outputJson?: any;
+  userId?: string;
+  userAge?: number;
+  userGender?: string;
+  responseTimeMs?: number;
+  tokensUsed?: number;
+}): Promise<void> {
+  await saveTrainingData({
+    requestType: data.requestType,
+    modelUsed: data.model,
+    inputPrompt: data.inputPrompt,
+    inputText: data.messages ? JSON.stringify(data.messages) : undefined,
+    outputJson: data.outputJson || { text: data.outputText },
+    outputRaw: data.outputText,
+    userId: data.userId,
+    userAge: data.userAge,
+    userGender: data.userGender,
+    responseTimeMs: data.responseTimeMs,
+    tokensUsed: data.tokensUsed,
+  });
+}
+
+/**
+ * HELPER: Save medical note/document for ML training (non-AI data)
+ */
+export async function saveMedicalData(data: {
+  requestType: 'doctor_note' | 'medical_report' | 'ecg_upload' | 'document_upload';
+  content: string | object; // Note content or document metadata
+  filePath?: string;
+  userId?: string;
+  userAge?: number;
+  userGender?: string;
+  metadata?: any; // Additional metadata (category, attachments, etc.)
+}): Promise<void> {
+  await saveTrainingData({
+    requestType: data.requestType,
+    modelUsed: 'manual', // Non-AI data
+    inputPrompt: `Medical data: ${data.requestType}`,
+    inputText: typeof data.content === 'string' ? data.content : JSON.stringify(data.content),
+    inputImagePath: data.filePath,
+    outputJson: data.metadata || {},
+    userId: data.userId,
+    userAge: data.userAge,
+    userGender: data.userGender,
+  });
 }
 
 /**

@@ -60,6 +60,7 @@ import AppointmentsPage from "@/pages/appointments";
 import DoctorAppointmentsPage from "@/pages/doctor-appointments";
 import DoctorPatientsPage from "@/pages/doctor-patients";
 import DoctorReportsPage from "@/pages/doctor-reports";
+import Home from "@/pages/home";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {

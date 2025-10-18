@@ -3550,6 +3550,66 @@ Restituisci SOLO un JSON con:
     }
   });
 
+  // *** SYNTHETIC DATA GENERATOR - Admin Only ***
+
+  // Admin - Generate synthetic training data (batch)
+  app.post('/api/ml/synthetic/generate', isAdmin, async (req, res) => {
+    try {
+      const { count = 10, delayMs = 2000 } = req.body;
+
+      // Validate inputs
+      if (count < 1 || count > 100) {
+        return res.status(400).json({ message: 'Count must be between 1 and 100' });
+      }
+
+      // Import generator dynamically
+      const { generateSyntheticDataBatch } = await import('./syntheticDataGenerator');
+
+      // Start generation in background (don't await to avoid timeout)
+      generateSyntheticDataBatch(count, delayMs).catch(err => {
+        console.error('[Synthetic API] Background generation failed:', err);
+      });
+
+      res.json({
+        message: `Generazione di ${count} conversazioni sintetiche avviata in background`,
+        estimatedTime: Math.round((count * delayMs) / 1000 / 60),
+        note: 'Controlla la pagina ML Training Data per vedere i progressi',
+      });
+    } catch (error: any) {
+      console.error('Error starting synthetic generation:', error);
+      res.status(500).json({ message: 'Failed to start synthetic data generation' });
+    }
+  });
+
+  // Admin - Generate balanced dataset (equal per category)
+  app.post('/api/ml/synthetic/generate-balanced', isAdmin, async (req, res) => {
+    try {
+      const { perCategory = 5, delayMs = 2000 } = req.body;
+
+      if (perCategory < 1 || perCategory > 20) {
+        return res.status(400).json({ message: 'perCategory must be between 1 and 20' });
+      }
+
+      const { generateBalancedDataset } = await import('./syntheticDataGenerator');
+
+      // Start in background
+      generateBalancedDataset(perCategory, delayMs).catch(err => {
+        console.error('[Synthetic API] Background balanced generation failed:', err);
+      });
+
+      const totalCount = 5 * perCategory; // 5 categorie
+      res.json({
+        message: `Dataset bilanciato avviato: ${perCategory} casi per categoria`,
+        totalCases: totalCount,
+        estimatedTime: Math.round((totalCount * delayMs) / 1000 / 60),
+        categories: ['testa', 'addome', 'torace', 'arti', 'generale'],
+      });
+    } catch (error: any) {
+      console.error('Error starting balanced generation:', error);
+      res.status(500).json({ message: 'Failed to start balanced dataset generation' });
+    }
+  });
+
   // *** TWO-FACTOR AUTHENTICATION (2FA) FOR DOCTORS ***
 
   // Doctor - Setup 2FA (generate secret and QR code)

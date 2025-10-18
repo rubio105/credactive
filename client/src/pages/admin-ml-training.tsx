@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Download, Database, TrendingUp, FileJson, Filter, Home } from "lucide-react";
+import { Brain, Download, Database, TrendingUp, FileJson, Filter, Home, Zap, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import AdminLayout from "@/components/AdminLayout";
@@ -47,9 +51,12 @@ interface MLRecordsResponse {
 
 export default function AdminMLTrainingPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [requestTypeFilter, setRequestTypeFilter] = useState<string>('');
   const [modelFilter, setModelFilter] = useState<string>('');
+  const [syntheticCount, setSyntheticCount] = useState<number>(10);
+  const [balancedPerCategory, setBalancedPerCategory] = useState<number>(5);
 
   const { data: stats, isLoading: statsLoading } = useQuery<MLStats>({
     queryKey: ['/api/ml/training/stats'],
@@ -59,6 +66,54 @@ export default function AdminMLTrainingPage() {
   const { data: recordsData, isLoading: recordsLoading } = useQuery<MLRecordsResponse>({
     queryKey: ['/api/ml/training/records', { requestType: requestTypeFilter, modelUsed: modelFilter, page }],
     enabled: !!user?.isAdmin,
+  });
+
+  // Synthetic data generation mutations
+  const generateSyntheticMutation = useMutation({
+    mutationFn: async (count: number) => {
+      return apiRequest('/api/ml/synthetic/generate', 'POST', { count, delayMs: 2000 });
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Generazione Avviata",
+        description: data.message || `Generazione di ${syntheticCount} conversazioni avviata`,
+      });
+      // Refresh stats after a delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/ml/training/stats'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/ml/training/records'] });
+      }, 5000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante l'avvio della generazione",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateBalancedMutation = useMutation({
+    mutationFn: async (perCategory: number) => {
+      return apiRequest('/api/ml/synthetic/generate-balanced', 'POST', { perCategory, delayMs: 2000 });
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Dataset Bilanciato Avviato",
+        description: data.message || `Generazione di ${data.totalCases} casi avviata`,
+      });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/ml/training/stats'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/ml/training/records'] });
+      }, 5000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante l'avvio del dataset bilanciato",
+        variant: "destructive",
+      });
+    },
   });
 
   if (authLoading) {
@@ -248,6 +303,120 @@ export default function AdminMLTrainingPage() {
             </Card>
           </div>
         )}
+
+        {/* Synthetic Data Generator */}
+        <Card className="border-2 border-purple-200 dark:border-purple-800">
+          <CardHeader className="bg-purple-50 dark:bg-purple-950/30">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Zap className="w-5 h-5 text-purple-500" />
+              Agente Sintetico - Generazione Dati ML
+            </CardTitle>
+            <CardDescription>
+              Genera conversazioni mediche sintetiche con sintomi variati per addestrare i modelli
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
+            {/* Batch Generation */}
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-purple-600" />
+                Generazione Batch Casuale
+              </h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Genera N conversazioni con sintomi casuali da tutte le categorie (testa, addome, torace, arti, generale)
+              </p>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <Label htmlFor="synthetic-count">Numero Conversazioni</Label>
+                  <Input
+                    id="synthetic-count"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={syntheticCount}
+                    onChange={(e) => setSyntheticCount(parseInt(e.target.value) || 10)}
+                    data-testid="input-synthetic-count"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Massimo 100 per volta (2 sec tra ogni generazione)
+                  </p>
+                </div>
+                <Button
+                  onClick={() => generateSyntheticMutation.mutate(syntheticCount)}
+                  disabled={generateSyntheticMutation.isPending || syntheticCount < 1 || syntheticCount > 100}
+                  className="flex items-center gap-2"
+                  data-testid="button-generate-synthetic"
+                >
+                  <Zap className="w-4 h-4" />
+                  {generateSyntheticMutation.isPending ? 'Generazione...' : 'Genera'}
+                </Button>
+              </div>
+              {generateSyntheticMutation.isPending && (
+                <div className="mt-3 text-sm text-muted-foreground">
+                  ⏱️ Tempo stimato: ~{Math.round((syntheticCount * 2) / 60)} minuti
+                </div>
+              )}
+            </div>
+
+            {/* Balanced Generation */}
+            <div className="bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-950/30 dark:to-emerald-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-blue-600" />
+                Dataset Bilanciato per Categoria
+              </h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Genera ugual numero di casi per ogni categoria medica (testa, addome, torace, arti, generale)
+              </p>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <Label htmlFor="balanced-per-category">Casi per Categoria</Label>
+                  <Input
+                    id="balanced-per-category"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={balancedPerCategory}
+                    onChange={(e) => setBalancedPerCategory(parseInt(e.target.value) || 5)}
+                    data-testid="input-balanced-per-category"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Totale: {balancedPerCategory * 5} conversazioni (5 categorie × {balancedPerCategory})
+                  </p>
+                </div>
+                <Button
+                  onClick={() => generateBalancedMutation.mutate(balancedPerCategory)}
+                  disabled={generateBalancedMutation.isPending || balancedPerCategory < 1 || balancedPerCategory > 20}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  data-testid="button-generate-balanced"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  {generateBalancedMutation.isPending ? 'Generazione...' : 'Genera Bilanciato'}
+                </Button>
+              </div>
+              {generateBalancedMutation.isPending && (
+                <div className="mt-3 text-sm text-muted-foreground">
+                  ⏱️ Tempo stimato: ~{Math.round((balancedPerCategory * 5 * 2) / 60)} minuti
+                </div>
+              )}
+            </div>
+
+            {/* Categories Info */}
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border">
+              <h4 className="font-semibold text-sm mb-2">Categorie Sintomi Disponibili</h4>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                <Badge variant="outline" className="justify-center">🧠 Testa</Badge>
+                <Badge variant="outline" className="justify-center">🫀 Addome</Badge>
+                <Badge variant="outline" className="justify-center">💨 Torace</Badge>
+                <Badge variant="outline" className="justify-center">🦴 Arti</Badge>
+                <Badge variant="outline" className="justify-center">🌡️ Generale</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Ogni conversazione include: età, sesso, peso, altezza + sintomo + analisi AI completa
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Export Section */}
         <Card>

@@ -177,7 +177,7 @@ function Router() {
         <Route path="/" component={Login} />
       ) : (
         <>
-          <Route path="/" component={Prevention} />
+          <Route path="/" component={Home} />
           <Route path="/quiz/:quizId">
             {() => <ProtectedRoute requireNonAiOnly><Quiz /></ProtectedRoute>}
           </Route>

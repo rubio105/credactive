@@ -160,7 +160,7 @@ export default function AdminUsersPage() {
   const filteredUsers = users.filter(u => 
     u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ).slice(0, 20); // Limit to max 20 users for performance
 
   const getUserType = (u: UserData) => {
     if (u.isAdmin) return "Admin";

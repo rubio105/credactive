@@ -27,6 +27,10 @@ interface DoctorNote {
   noteTitle: string | null;
   noteText: string;
   isReport: boolean;
+  category?: string | null;
+  attachmentPath?: string | null;
+  attachmentName?: string | null;
+  attachmentType?: string | null;
   createdAt: string;
   doctor: {
     firstName: string | null;
@@ -245,12 +249,34 @@ export default function DocumentiPage() {
                             {note.noteTitle && (
                               <h4 className="font-semibold mb-1">{note.noteTitle}</h4>
                             )}
-                            {note.isReport && (
-                              <Badge variant="secondary" className="mb-2">Referto Medico</Badge>
-                            )}
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {note.category && (
+                                <Badge variant="outline" className="text-xs">
+                                  {note.category}
+                                </Badge>
+                              )}
+                              {note.isReport && (
+                                <Badge variant="secondary" className="text-xs">Referto Medico</Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap">
                               {note.noteText}
                             </p>
+                            {note.attachmentPath && (
+                              <div className="mt-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  data-testid={`button-download-attachment-${note.id}`}
+                                >
+                                  <a href={note.attachmentPath} download={note.attachmentName} target="_blank" rel="noopener noreferrer">
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    {note.attachmentName || 'Scarica Allegato'}
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">

@@ -1025,8 +1025,8 @@ export default function PreventionPage() {
           <p className="text-sm sm:text-base text-muted-foreground mt-2">Con un medico sempre al tuo fianco</p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3 overflow-x-hidden">
-          <div className="lg:col-span-1 space-y-6 order-2 lg:order-1 max-w-full">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3 overflow-x-hidden px-2 sm:px-0">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6 order-2 lg:order-1 max-w-full">
             {/* Alert Pazienti Collegati (SOLO per Medici) */}
             {(user as any)?.isDoctor ? (
               <Card className="shadow-xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden">
@@ -1352,7 +1352,7 @@ export default function PreventionPage() {
             )}
           </div>
 
-          <div className="lg:col-span-2 order-1 lg:order-2 max-w-full">
+          <div className="lg:col-span-2 order-1 lg:order-2 max-w-full overflow-hidden">
             <Card className="shadow-2xl border-2 border-emerald-200/50 dark:border-emerald-800/50 overflow-hidden backdrop-blur-sm">
               <CardHeader className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 dark:from-emerald-600 dark:via-teal-600 dark:to-cyan-700 pb-8">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzBoLTEydjEyaDEyVjMwem0wLTI0SDI0djEyaDEyVjZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
@@ -1688,8 +1688,8 @@ export default function PreventionPage() {
                   </div>
                 ) : (
                   <>
-                    <ScrollArea ref={scrollAreaRef} className="h-[500px] rounded-xl p-6 bg-gradient-to-b from-white via-emerald-50/20 to-white dark:from-gray-950 dark:via-emerald-950/10 dark:to-gray-950">
-                      <div className="space-y-6">
+                    <ScrollArea ref={scrollAreaRef} className="h-[500px] rounded-xl p-2 sm:p-4 md:p-6 bg-gradient-to-b from-white via-emerald-50/20 to-white dark:from-gray-950 dark:via-emerald-950/10 dark:to-gray-950">
+                      <div className="space-y-4 sm:space-y-6">
                         {messages?.map((msg) => (
                           <div
                             key={msg.id}
@@ -1712,13 +1712,13 @@ export default function PreventionPage() {
                                   </div>
                                 )}
                                 <div
-                                  className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] ${
+                                  className={`max-w-[85%] sm:max-w-[85%] md:max-w-[80%] ${
                                     msg.role === 'user'
                                       ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white rounded-tr-sm'
                                       : 'bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm'
-                                  } p-4 rounded-2xl shadow-md transition-all hover:shadow-lg`}
+                                  } p-3 sm:p-4 rounded-2xl shadow-md transition-all hover:shadow-lg`}
                                 >
-                                  <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words text-justify">
+                                  <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">
                                     {msg.content}
                                   </p>
                                   
@@ -1853,12 +1853,12 @@ export default function PreventionPage() {
                   ) : (
                     <div className="space-y-6">
                       {/* Filters and Search */}
-                      <div className="flex flex-col md:flex-row gap-4">
+                      <div className="flex flex-col gap-3">
                         <div className="flex-1">
                           <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                             <Input
-                              placeholder="Cerca per nome, contenuto o valori medici..."
+                              placeholder="Cerca documenti..."
                               value={reportSearch}
                               onChange={(e) => setReportSearch(e.target.value)}
                               className="pl-10"
@@ -1866,11 +1866,11 @@ export default function PreventionPage() {
                             />
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                           <select
                             value={reportFilter}
                             onChange={(e) => setReportFilter(e.target.value)}
-                            className="px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-sm"
+                            className="flex-1 px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-sm min-w-0"
                             data-testid="select-filter-type"
                           >
                             <option value="all">Tutti i tipi</option>
@@ -1886,7 +1886,7 @@ export default function PreventionPage() {
                           <select
                             value={reportSort}
                             onChange={(e) => setReportSort(e.target.value as any)}
-                            className="px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-sm"
+                            className="flex-1 px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-sm min-w-0"
                             data-testid="select-sort-order"
                           >
                             <option value="recent">Più recenti</option>
@@ -1898,16 +1898,17 @@ export default function PreventionPage() {
 
                       {/* Cronologia Medica (Max 2 documenti per volta) */}
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">Cronologia Medica</h3>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                          <h3 className="text-base sm:text-lg font-semibold text-emerald-700 dark:text-emerald-400">Cronologia Medica</h3>
                           {totalReportPages > 1 && (
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">
-                                Pagina {reportPage + 1} di {totalReportPages}
+                              <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                                Pag {reportPage + 1}/{totalReportPages}
                               </span>
                               <Button
                                 variant="outline"
                                 size="icon"
+                                className="h-8 w-8"
                                 onClick={() => setReportPage(Math.max(0, reportPage - 1))}
                                 disabled={reportPage === 0}
                                 data-testid="button-prev-reports"
@@ -1917,6 +1918,7 @@ export default function PreventionPage() {
                               <Button
                                 variant="outline"
                                 size="icon"
+                                className="h-8 w-8"
                                 onClick={() => setReportPage(Math.min(totalReportPages - 1, reportPage + 1))}
                                 disabled={reportPage === totalReportPages - 1}
                                 data-testid="button-next-reports"

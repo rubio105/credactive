@@ -9457,9 +9457,10 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
           reason: alertReason,
           isReviewed: false,
         });
-        // Auto-close session when alert is created so user doesn't return to stale active session
-        await storage.closeTriageSession(sessionId);
-        await saveCompletedConversation(sessionId, user?.id);
+        // ❌ REMOVED: Don't auto-close session when alert is created
+        // Let user continue conversation freely - they can close manually if needed
+        // await storage.closeTriageSession(sessionId);
+        // await saveCompletedConversation(sessionId, user?.id);
       }
 
       // Track token usage for authenticated users

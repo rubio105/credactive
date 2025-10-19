@@ -99,13 +99,7 @@ export default function Subscribe() {
     // Check if user is already premium (solo una volta)
     if (!premiumCheckDone && user?.isPremium) {
       setPremiumCheckDone(true);
-      toast({
-        title: "Sei già Premium!",
-        description: "Il tuo abbonamento Premium è attivo",
-      });
-      setTimeout(() => {
-        setLocation("/");
-      }, 1000);
+      setLoadingPayment(false);
       return;
     }
 
@@ -139,6 +133,75 @@ export default function Subscribe() {
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-muted-foreground">Caricamento...</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se l'utente è già Premium, mostra una pagina dedicata
+  if (user?.isPremium) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <Card className="border-2 border-emerald-200 dark:border-emerald-800">
+            <CardHeader className="text-center pb-8">
+              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mb-6">
+                <Crown className="w-10 h-10 text-white" />
+              </div>
+              <CardTitle className="text-3xl mb-4">Sei già Premium! 🎉</CardTitle>
+              <p className="text-lg text-muted-foreground">
+                Il tuo abbonamento Premium è attivo e hai accesso a tutte le funzionalità esclusive
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 p-6 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <h3 className="font-semibold text-lg mb-4 text-emerald-700 dark:text-emerald-300">I tuoi vantaggi Premium attivi:</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>Consulto medico settimanale</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>Webinar sulla prevenzione</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>Eventi esclusivi sulla prevenzione</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>Accesso illimitato a CIRY</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>Supporto medico prioritario</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button 
+                  onClick={() => setLocation("/")}
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                  size="lg"
+                  data-testid="button-go-home"
+                >
+                  Vai alla Home
+                </Button>
+                <Button 
+                  onClick={() => setLocation("/settings")}
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                  data-testid="button-go-settings"
+                >
+                  Gestisci Abbonamento
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

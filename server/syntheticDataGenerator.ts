@@ -273,8 +273,26 @@ Fornisci un triage medico completo considerando tutti i fattori di rischio e la 
   return prompt;
 }
 
+// Follow-up domande realistiche che un paziente potrebbe fare
+const PATIENT_FOLLOWUP_QUESTIONS = [
+  "Devo preoccuparmi?",
+  "È grave secondo lei?",
+  "Quali esami dovrei fare?",
+  "Posso prendere qualche farmaco per stare meglio?",
+  "Devo andare subito in ospedale?",
+  "Può essere qualcosa di serio?",
+  "Cosa posso fare per migliorare?",
+  "Sono a rischio di complicazioni?",
+  "Quanto tempo ci vorrà per guarire?",
+  "Ci sono cose da evitare?",
+  "Devo cambiare la mia alimentazione?",
+  "Posso continuare a fare sport?",
+  "È contagioso?",
+  "I miei familiari sono a rischio?",
+];
+
 /**
- * Genera una singola conversazione sintetica
+ * Genera una singola conversazione sintetica con follow-up realistici
  */
 async function generateSyntheticConversation(): Promise<{
   success: boolean;
@@ -303,13 +321,47 @@ async function generateSyntheticConversation(): Promise<{
       clinicalValues, lifestyle, comorbidities, medications
     );
     
-    // Chiama Gemini per generare risposta realistica
+    // Chiama Gemini per generare risposta realistica iniziale
     const startTime = Date.now();
     const aiResponse = await generateTriageResponse(conversationPrompt, []);
+    
+    // Costruisci conversazione con 1-2 follow-up realistici
+    const conversationHistory: Array<{ role: string; content: string }> = [
+      { role: 'user', content: symptom },
+      { role: 'assistant', content: aiResponse.message },
+    ];
+
+    // 70% di probabilità di avere 1-2 follow-up
+    const shouldHaveFollowup = Math.random() > 0.3;
+    const followupCount = shouldHaveFollowup ? (Math.random() > 0.5 ? 2 : 1) : 0;
+
+    for (let i = 0; i < followupCount; i++) {
+      // Seleziona domanda follow-up casuale
+      const followupQuestion = PATIENT_FOLLOWUP_QUESTIONS[
+        Math.floor(Math.random() * PATIENT_FOLLOWUP_QUESTIONS.length)
+      ];
+      
+      // Genera risposta AI al follow-up (passa la history completa senza la nuova domanda)
+      const followupResponse = await generateTriageResponse(
+        followupQuestion,
+        conversationHistory // Pass full history including previous exchanges
+      );
+      
+      // Aggiungi domanda e risposta alla history
+      conversationHistory.push({ role: 'user', content: followupQuestion });
+      conversationHistory.push({ role: 'assistant', content: followupResponse.message });
+    }
+
     const responseTime = Date.now() - startTime;
     
-    // Stima token usati (approssimativa)
-    const estimatedTokens = Math.round((conversationPrompt.length + JSON.stringify(aiResponse).length) / 4);
+    // Calcola token totali della conversazione completa
+    const totalContent = conversationHistory.map(m => m.content).join(' ');
+    const estimatedTokens = Math.round(totalContent.length / 4);
+    
+    // Build full conversation transcript
+    const conversationTranscript = conversationHistory
+      .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+      .join('\n\n');
     
     // Salva nel sistema ML
     await saveTrainingData({
@@ -326,15 +378,17 @@ async function generateSyntheticConversation(): Promise<{
         _lifestyle: lifestyle,
         _comorbidities: comorbidities,
         _medications: medications,
+        _conversationTurns: conversationHistory.length,
+        _fullConversation: conversationHistory,
       },
-      outputRaw: JSON.stringify(aiResponse),
+      outputRaw: conversationTranscript,
       userAge: age,
       userGender: gender,
       responseTimeMs: responseTime,
       tokensUsed: estimatedTokens,
     });
     
-    console.log(`[Synthetic Generator] ✅ Generata conversazione: ${category} (${age}${gender}, ${responseTime}ms)`);
+    console.log(`[Synthetic Generator] ✅ Generata conversazione: ${category} (${age}${gender}, ${conversationHistory.length} messaggi, ${responseTime}ms)`);
     
     return { success: true, category };
   } catch (error: any) {

@@ -9188,6 +9188,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         });
         // Auto-close session when alert is created so user doesn't return to stale active session
         await storage.closeTriageSession(session.id);
+        await saveCompletedConversation(session.id, user?.id);
       }
 
       // Build response with upload instructions if needed
@@ -9422,6 +9423,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         });
         // Auto-close session when alert is created so user doesn't return to stale active session
         await storage.closeTriageSession(sessionId);
+        await saveCompletedConversation(sessionId, user?.id);
       }
 
       // Track token usage for authenticated users
@@ -9449,6 +9451,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
       if (aiAskedIfHelp && userSaidNo) {
         // Close the session automatically
         await storage.updateTriageSession(sessionId, { status: 'closed' });
+        await saveCompletedConversation(sessionId, user?.id);
         sessionClosed = true;
         console.log(`[Auto-Close] Session ${sessionId} closed - user declined further help`);
       }
@@ -9637,6 +9640,52 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
     }
   });
 
+  // Helper: Save complete conversation to ML training data
+  async function saveCompletedConversation(sessionId: string, userId?: string) {
+    try {
+      const messages = await storage.getTriageMessagesBySession(sessionId);
+      const session = await storage.getTriageSessionById(sessionId);
+      
+      if (!session || messages.length === 0) {
+        return; // Skip if no messages
+      }
+
+      // Build conversation transcript
+      const conversationTranscript = messages
+        .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+        .join('\n\n');
+
+      // Extract initial symptom (first user message)
+      const initialMessage = messages.find(m => m.role === 'user')?.content || 'N/A';
+
+      await saveTrainingData({
+        requestType: 'medical_triage',
+        modelUsed: 'gemini-2.5-pro',
+        inputText: initialMessage,
+        inputPrompt: `Complete triage conversation (${messages.length} messages)`,
+        outputJson: {
+          sessionId,
+          messageCount: messages.length,
+          userRole: session.userRole,
+          status: session.status,
+          messages: messages.map(m => ({
+            role: m.role,
+            content: m.content.substring(0, 500), // Preview only
+            aiSuggestDoctor: m.aiSuggestDoctor,
+            aiUrgencyLevel: m.aiUrgencyLevel
+          }))
+        },
+        outputRaw: conversationTranscript,
+        userId: userId || session.userId || undefined,
+      });
+
+      console.log(`[ML Collector] Saved completed conversation for session ${sessionId}`);
+    } catch (error) {
+      console.error('[ML Collector] Failed to save completed conversation:', error);
+      // Don't fail the close operation if ML tracking fails
+    }
+  }
+
   // Close triage session (POST /api/triage/:sessionId/close)
   app.post('/api/triage/:sessionId/close', async (req, res) => {
     try {
@@ -9654,6 +9703,10 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
       }
 
       const closedSession = await storage.closeTriageSession(sessionId);
+      
+      // Save conversation to ML training data after closing (so status is 'closed')
+      await saveCompletedConversation(sessionId, user?.id);
+      
       res.json(closedSession);
     } catch (error: any) {
       console.error('Close triage session error:', error);

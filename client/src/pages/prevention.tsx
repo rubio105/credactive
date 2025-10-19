@@ -437,6 +437,19 @@ export default function PreventionPage() {
       }
       
       const message = error?.message || "Errore durante l'invio del messaggio";
+      
+      // Handle closed session error specifically
+      if (message.includes("Session is closed") || message.includes("closed")) {
+        setSessionId(null);
+        queryClient.invalidateQueries({ queryKey: ["/api/triage/session/active"] });
+        toast({ 
+          title: "Conversazione chiusa", 
+          description: "La sessione è stata chiusa. Puoi iniziare una nuova conversazione quando vuoi!",
+          variant: "default" 
+        });
+        return;
+      }
+      
       toast({ 
         title: "Errore", 
         description: message.includes("quota") || message.includes("429") 

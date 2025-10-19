@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Plus, Trash2, Check, X, FileCheck, Calendar } from "lucide-react";
+import { FileText, Plus, Trash2, Check, X, FileCheck, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import Navigation from "@/components/navigation";
 import { SEO } from "@/components/SEO";
 import type { User } from "@shared/schema";
@@ -41,6 +41,7 @@ export default function DoctorReportsPage() {
   const [isReport, setIsReport] = useState(false);
   const [noteCategory, setNoteCategory] = useState<string>("Generico");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [paginationByPatient, setPaginationByPatient] = useState<Record<string, number>>({});
 
   // Get all doctor's reports/notes
   const { data: notes = [], isLoading } = useQuery<DoctorNote[]>({
@@ -150,15 +151,58 @@ export default function DoctorReportsPage() {
     setShowCreateDialog(true);
   };
 
-  // Group notes by patient
-  const notesByPatient = notes.reduce((acc, note) => {
-    const patientKey = note.patientId;
-    if (!acc[patientKey]) {
-      acc[patientKey] = [];
+  // Group notes by patient and sort by date (most recent first)
+  const notesByPatient = useMemo(() => {
+    const grouped = notes.reduce((acc, note) => {
+      const patientKey = note.patientId;
+      if (!acc[patientKey]) {
+        acc[patientKey] = [];
+      }
+      acc[patientKey].push(note);
+      return acc;
+    }, {} as Record<string, DoctorNote[]>);
+    
+    // Sort notes within each patient by date descending
+    Object.keys(grouped).forEach(patientId => {
+      grouped[patientId].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+    
+    return grouped;
+  }, [notes]);
+
+  const NOTES_PER_PAGE = 2;
+  
+  const getPaginatedNotes = (patientId: string, allNotes: DoctorNote[]) => {
+    let currentPage = paginationByPatient[patientId] || 0;
+    const totalPages = Math.ceil(allNotes.length / NOTES_PER_PAGE);
+    
+    // Reset to last valid page if current page is out of bounds
+    if (currentPage >= totalPages && totalPages > 0) {
+      currentPage = totalPages - 1;
+      setPaginationByPatient(prev => ({ ...prev, [patientId]: currentPage }));
     }
-    acc[patientKey].push(note);
-    return acc;
-  }, {} as Record<string, DoctorNote[]>);
+    
+    const startIndex = currentPage * NOTES_PER_PAGE;
+    const endIndex = startIndex + NOTES_PER_PAGE;
+    return {
+      notes: allNotes.slice(startIndex, endIndex),
+      currentPage,
+      totalPages,
+      hasNext: endIndex < allNotes.length,
+      hasPrev: currentPage > 0,
+    };
+  };
+
+  const navigatePage = (patientId: string, direction: 'next' | 'prev') => {
+    setPaginationByPatient(prev => ({
+      ...prev,
+      [patientId]: direction === 'next' 
+        ? (prev[patientId] || 0) + 1
+        : Math.max(0, (prev[patientId] || 0) - 1)
+    }));
+  };
 
   return (
     <>
@@ -252,6 +296,8 @@ export default function DoctorReportsPage() {
                     const patientName = patient 
                       ? `${patient.firstName} ${patient.lastName}`
                       : firstNote.patientName || 'Paziente Sconosciuto';
+                    
+                    const pagination = getPaginatedNotes(patientId, patientNotes);
 
                     return (
                       <div key={patientId} className="border rounded-lg p-4">
@@ -261,16 +307,41 @@ export default function DoctorReportsPage() {
                               {patientName.split(' ').map(n => n[0]).join('')}
                             </span>
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="font-medium">{patientName}</p>
                             <p className="text-sm text-muted-foreground">
                               {patientNotes.length} {patientNotes.length === 1 ? 'documento' : 'documenti'}
                             </p>
                           </div>
+                          {pagination.totalPages > 1 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">
+                                Pag. {pagination.currentPage + 1} di {pagination.totalPages}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => navigatePage(patientId, 'prev')}
+                                disabled={!pagination.hasPrev}
+                                data-testid={`button-prev-page-${patientId}`}
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => navigatePage(patientId, 'next')}
+                                disabled={!pagination.hasNext}
+                                data-testid={`button-next-page-${patientId}`}
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
                         <div className="space-y-2 ml-13">
-                          {patientNotes.map((note) => (
+                          {pagination.notes.map((note) => (
                             <div
                               key={note.id}
                               className="flex items-start justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"

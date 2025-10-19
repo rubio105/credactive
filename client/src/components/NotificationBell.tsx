@@ -75,10 +75,15 @@ export function NotificationBell() {
     return <Info className={`${className} text-gray-600`} />;
   };
 
-  const handleNotificationClick = (notification: Notification) => {
-    // Mark as read
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read and wait for it to complete
     if (!notification.read) {
-      markAsReadMutation.mutate(notification.id);
+      try {
+        await markAsReadMutation.mutateAsync(notification.id);
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+        // Continue with navigation even if mark-as-read fails
+      }
     }
 
     // Navigate if URL provided

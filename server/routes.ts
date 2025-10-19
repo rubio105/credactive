@@ -756,20 +756,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const doctor = await storage.getUserById(req.user.id);
         const doctorName = doctor?.lastName ? `Dr. ${doctor.lastName}` : 'il tuo medico';
         
+        // Customize notification based on category
+        const categoryLabels: Record<string, { title: string, defaultMessage: string }> = {
+          'Ricetta Medica': {
+            title: `Nuova ricetta medica da ${doctorName}`,
+            defaultMessage: 'Il tuo medico ha inviato una nuova ricetta medica'
+          },
+          'Refertazione': {
+            title: `Nuovo referto da ${doctorName}`,
+            defaultMessage: 'Il tuo medico ha pubblicato un nuovo referto medico'
+          },
+          'Consiglio': {
+            title: `Nuovo consiglio da ${doctorName}`,
+            defaultMessage: 'Il tuo medico ha condiviso un nuovo consiglio medico'
+          },
+          'Generico': {
+            title: `Nuova nota da ${doctorName}`,
+            defaultMessage: 'Il tuo medico ha aggiunto una nuova nota medica al tuo profilo'
+          }
+        };
+
+        const categoryData = categoryLabels[category as string] || categoryLabels['Generico'];
+        
         await storage.createNotification({
           userId: patientId,
-          title: `Nuova nota da ${doctorName}`,
-          message: noteTitle || 'Il tuo medico ha aggiunto una nuova nota medica al tuo profilo',
+          title: categoryData.title,
+          message: noteTitle || categoryData.defaultMessage,
           type: 'doctor_note',
           read: false,
           relatedResourceType: 'doctor_note',
           relatedResourceId: note.id,
           relatedUrl: '/documenti',
           iconType: 'stethoscope',
-          priority: isReport ? 'high' : 'normal',
+          priority: isReport || category === 'Refertazione' ? 'high' : 'normal',
         });
         
-        console.log(`[Notification] Created in-app notification for patient ${patientId} for new doctor note`);
+        console.log(`[Notification] Created in-app notification for patient ${patientId} for new doctor note (category: ${category})`);
       } catch (notificationError) {
         console.error(`[Notification] Failed to create in-app notification:`, notificationError);
         // Don't fail the request if notification creation fails
@@ -783,10 +805,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           const subscriptions = await storage.getPushSubscriptionsByUser(patientId);
           const doctor = await storage.getUserById(req.user.id);
+          const doctorName = doctor?.lastName ? `Dr. ${doctor.lastName}` : 'medico';
+          
+          // Customize push notification based on category
+          const categoryPushMessages: Record<string, { title: string, body: string }> = {
+            'Ricetta Medica': {
+              title: `Nuova ricetta medica dal ${doctorName}`,
+              body: noteTitle || 'Il tuo medico ha inviato una nuova ricetta medica'
+            },
+            'Refertazione': {
+              title: `Nuovo referto dal ${doctorName}`,
+              body: noteTitle || 'Il tuo medico ha pubblicato un nuovo referto medico'
+            },
+            'Consiglio': {
+              title: `Nuovo consiglio dal ${doctorName}`,
+              body: noteTitle || 'Il tuo medico ha condiviso un nuovo consiglio'
+            },
+            'Generico': {
+              title: `Nuova nota dal ${doctorName}`,
+              body: noteTitle || 'Il tuo medico ha aggiunto una nuova nota medica'
+            }
+          };
+
+          const pushData = categoryPushMessages[category as string] || categoryPushMessages['Generico'];
           
           const payload = JSON.stringify({
-            title: `Nuova nota dal Dr. ${doctor?.lastName || 'medico'}`,
-            body: noteTitle || 'Il tuo medico ha aggiunto una nuova nota medica',
+            title: pushData.title,
+            body: pushData.body,
             icon: '/images/ciry-main-logo.png',
             badge: '/images/ciry-main-logo.png',
             data: { url: '/documenti' },

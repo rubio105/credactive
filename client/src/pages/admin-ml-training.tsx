@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Download, Database, TrendingUp, FileJson, Filter, Home, Zap, BarChart3 } from "lucide-react";
+import { Brain, Download, Database, TrendingUp, FileJson, Filter, Home, Zap, BarChart3, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -58,12 +58,12 @@ export default function AdminMLTrainingPage() {
   const [syntheticCount, setSyntheticCount] = useState<number>(10);
   const [balancedPerCategory, setBalancedPerCategory] = useState<number>(5);
 
-  const { data: stats, isLoading: statsLoading } = useQuery<MLStats>({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<MLStats>({
     queryKey: ['/api/ml/training/stats'],
     enabled: !!user?.isAdmin,
   });
 
-  const { data: recordsData, isLoading: recordsLoading } = useQuery<MLRecordsResponse>({
+  const { data: recordsData, isLoading: recordsLoading, error: recordsError } = useQuery<MLRecordsResponse>({
     queryKey: ['/api/ml/training/records', { requestType: requestTypeFilter, modelUsed: modelFilter, page }],
     enabled: !!user?.isAdmin,
   });
@@ -202,7 +202,16 @@ export default function AdminMLTrainingPage() {
         {statsLoading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Caricamento statistiche...</p>
           </div>
+        ) : statsError ? (
+          <Card className="border-red-200 dark:border-red-800">
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+              <p className="text-red-600 dark:text-red-400 font-semibold">Errore nel caricamento delle statistiche</p>
+              <p className="text-sm text-muted-foreground mt-2">{statsError instanceof Error ? statsError.message : 'Errore sconosciuto'}</p>
+            </CardContent>
+          </Card>
         ) : stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
@@ -510,6 +519,13 @@ export default function AdminMLTrainingPage() {
             {recordsLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-4 text-sm text-muted-foreground">Caricamento record...</p>
+              </div>
+            ) : recordsError ? (
+              <div className="text-center py-8">
+                <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+                <p className="text-red-600 dark:text-red-400">Errore nel caricamento dei record</p>
+                <p className="text-sm text-muted-foreground mt-2">{recordsError instanceof Error ? recordsError.message : 'Errore sconosciuto'}</p>
               </div>
             ) : recordsData && recordsData.records.length > 0 ? (
               <div className="space-y-4">
@@ -597,11 +613,13 @@ export default function AdminMLTrainingPage() {
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Nessun record disponibile
+            ) : recordsData ? (
+              <div className="text-center py-12">
+                <Database className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-muted-foreground">Nessun record raccolto ancora</p>
+                <p className="text-sm text-muted-foreground mt-2">I dati ML inizieranno ad accumularsi quando gli utenti interagiscono con la piattaforma</p>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
       </div>

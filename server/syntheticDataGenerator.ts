@@ -1,5 +1,14 @@
 import { generateTriageResponse } from "./gemini";
 import { saveTrainingData } from "./mlDataCollector";
+import { 
+  generateRandomMedicalReport, 
+  generateCBCReport,
+  generateLipidPanelReport,
+  generateLiverFunctionReport,
+  generateKidneyFunctionReport,
+  generateGlucoseReport,
+  type MedicalReport 
+} from "./medicalReportGenerator";
 
 /**
  * Generatore Dati Sintetici per ML Training
@@ -291,6 +300,20 @@ const PATIENT_FOLLOWUP_QUESTIONS = [
   "I miei familiari sono a rischio?",
 ];
 
+// Domande specifiche per referti medici con valori anomali
+const MEDICAL_REPORT_QUESTIONS = [
+  "Ho visto che alcuni valori hanno l'asterisco, cosa significa?",
+  "Quanto sono preoccupanti i valori fuori range?",
+  "Cosa posso fare per normalizzare questi valori?",
+  "Devo ripetere le analisi?",
+  "Quali sono le cause di questi valori alterati?",
+  "Serve una visita specialistica?",
+  "Posso migliorare con la dieta?",
+  "Sono necessari farmaci?",
+  "C'è rischio di complicazioni?",
+  "Quando dovrei rifare gli esami?",
+];
+
 /**
  * Genera una singola conversazione sintetica con follow-up realistici
  */
@@ -393,6 +416,106 @@ async function generateSyntheticConversation(): Promise<{
     return { success: true, category };
   } catch (error: any) {
     console.error('[Synthetic Generator] ❌ Errore generazione:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Genera conversazione basata su referto medico con valori anomali
+ */
+async function generateMedicalReportConversation(): Promise<{
+  success: boolean;
+  reportType?: string;
+  error?: string;
+}> {
+  try {
+    // Genera dati demografici
+    const age = generateAge();
+    const gender = GENDERS[Math.floor(Math.random() * GENDERS.length)] as 'M' | 'F';
+    
+    // Genera referto medico casuale
+    const report = generateRandomMedicalReport(gender, age);
+    
+    // Costruisci messaggio iniziale del paziente con il referto
+    const initialMessage = `Ho ritirato le analisi del sangue. Ecco i risultati:\n\n${report.formattedReport}\n\nCosa ne pensa? Ci sono valori preoccupanti?`;
+    
+    // Chiama AI per interpretare il referto
+    const startTime = Date.now();
+    const aiResponse = await generateTriageResponse(initialMessage, []);
+    
+    // Costruisci conversazione
+    const conversationHistory: Array<{ role: string; content: string }> = [
+      { role: 'user', content: initialMessage },
+      { role: 'assistant', content: aiResponse.message },
+    ];
+    
+    // Se ci sono valori anomali, simula domande di approfondimento
+    const abnormalValues = report.values.filter(v => v.isAbnormal);
+    if (abnormalValues.length > 0) {
+      // 80% di probabilità di 1-2 domande di approfondimento
+      const shouldAskMore = Math.random() > 0.2;
+      const questionCount = shouldAskMore ? (Math.random() > 0.5 ? 2 : 1) : 0;
+      
+      for (let i = 0; i < questionCount; i++) {
+        const question = MEDICAL_REPORT_QUESTIONS[
+          Math.floor(Math.random() * MEDICAL_REPORT_QUESTIONS.length)
+        ];
+        
+        const followupResponse = await generateTriageResponse(
+          question,
+          conversationHistory
+        );
+        
+        conversationHistory.push({ role: 'user', content: question });
+        conversationHistory.push({ role: 'assistant', content: followupResponse.message });
+      }
+    }
+    
+    const responseTime = Date.now() - startTime;
+    
+    // Calcola token totali
+    const totalContent = conversationHistory.map(m => m.content).join(' ');
+    const estimatedTokens = Math.round(totalContent.length / 4);
+    
+    // Build conversation transcript
+    const conversationTranscript = conversationHistory
+      .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+      .join('\n\n');
+    
+    // Salva nel sistema ML
+    await saveTrainingData({
+      requestType: 'medical_report_analysis',
+      modelUsed: 'gemini-2.5-pro',
+      inputPrompt: initialMessage,
+      inputText: `Analisi referto: ${report.title}`,
+      outputJson: {
+        ...aiResponse,
+        _synthetic: true,
+        _reportType: report.type,
+        _reportTitle: report.title,
+        _demographics: { age, gender },
+        _abnormalValuesCount: abnormalValues.length,
+        _abnormalValues: abnormalValues.map(v => ({
+          name: v.name,
+          value: v.value,
+          severity: v.severity,
+        })),
+        _conversationTurns: conversationHistory.length,
+        _fullConversation: conversationHistory,
+        _medicalReport: report,
+      },
+      outputRaw: conversationTranscript,
+      userAge: age,
+      userGender: gender,
+      responseTimeMs: responseTime,
+      tokensUsed: estimatedTokens,
+    });
+    
+    console.log(`[Synthetic Generator] ✅ Generata conversazione referto: ${report.type} (${age}${gender}, ${abnormalValues.length} anomalie, ${conversationHistory.length} messaggi)`);
+    
+    return { success: true, reportType: report.type };
+  } catch (error: any) {
+    console.error('[Synthetic Generator] ❌ Errore generazione referto:', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -539,6 +662,125 @@ export async function generateBalancedDataset(
   
   console.log(`[Synthetic Generator] ✅ Dataset bilanciato completato`);
   console.log(`[Synthetic Generator] 📊 Risultati:`, results);
+  
+  return results;
+}
+
+/**
+ * Genera batch di conversazioni basate su referti medici
+ * @param count Numero di referti da generare
+ * @param delayMs Ritardo tra le generazioni
+ */
+export async function generateMedicalReportsBatch(
+  count: number = 10,
+  delayMs: number = 2000
+): Promise<{
+  total: number;
+  successful: number;
+  failed: number;
+  byReportType: Record<string, number>;
+}> {
+  console.log(`[Synthetic Generator] 🩺 Inizio generazione di ${count} conversazioni su referti medici...`);
+  
+  const results = {
+    total: count,
+    successful: 0,
+    failed: 0,
+    byReportType: {} as Record<string, number>,
+  };
+  
+  for (let i = 0; i < count; i++) {
+    console.log(`[Synthetic Generator] Progresso: ${i + 1}/${count}`);
+    
+    const result = await generateMedicalReportConversation();
+    
+    if (result.success && result.reportType) {
+      results.successful++;
+      results.byReportType[result.reportType] = (results.byReportType[result.reportType] || 0) + 1;
+    } else {
+      results.failed++;
+    }
+    
+    // Ritardo per evitare rate limit
+    if (i < count - 1) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  console.log(`[Synthetic Generator] ✅ Completato: ${results.successful} successi, ${results.failed} fallimenti`);
+  console.log(`[Synthetic Generator] 📊 Per tipo di referto:`, results.byReportType);
+  
+  return results;
+}
+
+/**
+ * Genera dataset misto: sintomi + referti medici
+ * @param symptomsCount Numero di conversazioni su sintomi
+ * @param reportsCount Numero di conversazioni su referti
+ * @param delayMs Ritardo tra le generazioni
+ */
+export async function generateMixedDataset(
+  symptomsCount: number = 10,
+  reportsCount: number = 10,
+  delayMs: number = 2000
+): Promise<{
+  total: number;
+  successful: number;
+  failed: number;
+  symptoms: number;
+  reports: number;
+}> {
+  console.log(`[Synthetic Generator] 🎯 Generazione dataset misto: ${symptomsCount} sintomi + ${reportsCount} referti`);
+  
+  const results = {
+    total: symptomsCount + reportsCount,
+    successful: 0,
+    failed: 0,
+    symptoms: 0,
+    reports: 0,
+  };
+  
+  // Alterna tra sintomi e referti per varietà
+  const tasks: Array<'symptom' | 'report'> = [];
+  for (let i = 0; i < symptomsCount; i++) tasks.push('symptom');
+  for (let i = 0; i < reportsCount; i++) tasks.push('report');
+  
+  // Shuffle
+  tasks.sort(() => Math.random() - 0.5);
+  
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
+    console.log(`[Synthetic Generator] Progresso: ${i + 1}/${tasks.length} (${task})`);
+    
+    let result;
+    if (task === 'symptom') {
+      result = await generateSyntheticConversation();
+      if (result.success) results.symptoms++;
+    } else {
+      result = await generateMedicalReportConversation();
+      if (result.success) results.reports++;
+    }
+    
+    if (result.success) {
+      results.successful++;
+    } else {
+      results.failed++;
+    }
+    
+    // Ritardo
+    if (i < tasks.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  console.log(`[Synthetic Generator] ✅ Dataset misto completato`);
+  console.log(`[Synthetic Generator] 📊 Risultati:`, {
+    totale: results.total,
+    successi: results.successful,
+    fallimenti: results.failed,
+    sintomi: results.symptoms,
+    referti: results.reports,
+  });
   
   return results;
 }

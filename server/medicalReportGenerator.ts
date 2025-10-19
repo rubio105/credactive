@@ -46,8 +46,8 @@ const LIPID_RANGES = {
   totalCholesterol: { min: 0, max: 200, unit: 'mg/dL', name: 'Colesterolo Totale', optimal: 'Ottimale: <200' },
   ldl: { min: 0, max: 100, unit: 'mg/dL', name: 'Colesterolo LDL', optimal: 'Ottimale: <100' },
   hdl: { 
-    male: { min: 40, max: 999, unit: 'mg/dL', name: 'Colesterolo HDL', optimal: 'Ottimale: >60' },
-    female: { min: 50, max: 999, unit: 'mg/dL', name: 'Colesterolo HDL', optimal: 'Ottimale: >60' }
+    male: { min: 40, max: 80, unit: 'mg/dL', name: 'Colesterolo HDL', optimal: 'Ottimale: >60' },
+    female: { min: 50, max: 90, unit: 'mg/dL', name: 'Colesterolo HDL', optimal: 'Ottimale: >60' }
   },
   triglycerides: { min: 0, max: 150, unit: 'mg/dL', name: 'Trigliceridi', optimal: 'Ottimale: <150' },
 };
@@ -82,6 +82,7 @@ const GLUCOSE_RANGES = {
 
 /**
  * Genera valore con possibilità di essere fuori range
+ * Garantisce valori fisiologicamente plausibili
  */
 function generateValue(
   range: { min: number; max: number },
@@ -91,6 +92,27 @@ function generateValue(
   
   if (!isAbnormal) {
     // Valore normale (nel range)
+    // Gestione speciale per test con min=0 per evitare valori troppo bassi
+    if (range.min === 0) {
+      // Per test con min=0, usa una soglia minima realistica
+      let realMin: number;
+      
+      if (range.max <= 10) {
+        // Test con max basso (es. HbA1c max=5.6): range normale 70-100% del max
+        realMin = range.max * 0.7;
+      } else if (range.max <= 60) {
+        // Test con max medio (ALT, AST max=40): range normale 5-max
+        realMin = 5;
+      } else {
+        // Test con max alto (colesterolo, LDL, trigliceridi): range normale 40-max
+        realMin = Math.max(range.max * 0.2, 30);
+      }
+      
+      const value = realMin + Math.random() * (range.max - realMin);
+      return { value: Number(value.toFixed(2)), isAbnormal: false };
+    }
+    
+    // Per test con min > 0, campiona normalmente
     const value = range.min + Math.random() * (range.max - range.min);
     return { value: Number(value.toFixed(2)), isAbnormal: false };
   }
@@ -100,6 +122,7 @@ function generateValue(
   const isCritical = Math.random() < 0.2; // 20% di valori critici
   
   if (isHigh) {
+    // Valori alti: sopra il max
     const deviation = isCritical ? 1.5 : 1.2;
     const value = range.max * (1 + Math.random() * (deviation - 1));
     return {
@@ -108,8 +131,38 @@ function generateValue(
       severity: isCritical ? 'CRITICAL_HIGH' : 'HIGH'
     };
   } else {
+    // Valori bassi: sotto il min ma fisiologicamente plausibili
     const deviation = isCritical ? 0.5 : 0.8;
-    const value = range.min * (Math.random() * deviation);
+    
+    // Gestione speciale per test con min=0 (evita valori a zero)
+    if (range.min === 0) {
+      // Per test come LDL, trigliceridi, ALT, HbA1c, ecc.
+      // Usa floor specifici per test con max molto bassi
+      let floor: number;
+      let maxOffset: number;
+      
+      if (range.max <= 10) {
+        // Test con max basso (es. HbA1c max=5.6): floor più alto
+        floor = Math.max(range.max * 0.6, 3.5); // Min 60% del max o 3.5
+        maxOffset = range.max * 0.95; // 95% del max
+      } else {
+        // Test con max normale (LDL, trigliceridi, ALT)
+        floor = range.max * 0.05; // 5% del max
+        maxOffset = range.max * 0.3; // 30% del max
+      }
+      
+      const value = floor + Math.random() * (maxOffset - floor);
+      return {
+        value: Number(value.toFixed(2)),
+        isAbnormal: true,
+        severity: isCritical ? 'CRITICAL_LOW' : 'LOW'
+      };
+    }
+    
+    // Per test con min > 0
+    // Campiona tra (min * deviation) e min per restare realistici
+    const lowerBound = range.min * deviation;
+    const value = lowerBound + Math.random() * (range.min - lowerBound);
     return {
       value: Number(value.toFixed(2)),
       isAbnormal: true,

@@ -866,6 +866,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Don't fail the request if push fails
       }
 
+      // Track doctor note with attachment in ML system (especially medical reports)
+      if (req.file || isReport || category === 'Refertazione') {
+        try {
+          const patient = await storage.getUserById(patientId);
+          
+          await saveTrainingData({
+            requestType: 'doctor_medical_note',
+            modelUsed: 'human_doctor', // Created by real doctor
+            inputPrompt: noteText,
+            inputText: noteTitle || category || 'Nota medica',
+            outputJson: {
+              _noteId: note.id,
+              _category: category,
+              _isReport: isReport,
+              _hasAttachment: !!req.file,
+              _attachmentType: req.file?.mimetype,
+              _attachmentSize: req.file?.size,
+              _doctorId: req.user.id,
+              _patientDemographics: patient ? {
+                age: patient.age,
+                gender: patient.gender,
+              } : null,
+            },
+            outputRaw: noteText,
+            userAge: patient?.age,
+            userGender: patient?.gender,
+            userId: patientId,
+          });
+          
+          console.log(`[ML Tracking] Tracked doctor note (${category}) with attachment: ${!!req.file}`);
+        } catch (mlError) {
+          console.error(`[ML Tracking] Failed to track doctor note:`, mlError);
+          // Don't fail the request if ML tracking fails
+        }
+      }
+
       res.json(note);
     } catch (error) {
       console.error("Error creating doctor note:", error);

@@ -3699,6 +3699,48 @@ Restituisci SOLO un JSON con:
     }
   });
 
+  // Admin/Doctor - Validate ML training data (add quality rating and feedback)
+  app.patch('/api/ml/training/:id/validate', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+      const { qualityRating, doctorNotes, doctorCorrectionJson, userFeedback } = req.body;
+
+      // Only admin or doctors can validate
+      if (!user.isAdmin && !user.isDoctor) {
+        return res.status(403).json({ message: 'Only doctors and admins can validate training data' });
+      }
+
+      // Validate rating
+      if (qualityRating && (qualityRating < 1 || qualityRating > 5)) {
+        return res.status(400).json({ message: 'Quality rating must be between 1 and 5' });
+      }
+
+      // Update training data record
+      const updated = await db.update(mlTrainingData)
+        .set({
+          qualityRating: qualityRating || undefined,
+          doctorNotes: doctorNotes || undefined,
+          doctorCorrectionJson: doctorCorrectionJson || undefined,
+          userFeedback: userFeedback || undefined,
+        })
+        .where(eq(mlTrainingData.id, id))
+        .returning();
+
+      if (updated.length === 0) {
+        return res.status(404).json({ message: 'Training data not found' });
+      }
+
+      res.json({
+        message: 'Validazione salvata con successo',
+        data: updated[0],
+      });
+    } catch (error: any) {
+      console.error('Error validating ML training data:', error);
+      res.status(500).json({ message: 'Failed to validate training data' });
+    }
+  });
+
   // *** TWO-FACTOR AUTHENTICATION (2FA) FOR DOCTORS ***
 
   // Doctor - Setup 2FA (generate secret and QR code)

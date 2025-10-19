@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Download, Database, TrendingUp, FileJson, Filter, Home, Zap, BarChart3, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Brain, Download, Database, TrendingUp, FileJson, Filter, Home, Zap, BarChart3, AlertCircle, Star, CheckCircle, Eye } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -57,15 +59,21 @@ export default function AdminMLTrainingPage() {
   const [modelFilter, setModelFilter] = useState<string>('');
   const [syntheticCount, setSyntheticCount] = useState<number>(10);
   const [balancedPerCategory, setBalancedPerCategory] = useState<number>(5);
+  
+  // Validation dialog state
+  const [validationDialogOpen, setValidationDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<MLRecord | null>(null);
+  const [validationRating, setValidationRating] = useState<number>(3);
+  const [validationNotes, setValidationNotes] = useState<string>('');
 
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<MLStats>({
     queryKey: ['/api/ml/training/stats'],
-    enabled: !!user?.isAdmin,
+    enabled: !!user?.isAdmin || !!user?.isDoctor,
   });
 
   const { data: recordsData, isLoading: recordsLoading, error: recordsError } = useQuery<MLRecordsResponse>({
     queryKey: ['/api/ml/training/records', { requestType: requestTypeFilter, modelUsed: modelFilter, page }],
-    enabled: !!user?.isAdmin,
+    enabled: !!user?.isAdmin || !!user?.isDoctor,
   });
 
   // Synthetic data generation mutations
@@ -116,6 +124,51 @@ export default function AdminMLTrainingPage() {
     },
   });
 
+  const validateRecordMutation = useMutation({
+    mutationFn: async ({ id, qualityRating, doctorNotes }: { id: string; qualityRating: number; doctorNotes: string }) => {
+      return apiRequest(`/api/ml/training/${id}/validate`, 'PATCH', { 
+        qualityRating, 
+        doctorNotes,
+        userFeedback: qualityRating >= 4 ? 'positive' : qualityRating <= 2 ? 'negative' : null
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Validazione Salvata",
+        description: "La valutazione è stata salvata con successo",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/ml/training/records'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ml/training/stats'] });
+      setValidationDialogOpen(false);
+      setSelectedRecord(null);
+      setValidationRating(3);
+      setValidationNotes('');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante il salvataggio della validazione",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleValidateRecord = (record: MLRecord) => {
+    setSelectedRecord(record);
+    setValidationRating(record.qualityRating || 3);
+    setValidationNotes('');
+    setValidationDialogOpen(true);
+  };
+
+  const handleSaveValidation = () => {
+    if (!selectedRecord) return;
+    validateRecordMutation.mutate({
+      id: selectedRecord.id,
+      qualityRating: validationRating,
+      doctorNotes: validationNotes,
+    });
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -127,14 +180,14 @@ export default function AdminMLTrainingPage() {
     );
   }
 
-  if (!user?.isAdmin) {
+  if (!user?.isAdmin && !user?.isDoctor) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle>Accesso Negato</CardTitle>
             <CardDescription>
-              Non hai i permessi necessari per accedere ai dati ML.
+              Solo medici e amministratori possono accedere alla validazione ML.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -313,8 +366,9 @@ export default function AdminMLTrainingPage() {
           </div>
         )}
 
-        {/* Synthetic Data Generator */}
-        <Card className="border-2 border-purple-200 dark:border-purple-800">
+        {/* Synthetic Data Generator - ADMIN ONLY */}
+        {user?.isAdmin && (
+          <Card className="border-2 border-purple-200 dark:border-purple-800">
           <CardHeader className="bg-purple-50 dark:bg-purple-950/30">
             <CardTitle className="text-lg flex items-center gap-2">
               <Zap className="w-5 h-5 text-purple-500" />
@@ -426,9 +480,11 @@ export default function AdminMLTrainingPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* Export Section */}
-        <Card>
+        {/* Export Section - ADMIN ONLY */}
+        {user?.isAdmin && (
+          <Card>
           <CardHeader>
             <CardTitle className="text-lg">Export Dati per Training</CardTitle>
             <CardDescription>
@@ -508,8 +564,9 @@ export default function AdminMLTrainingPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* Recent Records Table */}
+        {/* Recent Records Table - VALIDATION (doctors + admin) */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Ultimi Record Raccolti</CardTitle>
@@ -538,7 +595,9 @@ export default function AdminMLTrainingPage() {
                         <th className="pb-3 font-semibold text-sm">Utente</th>
                         <th className="pb-3 font-semibold text-sm">Tempo (ms)</th>
                         <th className="pb-3 font-semibold text-sm">Tokens</th>
+                        <th className="pb-3 font-semibold text-sm">Rating</th>
                         <th className="pb-3 font-semibold text-sm">Data</th>
+                        <th className="pb-3 font-semibold text-sm">Azioni</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -574,8 +633,47 @@ export default function AdminMLTrainingPage() {
                           <td className="py-3 text-sm">
                             {record.tokensUsed ? record.tokensUsed.toLocaleString() : '-'}
                           </td>
+                          <td className="py-3">
+                            {record.qualityRating ? (
+                              <div className="flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-4 h-4 ${
+                                      i < record.qualityRating!
+                                        ? 'fill-yellow-400 text-yellow-400'
+                                        : 'text-gray-300'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">Non validato</Badge>
+                            )}
+                          </td>
                           <td className="py-3 text-sm text-muted-foreground">
                             {format(new Date(record.createdAt), 'dd/MM/yyyy HH:mm')}
+                          </td>
+                          <td className="py-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleValidateRecord(record)}
+                              className="flex items-center gap-1"
+                              data-testid={`button-validate-${record.id}`}
+                            >
+                              {record.qualityRating ? (
+                                <>
+                                  <Eye className="w-3 h-3" />
+                                  Rivedi
+                                </>
+                              ) : (
+                                <>
+                                  <Star className="w-3 h-3" />
+                                  Valida
+                                </>
+                              )}
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -622,6 +720,124 @@ export default function AdminMLTrainingPage() {
             ) : null}
           </CardContent>
         </Card>
+
+        {/* Validation Dialog */}
+        <Dialog open={validationDialogOpen} onOpenChange={setValidationDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Validazione Conversazione ML</DialogTitle>
+              <DialogDescription>
+                Valuta la qualità della conversazione sintetica per migliorare il training dei modelli proprietari
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedRecord && (
+              <div className="space-y-4">
+                {/* Record Info */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="font-semibold">Tipo:</span> {selectedRecord.requestType}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Modello:</span> {selectedRecord.modelUsed}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Data:</span> {format(new Date(selectedRecord.createdAt), 'dd/MM/yyyy HH:mm')}
+                  </div>
+                  {selectedRecord.responseTimeMs && (
+                    <div>
+                      <span className="font-semibold">Tempo:</span> {selectedRecord.responseTimeMs}ms
+                    </div>
+                  )}
+                </div>
+
+                {/* Input Prompt */}
+                <div>
+                  <Label className="font-semibold mb-2 block">Prompt Input</Label>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md max-h-32 overflow-y-auto text-sm">
+                    {selectedRecord.inputPrompt.substring(0, 500)}
+                    {selectedRecord.inputPrompt.length > 500 && '...'}
+                  </div>
+                </div>
+
+                {/* Output Response */}
+                <div>
+                  <Label className="font-semibold mb-2 block">Risposta AI</Label>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md max-h-40 overflow-y-auto text-sm">
+                    <pre className="whitespace-pre-wrap font-mono text-xs">
+                      {JSON.stringify(selectedRecord.outputJson, null, 2).substring(0, 1000)}
+                      {JSON.stringify(selectedRecord.outputJson).length > 1000 && '\n...'}
+                    </pre>
+                  </div>
+                </div>
+
+                {/* Rating */}
+                <div>
+                  <Label className="font-semibold mb-2 block">Rating Qualità (1-5 stelle)</Label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <button
+                        key={rating}
+                        type="button"
+                        onClick={() => setValidationRating(rating)}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <Star
+                          className={`w-8 h-8 ${
+                            rating <= validationRating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300 hover:text-yellow-200'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    <span className="ml-2 text-sm font-medium">
+                      {validationRating}/5
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    1 = Molto scarsa, 3 = Accettabile, 5 = Eccellente
+                  </p>
+                </div>
+
+                {/* Doctor Notes */}
+                <div>
+                  <Label htmlFor="validation-notes" className="font-semibold mb-2 block">
+                    Note Medico (Opzionale)
+                  </Label>
+                  <Textarea
+                    id="validation-notes"
+                    placeholder="Aggiungi note, correzioni o suggerimenti per migliorare la risposta AI..."
+                    value={validationNotes}
+                    onChange={(e) => setValidationNotes(e.target.value)}
+                    rows={4}
+                    data-testid="textarea-validation-notes"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setValidationDialogOpen(false)}
+                    disabled={validateRecordMutation.isPending}
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    onClick={handleSaveValidation}
+                    disabled={validateRecordMutation.isPending}
+                    className="flex items-center gap-2"
+                    data-testid="button-save-validation"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    {validateRecordMutation.isPending ? 'Salvataggio...' : 'Salva Validazione'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

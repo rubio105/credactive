@@ -464,12 +464,6 @@ export default function Home() {
                       </Button>
                     </>
                   )}
-                  <Link href="/prevention">
-                    <Button variant="outline" size="sm" data-testid="button-view-all-reports">
-                      Vedi Tutti
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

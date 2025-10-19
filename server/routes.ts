@@ -18,7 +18,7 @@ import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
 import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent, analyzeRadiologicalImage, generateEmbedding } from "./gemini";
 import { clearBrevoInstance } from "./email";
-import { saveOpenAIData, saveMedicalData, getMLTrainingStats, exportTrainingDataToFile } from "./mlDataCollector";
+import { saveOpenAIData, saveMedicalData, getMLTrainingStats, exportTrainingDataToFile, saveTrainingData } from "./mlDataCollector";
 import { 
   insertUserQuizAttemptSchema, 
   insertContentPageSchema, 
@@ -9076,8 +9076,10 @@ Questa email è stata generata automaticamente dalla piattaforma CIRY
       // RAG: Semantic search for scientific context
       let scientificContext: string | undefined;
       try {
+        const ragStartTime = Date.now();
         const queryEmbedding = await generateEmbedding(initialSymptom);
         const relevantChunks = await storage.semanticSearchMedical(queryEmbedding, 3); // Top 3 chunks
+        const ragResponseTime = Date.now() - ragStartTime;
         
         if (relevantChunks.length > 0) {
           scientificContext = relevantChunks
@@ -9085,6 +9087,26 @@ Questa email è stata generata automaticamente dalla piattaforma CIRY
             .join('\n\n---\n\n');
           console.log(`[RAG] Found ${relevantChunks.length} relevant scientific sources for query`);
         }
+        
+        // Track RAG query for ML training
+        await saveTrainingData({
+          requestType: 'rag_semantic_search',
+          modelUsed: 'text-embedding-004',
+          inputText: initialSymptom,
+          inputPrompt: `Semantic search query: ${initialSymptom}`,
+          outputJson: {
+            chunksRetrieved: relevantChunks.length,
+            chunks: relevantChunks.map(c => ({
+              documentTitle: c.documentTitle,
+              similarity: c.similarity,
+              contentPreview: c.content.substring(0, 200)
+            }))
+          },
+          outputRaw: scientificContext,
+          userId: user?.id,
+          responseTimeMs: ragResponseTime,
+          confidenceScore: relevantChunks[0]?.similarity ? Math.round(relevantChunks[0].similarity * 100) : undefined
+        });
       } catch (ragError) {
         console.error('[RAG] Semantic search failed:', ragError);
         // Continue without RAG if it fails
@@ -9282,8 +9304,10 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
       // RAG: Semantic search for scientific context
       let scientificContext: string | undefined;
       try {
+        const ragStartTime = Date.now();
         const queryEmbedding = await generateEmbedding(content);
         const relevantChunks = await storage.semanticSearchMedical(queryEmbedding, 3); // Top 3 chunks
+        const ragResponseTime = Date.now() - ragStartTime;
         
         if (relevantChunks.length > 0) {
           scientificContext = relevantChunks
@@ -9291,6 +9315,26 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
             .join('\n\n---\n\n');
           console.log(`[RAG] Found ${relevantChunks.length} relevant scientific sources for query`);
         }
+        
+        // Track RAG query for ML training
+        await saveTrainingData({
+          requestType: 'rag_semantic_search',
+          modelUsed: 'text-embedding-004',
+          inputText: content,
+          inputPrompt: `Semantic search query: ${content}`,
+          outputJson: {
+            chunksRetrieved: relevantChunks.length,
+            chunks: relevantChunks.map(c => ({
+              documentTitle: c.documentTitle,
+              similarity: c.similarity,
+              contentPreview: c.content.substring(0, 200)
+            }))
+          },
+          outputRaw: scientificContext,
+          userId: user?.id,
+          responseTimeMs: ragResponseTime,
+          confidenceScore: relevantChunks[0]?.similarity ? Math.round(relevantChunks[0].similarity * 100) : undefined
+        });
       } catch (ragError) {
         console.error('[RAG] Semantic search failed:', ragError);
         // Continue without RAG if it fails

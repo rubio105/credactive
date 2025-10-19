@@ -15,6 +15,7 @@ import { createReadStream } from "fs";
 type MLRequestType = 
   // AI Interactions (Gemini)
   | 'radiological_analysis' | 'medical_triage' | 'prevention_chat' | 'crossword_generation'
+  | 'rag_semantic_search' // RAG knowledge base queries
   // AI Interactions (OpenAI)
   | 'conversational_assistant' | 'email_marketing' | 'ai_translation' | 'tts_audio' 
   | 'question_generation' | 'scenario_generation'

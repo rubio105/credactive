@@ -52,10 +52,19 @@ export default function Login() {
         title: "Accesso effettuato",
         description: "Benvenuto su CIRY!",
       });
-      // Redirect users with aiOnlyAccess directly to prevention page
-      if (data?.aiOnlyAccess) {
+      
+      // Role-based redirect logic
+      if (data?.isAdmin) {
+        // Admin → Dashboard amministratore
+        window.location.href = "/admin";
+      } else if (data?.isDoctor) {
+        // Dottore → Lista pazienti
+        window.location.href = "/doctor/patients";
+      } else if (data?.aiOnlyAccess) {
+        // Utenti AI-only → Prevenzione
         window.location.href = "/prevention";
       } else {
+        // Pazienti normali → Homepage
         window.location.href = "/";
       }
     },

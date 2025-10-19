@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle, Video, Phone, FileCheck, HeartPulse } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 const logoImageSmall = "/images/ciry-main-logo.png";
@@ -72,6 +73,8 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      // Clear TanStack Query cache
+      queryClient.clear();
       // Clear any cached data
       localStorage.clear();
       sessionStorage.clear();
@@ -79,6 +82,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
       window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
+      queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
       window.location.href = '/login';

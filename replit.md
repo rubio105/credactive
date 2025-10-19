@@ -186,6 +186,26 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. Schema supports: u
 - **Multi-Tenant B2B**: Clinic organizations with custom branding
 - **User Feedback System**: Complete feedback management with category/status filtering
 
+## Recent Changes (October 2025)
+
+**Authentication & Routing Fixes:**
+- Fixed role-based login redirect: Admin → `/admin`, Dottori → `/doctor/patients`, Pazienti → `/`
+- Fixed logout: ora pulisce completamente queryClient cache per evitare session cross-contamination
+
+**Notifiche Personalizzate (Doctor Notes):**
+- Messaggi customizzati per categoria: "Nuovo referto" (Refertazione), "Nuova ricetta medica" (Ricetta Medica), etc.
+- Mark-as-read ora usa await mutation prima di navigare (risolve badge persistente)
+- Priority HIGH automatica per categoria Refertazione
+
+**Paginazione Referti Medici:**
+- Doctor Reports: max 2 referti per paziente con frecce navigazione
+- Ordinamento automatico: più recenti prima (createdAt DESC)
+- Auto-reset pagina se referti eliminati (evita pagine vuote)
+
+**ML Admin Error States:**
+- Gestione completa stati: loading, error, empty data
+- Nessuna più pagina bianca su `/admin/ml-training`
+
 ## System Design Choices
 
 ### Deployment Architecture

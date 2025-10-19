@@ -129,9 +129,9 @@ export default function Home() {
   const sortedReports = [...healthReports]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   
-  // Pagination for recent reports (3 per page)
+  // Pagination for recent reports (2 per page for patients on homepage)
   const [reportPage, setReportPage] = useState(0);
-  const REPORTS_PER_PAGE = 3;
+  const REPORTS_PER_PAGE = 2;
   const totalReportPages = Math.ceil(sortedReports.length / REPORTS_PER_PAGE);
   const recentReports = sortedReports.slice(
     reportPage * REPORTS_PER_PAGE,
@@ -382,82 +382,49 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* AI Prevention Call-to-Action for regular patients */}
+        {/* AI Prevention Chat - Direct access for regular patients */}
         {user && !(user as UserType)?.isDoctor && !(user as UserType)?.isAdmin && !(user as UserType)?.aiOnlyAccess && (
-          <Card className="mb-8 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-3 text-emerald-900 dark:text-emerald-100">
-                    💚 Assistente AI Prevenzione
-                  </h2>
-                  <p className="text-emerald-700 dark:text-emerald-300 mb-4">
-                    Chatta con l'AI, carica referti medici e ricevi analisi personalizzate per monitorare il tuo benessere
-                  </p>
-                  <Link href="/prevention">
-                    <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white" data-testid="button-open-ai-prevention">
-                      Vai all'AI Prevenzione
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-                <div className="hidden md:block ml-8">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                    <Sparkles className="w-16 h-16 text-white" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mb-8">
+            <AIChatPanel />
+          </div>
         )}
 
-        {/* Welcome Section */}
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
-              {t.welcome}, {(user as User)?.firstName || 'User'}!
-            </h1>
-            {!(user as UserType)?.isDoctor && !(user as UserType)?.aiOnlyAccess && (
-              <>
+        {/* Welcome Section - Only for aiOnlyAccess and doctors */}
+        {((user as UserType)?.aiOnlyAccess || (user as UserType)?.isDoctor) && (
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
+                {t.welcome}, {(user as User)?.firstName || 'User'}!
+              </h1>
+              {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
+                <>
+                  <p className="text-muted-foreground">
+                    {t.subtitle}
+                  </p>
+                  <div className="mt-4">
+                    <p className="text-sm text-primary font-medium">
+                      🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
+                    </p>
+                  </div>
+                </>
+              )}
+              {(user as UserType)?.isDoctor && (
                 <p className="text-muted-foreground text-lg">
-                  Il tuo assistente AI per la prevenzione e il benessere
+                  Gestisci i tuoi pazienti e monitora la loro salute
                 </p>
-                <div className="mt-4">
-                  <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-                    💚 Carica referti, chatta con l'AI e monitora la tua salute
-                  </p>
-                </div>
-              </>
-            )}
+              )}
+            </div>
             {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
-              <>
-                <p className="text-muted-foreground">
-                  {t.subtitle}
-                </p>
-                <div className="mt-4">
-                  <p className="text-sm text-primary font-medium">
-                    🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
-                  </p>
-                </div>
-              </>
-            )}
-            {(user as UserType)?.isDoctor && (
-              <p className="text-muted-foreground text-lg">
-                Gestisci i tuoi pazienti e monitora la loro salute
-              </p>
+              <Link href="/dashboard">
+                <Button variant="outline" data-testid="button-view-dashboard">
+                  {t.viewDashboard}
+                </Button>
+              </Link>
             )}
           </div>
-          {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
-            <Link href="/dashboard">
-              <Button variant="outline" data-testid="button-view-dashboard">
-                {t.viewDashboard}
-              </Button>
-            </Link>
-          )}
-        </div>
+        )}
 
-
-        {/* Recent Medical Reports - For regular patients (prevention-only) and admins, NOT for aiOnlyAccess quiz users */}
+        {/* Recent Medical Reports - BELOW the chat for regular patients, max 2 at a time */}
         {sortedReports.length > 0 && !(user as UserType)?.aiOnlyAccess && !(user as UserType)?.isDoctor && (
           <Card className="mb-8">
             <CardContent className="p-6">
@@ -502,7 +469,7 @@ export default function Home() {
                   </Link>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {recentReports.map(report => (
                   <MedicalReportCard
                     key={report.id}

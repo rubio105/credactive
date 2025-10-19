@@ -73,6 +73,22 @@ export default function AdminMLTrainingPage() {
 
   const { data: recordsData, isLoading: recordsLoading, error: recordsError } = useQuery<MLRecordsResponse>({
     queryKey: ['/api/ml/training/records', { requestType: requestTypeFilter, modelUsed: modelFilter, page }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (requestTypeFilter) params.append('requestType', requestTypeFilter);
+      if (modelFilter) params.append('modelUsed', modelFilter);
+      params.append('page', page.toString());
+      
+      const res = await fetch(`/api/ml/training/records?${params.toString()}`, {
+        credentials: 'include',
+      });
+      
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${await res.text()}`);
+      }
+      
+      return await res.json();
+    },
     enabled: !!user?.isAdmin || !!user?.isDoctor,
   });
 
@@ -369,16 +385,16 @@ export default function AdminMLTrainingPage() {
         {/* Synthetic Data Generator - ADMIN ONLY */}
         {user?.isAdmin && (
           <Card className="border-2 border-purple-200 dark:border-purple-800">
-          <CardHeader className="bg-purple-50 dark:bg-purple-950/30">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Zap className="w-5 h-5 text-purple-500" />
-              Agente Sintetico - Generazione Dati ML
-            </CardTitle>
-            <CardDescription>
-              Genera conversazioni mediche sintetiche con sintomi variati per addestrare i modelli
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-6">
+            <CardHeader className="bg-purple-50 dark:bg-purple-950/30">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Zap className="w-5 h-5 text-purple-500" />
+                Agente Sintetico - Generazione Dati ML
+              </CardTitle>
+              <CardDescription>
+                Genera conversazioni mediche sintetiche con sintomi variati per addestrare i modelli
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
             {/* Batch Generation */}
             <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
               <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
@@ -485,22 +501,22 @@ export default function AdminMLTrainingPage() {
         {/* Export Section - ADMIN ONLY */}
         {user?.isAdmin && (
           <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Export Dati per Training</CardTitle>
-            <CardDescription>
-              Scarica i dati in formato JSON per addestrare i tuoi modelli ML proprietari
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Export Dati per Training</CardTitle>
+              <CardDescription>
+                Scarica i dati in formato JSON per addestrare i tuoi modelli ML proprietari
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Filtra per Tipo</label>
-                <Select value={requestTypeFilter} onValueChange={setRequestTypeFilter}>
+                <Select value={requestTypeFilter || "ALL"} onValueChange={(v) => setRequestTypeFilter(v === "ALL" ? "" : v)}>
                   <SelectTrigger data-testid="select-request-type">
                     <SelectValue placeholder="Tutti i tipi" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tutti i tipi</SelectItem>
+                    <SelectItem value="ALL">Tutti i tipi</SelectItem>
                     {stats && Object.keys(stats.byRequestType).map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
@@ -510,12 +526,12 @@ export default function AdminMLTrainingPage() {
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Filtra per Modello</label>
-                <Select value={modelFilter} onValueChange={setModelFilter}>
+                <Select value={modelFilter || "ALL"} onValueChange={(v) => setModelFilter(v === "ALL" ? "" : v)}>
                   <SelectTrigger data-testid="select-model">
                     <SelectValue placeholder="Tutti i modelli" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tutti i modelli</SelectItem>
+                    <SelectItem value="ALL">Tutti i modelli</SelectItem>
                     {stats && Object.keys(stats.byModel).map(model => (
                       <SelectItem key={model} value={model}>{model}</SelectItem>
                     ))}

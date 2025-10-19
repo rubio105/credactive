@@ -3525,8 +3525,11 @@ Restituisci SOLO un JSON con:
 
   // *** ML TRAINING DATA COLLECTION - Admin Analytics & Export ***
 
-  // Admin - Get ML training data statistics
-  app.get('/api/ml/training/stats', isAdmin, async (req, res) => {
+  // Admin + Doctor - Get ML training data statistics
+  app.get('/api/ml/training/stats', async (req, res) => {
+    if (!req.user?.isAdmin && !req.user?.isDoctor) {
+      return res.status(403).json({ message: 'Forbidden: Admin or Doctor access required' });
+    }
     try {
       const stats = await getMLTrainingStats();
       res.json(stats);
@@ -3577,8 +3580,11 @@ Restituisci SOLO un JSON con:
     }
   });
 
-  // Admin - Get paginated ML training data records
-  app.get('/api/ml/training/records', isAdmin, async (req, res) => {
+  // Admin + Doctor - Get paginated ML training data records
+  app.get('/api/ml/training/records', async (req, res) => {
+    if (!req.user?.isAdmin && !req.user?.isDoctor) {
+      return res.status(403).json({ message: 'Forbidden: Admin or Doctor access required' });
+    }
     try {
       const { 
         requestType, 

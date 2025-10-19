@@ -9222,9 +9222,10 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
           reason: `Urgency: ${aiResponse.urgencyLevel}. Related topics: ${aiResponse.relatedTopics.join(', ')}`,
           isReviewed: false,
         });
-        // Auto-close session when alert is created so user doesn't return to stale active session
-        await storage.closeTriageSession(session.id);
-        await saveCompletedConversation(session.id, user?.id);
+        // ❌ REMOVED: Don't auto-close session when alert is created
+        // Let user continue conversation freely - they can close manually if needed
+        // await storage.closeTriageSession(session.id);
+        // await saveCompletedConversation(session.id, user?.id);
       }
 
       // Build response with upload instructions if needed

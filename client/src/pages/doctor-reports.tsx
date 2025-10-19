@@ -39,6 +39,8 @@ export default function DoctorReportsPage() {
   const [noteTitle, setNoteTitle] = useState("");
   const [noteText, setNoteText] = useState("");
   const [isReport, setIsReport] = useState(false);
+  const [noteCategory, setNoteCategory] = useState<string>("Generico");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Get all doctor's reports/notes
   const { data: notes = [], isLoading } = useQuery<DoctorNote[]>({
@@ -98,16 +100,50 @@ export default function DoctorReportsPage() {
     },
   });
 
-  const handleCreateNote = () => {
+  const handleCreateNote = async () => {
     if (!selectedPatientId || !noteText) return;
 
-    createNoteMutation.mutate({
-      patientId: selectedPatientId,
-      noteTitle: noteTitle || null,
-      noteText,
-      isReport,
-      alertId: null,
-    });
+    const formData = new FormData();
+    formData.append('patientId', selectedPatientId);
+    formData.append('noteTitle', noteTitle || '');
+    formData.append('noteText', noteText);
+    formData.append('isReport', String(isReport));
+    formData.append('category', noteCategory);
+    if (selectedFile) {
+      formData.append('attachment', selectedFile);
+    }
+
+    try {
+      const response = await fetch('/api/doctor/notes', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore durante la creazione della nota');
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/all-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/patients"] });
+      toast({
+        title: "Referto creato",
+        description: "Il referto è stato salvato con successo",
+      });
+      setShowCreateDialog(false);
+      setSelectedPatientId("");
+      setNoteTitle("");
+      setNoteText("");
+      setIsReport(false);
+      setNoteCategory("Generico");
+      setSelectedFile(null);
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: error instanceof Error ? error.message : "Errore sconosciuto",
+        variant: "destructive",
+      });
+    }
   };
 
   const openCreateDialog = () => {
@@ -334,6 +370,37 @@ export default function DoctorReportsPage() {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="note-category">Categoria</Label>
+                  <Select value={noteCategory} onValueChange={setNoteCategory}>
+                    <SelectTrigger id="note-category" data-testid="select-note-category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Ricetta Medica">Ricetta Medica</SelectItem>
+                      <SelectItem value="Refertazione">Refertazione</SelectItem>
+                      <SelectItem value="Consiglio">Consiglio</SelectItem>
+                      <SelectItem value="Generico">Generico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="attachment">Allegato (opzionale)</Label>
+                  <Input
+                    id="attachment"
+                    type="file"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    data-testid="input-note-attachment"
+                  />
+                  {selectedFile && (
+                    <p className="text-sm text-muted-foreground">
+                      File selezionato: {selectedFile.name}
+                    </p>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -358,6 +425,8 @@ export default function DoctorReportsPage() {
                     setNoteTitle("");
                     setNoteText("");
                     setIsReport(false);
+                    setNoteCategory("Generico");
+                    setSelectedFile(null);
                   }}
                   data-testid="button-cancel-note"
                 >

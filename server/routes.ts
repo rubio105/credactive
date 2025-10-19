@@ -9164,6 +9164,8 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
           reason: `Urgency: ${aiResponse.urgencyLevel}. Related topics: ${aiResponse.relatedTopics.join(', ')}`,
           isReviewed: false,
         });
+        // Auto-close session when alert is created so user doesn't return to stale active session
+        await storage.closeTriageSession(session.id);
       }
 
       // Build response with upload instructions if needed
@@ -9374,6 +9376,8 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
           reason: alertReason,
           isReviewed: false,
         });
+        // Auto-close session when alert is created so user doesn't return to stale active session
+        await storage.closeTriageSession(sessionId);
       }
 
       // Track token usage for authenticated users

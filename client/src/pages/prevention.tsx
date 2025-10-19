@@ -1441,74 +1441,86 @@ export default function PreventionPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Alert Follow-up personalizzato - Sempre visibile se presente */}
+                {pendingAlert && (
+                  <Alert className={`border-2 ${
+                    pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
+                      ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700' 
+                      : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700'
+                  }`} data-testid="alert-followup">
+                    <AlertDescription className="space-y-3">
+                      <p className="font-semibold text-base">
+                        👋 Ciao {user?.firstName || 'utente'}, come va oggi?
+                      </p>
+                      <p className="text-sm">
+                        {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
+                          ? `Hai risolto il problema che avevamo rilevato? (${pendingAlert.reason})`
+                          : `Hai risolto la situazione che avevamo segnalato? (${pendingAlert.reason})`
+                        }
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setAlertButtonsDisabled(true);
+                            // Auto-close stale session if exists
+                            if (sessionId) {
+                              closeSessionMutation.mutate(sessionId);
+                            }
+                            resolveAlertMutation.mutate({ 
+                              alertId: pendingAlert.id, 
+                              response: "Sì, risolto" 
+                            });
+                          }}
+                          disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          data-testid="button-resolve-yes"
+                        >
+                          ✓ Sì, risolto
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setAlertButtonsDisabled(true);
+                            // Auto-close stale session if exists
+                            if (sessionId) {
+                              closeSessionMutation.mutate(sessionId);
+                            }
+                            monitorAlertMutation.mutate({ 
+                              alertId: pendingAlert.id, 
+                              response: "No, non ancora risolto" 
+                            });
+                          }}
+                          disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
+                          className="border-gray-400 dark:border-gray-600"
+                          data-testid="button-resolve-no"
+                        >
+                          ✗ No
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setAlertButtonsDisabled(true);
+                            // Auto-close stale session if exists
+                            if (sessionId) {
+                              closeSessionMutation.mutate(sessionId);
+                            }
+                            contactProhmedMutation.mutate(pendingAlert.id);
+                          }}
+                          disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          data-testid="button-contact-prohmed"
+                        >
+                          🩺 Contatta Medico Prohmed
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 {!sessionId ? (
                   <div className="space-y-4">
-                    {/* Alert Follow-up personalizzato */}
-                    {pendingAlert && (
-                      <Alert className={`border-2 ${
-                        pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
-                          ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700' 
-                          : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700'
-                      }`} data-testid="alert-followup">
-                        <AlertDescription className="space-y-3">
-                          <p className="font-semibold text-base">
-                            👋 Ciao {user?.firstName || 'utente'}, come va oggi?
-                          </p>
-                          <p className="text-sm">
-                            {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
-                              ? `Hai risolto il problema che avevamo rilevato? (${pendingAlert.reason})`
-                              : `Hai risolto la situazione che avevamo segnalato? (${pendingAlert.reason})`
-                            }
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setAlertButtonsDisabled(true);
-                                resolveAlertMutation.mutate({ 
-                                  alertId: pendingAlert.id, 
-                                  response: "Sì, risolto" 
-                                });
-                              }}
-                              disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              data-testid="button-resolve-yes"
-                            >
-                              ✓ Sì, risolto
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setAlertButtonsDisabled(true);
-                                monitorAlertMutation.mutate({ 
-                                  alertId: pendingAlert.id, 
-                                  response: "No, non ancora risolto" 
-                                });
-                              }}
-                              disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
-                              className="border-gray-400 dark:border-gray-600"
-                              data-testid="button-resolve-no"
-                            >
-                              ✗ No
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setAlertButtonsDisabled(true);
-                                contactProhmedMutation.mutate(pendingAlert.id);
-                              }}
-                              disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                              data-testid="button-contact-prohmed"
-                            >
-                              🩺 Contatta Medico Prohmed
-                            </Button>
-                          </div>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    
                     <div className="space-y-3">
                       <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
                         <Lightbulb className="w-4 h-4" />

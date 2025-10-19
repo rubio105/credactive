@@ -211,6 +211,11 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. Schema supports: u
 - Homepage `/` ripristinata al layout originale (Benvenuto + referti 3 colonne)
 - Rimosso bottone "Vedi Tutti" dalla sezione referti (fix layout mobile)
 
+**Unificazione Note Medico e Referti:**
+- Homepage `/` ora mostra ENTRAMBI: referti medici + note medico (come in `/prevention`)
+- Unificazione automatica: doctor notes trasformati in HealthReport e combinati con healthReports
+- Ordinamento per data, sempre visibili al paziente nella sezione "Documenti Recenti"
+
 ## System Design Choices
 
 ### Deployment Architecture

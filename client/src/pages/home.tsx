@@ -124,8 +124,45 @@ export default function Home() {
     enabled: !!user,
   });
 
+  // Fetch prevention documents to get doctor notes
+  interface PreventionDocument {
+    id: string;
+    title: string;
+    summary: string;
+    uploadDate: string;
+    fileType: string;
+    reportType?: string;
+    medicalValues?: any[];
+    radiologicalAnalysis?: any;
+  }
+
+  const { data: documents } = useQuery<PreventionDocument[]>({
+    queryKey: ["/api/prevention/documents"],
+    enabled: !!user,
+  });
+
+  // Get doctor notes from prevention documents (fileType: 'doctor_note')
+  const doctorNotes = (documents || []).filter((doc: any) => doc.fileType === 'doctor_note');
+  
+  // Transform doctor notes to match HealthReport interface
+  const doctorNotesAsReports: HealthReport[] = doctorNotes.map((note: any) => ({
+    id: note.id,
+    fileName: note.title,
+    reportType: note.reportType || 'doctor_note',
+    fileType: 'doctor_note',
+    aiSummary: note.summary,
+    createdAt: note.uploadDate,
+    reportDate: note.uploadDate,
+    issuer: 'Medico',
+    extractedValues: note.medicalValues || {},
+    radiologicalAnalysis: note.radiologicalAnalysis,
+  }));
+
+  // Combine health reports and doctor notes
+  const allReports = [...healthReports, ...doctorNotesAsReports];
+
   // Get all reports sorted by date (clone to avoid mutating cache)
-  const sortedReports = [...healthReports]
+  const sortedReports = [...allReports]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   
   // Pagination for recent reports (3 per page)

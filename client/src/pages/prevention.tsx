@@ -508,10 +508,12 @@ export default function PreventionPage() {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
-      toast({
-        title: "Ottimo!",
-        description: "Siamo felici che il problema sia risolto. C'è qualcos'altro con cui possiamo aiutarti?"
-      });
+      
+      // Avvia una nuova conversazione per mostrare il messaggio AI nella chat
+      setTimeout(() => {
+        const followupMessage = "Ho risolto il problema, grazie!";
+        startTriageMutation.mutate({ symptom: followupMessage, role: userRole });
+      }, 300);
     },
     onError: (error: any) => {
       toast({
@@ -532,10 +534,12 @@ export default function PreventionPage() {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
-      toast({
-        title: "Registrato",
-        description: "Capisco, ti aiutiamo a gestire la situazione"
-      });
+      
+      // Avvia conversazione per continuare ad assistere l'utente
+      setTimeout(() => {
+        const followupMessage = "Il problema non è ancora risolto, ho bisogno di aiuto";
+        startTriageMutation.mutate({ symptom: followupMessage, role: userRole });
+      }, 300);
     },
     onError: (error: any) => {
       toast({
@@ -1465,13 +1469,6 @@ export default function PreventionPage() {
                                   alertId: pendingAlert.id, 
                                   response: "No, non ancora risolto" 
                                 });
-                                // Start a conversation about the unresolved issue
-                                setTimeout(() => {
-                                  const followupMessage = pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency'
-                                    ? `Il problema rilevato non è ancora risolto. Hai consultato un medico?`
-                                    : `La situazione rilevata non è ancora risolta. Come posso aiutarti?`;
-                                  setUserInput(followupMessage);
-                                }, 500);
                               }}
                               disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
                               className="border-gray-400 dark:border-gray-600"

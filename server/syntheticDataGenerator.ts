@@ -62,6 +62,36 @@ const AGE_RANGES = [
   { min: 71, max: 85, weight: 2 }, // anziani
 ];
 
+// Abitudini di vita
+const SMOKING_STATUS = ["Non fumatore", "Fumatore (10 sig/giorno)", "Fumatore (20 sig/giorno)", "Ex fumatore"];
+const ALCOHOL_STATUS = ["Nessun consumo", "Occasionale (1-2 unità/settimana)", "Moderato (5-10 unità/settimana)", "Elevato (>10 unità/settimana)"];
+const PHYSICAL_ACTIVITY = ["Sedentario", "Attività leggera (1-2 volte/settimana)", "Attività moderata (3-4 volte/settimana)", "Attività intensa (5+ volte/settimana)"];
+
+// Comorbidità comuni (variano con età)
+const COMORBIDITIES = [
+  "Ipertensione arteriosa",
+  "Diabete tipo 2",
+  "Ipercolesterolemia",
+  "Obesità",
+  "Asma",
+  "BPCO",
+  "Depressione",
+  "Ansia",
+  "Gastrite cronica",
+  "Artrosi",
+];
+
+// Farmaci comuni
+const COMMON_MEDICATIONS = [
+  "Ramipril 5mg (antiipertensivo)",
+  "Metformina 1000mg (antidiabetico)",
+  "Atorvastatina 20mg (statina)",
+  "Omeprazolo 20mg (gastroprotettore)",
+  "Aspirina 100mg (antiaggregante)",
+  "Levotiroxina 50mcg (tiroide)",
+  "Salbutamolo spray (broncodilatatore)",
+];
+
 // Genera età con distribuzione pesata
 function generateAge(): number {
   const totalWeight = AGE_RANGES.reduce((sum, r) => sum + r.weight, 0);
@@ -91,6 +121,88 @@ function generateHeight(gender: string): number {
   return Math.round(baseHeight + variation);
 }
 
+// Genera valori clinici realistici basati su età
+function generateClinicalValues(age: number): {
+  cholesterol: number;
+  ldl: number;
+  hdl: number;
+  triglycerides: number;
+  bloodPressure: string;
+  glucose: number;
+  bmi: number;
+} {
+  // Colesterolo totale (normale <200, borderline 200-239, alto >240)
+  const baseCholesterol = age > 50 ? 210 : 180;
+  const cholesterol = Math.round(baseCholesterol + (Math.random() * 60 - 20));
+  
+  // LDL (cattivo) - normale <100, ottimale <130
+  const ldl = Math.round(cholesterol * 0.6 + (Math.random() * 30 - 15));
+  
+  // HDL (buono) - desiderabile >40 uomini, >50 donne
+  const hdl = Math.round(45 + (Math.random() * 20));
+  
+  // Trigliceridi - normale <150
+  const triglycerides = Math.round(100 + (Math.random() * 100));
+  
+  // Pressione arteriosa (sistolica/diastolica)
+  const systolic = age > 60 ? Math.round(130 + Math.random() * 30) : Math.round(115 + Math.random() * 25);
+  const diastolic = age > 60 ? Math.round(75 + Math.random() * 20) : Math.round(70 + Math.random() * 15);
+  const bloodPressure = `${systolic}/${diastolic} mmHg`;
+  
+  // Glicemia a digiuno (normale 70-100, pre-diabete 100-125, diabete >126)
+  const baseGlucose = age > 50 ? 95 : 85;
+  const glucose = Math.round(baseGlucose + (Math.random() * 40 - 10));
+  
+  // BMI viene calcolato dopo in base a peso e altezza
+  const bmi = 0; // placeholder
+  
+  return { cholesterol, ldl, hdl, triglycerides, bloodPressure, glucose, bmi };
+}
+
+// Genera abitudini di vita realistiche
+function generateLifestyleHabits(age: number): {
+  smoking: string;
+  alcohol: string;
+  physicalActivity: string;
+} {
+  // Giovani fumano meno, anziani sono più spesso ex-fumatori
+  const smokingIndex = age < 35 ? 0 : age > 60 ? 3 : Math.floor(Math.random() * 4);
+  const smoking = SMOKING_STATUS[smokingIndex];
+  
+  const alcohol = ALCOHOL_STATUS[Math.floor(Math.random() * ALCOHOL_STATUS.length)];
+  const physicalActivity = PHYSICAL_ACTIVITY[Math.floor(Math.random() * PHYSICAL_ACTIVITY.length)];
+  
+  return { smoking, alcohol, physicalActivity };
+}
+
+// Genera comorbidità basate su età (anziani hanno più patologie)
+function generateComorbidities(age: number): string[] {
+  const count = age < 40 ? 0 : age < 60 ? Math.floor(Math.random() * 2) : Math.floor(Math.random() * 3) + 1;
+  const selected: string[] = [];
+  
+  const shuffled = [...COMORBIDITIES].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < count && i < shuffled.length; i++) {
+    selected.push(shuffled[i]);
+  }
+  
+  return selected;
+}
+
+// Genera farmaci in uso (correla con comorbidità ed età)
+function generateMedications(age: number, comorbidities: string[]): string[] {
+  if (age < 40 || comorbidities.length === 0) return [];
+  
+  const count = Math.min(comorbidities.length, Math.floor(Math.random() * 3) + 1);
+  const selected: string[] = [];
+  
+  const shuffled = [...COMMON_MEDICATIONS].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < count && i < shuffled.length; i++) {
+    selected.push(shuffled[i]);
+  }
+  
+  return selected;
+}
+
 // Seleziona sintomo casuale da tutte le categorie
 function getRandomSymptom(): { category: string; symptom: string } {
   const categories = Object.keys(SYMPTOM_CATEGORIES);
@@ -104,28 +216,61 @@ function getRandomSymptom(): { category: string; symptom: string } {
   };
 }
 
-// Genera prompt di conversazione completo
+// Genera prompt di conversazione completo con dati clinici completi
 function generateConversationPrompt(
   symptom: string,
   age: number,
   gender: string,
   weight: number,
-  height: number
+  height: number,
+  clinicalValues: ReturnType<typeof generateClinicalValues>,
+  lifestyle: ReturnType<typeof generateLifestyleHabits>,
+  comorbidities: string[],
+  medications: string[]
 ): string {
-  return `Paziente con i seguenti dati:
+  const bmi = (weight / ((height / 100) ** 2)).toFixed(1);
+  
+  let prompt = `Paziente con i seguenti dati:
+
+DATI ANAGRAFICI:
 - Età: ${age} anni
 - Sesso: ${gender === "M" ? "Maschile" : "Femminile"}
 - Peso: ${weight} kg
 - Altezza: ${height} cm
+- BMI: ${bmi}
 
-Sintomo principale: ${symptom}
+VALORI CLINICI:
+- Colesterolo totale: ${clinicalValues.cholesterol} mg/dL
+- Colesterolo LDL: ${clinicalValues.ldl} mg/dL
+- Colesterolo HDL: ${clinicalValues.hdl} mg/dL
+- Trigliceridi: ${clinicalValues.triglycerides} mg/dL
+- Pressione arteriosa: ${clinicalValues.bloodPressure}
+- Glicemia a digiuno: ${clinicalValues.glucose} mg/dL
 
-Fornisci un triage medico completo con:
+ABITUDINI DI VITA:
+- Fumo: ${lifestyle.smoking}
+- Alcol: ${lifestyle.alcohol}
+- Attività fisica: ${lifestyle.physicalActivity}`;
+
+  if (comorbidities.length > 0) {
+    prompt += `\n\nPATOLOGIE PREGRESSE:\n- ${comorbidities.join('\n- ')}`;
+  }
+
+  if (medications.length > 0) {
+    prompt += `\n\nFARMACI IN USO:\n- ${medications.join('\n- ')}`;
+  }
+
+  prompt += `\n\nSINTOMO PRINCIPALE: ${symptom}
+
+Fornisci un triage medico completo considerando tutti i fattori di rischio e la storia clinica del paziente:
 1. Valutazione urgenza (EMERGENCY, HIGH, MEDIUM, LOW)
-2. Possibili diagnosi differenziali
-3. Esami consigliati
-4. Consigli immediati per il paziente
-5. Quando rivolgersi al medico`;
+2. Possibili diagnosi differenziali tenendo conto dei valori clinici e comorbidità
+3. Esami consigliati specifici per questo caso
+4. Consigli immediati personalizzati per il paziente
+5. Quando rivolgersi al medico
+6. Considerazioni sui fattori di rischio cardiovascolare e metabolico`;
+
+  return prompt;
 }
 
 /**
@@ -143,11 +288,20 @@ async function generateSyntheticConversation(): Promise<{
     const weight = generateWeight(age, gender);
     const height = generateHeight(gender);
     
+    // Genera valori clinici e abitudini
+    const clinicalValues = generateClinicalValues(age);
+    const lifestyle = generateLifestyleHabits(age);
+    const comorbidities = generateComorbidities(age);
+    const medications = generateMedications(age, comorbidities);
+    
     // Seleziona sintomo casuale
     const { category, symptom } = getRandomSymptom();
     
-    // Genera prompt completo
-    const conversationPrompt = generateConversationPrompt(symptom, age, gender, weight, height);
+    // Genera prompt completo con tutti i dati
+    const conversationPrompt = generateConversationPrompt(
+      symptom, age, gender, weight, height,
+      clinicalValues, lifestyle, comorbidities, medications
+    );
     
     // Chiama Gemini per generare risposta realistica
     const startTime = Date.now();
@@ -168,6 +322,10 @@ async function generateSyntheticConversation(): Promise<{
         _synthetic: true,
         _category: category,
         _demographics: { age, gender, weight, height },
+        _clinicalValues: clinicalValues,
+        _lifestyle: lifestyle,
+        _comorbidities: comorbidities,
+        _medications: medications,
       },
       outputRaw: JSON.stringify(aiResponse),
       userAge: age,
@@ -270,9 +428,18 @@ export async function generateBalancedDataset(
       const weight = generateWeight(age, gender);
       const height = generateHeight(gender);
       
+      // Genera valori clinici e abitudini
+      const clinicalValues = generateClinicalValues(age);
+      const lifestyle = generateLifestyleHabits(age);
+      const comorbidities = generateComorbidities(age);
+      const medications = generateMedications(age, comorbidities);
+      
       // Genera conversazione
       try {
-        const conversationPrompt = generateConversationPrompt(symptom, age, gender, weight, height);
+        const conversationPrompt = generateConversationPrompt(
+          symptom, age, gender, weight, height,
+          clinicalValues, lifestyle, comorbidities, medications
+        );
         
         const startTime = Date.now();
         const aiResponse = await generateTriageResponse(conversationPrompt, []);
@@ -290,6 +457,10 @@ export async function generateBalancedDataset(
             _synthetic: true,
             _category: category,
             _demographics: { age, gender, weight, height },
+            _clinicalValues: clinicalValues,
+            _lifestyle: lifestyle,
+            _comorbidities: comorbidities,
+            _medications: medications,
           },
           outputRaw: JSON.stringify(aiResponse),
           userAge: age,

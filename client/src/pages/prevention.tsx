@@ -513,11 +513,10 @@ export default function PreventionPage() {
       // Reset bottoni
       setAlertButtonsDisabled(false);
       
-      // Avvia una nuova conversazione per mostrare il messaggio AI nella chat
-      setTimeout(() => {
-        const followupMessage = "Ho risolto il problema, grazie!";
-        startTriageMutation.mutate({ symptom: followupMessage, role: userRole });
-      }, 300);
+      toast({
+        title: "Perfetto!",
+        description: "Siamo felici che il problema sia stato risolto. Continua a monitorare la tua salute!",
+      });
     },
     onError: (error: any) => {
       setAlertButtonsDisabled(false);
@@ -543,11 +542,10 @@ export default function PreventionPage() {
       // Reset bottoni
       setAlertButtonsDisabled(false);
       
-      // Avvia conversazione per continuare ad assistere l'utente
-      setTimeout(() => {
-        const followupMessage = "Il problema non è ancora risolto, ho bisogno di aiuto";
-        startTriageMutation.mutate({ symptom: followupMessage, role: userRole });
-      }, 300);
+      toast({
+        title: "Ti stiamo monitorando",
+        description: "Continueremo a seguire la situazione. Se hai bisogno di assistenza, usa la chat qui sotto.",
+      });
     },
     onError: (error: any) => {
       setAlertButtonsDisabled(false);

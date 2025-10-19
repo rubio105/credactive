@@ -217,6 +217,11 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. Schema supports: u
 - Ordinamento per data, sempre visibili al paziente nella sezione "Documenti Recenti"
 - Max 2 referti per volta con frecce navigazione (grid 2 colonne)
 
+**Paginazione Referti in /prevention:**
+- Pagina AI Prevenzione mostra max 2 referti per volta (1 colonna verticale)
+- Frecce navigazione (← →) per scorrere tra i referti
+- Auto-reset pagina se referti eliminati (evita pagine vuote)
+
 ## System Design Choices
 
 ### Deployment Architecture

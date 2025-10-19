@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, Sparkles, Stethoscope, Info, Camera } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -193,15 +193,21 @@ export default function PreventionPage() {
       return 0;
     });
 
-  // Always get the latest 3 reports (by date) for "Documenti Recenti", regardless of user sort
-  const recentReports = [...filteredReports]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 3);
-  
-  // Archived reports are the rest (also by date descending)
-  const archivedReports = [...filteredReports]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(3);
+  // Pagination for medical reports (2 per page)
+  const [reportPage, setReportPage] = useState(0);
+  const REPORTS_PER_PAGE = 2;
+  const totalReportPages = Math.ceil(filteredReports.length / REPORTS_PER_PAGE);
+  const paginatedReports = filteredReports.slice(
+    reportPage * REPORTS_PER_PAGE,
+    (reportPage + 1) * REPORTS_PER_PAGE
+  );
+
+  // Reset to first page when reports change (new uploads or deletions)
+  useEffect(() => {
+    if (filteredReports.length > 0 && reportPage >= totalReportPages) {
+      setReportPage(Math.max(0, totalReportPages - 1));
+    }
+  }, [filteredReports.length, reportPage, totalReportPages]);
 
   interface PreventionIndexData {
     score: number;
@@ -1890,11 +1896,38 @@ export default function PreventionPage() {
                         </div>
                       </div>
 
-                      {/* Cronologia Medica (Tutti i Documenti) */}
+                      {/* Cronologia Medica (Max 2 documenti per volta) */}
                       <div className="space-y-3">
-                        <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">Cronologia Medica</h3>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">Cronologia Medica</h3>
+                          {totalReportPages > 1 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">
+                                Pagina {reportPage + 1} di {totalReportPages}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setReportPage(Math.max(0, reportPage - 1))}
+                                disabled={reportPage === 0}
+                                data-testid="button-prev-reports"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setReportPage(Math.min(totalReportPages - 1, reportPage + 1))}
+                                disabled={reportPage === totalReportPages - 1}
+                                data-testid="button-next-reports"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                         <div className="grid gap-4">
-                          {filteredReports.map((report) => (
+                          {paginatedReports.map((report) => (
                             <MedicalReportCard
                               key={report.id}
                               report={{

@@ -339,11 +339,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Serve uploaded images statically
+  // Serve uploaded images statically (non-sensitive public content)
   app.use('/question-images', express.static(uploadDir));
   
-  // Serve uploaded PDFs statically
+  // Serve uploaded PDFs statically (non-sensitive public content)
   app.use('/quiz-documents', express.static(pdfUploadDir));
+  
+  // NOTE: Medical documents, doctor notes, and profile images are NOT served statically
+  // for security reasons. They require authentication and are served via dedicated endpoints below.
 
   // Auth routes
   app.post('/api/auth/register', registrationLimiter, async (req, res) => {
@@ -934,6 +937,237 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting doctor note:", error);
       res.status(500).json({ message: "Errore durante l'eliminazione della nota" });
+    }
+  });
+
+  // ========== SECURE FILE DOWNLOAD ENDPOINTS ==========
+  // These endpoints require authentication and verify user permissions
+  
+  // Download doctor note attachment (authenticated)
+  app.get('/doctor-note-attachments/:filename', isAuthenticated, async (req, res) => {
+    try {
+      const { filename } = req.params;
+      
+      // SECURITY: Prevent directory traversal attacks
+      // Sanitize filename: remove any path separators and parent directory references
+      const sanitizedFilename = path.basename(filename);
+      if (sanitizedFilename !== filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return res.status(400).json({ message: "Nome file non valido" });
+      }
+      
+      // Construct and verify path is within allowed directory
+      const filePath = path.resolve(doctorNoteAttachmentsDir, sanitizedFilename);
+      const baseDir = path.resolve(doctorNoteAttachmentsDir);
+      
+      if (!filePath.startsWith(baseDir + path.sep)) {
+        return res.status(403).json({ message: "Accesso negato" });
+      }
+      
+      // Admin can access all files directly
+      if (req.user!.isAdmin) {
+        if (!fs.existsSync(filePath)) {
+          return res.status(404).json({ message: "File non trovato sul server" });
+        }
+        
+        // For admin, serve with generic headers since we skip DB lookup
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFilename}"`);
+        
+        const fileStream = fs.createReadStream(filePath);
+        return fileStream.pipe(res);
+      }
+      
+      // For non-admin users, find the note with this attachment
+      const allNotes = await storage.getDoctorNotesByPatient(req.user!.id);
+      const doctorNotes = req.user!.isDoctor ? await storage.getDoctorNotesByDoctor(req.user!.id) : [];
+      const combinedNotes = [...allNotes, ...doctorNotes];
+      
+      const note = combinedNotes.find(n => n.attachmentPath?.includes(sanitizedFilename));
+      
+      if (!note) {
+        return res.status(404).json({ message: "Allegato non trovato o accesso negato" });
+      }
+      
+      // Verify user has permission to access this note
+      const isPatient = note.patientId === req.user!.id;
+      const isDoctor = note.doctorId === req.user!.id;
+      
+      if (!isPatient && !isDoctor) {
+        return res.status(403).json({ message: "Non autorizzato ad accedere a questo allegato" });
+      }
+      
+      // File path already validated above
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File non trovato sul server" });
+      }
+      
+      // Set appropriate headers
+      res.setHeader('Content-Type', note.attachmentType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${note.attachmentName || sanitizedFilename}"`);
+      
+      // Stream the file
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Error downloading doctor note attachment:", error);
+      res.status(500).json({ message: "Errore durante il download dell'allegato" });
+    }
+  });
+
+  // Download medical report (authenticated)
+  app.get('/medical-reports/:filename', isAuthenticated, async (req, res) => {
+    try {
+      const { filename } = req.params;
+      
+      // SECURITY: Prevent directory traversal attacks
+      const sanitizedFilename = path.basename(filename);
+      if (sanitizedFilename !== filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return res.status(400).json({ message: "Nome file non valido" });
+      }
+      
+      const filePath = path.resolve(medicalReportsDir, sanitizedFilename);
+      const baseDir = path.resolve(medicalReportsDir);
+      
+      if (!filePath.startsWith(baseDir + path.sep)) {
+        return res.status(403).json({ message: "Accesso negato" });
+      }
+      
+      // Admin can access all files directly
+      if (req.user!.isAdmin) {
+        if (!fs.existsSync(filePath)) {
+          return res.status(404).json({ message: "File non trovato sul server" });
+        }
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFilename}"`);
+        
+        const fileStream = fs.createReadStream(filePath);
+        return fileStream.pipe(res);
+      }
+      
+      // Find the medical report with this file - use userHealthReports table
+      const reports = await storage.getUserHealthReports(req.user!.id);
+      const report = reports.find(r => r.fileName === sanitizedFilename || r.filePath?.includes(sanitizedFilename));
+      
+      if (!report) {
+        // If user is doctor, check if they have access through patient linkage
+        if (req.user!.isDoctor) {
+          const patients = await storage.getDoctorPatients(req.user!.id);
+          const patientIds = patients.map(p => p.id);
+          
+          // Check if any linked patient owns this report
+          for (const patientId of patientIds) {
+            const patientReports = await storage.getUserHealthReports(patientId);
+            const foundReport = patientReports.find(r => r.fileName === sanitizedFilename || r.filePath?.includes(sanitizedFilename));
+            if (foundReport) {
+              // Doctor has access through patient linkage - file path already validated above
+              if (!fs.existsSync(filePath)) {
+                return res.status(404).json({ message: "File non trovato sul server" });
+              }
+              
+              res.setHeader('Content-Type', foundReport.fileType || 'application/pdf');
+              res.setHeader('Content-Disposition', `attachment; filename="${foundReport.fileName || sanitizedFilename}"`);
+              
+              const fileStream = fs.createReadStream(filePath);
+              return fileStream.pipe(res);
+            }
+          }
+        }
+        
+        return res.status(404).json({ message: "Referto non trovato o accesso negato" });
+      }
+      
+      // File path already validated above
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File non trovato sul server" });
+      }
+      
+      // Set appropriate headers
+      res.setHeader('Content-Type', report.fileType || 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${report.fileName || sanitizedFilename}"`);
+      
+      // Stream the file
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Error downloading medical report:", error);
+      res.status(500).json({ message: "Errore durante il download del referto" });
+    }
+  });
+
+  // Download profile image (authenticated)
+  app.get('/profile-images/:filename', isAuthenticated, async (req, res) => {
+    try {
+      const { filename } = req.params;
+      
+      // SECURITY: Prevent directory traversal attacks
+      const sanitizedFilename = path.basename(filename);
+      if (sanitizedFilename !== filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return res.status(400).json({ message: "Nome file non valido" });
+      }
+      
+      const filePath = path.resolve(profileImageDir, sanitizedFilename);
+      const baseDir = path.resolve(profileImageDir);
+      
+      if (!filePath.startsWith(baseDir + path.sep)) {
+        return res.status(403).json({ message: "Accesso negato" });
+      }
+      
+      // Determine MIME type from extension
+      const ext = path.extname(sanitizedFilename).toLowerCase();
+      const mimeTypes: Record<string, string> = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+      };
+      
+      const mimeType = mimeTypes[ext] || 'application/octet-stream';
+      
+      // Admin can access all files directly
+      if (req.user!.isAdmin) {
+        if (!fs.existsSync(filePath)) {
+          return res.status(404).json({ message: "Immagine non trovata sul server" });
+        }
+        
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        
+        const fileStream = fs.createReadStream(filePath);
+        return fileStream.pipe(res);
+      }
+      
+      // Profile images are only accessible to the user themselves
+      // Extract user ID from filename pattern: profile-{userId}-{timestamp}.{ext}
+      const userIdMatch = sanitizedFilename.match(/^profile-([a-zA-Z0-9-]+)-/);
+      
+      if (!userIdMatch) {
+        return res.status(404).json({ message: "Formato filename non valido" });
+      }
+      
+      const fileUserId = userIdMatch[1];
+      const isOwnProfile = fileUserId === req.user!.id;
+      
+      if (!isOwnProfile) {
+        return res.status(403).json({ message: "Non autorizzato ad accedere a questa immagine" });
+      }
+      
+      // File path already validated above
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "Immagine non trovata sul server" });
+      }
+      
+      // Set appropriate headers
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      
+      // Stream the file
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Error downloading profile image:", error);
+      res.status(500).json({ message: "Errore durante il download dell'immagine" });
     }
   });
 

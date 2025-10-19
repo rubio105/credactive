@@ -520,8 +520,8 @@ export default function PreventionPage() {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
       
-      // Forza un refetch immediato per assicurarsi che l'alert sia scomparso
-      await queryClient.refetchQueries({ queryKey: ["/api/triage/pending-alert"] });
+      // NON fare refetch immediato - questo ricaricherebbe altri alert pending
+      // La cache è già null, il banner scompare automaticamente
       
       toast({
         title: "Perfetto!",
@@ -547,8 +547,8 @@ export default function PreventionPage() {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
       
-      // Forza un refetch immediato per assicurarsi che l'alert sia scomparso
-      await queryClient.refetchQueries({ queryKey: ["/api/triage/pending-alert"] });
+      // NON fare refetch immediato - questo ricaricherebbe altri alert pending
+      // La cache è già null, il banner scompare automaticamente
       
       toast({
         title: "Ti stiamo monitorando",
@@ -583,8 +583,8 @@ export default function PreventionPage() {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
       
-      // Forza un refetch immediato per assicurarsi che l'alert sia scomparso
-      await queryClient.refetchQueries({ queryKey: ["/api/triage/pending-alert"] });
+      // NON fare refetch immediato - questo ricaricherebbe altri alert pending
+      // La cache è già null, il banner scompare automaticamente
       
       toast({
         title: "Email inviata!",

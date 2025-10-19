@@ -1518,10 +1518,6 @@ export default function PreventionPage() {
                         <Button
                           size="sm"
                           onClick={() => {
-                            // Auto-close stale session if exists
-                            if (sessionId) {
-                              closeSessionMutation.mutate(sessionId);
-                            }
                             resolveAlertMutation.mutate({ 
                               alertId: pendingAlert.id, 
                               response: "Sì, risolto" 
@@ -1537,10 +1533,6 @@ export default function PreventionPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            // Auto-close stale session if exists
-                            if (sessionId) {
-                              closeSessionMutation.mutate(sessionId);
-                            }
                             monitorAlertMutation.mutate({ 
                               alertId: pendingAlert.id, 
                               response: "No, non ancora risolto" 
@@ -1555,10 +1547,6 @@ export default function PreventionPage() {
                         <Button
                           size="sm"
                           onClick={() => {
-                            // Auto-close stale session if exists
-                            if (sessionId) {
-                              closeSessionMutation.mutate(sessionId);
-                            }
                             contactProhmedMutation.mutate(pendingAlert.id);
                           }}
                           disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}

@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -266,11 +266,9 @@ export default function PreventionPage() {
     enabled: !!sessionId,
   });
 
-  // Don't auto-open old sessions - let user decide
-  // This prevents forcing users into old conversations they want to finish
+  // Don't auto-open old sessions - show banner instead to let user choose
   useEffect(() => {
-    // Removed automatic session reopening to improve UX
-    // Users can manually continue old sessions if needed
+    // Removed automatic session reopening - user controls when to resume
   }, [activeSession, sessionId]);
 
   // Auto-open AI dialog for doctors when they access prevention page
@@ -1394,16 +1392,31 @@ export default function PreventionPage() {
                     </div>
                   </div>
                   {sessionId && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCloseSession}
-                      className="border-2 border-white/30 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:border-white/50 transition-all duration-200 shadow-lg"
-                      data-testid="button-close-session"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Chiudi Conversazione
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          await closeSessionMutation.mutateAsync(sessionId);
+                          setSessionId(null);
+                        }}
+                        className="border-2 border-white/30 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:border-white/50 transition-all duration-200 shadow-lg"
+                        data-testid="button-new-conversation"
+                      >
+                        <MessageSquarePlus className="w-4 h-4 mr-2" />
+                        Nuova Conversazione
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCloseSession}
+                        className="border-2 border-white/30 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:border-white/50 transition-all duration-200 shadow-lg"
+                        data-testid="button-close-session"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Chiudi
+                      </Button>
+                    </div>
                   )}
                 </div>
                 {/* Token banner ONLY for aiOnlyAccess users (quiz/cybersecurity) */}
@@ -1429,6 +1442,42 @@ export default function PreventionPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Banner conversazione in sospeso - Mostra solo se c'è activeSession ma nessuna session aperta */}
+                {activeSession && !sessionId && (
+                  <Alert className="border-2 bg-blue-50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-700" data-testid="alert-resume-session">
+                    <AlertDescription className="space-y-3">
+                      <p className="font-semibold text-base">
+                        💬 Hai una conversazione in sospeso
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Vuoi continuare la conversazione precedente o iniziarne una nuova?
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => setSessionId(activeSession.id)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          data-testid="button-resume-session"
+                        >
+                          Continua Conversazione
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            await closeSessionMutation.mutateAsync(activeSession.id);
+                            queryClient.invalidateQueries({ queryKey: ["/api/triage/session/active"] });
+                          }}
+                          className="border-gray-400 dark:border-gray-600"
+                          data-testid="button-close-old-session"
+                        >
+                          Inizia Nuova
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 {/* Alert Follow-up personalizzato - Sempre visibile se presente */}
                 {pendingAlert && (
                   <Alert className={`border-2 ${

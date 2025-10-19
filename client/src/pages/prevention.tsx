@@ -1461,8 +1461,8 @@ export default function PreventionPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Banner conversazione in sospeso - Mostra solo se c'è activeSession ma nessuna session aperta */}
-                {activeSession && !sessionId && (
+                {/* Banner conversazione in sospeso - Mostra solo se c'è activeSession ma nessuna session aperta E non c'è alert pendente */}
+                {activeSession && !sessionId && !pendingAlert && (
                   <Alert className="border-2 bg-blue-50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-700" data-testid="alert-resume-session">
                     <AlertDescription className="space-y-3">
                       <p className="font-semibold text-base">

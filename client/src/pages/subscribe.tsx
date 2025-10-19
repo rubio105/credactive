@@ -183,7 +183,7 @@ export default function Subscribe() {
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button 
-                  onClick={() => setLocation("/")}
+                  onClick={() => setLocation("/prevention")}
                   className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
                   size="lg"
                   data-testid="button-go-home"
@@ -191,11 +191,31 @@ export default function Subscribe() {
                   Vai alla Home
                 </Button>
                 <Button 
-                  onClick={() => setLocation("/settings")}
+                  onClick={async () => {
+                    try {
+                      const response = await apiRequest("/api/create-billing-portal", "POST", {});
+                      const data = await response.json();
+                      if (data.url) {
+                        window.location.href = data.url;
+                      } else {
+                        toast({
+                          title: "Errore",
+                          description: "Impossibile aprire il portale di gestione abbonamento",
+                          variant: "destructive",
+                        });
+                      }
+                    } catch (error) {
+                      toast({
+                        title: "Errore",
+                        description: "Impossibile aprire il portale di gestione abbonamento",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
                   variant="outline"
                   className="flex-1"
                   size="lg"
-                  data-testid="button-go-settings"
+                  data-testid="button-manage-subscription"
                 >
                   Gestisci Abbonamento
                 </Button>

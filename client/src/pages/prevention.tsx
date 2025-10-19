@@ -266,10 +266,11 @@ export default function PreventionPage() {
     enabled: !!sessionId,
   });
 
+  // Don't auto-open old sessions - let user decide
+  // This prevents forcing users into old conversations they want to finish
   useEffect(() => {
-    if (activeSession?.id && !sessionId) {
-      setSessionId(activeSession.id);
-    }
+    // Removed automatic session reopening to improve UX
+    // Users can manually continue old sessions if needed
   }, [activeSession, sessionId]);
 
   // Auto-open AI dialog for doctors when they access prevention page

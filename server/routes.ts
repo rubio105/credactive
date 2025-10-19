@@ -9477,21 +9477,10 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         }
       }
 
-      // Auto-close session when user declines further help
-      // Check if last AI message asked if user needs more help and user said no
-      const lastAiMessage = messages[messages.length - 1];
-      const userSaidNo = /\b(no|non?\s+(mi\s+serve|grazie|voglio)|basta|chiudi|esci|stop)\b/i.test(content.toLowerCase());
-      const aiAskedIfHelp = lastAiMessage && lastAiMessage.role === 'assistant' && 
-        /posso\s+esserti\s+(ancora\s+)?utile|altro\s+da\s+chieder|qualcos'?altro/i.test(lastAiMessage.content);
-      
+      // ❌ REMOVED: Auto-close logic was too aggressive and closed sessions unexpectedly
+      // Users can manually close conversations when they're done
+      // The regex was matching normal phrases like "No ho febbre" (Non ho febbre)
       let sessionClosed = false;
-      if (aiAskedIfHelp && userSaidNo) {
-        // Close the session automatically
-        await storage.updateTriageSession(sessionId, { status: 'closed' });
-        await saveCompletedConversation(sessionId, user?.id);
-        sessionClosed = true;
-        console.log(`[Auto-Close] Session ${sessionId} closed - user declined further help`);
-      }
 
       // Build response with upload instructions if needed
       const response: any = {

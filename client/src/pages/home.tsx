@@ -57,7 +57,7 @@ interface DashboardData {
 export default function Home() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [selectedLiveCourseQuiz, setSelectedLiveCourseQuiz] = useState<{ id: string; title: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -262,12 +262,14 @@ export default function Home() {
   }, [user, setLocation]);
 
   // Redirect aiOnlyAccess to Prevention page (but not doctors or admins)
+  // Exception: allow access to /subscribe so users can purchase Premium
   useEffect(() => {
     const typedUser = user as UserType;
-    if (typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin) {
+    const isOnSubscribePage = location === '/subscribe' || location === '/payment-success';
+    if (typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && !isOnSubscribePage) {
       setLocation('/prevention');
     }
-  }, [user, setLocation]);
+  }, [user, location, setLocation]);
 
   // Check if user needs onboarding (only for patients, not doctors)
   // Show popup max 4 times if not completed, but only once per session

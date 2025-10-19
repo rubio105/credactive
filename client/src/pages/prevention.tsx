@@ -516,10 +516,12 @@ export default function PreventionPage() {
       const res = await apiRequest("/api/triage/resolve-alert", "POST", { alertId, response });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
-      queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      
+      // Forza un refetch immediato per assicurarsi che l'alert sia scomparso
+      await queryClient.refetchQueries({ queryKey: ["/api/triage/pending-alert"] });
       
       toast({
         title: "Perfetto!",
@@ -541,10 +543,12 @@ export default function PreventionPage() {
       const res = await apiRequest("/api/triage/monitor-alert", "POST", { alertId, response });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
-      queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      
+      // Forza un refetch immediato per assicurarsi che l'alert sia scomparso
+      await queryClient.refetchQueries({ queryKey: ["/api/triage/pending-alert"] });
       
       toast({
         title: "Ti stiamo monitorando",
@@ -575,10 +579,12 @@ export default function PreventionPage() {
       
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
-      queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      
+      // Forza un refetch immediato per assicurarsi che l'alert sia scomparso
+      await queryClient.refetchQueries({ queryKey: ["/api/triage/pending-alert"] });
       
       toast({
         title: "Email inviata!",

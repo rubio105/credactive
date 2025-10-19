@@ -64,8 +64,8 @@ export default function Login() {
         // Utenti AI-only → Prevenzione
         window.location.href = "/prevention";
       } else {
-        // Pazienti normali → Homepage
-        window.location.href = "/";
+        // Pazienti normali → AI Prevenzione (pagina completa)
+        window.location.href = "/prevention";
       }
     },
     onError: (error: any) => {

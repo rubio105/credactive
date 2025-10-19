@@ -15,7 +15,6 @@ import { LiveCourseModal } from "@/components/LiveCourseModal";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import { DoctorDashboard } from "@/components/DoctorDashboard";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
-import { AIChatPanel } from "@/components/AIChatPanel";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
@@ -129,9 +128,9 @@ export default function Home() {
   const sortedReports = [...healthReports]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   
-  // Pagination for recent reports (2 per page for patients on homepage)
+  // Pagination for recent reports (3 per page)
   const [reportPage, setReportPage] = useState(0);
-  const REPORTS_PER_PAGE = 2;
+  const REPORTS_PER_PAGE = 3;
   const totalReportPages = Math.ceil(sortedReports.length / REPORTS_PER_PAGE);
   const recentReports = sortedReports.slice(
     reportPage * REPORTS_PER_PAGE,
@@ -382,49 +381,53 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* AI Prevention Chat - Direct access for regular patients */}
-        {user && !(user as UserType)?.isDoctor && !(user as UserType)?.isAdmin && !(user as UserType)?.aiOnlyAccess && (
-          <div className="mb-8">
-            <AIChatPanel />
-          </div>
-        )}
-
-        {/* Welcome Section - Only for aiOnlyAccess and doctors */}
-        {((user as UserType)?.aiOnlyAccess || (user as UserType)?.isDoctor) && (
-          <div className="mb-8 flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
-                {t.welcome}, {(user as User)?.firstName || 'User'}!
-              </h1>
-              {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
-                <>
-                  <p className="text-muted-foreground">
-                    {t.subtitle}
-                  </p>
-                  <div className="mt-4">
-                    <p className="text-sm text-primary font-medium">
-                      🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
-                    </p>
-                  </div>
-                </>
-              )}
-              {(user as UserType)?.isDoctor && (
+        {/* Welcome Section */}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2" data-testid="welcome-title">
+              {t.welcome}, {(user as User)?.firstName || 'User'}!
+            </h1>
+            {!(user as UserType)?.isDoctor && !(user as UserType)?.aiOnlyAccess && (
+              <>
                 <p className="text-muted-foreground text-lg">
-                  Gestisci i tuoi pazienti e monitora la loro salute
+                  Il tuo assistente AI per la prevenzione e il benessere
                 </p>
-              )}
-            </div>
+                <div className="mt-4">
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                    💚 Carica referti, chatta con l'AI e monitora la tua salute
+                  </p>
+                </div>
+              </>
+            )}
             {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
-              <Link href="/dashboard">
-                <Button variant="outline" data-testid="button-view-dashboard">
-                  {t.viewDashboard}
-                </Button>
-              </Link>
+              <>
+                <p className="text-muted-foreground">
+                  {t.subtitle}
+                </p>
+                <div className="mt-4">
+                  <p className="text-sm text-primary font-medium">
+                    🏆 Completa quiz, guadagna punti, sblocca badge e scala la classifica!
+                  </p>
+                </div>
+              </>
+            )}
+            {(user as UserType)?.isDoctor && (
+              <p className="text-muted-foreground text-lg">
+                Gestisci i tuoi pazienti e monitora la loro salute
+              </p>
             )}
           </div>
-        )}
+          {!(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (
+            <Link href="/dashboard">
+              <Button variant="outline" data-testid="button-view-dashboard">
+                {t.viewDashboard}
+              </Button>
+            </Link>
+          )}
+        </div>
 
-        {/* Recent Medical Reports - BELOW the chat for regular patients, max 2 at a time */}
+
+        {/* Recent Medical Reports - For regular patients (prevention-only) and admins, NOT for aiOnlyAccess quiz users */}
         {sortedReports.length > 0 && !(user as UserType)?.aiOnlyAccess && !(user as UserType)?.isDoctor && (
           <Card className="mb-8">
             <CardContent className="p-6">
@@ -469,7 +472,7 @@ export default function Home() {
                   </Link>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {recentReports.map(report => (
                   <MedicalReportCard
                     key={report.id}

@@ -206,10 +206,9 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. Schema supports: u
 - Gestione completa stati: loading, error, empty data
 - Nessuna più pagina bianca su `/admin/ml-training`
 
-**Homepage Paziente Migliorata:**
-- Chat AI visibile DIRETTAMENTE (no click "Vai all'AI Prevenzione")
-- Referti medici SOTTO la chat (max 2 per volta con paginazione)
-- Layout: Chat → Documenti Recenti (grid 2 colonne invece di 3)
+**Login Redirect Pazienti:**
+- Pazienti normali ora vanno DIRETTAMENTE a `/prevention` dopo login (pagina completa con chat AI)
+- Homepage `/` ripristinata al layout originale (Benvenuto + referti 3 colonne)
 
 ## System Design Choices
 

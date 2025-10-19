@@ -71,6 +71,14 @@ PostgreSQL, managed by Drizzle ORM, handles data for users, subscriptions, medic
 - **Stripe**: Payment processing for subscriptions.
 - **Brevo (Sendinblue)**: Transactional emails and marketing.
 - **Neon Database**: Serverless PostgreSQL with `pgvector` extension.
-- **Google Gemini AI**:
-  - `gemini-2.5-pro`: Medical document analysis, conversational triage.
-  - `gemini-2.5-flash`: Lightweight tasks, embeddings (`text-embedding-004`).
+- **AI Infrastructure**:
+  - **Primary (Production)**: Self-hosted **Gemma Med** via Ollama on Hetzner GPU server for GDPR-compliant medical inference
+  - **Fallback (Cloud)**: Google Gemini AI (`gemini-2.5-pro`, `gemini-2.5-flash`) for high availability
+  - **Strategy**: Automatic fallback system tries Gemma local first, uses Gemini cloud if unavailable
+  - **Environment Variables**:
+    - `USE_LOCAL_MODEL=true` - Enables local Gemma inference
+    - `GEMMA_ENDPOINT=http://localhost:11434` - Ollama API endpoint
+    - `GEMMA_MODEL=gemma2:9b-instruct` - Model name (gemma2, medllama2, meditron)
+    - `GEMMA_TIMEOUT=60000` - Request timeout in milliseconds
+    - `GEMINI_API_KEY` - Fallback cloud API key
+  - **Tracking**: Each AI response includes `modelUsed` field for ML analytics

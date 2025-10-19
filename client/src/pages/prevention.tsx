@@ -99,6 +99,7 @@ export default function PreventionPage() {
   // Auto-detect role based on user type: doctor for diagnosis, patient for prevention
   const userRole = (user as any)?.isDoctor ? 'doctor' : 'patient';
   const [showArchive, setShowArchive] = useState<boolean>(false);
+  const [alertButtonsDisabled, setAlertButtonsDisabled] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -509,6 +510,9 @@ export default function PreventionPage() {
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       
+      // Reset bottoni
+      setAlertButtonsDisabled(false);
+      
       // Avvia una nuova conversazione per mostrare il messaggio AI nella chat
       setTimeout(() => {
         const followupMessage = "Ho risolto il problema, grazie!";
@@ -516,6 +520,7 @@ export default function PreventionPage() {
       }, 300);
     },
     onError: (error: any) => {
+      setAlertButtonsDisabled(false);
       toast({
         title: "Errore",
         description: error?.message || "Impossibile aggiornare lo stato",
@@ -535,6 +540,9 @@ export default function PreventionPage() {
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
       
+      // Reset bottoni
+      setAlertButtonsDisabled(false);
+      
       // Avvia conversazione per continuare ad assistere l'utente
       setTimeout(() => {
         const followupMessage = "Il problema non è ancora risolto, ho bisogno di aiuto";
@@ -542,6 +550,7 @@ export default function PreventionPage() {
       }, 300);
     },
     onError: (error: any) => {
+      setAlertButtonsDisabled(false);
       toast({
         title: "Errore",
         description: error?.message || "Impossibile aggiornare lo stato",
@@ -569,12 +578,17 @@ export default function PreventionPage() {
       // Chiudi immediatamente l'alert impostando la cache a null
       queryClient.setQueryData(["/api/triage/pending-alert"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/triage/pending-alert"] });
+      
+      // Reset bottoni
+      setAlertButtonsDisabled(false);
+      
       toast({
         title: "Email inviata!",
         description: `Ti abbiamo inviato un'email con il codice promo ${data.promoCode} per un consulto gratuito con Prohmed. Controlla la tua casella di posta.`
       });
     },
     onError: (error: any) => {
+      setAlertButtonsDisabled(false);
       toast({
         title: "Errore",
         description: error?.message || "Impossibile inviare l'email",
@@ -1451,11 +1465,14 @@ export default function PreventionPage() {
                           <div className="flex flex-wrap gap-2">
                             <Button
                               size="sm"
-                              onClick={() => resolveAlertMutation.mutate({ 
-                                alertId: pendingAlert.id, 
-                                response: "Sì, risolto" 
-                              })}
-                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
+                              onClick={() => {
+                                setAlertButtonsDisabled(true);
+                                resolveAlertMutation.mutate({ 
+                                  alertId: pendingAlert.id, 
+                                  response: "Sì, risolto" 
+                                });
+                              }}
+                              disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
                               className="bg-green-600 hover:bg-green-700 text-white"
                               data-testid="button-resolve-yes"
                             >
@@ -1465,12 +1482,13 @@ export default function PreventionPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
+                                setAlertButtonsDisabled(true);
                                 monitorAlertMutation.mutate({ 
                                   alertId: pendingAlert.id, 
                                   response: "No, non ancora risolto" 
                                 });
                               }}
-                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
+                              disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
                               className="border-gray-400 dark:border-gray-600"
                               data-testid="button-resolve-no"
                             >
@@ -1478,8 +1496,11 @@ export default function PreventionPage() {
                             </Button>
                             <Button
                               size="sm"
-                              onClick={() => contactProhmedMutation.mutate(pendingAlert.id)}
-                              disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
+                              onClick={() => {
+                                setAlertButtonsDisabled(true);
+                                contactProhmedMutation.mutate(pendingAlert.id);
+                              }}
+                              disabled={alertButtonsDisabled || resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
                               className="bg-blue-600 hover:bg-blue-700 text-white"
                               data-testid="button-contact-prohmed"
                             >

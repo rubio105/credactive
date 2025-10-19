@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import { GoogleGenAI, Modality } from "@google/genai";
 import { createRequire } from "module";
+import { gemmaClient } from "./gemmaClient";
 
 // DON'T DELETE THIS COMMENT
 // Blueprint: javascript_gemini integration
@@ -15,6 +16,9 @@ if (!process.env.GEMINI_API_KEY) {
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// Configurazione fallback: usa modello locale se disponibile
+const USE_LOCAL_MODEL_FALLBACK = process.env.USE_LOCAL_MODEL === 'true';
 
 // Generic Gemini content generation helper
 export async function generateGeminiContent(prompt: string, model: string = "gemini-2.5-pro"): Promise<string> {
@@ -353,7 +357,172 @@ export interface TriageResponse {
   needsReportUpload: boolean; // True if user wants to share medical reports
 }
 
+/**
+ * Genera risposta triage con fallback automatico Gemma → Gemini
+ * Prova prima il modello locale (Gemma), se fallisce usa Gemini cloud
+ */
 export async function generateTriageResponse(
+  userMessage: string,
+  conversationHistory: Array<{ role: string; content: string }>,
+  documentContext?: string,
+  userName?: string,
+  scientificContext?: string,
+  userRole?: 'patient' | 'doctor',
+  language?: string,
+  userAge?: number,
+  userGender?: string,
+  heightCm?: number | null,
+  weightKg?: number | null,
+  smokingStatus?: string | null,
+  physicalActivity?: string | null,
+  userBio?: string | null
+): Promise<TriageResponse & { modelUsed?: string }> {
+  // Prova prima Gemma locale se abilitato
+  if (USE_LOCAL_MODEL_FALLBACK) {
+    try {
+      const isAvailable = await gemmaClient.isAvailable();
+      
+      if (isAvailable) {
+        console.log('[AI] Tentativo con Gemma locale...');
+        const result = await generateTriageResponseWithGemma(
+          userMessage,
+          conversationHistory,
+          documentContext,
+          userName,
+          scientificContext,
+          userRole,
+          language,
+          userAge,
+          userGender,
+          heightCm,
+          weightKg,
+          smokingStatus,
+          physicalActivity,
+          userBio
+        );
+        
+        console.log('[AI] ✅ Gemma locale ha risposto con successo');
+        return { ...result, modelUsed: `gemma-local-${process.env.GEMMA_MODEL || 'gemma2:9b'}` };
+      } else {
+        console.log('[AI] Gemma locale non disponibile, fallback a Gemini');
+      }
+    } catch (error) {
+      console.warn('[AI] ⚠️ Gemma locale fallito, fallback a Gemini:', error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
+  
+  // Fallback a Gemini cloud
+  const result = await generateTriageResponseWithGemini(
+    userMessage,
+    conversationHistory,
+    documentContext,
+    userName,
+    scientificContext,
+    userRole,
+    language,
+    userAge,
+    userGender,
+    heightCm,
+    weightKg,
+    smokingStatus,
+    physicalActivity,
+    userBio
+  );
+  
+  return { ...result, modelUsed: 'gemini-2.5-flash' };
+}
+
+/**
+ * Implementazione con Gemma locale
+ */
+async function generateTriageResponseWithGemma(
+  userMessage: string,
+  conversationHistory: Array<{ role: string; content: string }>,
+  documentContext?: string,
+  userName?: string,
+  scientificContext?: string,
+  userRole?: 'patient' | 'doctor',
+  language?: string,
+  userAge?: number,
+  userGender?: string,
+  heightCm?: number | null,
+  weightKg?: number | null,
+  smokingStatus?: string | null,
+  physicalActivity?: string | null,
+  userBio?: string | null
+): Promise<TriageResponse> {
+  // Build il system prompt (identico a Gemini)
+  const contextInfo = documentContext 
+    ? `\n\nRELEVANT MEDICAL DOCUMENTATION (User's personal reports):\n${documentContext}`
+    : "";
+  
+  const scientificInfo = scientificContext
+    ? `\n\nSCIENTIFIC EVIDENCE BASE (Medical literature):\n${scientificContext}\n\nIMPORTANT: Base your prevention recommendations on these scientific sources when relevant.`
+    : "";
+  
+  const userGreeting = userName 
+    ? `\n\nUSER CONTEXT: The user's name is ${userName}. When appropriate, address them by name to personalize the conversation (e.g., "Ciao ${userName}, capisco la tua preoccupazione...").`
+    : "\n\nUSER CONTEXT: This is an anonymous user. Use general greetings without names.";
+
+  const demographicContext = userRole !== 'doctor' && (userAge || userGender || heightCm || weightKg || smokingStatus || physicalActivity || userBio)
+    ? `\n\nPATIENT HEALTH PROFILE:${userAge ? `\n- Age: ${userAge} years old` : ''}${userGender ? `\n- Gender: ${userGender}` : ''}${heightCm && weightKg ? `\n- BMI: ${(weightKg / ((heightCm / 100) ** 2)).toFixed(1)} (Height: ${heightCm}cm, Weight: ${weightKg}kg)` : heightCm ? `\n- Height: ${heightCm}cm` : weightKg ? `\n- Weight: ${weightKg}kg` : ''}${smokingStatus ? `\n- Smoking Status: ${smokingStatus.replace('-', ' ')}` : ''}${physicalActivity ? `\n- Physical Activity Level: ${physicalActivity.replace('-', ' ')}` : ''}${userBio ? `\n- Patient's Story: ${userBio}` : ''}
+IMPORTANT: Consider this complete health profile when assessing risk factors and recommending personalized prevention strategies.`
+    : '';
+
+  const roleContext = userRole === 'doctor' 
+    ? `\n\nUSER ROLE: This user is a MEDICAL PROFESSIONAL. Use appropriate medical terminology and technical language.`
+    : `\n\nUSER ROLE: This user is a PATIENT. Use simple, everyday language and avoid medical jargon.`;
+
+  const systemPrompt = `You are "AI Prohmed", an educational assistant specialized in teaching prevention strategies.
+Your mission is to help users LEARN how to prevent health issues through their personal cases.
+
+CONVERSATIONAL & EXPLORATORY APPROACH:
+- Be empathetic, encouraging, and naturally conversational
+- ALWAYS ask clarifying follow-up questions before giving advice
+- Make the conversation feel natural, like talking to a caring health educator
+
+RESPONSE FORMAT - You MUST respond ONLY with valid JSON in this exact format:
+{
+  "message": "your educational response in ${language || 'Italian'}",
+  "isSensitive": boolean,
+  "suggestDoctor": boolean,
+  "urgencyLevel": "low" | "medium" | "high" | "emergency",
+  "relatedTopics": ["topic1", "topic2"],
+  "needsReportUpload": boolean
+}
+
+IMPORTANT: Output ONLY the JSON, no other text before or after.${scientificInfo}${contextInfo}${userGreeting}${demographicContext}${roleContext}`;
+
+  const response = await gemmaClient.generateMedicalResponse(
+    userMessage,
+    conversationHistory,
+    systemPrompt
+  );
+
+  // Parse la risposta JSON
+  try {
+    // Gemma potrebbe includere testo extra, proviamo a estrarre il JSON
+    let jsonText = response.message.trim();
+    
+    // Se c'è testo prima/dopo il JSON, prova a estrarlo
+    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonText = jsonMatch[0];
+    }
+    
+    const result = JSON.parse(jsonText);
+    console.log("[Gemma] Triage response generated, urgency:", result.urgencyLevel);
+    return result;
+  } catch (parseError) {
+    console.error('[Gemma] Failed to parse JSON response:', response.message);
+    throw new Error(`Gemma returned invalid JSON: ${parseError}`);
+  }
+}
+
+/**
+ * Implementazione originale con Gemini cloud
+ */
+async function generateTriageResponseWithGemini(
   userMessage: string,
   conversationHistory: Array<{ role: string; content: string }>,
   documentContext?: string,

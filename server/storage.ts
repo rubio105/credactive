@@ -781,6 +781,93 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<void> {
+    // Delete all user-related data in correct order to avoid foreign key constraint violations
+    
+    // Import all necessary tables at the top of the file if not already imported
+    const {
+      userQuizAttempts,
+      userProgress,
+      quizReports,
+      liveCourseEnrollments,
+      liveStreamingMessages,
+      liveStreamingPollResponses,
+      userVideoProgress,
+      userBadges,
+      userAchievements,
+      userDailyChallenges,
+      userCertificates,
+      // Medical/Healthcare tables (already have onDelete: cascade in most cases, but including for safety)
+      triageSessions,
+      userHealthReports,
+      preventionDocuments,
+      doctorNotes,
+      appointments,
+      triageAlerts,
+      preventionAssessments,
+      userFeedback,
+      auditLogs,
+      prohmedCodes,
+      doctorPatientLinks,
+      // Tables with onDelete: cascade (will be deleted automatically, but can delete explicitly for clarity)
+      // emailNotifications, pushSubscriptions, notifications, mlTrainingData
+    } = await import('@shared/schema');
+    
+    // Delete quiz/learning related data
+    await db.delete(userQuizAttempts).where(eq(userQuizAttempts.userId, id));
+    await db.delete(userProgress).where(eq(userProgress.userId, id));
+    await db.delete(quizReports).where(eq(quizReports.userId, id));
+    
+    // Delete course related data
+    await db.delete(liveCourseEnrollments).where(eq(liveCourseEnrollments.userId, id));
+    await db.delete(userVideoProgress).where(eq(userVideoProgress.userId, id));
+    
+    // Delete gamification data
+    await db.delete(userBadges).where(eq(userBadges.userId, id));
+    await db.delete(userAchievements).where(eq(userAchievements.userId, id));
+    await db.delete(userDailyChallenges).where(eq(userDailyChallenges.userId, id));
+    await db.delete(userCertificates).where(eq(userCertificates.userId, id));
+    
+    // Delete streaming data
+    await db.delete(liveStreamingMessages).where(eq(liveStreamingMessages.userId, id));
+    await db.delete(liveStreamingPollResponses).where(eq(liveStreamingPollResponses.userId, id));
+    
+    // Delete medical/healthcare data (some have cascade, but explicit for safety)
+    await db.delete(triageAlerts).where(eq(triageAlerts.userId, id));
+    await db.delete(triageSessions).where(eq(triageSessions.userId, id));
+    await db.delete(userHealthReports).where(eq(userHealthReports.userId, id));
+    await db.delete(preventionDocuments).where(eq(preventionDocuments.uploadedById, id));
+    await db.delete(preventionAssessments).where(eq(preventionAssessments.userId, id));
+    await db.delete(userFeedback).where(eq(userFeedback.userId, id));
+    
+    // Delete appointments where user is doctor or patient
+    await db.delete(appointments).where(or(
+      eq(appointments.doctorId, id),
+      eq(appointments.patientId, id)
+    ));
+    
+    // Delete doctor-related data (notes where user is doctor OR patient)
+    await db.delete(doctorNotes).where(or(
+      eq(doctorNotes.doctorId, id),
+      eq(doctorNotes.patientId, id)
+    ));
+    await db.delete(doctorPatientLinks).where(or(
+      eq(doctorPatientLinks.doctorId, id),
+      eq(doctorPatientLinks.patientId, id)
+    ));
+    
+    // Delete Prohmed codes linked to user (set null on delete for this table)
+    await db.delete(prohmedCodes).where(eq(prohmedCodes.userId, id));
+    
+    // Delete audit logs
+    await db.delete(auditLogs).where(eq(auditLogs.userId, id));
+    
+    // Tables with onDelete: cascade will be automatically deleted:
+    // - emailNotifications
+    // - pushSubscriptions  
+    // - notifications
+    // - mlTrainingData (onDelete: set null)
+    
+    // Finally, delete the user
     await db.delete(users).where(eq(users.id, id));
   }
 

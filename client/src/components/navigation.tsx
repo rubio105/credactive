@@ -126,7 +126,11 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-24 py-2">
           {/* Logo */}
-          <Link href={typedUser?.aiOnlyAccess ? "/prevention" : "/"}>
+          <Link href={
+            typedUser?.isAdmin ? "/admin" : 
+            typedUser?.isDoctor ? "/doctor/patients" : 
+            "/prevention"
+          }>
             <div className="flex items-center cursor-pointer" data-testid="logo">
               <img 
                 src={logoImage} 

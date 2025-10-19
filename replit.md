@@ -222,6 +222,13 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. Schema supports: u
 - Frecce navigazione (← →) per scorrere tra i referti
 - Auto-reset pagina se referti eliminati (evita pagine vuote)
 
+**Logo Navigation:**
+- Click sul logo porta sempre su pagina principale per il ruolo utente:
+  - Admin → `/admin`
+  - Dottori → `/doctor/patients`
+  - Pazienti → `/prevention` (AI Prevenzione)
+- Allineato con login redirect per UX coerente
+
 ## System Design Choices
 
 ### Deployment Architecture

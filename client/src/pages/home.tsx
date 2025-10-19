@@ -165,9 +165,9 @@ export default function Home() {
   const sortedReports = [...allReports]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   
-  // Pagination for recent reports (3 per page)
+  // Pagination for recent reports (2 per page)
   const [reportPage, setReportPage] = useState(0);
-  const REPORTS_PER_PAGE = 3;
+  const REPORTS_PER_PAGE = 2;
   const totalReportPages = Math.ceil(sortedReports.length / REPORTS_PER_PAGE);
   const recentReports = sortedReports.slice(
     reportPage * REPORTS_PER_PAGE,
@@ -503,7 +503,7 @@ export default function Home() {
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {recentReports.map(report => (
                   <MedicalReportCard
                     key={report.id}

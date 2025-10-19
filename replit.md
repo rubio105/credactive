@@ -208,13 +208,14 @@ PostgreSQL (Neon's serverless driver) managed by Drizzle ORM. Schema supports: u
 
 **Login Redirect Pazienti:**
 - Pazienti normali ora vanno DIRETTAMENTE a `/prevention` dopo login (pagina completa con chat AI)
-- Homepage `/` ripristinata al layout originale (Benvenuto + referti 3 colonne)
+- Homepage `/` ripristinata al layout originale (Benvenuto + referti)
 - Rimosso bottone "Vedi Tutti" dalla sezione referti (fix layout mobile)
 
 **Unificazione Note Medico e Referti:**
 - Homepage `/` ora mostra ENTRAMBI: referti medici + note medico (come in `/prevention`)
 - Unificazione automatica: doctor notes trasformati in HealthReport e combinati con healthReports
 - Ordinamento per data, sempre visibili al paziente nella sezione "Documenti Recenti"
+- Max 2 referti per volta con frecce navigazione (grid 2 colonne)
 
 ## System Design Choices
 

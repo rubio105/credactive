@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Maskable PWA Icon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid #10b981;
+            margin: 20px 0;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px;
+        }
+        button:hover {
+            background: #059669;
+        }
+        .preview {
+            display: inline-block;
+            margin: 20px;
+        }
+        .preview canvas {
+            border-radius: 50%;
+        }
+        .info {
+            background: #f0fdf4;
+            border: 2px solid #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Generate Maskable PWA Icon</h1>
+    <div class="info">
+        <p><strong>Android PWA richiede icone "maskable"</strong></p>
+        <p>L'icona viene ridimensionata al 60% e centrata su sfondo bianco (40% safe zone)</p>
+    </div>
+
+    <canvas id="canvas" width="512" height="512"></canvas>
+    
+    <div>
+        <button onclick="generateIcon()">Generate Icon</button>
+        <button onclick="downloadIcon()">Download Icon (512x512)</button>
+    </div>
+
+    <div class="preview">
+        <h3>Preview (circular mask)</h3>
+        <canvas id="preview" width="192" height="192"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const preview = document.getElementById('preview');
+        const previewCtx = preview.getContext('2d');
+
+        function generateIcon() {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                // Clear canvas
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 512, 512);
+
+                // Calculate safe zone (40% padding = 60% content)
+                const safeZonePercent = 0.60;
+                const iconSize = 512 * safeZonePercent; // 307.2px
+                const offset = (512 - iconSize) / 2; // 102.4px
+
+                // Draw centered image at 60% size
+                ctx.drawImage(img, offset, offset, iconSize, iconSize);
+
+                // Generate preview
+                generatePreview();
+            };
+            img.src = '/images/ai-shield-icon.png';
+        }
+
+        function generatePreview() {
+            // Create circular mask preview
+            previewCtx.clearRect(0, 0, 192, 192);
+            
+            // Draw circular clip
+            previewCtx.save();
+            previewCtx.beginPath();
+            previewCtx.arc(96, 96, 96, 0, Math.PI * 2);
+            previewCtx.closePath();
+            previewCtx.clip();
+            
+            // Draw scaled version of main canvas
+            previewCtx.drawImage(canvas, 0, 0, 192, 192);
+            previewCtx.restore();
+            
+            // Draw circle border
+            previewCtx.strokeStyle = '#10b981';
+            previewCtx.lineWidth = 2;
+            previewCtx.beginPath();
+            previewCtx.arc(96, 96, 96, 0, Math.PI * 2);
+            previewCtx.stroke();
+        }
+
+        function downloadIcon() {
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'pwa-maskable-icon-512.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Auto-generate on load
+        window.onload = generateIcon;
+    </script>
+</body>
+</html>

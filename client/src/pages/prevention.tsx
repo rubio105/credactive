@@ -449,7 +449,17 @@ export default function PreventionPage() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
+      // Use setQueryData to immediately append new messages to cache
+      // This ensures messages appear instantly without waiting for refetch
+      if (data.userMessage && data.aiMessage) {
+        const currentMessages = queryClient.getQueryData<TriageMessage[]>(["/api/triage/messages", sessionId]) || [];
+        const updatedMessages = [...currentMessages, data.userMessage, data.aiMessage];
+        queryClient.setQueryData(["/api/triage/messages", sessionId], updatedMessages);
+      } else {
+        // Fallback to invalidation if backend response is unexpected
+        queryClient.invalidateQueries({ queryKey: ["/api/triage/messages", sessionId] });
+      }
+      
       queryClient.invalidateQueries({ queryKey: ["/api/triage/session", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/prevention/index"] });
       setUserInput("");

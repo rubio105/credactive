@@ -26,7 +26,7 @@ export const passwordResetLimiter = rateLimit({
 
 export const aiGenerationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 ora
-  max: 20, // 20 richieste AI per IP per ora
+  max: 200, // 200 richieste AI per IP per ora (generoso per permettere conversazioni lunghe)
   message: 'Troppe richieste di generazione AI. Riprova tra un\'ora.',
   standardHeaders: true,
   legacyHeaders: false,

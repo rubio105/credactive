@@ -291,7 +291,7 @@ export default function Home() {
             headers: { "Content-Type": "application/json" },
           });
           // Silently refresh user data in background
-          queryClient.invalidateQueries({ queryKey: ["/api/user/me"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
         } catch (error) {
           console.error("Failed to increment onboarding prompt:", error);
         }

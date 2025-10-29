@@ -40,7 +40,7 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       onOpenChange(false);
       toast({
         title: "Profilo completato! 🎉",

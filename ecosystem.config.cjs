@@ -1,10 +1,10 @@
-require('dotenv').config({ path: '/var/www/ciry-app/.env' });
+require('dotenv').config({ path: '/var/www/credactive/.env' });
 
 module.exports = {
   apps: [{
     name: 'ciry-app',
     script: './dist/index.js',
-    cwd: '/var/www/ciry-app',
+    cwd: '/var/www/credactive',
     exec_mode: 'fork',
     instances: 1,
     autorestart: true,

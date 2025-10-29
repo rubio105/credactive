@@ -63,7 +63,7 @@ PostgreSQL, managed by Drizzle ORM, handles data for users, subscriptions, medic
 ## System Design Choices
 
 ### Deployment Architecture
-- **Production Environment**: Hosted on Hetzner VPS with PM2, Neon PostgreSQL, Nginx reverse proxy, and Cloudflare SSL.
+- **Production Environment**: Hosted on Hetzner VPS (157.180.21.147) at `/var/www/credactive` with PM2 process manager, Neon PostgreSQL, Nginx reverse proxy, and Cloudflare SSL.
 - **Build Systems**: Vite for frontend, esbuild for backend.
 - **Version Control**: GitHub.
 - **Environment Configuration**: Environment variables loaded from `.env` with critical `VITE_*` variables needing export before build.

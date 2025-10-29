@@ -3,7 +3,7 @@
 ## 📋 Prerequisiti Server
 
 - **Server**: Hetzner VPS (157.180.21.147)
-- **Path**: `/var/www/ciry-app`
+- **Path**: `/var/www/credactive`
 - **Process Manager**: PM2
 - **Web Server**: Nginx + Cloudflare SSL
 - **Database**: Neon PostgreSQL
@@ -29,7 +29,7 @@ server {
 
     # Static assets (immagini, etc)
     location /images/ {
-        alias /var/www/ciry-app/public/images/;
+        alias /var/www/credactive/public/images/;
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
@@ -69,7 +69,7 @@ BREVO_API_KEY=...
 ### 1. Connessione SSH
 ```bash
 ssh root@157.180.21.147
-cd /var/www/ciry-app
+cd /var/www/credactive
 ```
 
 ### 2. Aggiornare Codice
@@ -128,7 +128,7 @@ pm2 restart ciry-app
 
 ### Errore: "VITE_STRIPE_PUBLIC_KEY is not set"
 ```bash
-# Aggiungere in /var/www/ciry-app/.env
+# Aggiungere in /var/www/credactive/.env
 echo "VITE_STRIPE_PUBLIC_KEY=pk_live_..." >> .env
 
 # Rifare build

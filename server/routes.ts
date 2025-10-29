@@ -11643,9 +11643,9 @@ Format as JSON: {
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
     const isAndroid = /Android/.test(userAgent);
     
-    // Replace with actual Prohmed app store URLs
-    const iosAppStoreUrl = 'https://apps.apple.com/app/prohmed'; // TODO: Replace with real URL
-    const androidPlayStoreUrl = 'https://play.google.com/store/apps/details?id=com.prohmed'; // TODO: Replace with real URL
+    // Prohmed app store URLs
+    const iosAppStoreUrl = 'https://apps.apple.com/it/app/prohmed/id6449252498';
+    const androidPlayStoreUrl = 'https://play.google.com/store/apps/details?id=com.prohmed.prohmedApp&pcampaignid=web_share';
     
     if (isIOS) {
       // Redirect to iOS App Store

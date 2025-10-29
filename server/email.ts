@@ -528,7 +528,7 @@ export async function sendProhmedInviteEmail(
           </div>
 
           <p style="text-align: center; margin-top: 30px;">
-            <a href="https://prohmed.it/app" class="button">📱 Scarica l'App Prohmed</a>
+            <a href="https://ciry.app/download-prohmed" class="button">📱 Scarica l'App Prohmed</a>
           </p>
 
           <p style="margin-top: 30px; color: #666; font-size: 14px;">
@@ -573,7 +573,7 @@ Cosa include:
 - Telemedicina 24/7
 - Privacy garantita
 
-Scarica l'app: https://prohmed.it/app
+Scarica l'app: https://ciry.app/download-prohmed
 
 Con attenzione alla tua salute,
 Il Team Prohmed & CIRY

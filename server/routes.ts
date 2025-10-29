@@ -11635,6 +11635,118 @@ Format as JSON: {
       res.status(500).json({ message: error.message || 'Failed to export ML training data' });
     }
   });
+
+  // Universal Prohmed App Download Link (GET /download-prohmed)
+  // Detects device and redirects to appropriate app store
+  app.get('/download-prohmed', (req, res) => {
+    const userAgent = req.headers['user-agent'] || '';
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isAndroid = /Android/.test(userAgent);
+    
+    // Replace with actual Prohmed app store URLs
+    const iosAppStoreUrl = 'https://apps.apple.com/app/prohmed'; // TODO: Replace with real URL
+    const androidPlayStoreUrl = 'https://play.google.com/store/apps/details?id=com.prohmed'; // TODO: Replace with real URL
+    
+    if (isIOS) {
+      // Redirect to iOS App Store
+      return res.redirect(302, iosAppStoreUrl);
+    } else if (isAndroid) {
+      // Redirect to Android Play Store
+      return res.redirect(302, androidPlayStoreUrl);
+    } else {
+      // Desktop or unknown device: show HTML page with both options
+      const htmlPage = `
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Scarica l'App Prohmed</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+              background: linear-gradient(135deg, #0066CC 0%, #0052A3 100%);
+              color: white;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              padding: 20px;
+            }
+            .container {
+              background: white;
+              color: #333;
+              border-radius: 16px;
+              padding: 40px;
+              max-width: 500px;
+              text-align: center;
+              box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            }
+            h1 {
+              color: #0066CC;
+              margin-bottom: 10px;
+              font-size: 28px;
+            }
+            p {
+              color: #666;
+              margin-bottom: 30px;
+              font-size: 16px;
+            }
+            .app-buttons {
+              display: flex;
+              flex-direction: column;
+              gap: 15px;
+            }
+            .app-button {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              padding: 16px 32px;
+              background: #000;
+              color: white;
+              text-decoration: none;
+              border-radius: 12px;
+              font-weight: 600;
+              font-size: 16px;
+              transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .app-button:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            }
+            .app-button img {
+              width: 24px;
+              height: 24px;
+            }
+            @media (min-width: 600px) {
+              .app-buttons {
+                flex-direction: row;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>📱 Scarica l'App Prohmed</h1>
+            <p>Scegli il tuo store per scaricare l'app Prohmed e iniziare il tuo consulto medico gratuito.</p>
+            <div class="app-buttons">
+              <a href="${iosAppStoreUrl}" class="app-button">
+                🍎 App Store
+              </a>
+              <a href="${androidPlayStoreUrl}" class="app-button">
+                🤖 Google Play
+              </a>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      return res.send(htmlPage);
+    }
+  });
   
   return httpServer;
 }

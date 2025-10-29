@@ -8988,15 +8988,32 @@ Questa email è stata generata automaticamente dalla piattaforma CIRY
         return res.status(404).json({ message: 'Utente non trovato' });
       }
       
-      // Send Prohmed invite email with promo code
-      await sendProhmedInviteEmail(user.email, user.firstName);
+      const promoCode = 'PROHMED2025';
+      let emailSent = false;
       
-      console.log(`[Prohmed Contact Direct] Email sent to ${user.email} (AI suggestion)`);
+      // Send email ONLY if user hasn't received promo code before
+      if (!user.prohmedPromoCodeSent) {
+        // Send Prohmed invite email with promo code
+        await sendProhmedInviteEmail(user.email, user.firstName);
+        
+        // Mark user as having received promo code
+        await storage.updateUser(userId, {
+          prohmedPromoCodeSent: true,
+          prohmedPromoCode: promoCode,
+        });
+        
+        emailSent = true;
+        console.log(`[Prohmed Contact Direct] Email sent to ${user.email} (first time)`);
+      } else {
+        console.log(`[Prohmed Contact Direct] Email already sent to ${user.email}, skipping. User should use app deep link.`);
+      }
       
       res.json({ 
         success: true, 
-        message: 'Email inviata con successo',
-        promoCode: 'PROHMED2025'
+        message: emailSent ? 'Email inviata con successo' : 'Email già inviata in precedenza',
+        promoCode: user.prohmedPromoCode || promoCode,
+        emailSent,
+        alreadySent: !emailSent,
       });
     } catch (error: any) {
       console.error('Contact Prohmed direct error:', error);

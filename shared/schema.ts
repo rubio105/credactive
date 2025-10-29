@@ -101,6 +101,8 @@ export const users = pgTable("users", {
   corporateAgreementId: uuid("corporate_agreement_id"),
   // Coupon tracking
   couponCode: varchar("coupon_code", { length: 100 }),
+  prohmedPromoCodeSent: boolean("prohmed_promo_code_sent").default(false), // Track if Prohmed promo code email was sent
+  prohmedPromoCode: varchar("prohmed_promo_code", { length: 50 }), // Store the promo code sent to user
   // Login tracking for feedback popup
   loginCount: integer("login_count").default(0),
   feedbackSubmitted: boolean("feedback_submitted").default(false),

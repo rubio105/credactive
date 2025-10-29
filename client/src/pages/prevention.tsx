@@ -666,14 +666,51 @@ export default function PreventionPage() {
       return res.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: "Email inviata!",
-        description: `Ti abbiamo inviato un'email con il codice promo ${data.promoCode} per un consulto gratuito con Prohmed. Controlla la tua casella di posta.`,
-        duration: 6000,
-      });
+      // Refresh user state to reflect promo code sent
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       
-      // Always show dialog asking if user wants to continue conversation
-      setShowContinueConversationDialog(true);
+      if (data.emailSent) {
+        // First time: show success and dialog
+        toast({
+          title: "Email inviata!",
+          description: `Ti abbiamo inviato un'email con il codice promo ${data.promoCode} per un consulto gratuito con Prohmed. Controlla la tua casella di posta.`,
+          duration: 6000,
+        });
+        setShowContinueConversationDialog(true);
+      } else if (data.alreadySent) {
+        // Already sent: open Prohmed app directly
+        const prohmedDeepLink = "prohmed://open";
+        const prohmedAppStore = "https://apps.apple.com/app/prohmed";
+        const prohmedPlayStore = "https://play.google.com/store/apps/details?id=com.prohmed";
+        
+        toast({
+          title: "Apertura app Prohmed",
+          description: "Hai già ricevuto il codice promo. Apro l'app Prohmed...",
+        });
+        
+        // Try to open app
+        window.location.href = prohmedDeepLink;
+        
+        // Fallback to app store if app not installed
+        setTimeout(() => {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const isAndroid = /Android/.test(navigator.userAgent);
+          
+          if (isIOS) {
+            window.location.href = prohmedAppStore;
+          } else if (isAndroid) {
+            window.location.href = prohmedPlayStore;
+          } else {
+            toast({
+              title: "App mobile richiesta",
+              description: "Scarica l'app Prohmed dal tuo store per contattare il medico.",
+            });
+          }
+        }, 1500);
+        
+        // Still show dialog for continuing conversation
+        setShowContinueConversationDialog(true);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -2150,48 +2187,46 @@ export default function PreventionPage() {
               CIRY può aiutarti in qualcos'altro?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              Hai ricevuto l'email con il codice promo per il consulto medico. Vuoi continuare la conversazione con CIRY per altre domande sulla tua salute?
+              {(user as any)?.prohmedPromoCodeSent 
+                ? "Vuoi approfondire altri sintomi con CIRY o preferisci contattare direttamente il medico?"
+                : "Hai ricevuto l'email con il codice promo per il consulto medico. Vuoi approfondire altri sintomi con CIRY?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel 
               onClick={() => {
                 setShowContinueConversationDialog(false);
-                // Close session only if one exists
+                
+                // Close session if exists (app already opened by mutation or email already sent)
                 if (sessionId) {
                   closeSessionMutation.mutate(sessionId);
-                } else {
-                  toast({
-                    title: "Grazie!",
-                    description: "Ti abbiamo inviato l'email. Torna quando vuoi per parlare con CIRY.",
-                  });
                 }
+                
+                toast({
+                  title: "Grazie!",
+                  description: (user as any)?.prohmedPromoCodeSent 
+                    ? "L'app Prohmed dovrebbe aprirsi a breve. Se non si apre, scaricala dallo store."
+                    : "Controlla la tua email per il codice promo e contatta Prohmed.",
+                });
               }}
-              className="bg-red-100 hover:bg-red-200 text-red-900 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-200"
-              data-testid="button-close-conversation"
+              className="bg-blue-100 hover:bg-blue-200 text-blue-900 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-200"
+              data-testid="button-contact-doctor"
             >
-              No, chiudi conversazione
+              🩺 No, contatta il medico
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => {
                 setShowContinueConversationDialog(false);
-                // Keep conversation open or encourage user to start one
-                if (sessionId) {
-                  toast({
-                    title: "Continua pure!",
-                    description: "CIRY è qui per rispondere a tutte le tue domande sulla salute.",
-                  });
-                } else {
-                  toast({
-                    title: "Perfetto!",
-                    description: "Inizia una conversazione con CIRY quando vuoi. Sono qui per aiutarti!",
-                  });
-                }
+                // Keep conversation open
+                toast({
+                  title: "Perfetto!",
+                  description: "Continua pure a farmi domande sulla tua salute. Sono qui per aiutarti!",
+                });
               }}
               className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-              data-testid="button-continue-conversation"
+              data-testid="button-continue-symptoms"
             >
-              Sì, continua
+              ✅ Sì, approfondisci sintomi
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

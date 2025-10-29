@@ -74,6 +74,47 @@ interface LatestAssessment {
   riskLevel?: string;
 }
 
+function getSeverityColor(urgencyLevel: 'low' | 'medium' | 'high' | 'emergency') {
+  switch (urgencyLevel) {
+    case 'emergency':
+      return {
+        bg: 'bg-red-100 dark:bg-red-950/30',
+        border: 'border-red-400 dark:border-red-700',
+        text: 'text-red-900 dark:text-red-200',
+        badge: 'bg-red-600 text-white',
+        icon: '🚨',
+        label: 'EMERGENZA'
+      };
+    case 'high':
+      return {
+        bg: 'bg-orange-100 dark:bg-orange-950/30',
+        border: 'border-orange-400 dark:border-orange-700',
+        text: 'text-orange-900 dark:text-orange-200',
+        badge: 'bg-orange-600 text-white',
+        icon: '⚡',
+        label: 'ALTA'
+      };
+    case 'medium':
+      return {
+        bg: 'bg-yellow-100 dark:bg-yellow-950/30',
+        border: 'border-yellow-400 dark:border-yellow-700',
+        text: 'text-yellow-900 dark:text-yellow-200',
+        badge: 'bg-yellow-600 text-white',
+        icon: 'ℹ️',
+        label: 'MEDIA'
+      };
+    case 'low':
+      return {
+        bg: 'bg-green-100 dark:bg-green-950/30',
+        border: 'border-green-400 dark:border-green-700',
+        text: 'text-green-900 dark:text-green-200',
+        badge: 'bg-green-600 text-white',
+        icon: '✓',
+        label: 'BASSA'
+      };
+  }
+}
+
 export default function PreventionPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -1497,23 +1538,34 @@ export default function PreventionPage() {
                   </Alert>
                 )}
                 
-                {/* Alert Follow-up personalizzato - Sempre visibile se presente */}
-                {pendingAlert && (
-                  <Alert className={`border-2 ${
-                    pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
-                      ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700' 
-                      : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700'
-                  }`} data-testid="alert-followup">
-                    <AlertDescription className="space-y-3">
-                      <p className="font-semibold text-base">
-                        👋 Ciao {user?.firstName || 'utente'}, come va oggi?
-                      </p>
-                      <p className="text-sm">
-                        {pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
-                          ? `Hai risolto il problema che avevamo rilevato? (${pendingAlert.reason})`
-                          : `Hai risolto la situazione che avevamo segnalato? (${pendingAlert.reason})`
-                        }
-                      </p>
+                {/* Alert Follow-up personalizzato - Sempre visibile se presente con sticky positioning */}
+                {pendingAlert && (() => {
+                  const severity = getSeverityColor(pendingAlert.urgencyLevel);
+                  return (
+                    <Alert 
+                      className={`sticky top-4 z-50 border-2 ${severity.bg} ${severity.border} ${severity.text} shadow-xl`} 
+                      data-testid="alert-followup"
+                    >
+                      <AlertDescription className="space-y-3">
+                        <div className="flex items-center gap-2 justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{severity.icon}</span>
+                            <p className="font-bold text-base">
+                              Ciao {user?.firstName || 'utente'}, come va oggi?
+                            </p>
+                          </div>
+                          <Badge className={`${severity.badge} font-semibold px-2 py-0.5 text-xs`}>
+                            {severity.label}
+                          </Badge>
+                        </div>
+                        <p className="text-sm font-medium">
+                          {pendingAlert.urgencyLevel === 'emergency' 
+                            ? `⚠️ Situazione critica rilevata: ${pendingAlert.reason}`
+                            : pendingAlert.urgencyLevel === 'high'
+                            ? `Hai risolto il problema importante che avevamo rilevato? (${pendingAlert.reason})`
+                            : `Hai risolto la situazione che avevamo segnalato? (${pendingAlert.reason})`
+                          }
+                        </p>
                       <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
@@ -1558,7 +1610,8 @@ export default function PreventionPage() {
                       </div>
                     </AlertDescription>
                   </Alert>
-                )}
+                  );
+                })()}
                 
                 {!sessionId ? (
                   <div className="space-y-4">

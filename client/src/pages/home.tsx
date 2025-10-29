@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/navigation";
 import QuizCard from "@/components/quiz-card";
 import LanguageSelector from "@/components/language-selector";
@@ -21,7 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload, FileText, ArrowRight, Sparkles } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload, FileText, ArrowRight, Sparkles, Stethoscope, Users } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 const prohmedLogo = "/images/ciry-logo.png";
 
@@ -253,13 +254,8 @@ export default function Home() {
     }
   }, [user, setLocation]);
 
-  // Redirect doctor users to patients page
-  useEffect(() => {
-    const typedUser = user as UserType;
-    if (typedUser?.isDoctor && !typedUser?.isAdmin) {
-      setLocation('/doctor/patients');
-    }
-  }, [user, setLocation]);
+  // REMOVED: Redirect doctor users - show homepage with tabs instead
+  // Doctors now see role-based tabs (Pazienti + Shortcuts)
 
   // Redirect aiOnlyAccess to Prevention page (but not doctors or admins)
   // Exception: allow access to /subscribe so users can purchase Premium
@@ -466,14 +462,83 @@ export default function Home() {
         </div>
 
 
-        {/* Recent Medical Reports - For regular patients (prevention-only) and admins, NOT for aiOnlyAccess quiz users */}
-        {sortedReports.length > 0 && !(user as UserType)?.aiOnlyAccess && !(user as UserType)?.isDoctor && (
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  <h2 className="text-2xl font-bold">Documenti Recenti</h2>
+        {/* Role-based Tabs - Patients get Prevenzione + Referti, Doctors get Pazienti + Shortcuts */}
+        {!(user as UserType)?.aiOnlyAccess && !(user as UserType)?.isDoctor && (
+          <Tabs defaultValue="prevention" className="mb-8">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="prevention" className="text-base" data-testid="tab-prevention">
+                <Shield className="w-4 h-4 mr-2" />
+                Prevenzione
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="text-base" data-testid="tab-reports">
+                <FileText className="w-4 h-4 mr-2" />
+                I Tuoi Referti
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="prevention" className="space-y-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-emerald-100 dark:bg-emerald-900 rounded-full">
+                      <Sparkles className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold mb-1">AI Prevenzione</h2>
+                      <p className="text-muted-foreground">
+                        Chatta con l'AI, carica referti e ricevi analisi personalizzate
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <Link href="/prevention">
+                      <Button className="w-full h-auto py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg" data-testid="button-go-prevention">
+                        <div className="flex flex-col items-center gap-2">
+                          <Shield className="w-8 h-8" />
+                          <span className="font-semibold text-lg">Vai alla Prevenzione</span>
+                        </div>
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full h-auto py-6 border-2 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600" 
+                      onClick={() => setShowUploadDialog(true)}
+                      data-testid="button-upload-report"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <Upload className="w-8 h-8" />
+                        <span className="font-semibold text-lg">Carica Referto</span>
+                      </div>
+                    </Button>
+                  </div>
+                  {preventionIndex && (
+                    <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Prevention Index</p>
+                          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{preventionIndex.score}/100</p>
+                        </div>
+                        <Badge className={`${
+                          preventionIndex.tier === 'high' ? 'bg-emerald-600' :
+                          preventionIndex.tier === 'medium' ? 'bg-yellow-600' : 'bg-orange-600'
+                        } text-white`}>
+                          {preventionIndex.tier.toUpperCase()}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reports" className="space-y-6">
+              {sortedReports.length > 0 ? (
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        <h2 className="text-2xl font-bold">Documenti Recenti</h2>
                   {totalReportPages > 1 && (
                     <span className="text-sm text-muted-foreground">
                       Pagina {reportPage + 1} di {totalReportPages}
@@ -548,14 +613,82 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
+        ) : (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-xl font-semibold mb-2">Nessun Referto Caricato</h3>
+              <p className="text-muted-foreground mb-6">
+                Inizia caricando i tuoi referti medici per ricevere analisi AI personalizzate
+              </p>
+              <Button onClick={() => setShowUploadDialog(true)} data-testid="button-upload-first-report">
+                <Upload className="w-4 h-4 mr-2" />
+                Carica il Primo Referto
+              </Button>
+            </CardContent>
+          </Card>
         )}
+      </TabsContent>
+    </Tabs>
+  )}
 
-        {/* Doctor Dashboard - Only for doctors */}
-        {(user as UserType)?.isDoctor && (
-          <div className="mb-8">
-            <DoctorDashboard />
-          </div>
-        )}
+  {/* Doctor Tabs - Pazienti + Shortcuts Rapidi */}
+  {(user as UserType)?.isDoctor && (
+    <Tabs defaultValue="patients" className="mb-8">
+      <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsTrigger value="patients" className="text-base" data-testid="tab-patients">
+          <Stethoscope className="w-4 h-4 mr-2" />
+          I Tuoi Pazienti
+        </TabsTrigger>
+        <TabsTrigger value="shortcuts" className="text-base" data-testid="tab-shortcuts">
+          <ArrowRight className="w-4 h-4 mr-2" />
+          Shortcuts Rapidi
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="patients">
+        <DoctorDashboard />
+      </TabsContent>
+
+      <TabsContent value="shortcuts" className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link href="/doctor/patients">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-all-patients">
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="font-semibold mb-1">Lista Pazienti</h3>
+                <p className="text-sm text-muted-foreground">Visualizza tutti i pazienti</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/prevention">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-ai-prevention">
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <h3 className="font-semibold mb-1">AI Diagnostica</h3>
+                <p className="text-sm text-muted-foreground">Chatta con l'AI medica</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/admin/knowledge-base">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-knowledge-base">
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="font-semibold mb-1">Knowledge Base</h3>
+                <p className="text-sm text-muted-foreground">Documenti scientifici</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      </TabsContent>
+    </Tabs>
+  )}
 
         {/* Quick Stats - HIDDEN for regular patients, only for aiOnlyAccess */}
         {dashboardData && !(user as UserType)?.isDoctor && (user as UserType)?.aiOnlyAccess && (

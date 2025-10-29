@@ -307,9 +307,12 @@ export default function PreventionPage() {
     enabled: !!sessionId,
   });
 
-  // Don't auto-open old sessions - show banner instead to let user choose
+  // Auto-restore active session on page load for conversation continuity
   useEffect(() => {
-    // Removed automatic session reopening - user controls when to resume
+    // If there's an active session and no current session, automatically restore it
+    if (activeSession?.id && !sessionId) {
+      setSessionId(activeSession.id);
+    }
   }, [activeSession, sessionId]);
 
   // Auto-open AI dialog for doctors when they access prevention page

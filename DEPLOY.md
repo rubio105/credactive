@@ -3,7 +3,7 @@
 ## 📋 Prerequisiti Server
 
 - **Server**: Hetzner VPS (157.180.21.147)
-- **Path**: `/var/www/credactive`
+- **Path**: `/var/www/ciry-app`
 - **Process Manager**: PM2
 - **Web Server**: Nginx + Cloudflare SSL
 - **Database**: Neon PostgreSQL
@@ -17,7 +17,7 @@ npm install -g pm2
 
 ### 2. Configurare Nginx
 ```bash
-# File: /etc/nginx/sites-available/credactive
+# File: /etc/nginx/sites-available/ciry-app
 server {
     listen 80;
     listen 443 ssl http2;
@@ -29,7 +29,7 @@ server {
 
     # Static assets (immagini, etc)
     location /images/ {
-        alias /var/www/credactive/public/images/;
+        alias /var/www/ciry-app/public/images/;
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
@@ -69,7 +69,7 @@ BREVO_API_KEY=...
 ### 1. Connessione SSH
 ```bash
 ssh root@157.180.21.147
-cd /var/www/credactive
+cd /var/www/ciry-app
 ```
 
 ### 2. Aggiornare Codice
@@ -97,10 +97,10 @@ Questo comando esegue:
 pm2 start ecosystem.config.cjs
 
 # Aggiornamenti successivi
-pm2 restart credactive
+pm2 restart ciry-app
 
 # Verificare logs
-pm2 logs credactive --lines 30
+pm2 logs ciry-app --lines 30
 
 # Verificare status
 pm2 status
@@ -123,24 +123,24 @@ ls -la dist/
 
 # Se manca, rifare build
 npm run build
-pm2 restart credactive
+pm2 restart ciry-app
 ```
 
 ### Errore: "VITE_STRIPE_PUBLIC_KEY is not set"
 ```bash
-# Aggiungere in /var/www/credactive/.env
+# Aggiungere in /var/www/ciry-app/.env
 echo "VITE_STRIPE_PUBLIC_KEY=pk_live_..." >> .env
 
 # Rifare build
 npm run build
-pm2 restart credactive
+pm2 restart ciry-app
 ```
 
 ### Server non risponde
 ```bash
 # Verificare PM2
 pm2 status
-pm2 logs credactive --lines 50
+pm2 logs ciry-app --lines 50
 
 # Verificare Nginx
 sudo nginx -t
@@ -166,22 +166,22 @@ npm run db:push
 pm2 list
 
 # Logs real-time
-pm2 logs credactive
+pm2 logs ciry-app
 
 # Logs ultimi N righe
-pm2 logs credactive --lines 100
+pm2 logs ciry-app --lines 100
 
 # Monitorare risorse
 pm2 monit
 
 # Riavvio automatico dopo crash
-pm2 restart credactive --watch
+pm2 restart ciry-app --watch
 
 # Fermare processo
-pm2 stop credactive
+pm2 stop ciry-app
 
 # Rimuovere processo
-pm2 delete credactive
+pm2 delete ciry-app
 ```
 
 ## 🔐 Sicurezza
@@ -198,8 +198,8 @@ pm2 delete credactive
 - [ ] Verificare `VITE_STRIPE_PUBLIC_KEY` presente
 - [ ] Eseguire `npm install` se package.json cambiato
 - [ ] Eseguire `npm run build`
-- [ ] Riavviare PM2: `pm2 restart credactive`
-- [ ] Verificare logs: `pm2 logs credactive --lines 30`
+- [ ] Riavviare PM2: `pm2 restart ciry-app`
+- [ ] Verificare logs: `pm2 logs ciry-app --lines 30`
 - [ ] Testare sito: https://ciry.app
 
 ## 🆘 Rollback Veloce
@@ -215,7 +215,7 @@ git reset --hard <commit-hash>
 npm run build
 
 # 3. Restart
-pm2 restart credactive
+pm2 restart ciry-app
 ```
 
 ## 📱 Notifiche Push (Temporaneamente Disabilitate)
@@ -228,5 +228,5 @@ VAPID_PRIVATE_KEY=...
 
 ---
 
-**Ultimo aggiornamento**: 17 Ottobre 2025
+**Ultimo aggiornamento**: 29 Ottobre 2025
 **Manutentore**: CIRY DevOps Team

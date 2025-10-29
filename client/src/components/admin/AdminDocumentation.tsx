@@ -223,7 +223,7 @@ VITE_GOOGLE_ANALYTICS_ID=G-...`}
                   <div>
                     <p className="text-sm font-medium mb-2">3.2 - Aggiornamento codice:</p>
                     {[
-                      { id: 'cd', cmd: 'cd /var/www/credactive' },
+                      { id: 'cd', cmd: 'cd /var/www/ciry-app' },
                       { id: 'pull', cmd: 'git pull origin main' },
                       { id: 'install', cmd: 'npm install' },
                       { id: 'build', cmd: 'export $(cat .env | xargs) && npm run build' },
@@ -250,11 +250,11 @@ VITE_GOOGLE_ANALYTICS_ID=G-...`}
                   <div>
                     <p className="text-sm font-medium mb-2">3.3 - Verifica deployment:</p>
                     <div className="flex items-center gap-2 bg-muted p-3 rounded-md">
-                      <code className="flex-1 text-sm font-mono">pm2 logs credactive --lines 20 --nostream</code>
+                      <code className="flex-1 text-sm font-mono">pm2 logs ciry-app --lines 20 --nostream</code>
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => copyToClipboard('pm2 logs credactive --lines 20 --nostream', 'logs')}
+                        onClick={() => copyToClipboard('pm2 logs ciry-app --lines 20 --nostream', 'logs')}
                         data-testid="copy-logs"
                       >
                         {copiedCommand === 'logs' ? (
@@ -283,7 +283,7 @@ VITE_GOOGLE_ANALYTICS_ID=G-...`}
                     { id: 'status', cmd: 'pm2 status', desc: 'Verifica status applicazione' },
                     { id: 'restart-pm2', cmd: 'pm2 restart all', desc: 'Riavvia applicazione' },
                     { id: 'stop', cmd: 'pm2 stop all', desc: 'Ferma applicazione' },
-                    { id: 'logs-pm2', cmd: 'pm2 logs credactive', desc: 'Log in tempo reale' },
+                    { id: 'logs-pm2', cmd: 'pm2 logs ciry-app', desc: 'Log in tempo reale' },
                     { id: 'monit', cmd: 'pm2 monit', desc: 'Monitor CPU/memoria' }
                   ].map(({ id, cmd, desc }) => (
                     <div key={id} className="flex items-center gap-2">
@@ -471,7 +471,7 @@ VITE_GOOGLE_ANALYTICS_ID=G-...`}
               <h3>Support & Troubleshooting</h3>
               <p>Per problemi tecnici, controlla:</p>
               <ul>
-                <li>Logs PM2: <code>pm2 logs credactive</code></li>
+                <li>Logs PM2: <code>pm2 logs ciry-app</code></li>
                 <li>Status server: <code>pm2 status</code></li>
                 <li>Database connectivity: verifica DATABASE_URL in .env</li>
                 <li>API keys: controlla tab "API Keys" nel pannello admin</li>

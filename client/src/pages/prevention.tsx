@@ -125,6 +125,7 @@ export default function PreventionPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingPromptShown, setOnboardingPromptShown] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [showContinueConversationDialog, setShowContinueConversationDialog] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
@@ -671,10 +672,8 @@ export default function PreventionPage() {
         duration: 6000,
       });
       
-      // Send follow-up AI message asking if user needs more help
-      if (sessionId) {
-        sendMessageMutation.mutate("Perfetto! Ti ho inviato l'email. Posso esserti ancora utile con qualche altra domanda sulla tua salute?");
-      }
+      // Always show dialog asking if user wants to continue conversation
+      setShowContinueConversationDialog(true);
     },
     onError: (error: any) => {
       toast({
@@ -2137,6 +2136,62 @@ export default function PreventionPage() {
             >
               <Crown className="w-4 h-4 mr-2" />
               Abbonati Ora
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Continue Conversation Dialog */}
+      <AlertDialog open={showContinueConversationDialog} onOpenChange={setShowContinueConversationDialog}>
+        <AlertDialogContent className="bg-white dark:bg-gray-900">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <Sparkles className="w-5 h-5 text-emerald-600" />
+              CIRY può aiutarti in qualcos'altro?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              Hai ricevuto l'email con il codice promo per il consulto medico. Vuoi continuare la conversazione con CIRY per altre domande sulla tua salute?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => {
+                setShowContinueConversationDialog(false);
+                // Close session only if one exists
+                if (sessionId) {
+                  closeSessionMutation.mutate(sessionId);
+                } else {
+                  toast({
+                    title: "Grazie!",
+                    description: "Ti abbiamo inviato l'email. Torna quando vuoi per parlare con CIRY.",
+                  });
+                }
+              }}
+              className="bg-red-100 hover:bg-red-200 text-red-900 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-200"
+              data-testid="button-close-conversation"
+            >
+              No, chiudi conversazione
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowContinueConversationDialog(false);
+                // Keep conversation open or encourage user to start one
+                if (sessionId) {
+                  toast({
+                    title: "Continua pure!",
+                    description: "CIRY è qui per rispondere a tutte le tue domande sulla salute.",
+                  });
+                } else {
+                  toast({
+                    title: "Perfetto!",
+                    description: "Inizia una conversazione con CIRY quando vuoi. Sono qui per aiutarti!",
+                  });
+                }
+              }}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              data-testid="button-continue-conversation"
+            >
+              Sì, continua
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

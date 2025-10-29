@@ -10,7 +10,10 @@ Preferred communication style: Simple, everyday language.
 
 ## UI/UX Decisions
 
-The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod. The design focuses on medical professionalism with features like color-coded health indicators, modern chat interfaces, and severity badges for medical reports. Key UI elements include a user guide, AI prevention chat, emergency alerts, a premium subscription system, MFA, and role-based homepage routing.
+The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod. The design focuses on medical professionalism with features like color-coded health indicators, modern chat interfaces, and severity badges for medical reports. Key UI elements include:
+- **Color-Coded Medical Alerts**: Sticky-positioned alerts with 4 urgency levels (EMERGENCY 🚨, HIGH ⚡, MEDIUM ℹ️, LOW ✓) using healthcare-appropriate colors (red, orange, yellow, green)
+- **Role-Based Homepage Tabs**: Patients see "Prevenzione" + "I Tuoi Referti" tabs, Doctors see "I Tuoi Pazienti" + "Shortcuts Rapidi" tabs
+- User guide, AI prevention chat, emergency alerts, premium subscription system, MFA, and role-based routing
 
 ## Technical Implementations
 

@@ -1365,8 +1365,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (destroyErr) {
           console.error('Session destroy error:', destroyErr);
         }
-        // Clear cookie
-        res.clearCookie('connect.sid');
+        // Clear cookie with same options used to set it
+        res.clearCookie('connect.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.FORCE_HTTPS === "true",
+          sameSite: "lax"
+        });
         res.json({ message: "Logout effettuato con successo" });
       });
     });

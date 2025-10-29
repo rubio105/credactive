@@ -3493,7 +3493,19 @@ Restituisci SOLO un JSON con:
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const { title, description, category, language = 'it' } = req.body;
+      const { title, description, category, language = 'it', documentType = 'article' } = req.body;
+      
+      // Validate documentType
+      const validDocumentTypes = ['guideline', 'study', 'protocol', 'article', 'review'];
+      if (!validDocumentTypes.includes(documentType)) {
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(400).json({ 
+          message: `Invalid documentType. Must be one of: ${validDocumentTypes.join(', ')}` 
+        });
+      }
+      
       if (!title) {
         // Clean up uploaded file
         if (fs.existsSync(req.file.path)) {
@@ -3529,6 +3541,7 @@ Restituisci SOLO un JSON con:
       // Create document record
       const document = await storage.createMedicalDocument({
         title,
+        documentType: documentType || 'article', // guideline, study, protocol, article, review
         description: description || null,
         category: category || null,
         language,

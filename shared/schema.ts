@@ -42,7 +42,7 @@ export const sessions = pgTable(
 
 // User storage table
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: serial("id").primaryKey(),
   email: varchar("email").unique().notNull(),
   password: varchar("password"), // Hashed password for email/password auth (null for social login)
   authProvider: varchar("auth_provider", { length: 20 }).default("local"), // local, google, apple

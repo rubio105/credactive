@@ -52,13 +52,271 @@ export default function AdminDocumentazionePage() {
           <p className="text-gray-500 dark:text-gray-400 mt-1">Architettura, servizi e specifiche tecniche CIRY</p>
         </div>
 
-        <Tabs defaultValue="architettura" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="api-prohmed" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="api-prohmed" data-testid="tab-api-prohmed">API ProhMed</TabsTrigger>
             <TabsTrigger value="architettura" data-testid="tab-architettura">Architettura</TabsTrigger>
             <TabsTrigger value="servizi" data-testid="tab-servizi">Servizi Esterni</TabsTrigger>
-            <TabsTrigger value="api" data-testid="tab-api">API & Endpoint</TabsTrigger>
-            <TabsTrigger value="database" data-testid="tab-database">Database Schema</TabsTrigger>
+            <TabsTrigger value="api" data-testid="tab-api">API Interne</TabsTrigger>
+            <TabsTrigger value="database" data-testid="tab-database">Database</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="api-prohmed" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Globe className="w-6 h-6 text-blue-600" />
+                  <CardTitle>API Triage ProhMed - Integrazione Esterna</CardTitle>
+                </div>
+                <CardDescription>
+                  API REST v1 per integrazione app mobile ProhMed (Android/iOS) con motore AI triage CIRY
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">🔑 Production API Key</h3>
+                  <code className="text-sm bg-white dark:bg-gray-800 px-3 py-2 rounded block overflow-x-auto">
+                    ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM
+                  </code>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                    Rate Limit: 120 req/min | Scopes: triage:read, triage:write
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-3">🌍 Supporto Multilingua</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    L'API supporta 5 lingue tramite parametro opzionale <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">language</code>:
+                  </p>
+                  <div className="grid grid-cols-5 gap-2 text-sm">
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded text-center">
+                      <div className="font-semibold">🇮🇹 it</div>
+                      <div className="text-xs text-muted-foreground">Italiano</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded text-center">
+                      <div className="font-semibold">🇬🇧 en</div>
+                      <div className="text-xs text-muted-foreground">English</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded text-center">
+                      <div className="font-semibold">🇫🇷 fr</div>
+                      <div className="text-xs text-muted-foreground">Français</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded text-center">
+                      <div className="font-semibold">🇩🇪 de</div>
+                      <div className="text-xs text-muted-foreground">Deutsch</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded text-center">
+                      <div className="font-semibold">🇪🇸 es</div>
+                      <div className="text-xs text-muted-foreground">Español</div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    ℹ️ Se non specificato, default a Italiano (it)
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-3">📡 Base URL</h3>
+                  <code className="text-sm bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded block">
+                    https://ciry.app/api/v1
+                  </code>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-3">🔐 Autenticazione</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    Tutte le richieste richiedono header:
+                  </p>
+                  <code className="text-sm bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded block">
+                    X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM
+                  </code>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>📋 Endpoint Disponibili</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    <span className="text-green-600">POST</span> /api/v1/triage/sessions
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    Crea una nuova sessione di triage AI con storia medica opzionale
+                  </p>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Request Body (JSON):</p>
+                    <pre className="text-xs overflow-x-auto"><code>{`{
+  "userId": "prohmed_user_12345",
+  "initialSymptoms": "Severe headache for 3 days",
+  "language": "en",
+  "medicalHistory": {
+    "age": 35,
+    "gender": "female",
+    "allergies": ["penicillin"],
+    "chronicConditions": ["migraine"],
+    "currentMedications": ["sumatriptan 50mg"],
+    "previousSurgeries": []
+  }
+}`}</code></pre>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg mt-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Response 201 (Created):</p>
+                    <pre className="text-xs overflow-x-auto"><code>{`{
+  "sessionId": "uuid-session-id",
+  "userId": "prohmed_user_12345",
+  "status": "active",
+  "createdAt": "2025-11-02T22:00:00Z",
+  "firstResponse": {
+    "role": "assistant",
+    "content": "I'm sorry to hear you've been...",
+    "urgency": "medium",
+    "requiresDoctorContact": false
+  }
+}`}</code></pre>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    <span className="text-green-600">POST</span> /api/v1/triage/sessions/:sessionId/messages
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    Continua conversazione in sessione esistente
+                  </p>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Request Body (JSON):</p>
+                    <pre className="text-xs overflow-x-auto"><code>{`{
+  "message": "The pain is getting worse even after medication"
+}`}</code></pre>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    <span className="text-blue-600">GET</span> /api/v1/triage/sessions/:sessionId/messages
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Recupera storico completo conversazione
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    <span className="text-blue-600">GET</span> /api/v1/triage/sessions?userId=:userId
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Lista tutte le sessioni di un utente
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    <span className="text-blue-600">GET</span> /api/v1/docs
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Specifica API completa in formato JSON
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>🧪 Test Esempi - Diverse Lingue</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">🇬🇧 Esempio Inglese</h3>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <pre className="text-xs overflow-x-auto"><code>{`curl -X POST 'https://ciry.app/api/v1/triage/sessions' \\
+  -H "X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM" \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "userId": "prohmed_en_001",
+    "initialSymptoms": "Severe chest pain and shortness of breath",
+    "language": "en"
+  }'`}</code></pre>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">🇫🇷 Esempio Francese</h3>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <pre className="text-xs overflow-x-auto"><code>{`curl -X POST 'https://ciry.app/api/v1/triage/sessions' \\
+  -H "X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM" \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "userId": "prohmed_fr_001",
+    "initialSymptoms": "Douleur thoracique sévère et essoufflement",
+    "language": "fr"
+  }'`}</code></pre>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">🇩🇪 Esempio Tedesco</h3>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <pre className="text-xs overflow-x-auto"><code>{`curl -X POST 'https://ciry.app/api/v1/triage/sessions' \\
+  -H "X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM" \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "userId": "prohmed_de_001",
+    "initialSymptoms": "Starke Brustschmerzen und Atemnot",
+    "language": "de"
+  }'`}</code></pre>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <h3 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">⚠️ Flag requiresDoctorContact</h3>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    Quando <code className="bg-yellow-100 dark:bg-yellow-900 px-2 py-1 rounded">requiresDoctorContact: true</code>, 
+                    l'app ProhMed dovrebbe mostrare un alert e offrire il pulsante "Prenota Visita" per reindirizzare 
+                    al sistema di booking interno.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>📚 Documentazione Completa</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                  La documentazione tecnica completa con esempi React Native e Flutter è disponibile nel repository:
+                </p>
+                <code className="text-sm bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded block mb-4">
+                  docs/API_INTEGRATION_PROHMED.md
+                </code>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Guida completa integrazione mobile (React Native, Flutter)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>TypeScript types per tutti i modelli</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Error handling e best practices</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Testing completo per tutte le lingue</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>FAQ con 10+ domande comuni</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="architettura" className="space-y-4 mt-4">
             <Card>

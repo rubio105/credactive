@@ -38,7 +38,9 @@ import {
   insertCrosswordPuzzleSchema,
   insertPreventionAssessmentSchema,
   insertPreventionAssessmentQuestionSchema,
-  insertPreventionUserResponseSchema
+  insertPreventionUserResponseSchema,
+  medicalHistorySchema,
+  type MedicalHistory
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -11711,6 +11713,43 @@ Format as JSON: {
   
   const { authenticateApiKey, apiRateLimiter } = await import('./apiMiddleware');
   
+  // Helper: Call AI for triage with medical context
+  async function callAIForTriage(
+    messages: Array<{ role: string; content: string }>,
+    userMessage: string,
+    medicalHistory?: MedicalHistory | null
+  ): Promise<{
+    content: string;
+    urgency: string;
+    requiresDoctorContact: boolean;
+  }> {
+    const mh = medicalHistory as MedicalHistory | undefined;
+    
+    // Call existing generateTriageResponse with medical history params
+    const response = await generateTriageResponse(
+      userMessage,
+      messages,
+      undefined, // documentContext
+      undefined, // userName
+      undefined, // scientificContext
+      'patient', // userRole
+      'it', // language
+      mh?.age,
+      mh?.gender,
+      undefined, // heightCm
+      undefined, // weightKg
+      undefined, // smokingStatus
+      undefined, // physicalActivity
+      mh ? `Allergie: ${mh.allergies?.join(', ') || 'nessuna'}. Patologie croniche: ${mh.chronicConditions?.join(', ') || 'nessuna'}. Farmaci attuali: ${mh.currentMedications?.join(', ') || 'nessuno'}. Interventi chirurgici pregressi: ${mh.previousSurgeries?.join(', ') || 'nessuno'}.` : undefined
+    );
+    
+    return {
+      content: response.message,
+      urgency: response.urgencyLevel || 'LOW',
+      requiresDoctorContact: response.requiresDoctorContact ?? false, // Ensure always boolean
+    };
+  }
+  
   // API Documentation (GET /api/v1/docs)
   app.get('/api/v1/docs', (req, res) => {
     const docs = {
@@ -11736,22 +11775,46 @@ Format as JSON: {
         {
           method: 'POST',
           path: '/api/v1/triage/sessions',
-          description: 'Create a new triage session for a user',
+          description: 'Create a new triage session for a user with optional medical history',
           authentication: true,
           requestBody: {
-            userId: 'string (required) - User ID from your system',
-            metadata: 'object (optional) - Additional metadata',
+            userId: 'string (required) - User ID from your system (e.g., ProhMed user ID)',
+            initialSymptoms: 'string (optional) - Initial symptom description for immediate AI response',
+            medicalHistory: {
+              type: 'object (optional)',
+              description: 'Patient medical history from your EHR/app (improves AI accuracy)',
+              properties: {
+                age: 'number (optional) - Patient age',
+                gender: 'string (optional) - male, female, other, prefer_not_to_say',
+                allergies: 'array of strings (optional) - Known allergies',
+                chronicConditions: 'array of strings (optional) - Chronic diseases',
+                currentMedications: 'array of strings (optional) - Current medications',
+                previousSurgeries: 'array of strings (optional) - Surgical history',
+              },
+            },
           },
           response: {
             sessionId: 'string - Unique session identifier',
             userId: 'string - User ID',
             status: 'string - Session status (active/completed)',
             createdAt: 'string (ISO 8601) - Creation timestamp',
+            firstResponse: 'object (optional) - AI response if initialSymptoms provided',
           },
           exampleCurl: `curl -X POST '${req.protocol}://${req.get('host')}/api/v1/triage/sessions' \\
   -H 'X-API-Key: YOUR_API_KEY' \\
   -H 'Content-Type: application/json' \\
-  -d '{"userId": "user123"}'`,
+  -d '{
+    "userId": "prohmed_user_789",
+    "initialSymptoms": "Febbre alta da 2 giorni con mal di testa",
+    "medicalHistory": {
+      "age": 45,
+      "gender": "male",
+      "allergies": ["Penicillina"],
+      "chronicConditions": ["Diabete tipo 2", "Ipertensione"],
+      "currentMedications": ["Metformina 500mg 2x/die", "Ramipril 5mg 1x/die"],
+      "previousSurgeries": ["Appendicectomia 2018"]
+    }
+  }'`,
         },
         {
           method: 'GET',
@@ -11787,29 +11850,33 @@ Format as JSON: {
         {
           method: 'POST',
           path: '/api/v1/triage/sessions/:sessionId/messages',
-          description: 'Send a message in a triage session and receive AI response',
+          description: 'Send a message in a triage session and receive AI response (uses medical history from session)',
           authentication: true,
           pathParameters: {
             sessionId: 'string - Session ID',
           },
           requestBody: {
             message: 'string (required) - User message/symptom description',
-            userContext: 'object (optional) - Additional context (age, gender, medical history)',
           },
           response: {
             sessionId: 'string',
             userMessage: 'object - User message details',
-            aiResponse: 'object - AI-generated medical response',
+            aiResponse: {
+              content: 'string - AI response text',
+              urgency: 'string - Urgency level (LOW/MEDIUM/HIGH/EMERGENCY)',
+              requiresDoctorContact: 'boolean - TRUE if AI recommends contacting a doctor',
+            },
             metadata: {
-              urgencyLevel: 'string - Urgency level (LOW/MEDIUM/HIGH/EMERGENCY)',
-              recommendedActions: 'array - List of recommended actions',
+              urgencyLevel: 'string - Urgency level',
+              requiresDoctorContact: 'boolean - Doctor contact recommendation flag',
               disclaimer: 'string - Medical disclaimer',
             },
           },
           exampleCurl: `curl -X POST '${req.protocol}://${req.get('host')}/api/v1/triage/sessions/SESSION_ID/messages' \\
   -H 'X-API-Key: YOUR_API_KEY' \\
   -H 'Content-Type: application/json' \\
-  -d '{"message": "Ho mal di testa da 2 giorni", "userContext": {"age": 35, "gender": "male"}}'`,
+  -d '{"message": "Ora ho anche nausea e vertigini"}'`,
+          integrationTip: 'When aiResponse.requiresDoctorContact is true, redirect user to your booking/appointments page in ProhMed app',
         },
         {
           method: 'GET',
@@ -11919,23 +11986,66 @@ console.log('Urgency Level:', result.metadata.urgencyLevel);
   // Create triage session (POST /api/v1/triage/sessions)
   app.post('/api/v1/triage/sessions', authenticateApiKey, apiRateLimiter, async (req, res) => {
     try {
-      const { userId, metadata } = req.body;
+      const { userId, initialSymptoms, medicalHistory } = req.body;
       
       if (!userId) {
         return res.status(400).json({ error: 'Bad Request', message: 'userId is required' });
+      }
+      
+      // Validate medicalHistory if provided
+      if (medicalHistory) {
+        const validation = medicalHistorySchema.safeParse(medicalHistory);
+        if (!validation.success) {
+          return res.status(400).json({
+            error: 'Bad Request',
+            message: 'Invalid medicalHistory format',
+            details: validation.error.errors,
+          });
+        }
       }
       
       // Create new triage session for the user
       const session = await storage.createTriageSession({
         userId,
         status: 'active',
+        title: initialSymptoms ? initialSymptoms.substring(0, 200) : undefined,
+        medicalHistory: medicalHistory || null,
       });
+      
+      // If initialSymptoms provided, send first message to AI
+      let firstResponse = null;
+      if (initialSymptoms) {
+        const messages = await storage.getTriageMessagesBySession(session.id);
+        
+        const userMessage = await storage.createTriageMessage({
+          sessionId: session.id,
+          role: 'user',
+          content: initialSymptoms,
+        });
+        
+        const conversationHistory = messages.map(m => ({ role: m.role, content: m.content }));
+        const aiResponse = await callAIForTriage(conversationHistory, initialSymptoms, session.medicalHistory as MedicalHistory | null);
+        
+        const assistantMessage = await storage.createTriageMessage({
+          sessionId: session.id,
+          role: 'assistant',
+          content: aiResponse.content,
+        });
+        
+        firstResponse = {
+          role: 'assistant',
+          content: aiResponse.content,
+          urgency: aiResponse.urgency,
+          requiresDoctorContact: aiResponse.requiresDoctorContact,
+        };
+      }
       
       res.status(201).json({
         sessionId: session.id,
         userId: session.userId,
         status: session.status,
         createdAt: session.createdAt,
+        firstResponse,
       });
     } catch (error: any) {
       console.error('Create triage session error:', error);
@@ -12014,8 +12124,19 @@ console.log('Urgency Level:', result.metadata.urgencyLevel);
         content: message,
       });
       
-      // Generate AI response with medical context
-      const response = await generateTriageResponse(message, userContext || {});
+      // Get conversation history
+      const messages = await storage.getTriageMessagesBySession(sessionId);
+      const conversationHistory = messages.map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+      
+      // Generate AI response with medical history context
+      const response = await callAIForTriage(
+        conversationHistory,
+        message,
+        session.medicalHistory as MedicalHistory | null
+      );
       
       // Save AI message
       const aiMsg = await storage.createTriageMessage({
@@ -12037,10 +12158,12 @@ console.log('Urgency Level:', result.metadata.urgencyLevel);
           role: 'assistant',
           content: response.content,
           timestamp: aiMsg.createdAt,
+          urgency: response.urgency,
+          requiresDoctorContact: response.requiresDoctorContact,
         },
         metadata: {
           urgencyLevel: response.urgency || 'MEDIUM',
-          recommendedActions: response.recommendations || [],
+          requiresDoctorContact: response.requiresDoctorContact,
           disclaimer: 'Questo servizio non sostituisce un consulto medico professionale.',
         },
       });

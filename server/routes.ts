@@ -2621,6 +2621,25 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Bulk delete users (admin only)
+  app.post('/api/admin/users/bulk-delete', isAdmin, async (req, res) => {
+    try {
+      const { userIds } = req.body;
+      
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ message: "userIds must be a non-empty array" });
+      }
+
+      // Delete all users
+      await Promise.all(userIds.map(id => storage.deleteUser(id)));
+      
+      res.json({ success: true, deleted: userIds.length });
+    } catch (error) {
+      console.error("Error bulk deleting users:", error);
+      res.status(500).json({ message: "Failed to delete users" });
+    }
+  });
+
   // ========== ADMIN - API KEYS MANAGEMENT ==========
 
   // Create API Key

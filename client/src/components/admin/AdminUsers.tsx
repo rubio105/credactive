@@ -28,9 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Trash2, ArrowLeft, Plus, Download, Upload, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, Trash2, ArrowLeft, Plus, Download, Upload, Search, ChevronLeft, ChevronRight, UserX } from "lucide-react";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
 
 interface User {
@@ -78,6 +79,7 @@ export function AdminUsers() {
   const [isImporting, setIsImporting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const USERS_PER_PAGE = 15;
   const [newUser, setNewUser] = useState<NewUser>({
     email: '',
@@ -112,10 +114,23 @@ export function AdminUsers() {
     mutationFn: (id: string) => apiRequest(`/api/admin/users/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setSelectedUserIds(new Set());
       toast({ title: "Utente eliminato con successo" });
     },
     onError: () => {
       toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
+    },
+  });
+
+  const deleteMultipleMutation = useMutation({
+    mutationFn: (ids: string[]) => apiRequest('/api/admin/users/bulk-delete', 'POST', { userIds: ids }),
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setSelectedUserIds(new Set());
+      toast({ title: `${ids.length} utenti eliminati con successo` });
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'eliminazione multipla", variant: "destructive" });
     },
   });
 
@@ -255,6 +270,38 @@ export function AdminUsers() {
     setCurrentPage(0);
   };
 
+  // Multi-select handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const newSelection = new Set(paginatedUsers.map(u => u.id));
+      setSelectedUserIds(newSelection);
+    } else {
+      setSelectedUserIds(new Set());
+    }
+  };
+
+  const handleSelectUser = (userId: string, checked: boolean) => {
+    const newSelection = new Set(selectedUserIds);
+    if (checked) {
+      newSelection.add(userId);
+    } else {
+      newSelection.delete(userId);
+    }
+    setSelectedUserIds(newSelection);
+  };
+
+  const handleDeleteSelected = () => {
+    const count = selectedUserIds.size;
+    if (count === 0) return;
+    
+    if (confirm(`Sei sicuro di voler eliminare ${count} utenti selezionati? Questa azione non può essere annullata.`)) {
+      deleteMultipleMutation.mutate(Array.from(selectedUserIds));
+    }
+  };
+
+  const allPageSelected = paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUserIds.has(u.id));
+  const somePageSelected = paginatedUsers.some(u => selectedUserIds.has(u.id)) && !allPageSelected;
+
   if (isLoading) {
     return <div>Caricamento...</div>;
   }
@@ -270,9 +317,26 @@ export function AdminUsers() {
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gestione Utenti</h2>
-          <p className="text-muted-foreground">Gestisci gli utenti della piattaforma</p>
+          <p className="text-muted-foreground">
+            {selectedUserIds.size > 0 
+              ? `${selectedUserIds.size} utenti selezionati` 
+              : 'Gestisci gli utenti della piattaforma'}
+          </p>
         </div>
         <div className="flex gap-2">
+          {selectedUserIds.size > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteSelected}
+              disabled={deleteMultipleMutation.isPending}
+              data-testid="button-delete-selected"
+            >
+              <UserX className="w-4 h-4 mr-2" />
+              {deleteMultipleMutation.isPending 
+                ? 'Eliminazione...' 
+                : `Elimina ${selectedUserIds.size} selezionati`}
+            </Button>
+          )}
           <Button 
             variant="outline" 
             onClick={handleExport} 
@@ -326,6 +390,14 @@ export function AdminUsers() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox 
+                  checked={allPageSelected}
+                  indeterminate={somePageSelected}
+                  onCheckedChange={handleSelectAll}
+                  data-testid="checkbox-select-all"
+                />
+              </TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Cognome</TableHead>
@@ -341,6 +413,13 @@ export function AdminUsers() {
           <TableBody>
             {paginatedUsers.map((user) => (
               <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                <TableCell>
+                  <Checkbox 
+                    checked={selectedUserIds.has(user.id)}
+                    onCheckedChange={(checked) => handleSelectUser(user.id, checked as boolean)}
+                    data-testid={`checkbox-select-${user.id}`}
+                  />
+                </TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.firstName}</TableCell>
                 <TableCell>{user.lastName}</TableCell>

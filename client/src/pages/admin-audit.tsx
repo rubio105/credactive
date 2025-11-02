@@ -50,8 +50,28 @@ export default function AdminAuditPage() {
 
   const { data, isLoading, error } = useQuery<AuditLogsResponse>({
     queryKey: ['/api/admin/audit/logs', appliedFilters, page],
-    enabled: !!user?.isAdmin,
+    enabled: !!(user as any)?.isAdmin,
     refetchInterval: 30000, // Refresh every 30s
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', '50');
+      
+      if (appliedFilters.userId) params.append('userId', appliedFilters.userId);
+      if (appliedFilters.resourceType) params.append('resourceType', appliedFilters.resourceType);
+      if (appliedFilters.startDate) params.append('startDate', appliedFilters.startDate);
+      if (appliedFilters.endDate) params.append('endDate', appliedFilters.endDate);
+
+      const response = await fetch(`/api/admin/audit/logs?${params.toString()}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audit logs: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
   });
 
   if (authLoading) {

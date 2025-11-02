@@ -11717,7 +11717,8 @@ Format as JSON: {
   async function callAIForTriage(
     messages: Array<{ role: string; content: string }>,
     userMessage: string,
-    medicalHistory?: MedicalHistory | null
+    medicalHistory?: MedicalHistory | null,
+    language: string = 'it'
   ): Promise<{
     content: string;
     urgency: string;
@@ -11733,7 +11734,7 @@ Format as JSON: {
       undefined, // userName
       undefined, // scientificContext
       'patient', // userRole
-      'it', // language
+      language, // language from request
       mh?.age,
       mh?.gender,
       undefined, // heightCm
@@ -11986,7 +11987,7 @@ console.log('Urgency Level:', result.metadata.urgencyLevel);
   // Create triage session (POST /api/v1/triage/sessions)
   app.post('/api/v1/triage/sessions', authenticateApiKey, apiRateLimiter, async (req, res) => {
     try {
-      const { userId, initialSymptoms, medicalHistory } = req.body;
+      const { userId, initialSymptoms, medicalHistory, language } = req.body;
       
       if (!userId) {
         return res.status(400).json({ error: 'Bad Request', message: 'userId is required' });
@@ -12004,12 +12005,17 @@ console.log('Urgency Level:', result.metadata.urgencyLevel);
         }
       }
       
+      // Validate language if provided (default to 'it')
+      const validLanguages = ['it', 'en', 'fr', 'de', 'es'];
+      const sessionLanguage = language && validLanguages.includes(language) ? language : 'it';
+      
       // Create new triage session for the user
       const session = await storage.createTriageSession({
         userId,
         status: 'active',
         title: initialSymptoms ? initialSymptoms.substring(0, 200) : undefined,
         medicalHistory: medicalHistory || null,
+        language: sessionLanguage,
       });
       
       // If initialSymptoms provided, send first message to AI
@@ -12024,7 +12030,7 @@ console.log('Urgency Level:', result.metadata.urgencyLevel);
         });
         
         const conversationHistory = messages.map(m => ({ role: m.role, content: m.content }));
-        const aiResponse = await callAIForTriage(conversationHistory, initialSymptoms, session.medicalHistory as MedicalHistory | null);
+        const aiResponse = await callAIForTriage(conversationHistory, initialSymptoms, session.medicalHistory as MedicalHistory | null, session.language || 'it');
         
         const assistantMessage = await storage.createTriageMessage({
           sessionId: session.id,
@@ -12131,11 +12137,12 @@ console.log('Urgency Level:', result.metadata.urgencyLevel);
         content: m.content,
       }));
       
-      // Generate AI response with medical history context
+      // Generate AI response with medical history context and session language
       const response = await callAIForTriage(
         conversationHistory,
         message,
-        session.medicalHistory as MedicalHistory | null
+        session.medicalHistory as MedicalHistory | null,
+        session.language || 'it'
       );
       
       // Save AI message

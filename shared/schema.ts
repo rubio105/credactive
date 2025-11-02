@@ -1323,6 +1323,9 @@ export const triageSessions = pgTable("triage_sessions", {
   // Medical history context (for external API integrations like ProhMed)
   medicalHistory: jsonb("medical_history"), // { age, gender, allergies[], chronicConditions[], currentMedications[], previousSurgeries[] }
   
+  // Language preference (for external API integrations)
+  language: varchar("language", { length: 5 }).default("it"), // it, en, fr, de, es
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   closedAt: timestamp("closed_at"),

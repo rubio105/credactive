@@ -11710,13 +11710,8 @@ Format as JSON: {
   });
 
   // Endpoint per servire documentazione API ProhMed (solo admin)
-  app.get('/api/admin/prohmed-docs', async (req, res) => {
+  app.get('/api/admin/prohmed-docs', isAdmin, async (req, res) => {
     try {
-      const user = req.user as any;
-      if (!user?.isAdmin) {
-        return res.status(403).json({ error: 'Forbidden' });
-      }
-
       const fs = await import('fs/promises');
       const path = await import('path');
       const docPath = path.join(process.cwd(), 'docs', 'API_INTEGRATION_PROHMED.md');

@@ -20,9 +20,10 @@ export default function AdminDocumentazionePage() {
   const { user, isLoading } = useAuth();
   
   // Fetch documentazione ProhMed completa
-  const { data: prohmedDocs, isLoading: isLoadingDocs } = useQuery({
+  const { data: prohmedDocs, isLoading: isLoadingDocs, error: docsError } = useQuery({
     queryKey: ['/api/admin/prohmed-docs'],
     enabled: !!(user as any)?.isAdmin,
+    retry: 1,
   });
 
   if (isLoading) {
@@ -321,9 +322,14 @@ export default function AdminDocumentazionePage() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <p className="text-sm text-red-600 dark:text-red-400">
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-2">
                       Errore nel caricamento della documentazione
                     </p>
+                    {docsError && (
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {(docsError as any)?.message || 'Verifica di essere autenticato come admin'}
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>

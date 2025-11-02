@@ -8,7 +8,15 @@ CIRY provides a REST API v1 for external app integration (e.g., ProhMed Android/
 - **Medical History Context**: Apps can pass patient data (age, gender, allergies, chronic conditions, medications, surgeries) when creating triage sessions
 - **Data Storage**: Triage sessions and medical history are stored on CIRY database, associated with external app's userId
 - **Doctor Contact Flag**: API returns `requiresDoctorContact: true` when AI recommends medical consultation - external app intercepts this to redirect to booking/appointments
-- **Authentication**: SHA-256 hashed API keys with scope-based permissions and rate limiting (60 req/min default)
+- **Authentication**: SHA-256 hashed API keys with scope-based permissions and rate limiting (120 req/min production default)
+- **Production API Key**: `ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM` (120 req/min, scopes: triage:read, triage:write)
+- **Developer Documentation**: `docs/API_INTEGRATION_PROHMED.md` - Complete technical documentation for ProhMed developers including:
+  - Architecture overview and data separation principles
+  - Full API reference with TypeScript types
+  - React Native and Flutter integration examples
+  - Error handling patterns and best practices
+  - Testing guides and cURL examples
+  - FAQ and troubleshooting section
 
 # User Preferences
 

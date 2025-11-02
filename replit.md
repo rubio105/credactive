@@ -67,7 +67,26 @@ PostgreSQL, managed by Drizzle ORM, handles data for users, subscriptions, medic
 - **Build Systems**: Vite for frontend, esbuild for backend.
 - **Version Control**: GitHub.
 - **Environment Configuration**: Environment variables loaded from `.env` with critical `VITE_*` variables needing export before build.
-- **Deployment Workflow**: Involves pushing to GitHub, SSHing to server, pulling changes, exporting env vars, building, restarting PM2, and purging Cloudflare cache.
+- **Deployment Workflow**:
+  ```bash
+  # 1. On Replit: commit changes
+  git add .
+  git commit -m "description"
+  git push
+  
+  # 2. On server (157.180.21.147)
+  cd /var/www/credactive
+  git pull
+  rm -rf dist/
+  export VITE_STRIPE_PUBLIC_KEY="pk_live_51QGqOLRoBZjvt9q7aJusgvh5IvdlNNKglLEAZABJamBBs8A24ILYZFMUQVBYARwj9FNw79wUy58rTbw1sKtWDHMi007yDdPpnx"
+  npm run build
+  pm2 restart credactive
+  
+  # 3. CRITICAL: Purge Cloudflare cache (ALWAYS after deploy)
+  # Go to dash.cloudflare.com → ciry.app → Caching → Purge Everything
+  # Or wait 30s then test with CTRL+SHIFT+R
+  ```
+- **Cache Management**: **ALWAYS purge Cloudflare cache after every deploy** or changes won't be visible to users. Users must use CTRL+SHIFT+R (hard refresh) to see updates immediately.
 
 # External Dependencies
 

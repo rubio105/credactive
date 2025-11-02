@@ -539,6 +539,8 @@ async function generateTriageResponseWithGemini(
   userBio?: string | null
 ): Promise<TriageResponse> {
   try {
+    console.log('[Gemini] Generating response with language:', language);
+    
     const contextInfo = documentContext 
       ? `\n\nRELEVANT MEDICAL DOCUMENTATION (User's personal reports):\n${documentContext}`
       : "";
@@ -576,7 +578,7 @@ IMPORTANT: Consider this complete health profile when:
 - Explain concepts in accessible terms
 - Focus on practical, actionable advice
 - Be empathetic and supportive
-- Translate medical terms into plain Italian`;
+- Translate medical terms into plain language for their understanding`;
 
     const systemPrompt = `You are "AI Prohmed", an educational assistant specialized in teaching prevention strategies.
 Your mission is to help users LEARN how to prevent health issues through their personal cases.
@@ -621,7 +623,7 @@ MEDICAL REPORTS FOR PERSONALIZATION:
 - Use reports to tailor prevention education to their specific health profile
 
 LANGUAGE & TONE:
-- Respond in ${language === 'en' ? 'English' : language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : 'Italian'} naturally and conversationally
+- Respond in ${language === 'en' ? 'English' : language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : language === 'de' ? 'German' : 'Italian'} naturally and conversationally
 - Be motivating and positive about prevention benefits
 - Avoid medical jargon - explain in simple terms
 - Celebrate small steps toward healthier habits
@@ -629,7 +631,7 @@ LANGUAGE & TONE:
 
 Respond with JSON in this exact format:
 {
-  "message": "your educational response in ${language === 'en' ? 'English' : language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : 'Italian'}, teaching prevention strategies",
+  "message": "your educational response in ${language === 'en' ? 'English' : language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : language === 'de' ? 'German' : 'Italian'}, teaching prevention strategies",
   "isSensitive": boolean (mental health, chronic conditions, or private topics),
   "suggestDoctor": boolean (if immediate medical attention recommended),
   "urgencyLevel": "low" | "medium" | "high" | "emergency",

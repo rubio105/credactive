@@ -2282,5 +2282,50 @@ export const insertMLTrainingDataSchema = createInsertSchema(mlTrainingData).omi
 });
 export type InsertMLTrainingData = z.infer<typeof insertMLTrainingDataSchema>;
 
+// ========== EXTERNAL API KEYS ==========
+
+// API Keys for external app integrations (triage API, etc.)
+export const apiKeys = pgTable("api_keys", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // API key metadata
+  name: varchar("name", { length: 200 }).notNull(), // Descriptive name (e.g., "Mobile App Prod")
+  keyHash: varchar("key_hash", { length: 255 }).notNull().unique(), // SHA-256 hash of the API key
+  keyPrefix: varchar("key_prefix", { length: 20 }).notNull(), // First 8 chars for display (e.g., "ciry_abc")
+  
+  // Permissions and scopes
+  scopes: jsonb("scopes").notNull(), // Array of allowed endpoints: ["triage", "reports", "users"]
+  active: boolean("active").default(true).notNull(),
+  
+  // Usage tracking
+  lastUsedAt: timestamp("last_used_at"),
+  requestCount: integer("request_count").default(0),
+  
+  // Rate limiting
+  rateLimitPerMinute: integer("rate_limit_per_minute").default(60), // Max requests per minute
+  
+  // Owner
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }), // Admin who created the key
+  
+  // Metadata
+  expiresAt: timestamp("expires_at"), // Optional expiry date
+  createdAt: timestamp("created_at").defaultNow(),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => [
+  index("idx_api_key_hash").on(table.keyHash),
+  index("idx_api_key_active").on(table.active),
+  index("idx_api_key_created_by").on(table.createdBy),
+]);
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
+  id: true,
+  createdAt: true,
+  requestCount: true,
+  lastUsedAt: true,
+  revokedAt: true,
+});
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

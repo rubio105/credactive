@@ -40,6 +40,7 @@ import {
   subscriptionPlans,
   medicalKnowledgeBase,
   medicalKnowledgeChunks,
+  apiKeys,
   type User,
   type UpsertUser,
   type Category,
@@ -207,6 +208,8 @@ import {
   notifications,
   type Notification,
   type InsertNotification,
+  type ApiKey,
+  type InsertApiKey,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, sql, and, or, gte, lte, inArray } from "drizzle-orm";
@@ -696,6 +699,15 @@ export interface IStorage {
   markNotificationAsRead(notificationId: string): Promise<void>;
   markAllNotificationsAsRead(userId: string): Promise<void>;
   getUnreadNotificationCount(userId: string): Promise<number>;
+
+  // ========== EXTERNAL API KEYS ==========
+
+  // API Key operations
+  createApiKey(name: string, scopes: string[], createdBy: string, rateLimitPerMinute?: number, expiresAt?: Date): Promise<{ id: string; key: string }>;
+  validateApiKey(keyHash: string): Promise<ApiKey | undefined>;
+  listApiKeys(activeOnly?: boolean): Promise<ApiKey[]>;
+  revokeApiKey(id: string): Promise<void>;
+  updateApiKeyUsage(keyHash: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4417,6 +4429,92 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return result[0]?.count || 0;
+  }
+
+  // ========== EXTERNAL API KEYS ==========
+
+  async createApiKey(name: string, scopes: string[], createdBy: string, rateLimitPerMinute: number = 60, expiresAt?: Date): Promise<{ id: string; key: string }> {
+    const crypto = await import('crypto');
+    
+    // Generate API key: ciry_<random_32_chars>
+    const randomBytes = crypto.randomBytes(24);
+    const key = `ciry_${randomBytes.toString('base64url')}`;
+    
+    // Hash the key for storage (SHA-256)
+    const keyHash = crypto.createHash('sha256').update(key).digest('hex');
+    
+    // Extract prefix for display (first 12 chars)
+    const keyPrefix = key.substring(0, 12);
+    
+    const [created] = await db
+      .insert(apiKeys)
+      .values({
+        name,
+        keyHash,
+        keyPrefix,
+        scopes: scopes as any,
+        active: true,
+        rateLimitPerMinute,
+        createdBy,
+        expiresAt: expiresAt || null,
+      })
+      .returning();
+    
+    // Return the plaintext key ONLY once (never stored)
+    return { id: created.id, key };
+  }
+
+  async validateApiKey(keyHash: string): Promise<ApiKey | undefined> {
+    const [key] = await db
+      .select()
+      .from(apiKeys)
+      .where(
+        and(
+          eq(apiKeys.keyHash, keyHash),
+          eq(apiKeys.active, true),
+          or(
+            sql`${apiKeys.expiresAt} IS NULL`,
+            sql`${apiKeys.expiresAt} > NOW()`
+          )
+        )
+      );
+    
+    return key;
+  }
+
+  async listApiKeys(activeOnly: boolean = false): Promise<ApiKey[]> {
+    if (activeOnly) {
+      return await db
+        .select()
+        .from(apiKeys)
+        .where(eq(apiKeys.active, true))
+        .orderBy(desc(apiKeys.createdAt));
+    }
+    
+    return await db
+      .select()
+      .from(apiKeys)
+      .orderBy(desc(apiKeys.createdAt));
+  }
+
+  async revokeApiKey(id: string): Promise<void> {
+    await db
+      .update(apiKeys)
+      .set({ 
+        active: false,
+        revokedAt: new Date(),
+      })
+      .where(eq(apiKeys.id, id));
+  }
+
+  async updateApiKeyUsage(keyHash: string): Promise<void> {
+    await db
+      .update(apiKeys)
+      .set({
+        lastUsedAt: new Date(),
+        requestCount: sql`${apiKeys.requestCount} + 1`,
+      })
+      .where(eq(apiKeys.keyHash, keyHash));
   }
 }
 

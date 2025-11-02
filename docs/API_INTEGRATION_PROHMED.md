@@ -216,6 +216,7 @@ X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM
 {
   "userId": "prohmed_user_12345",
   "initialSymptoms": "Mal di testa persistente da 3 giorni, nausea, sensibilità alla luce",
+  "language": "it",
   "medicalHistory": {
     "age": 35,
     "gender": "female",
@@ -233,6 +234,7 @@ X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM
 |-------|------|--------------|-------------|
 | `userId` | `string` | ✅ Sì | Identificativo univoco paziente su ProhMed |
 | `initialSymptoms` | `string` | ✅ Sì | Descrizione iniziale sintomi (min 10 char) |
+| `language` | `"it" \| "en" \| "fr" \| "de" \| "es"` | ❌ No | Lingua risposte AI (default: "it") |
 | `medicalHistory` | `object` | ❌ No | Anamnesi paziente (opzionale ma consigliato) |
 | `medicalHistory.age` | `number` | ❌ No | Età paziente |
 | `medicalHistory.gender` | `"male" \| "female" \| "other"` | ❌ No | Sesso biologico |
@@ -1232,7 +1234,43 @@ curl -X POST 'https://ciry.app/api/v1/triage/sessions' \
   }'
 ```
 
-**Test 3: Inviare messaggio**:
+**Test 3: Sessione in inglese**:
+```bash
+curl -X POST 'https://ciry.app/api/v1/triage/sessions' \
+  -H "X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "userId": "test_user_003_en",
+    "initialSymptoms": "Severe chest pain for 2 hours, cold sweat",
+    "language": "en",
+    "medicalHistory": {
+      "age": 58,
+      "gender": "male",
+      "chronicConditions": ["hypertension", "type 2 diabetes"],
+      "currentMedications": ["ramipril 10mg", "metformin 1000mg"],
+      "allergies": ["penicillin"]
+    }
+  }'
+```
+
+**Test 4: Sessione in francese**:
+```bash
+curl -X POST 'https://ciry.app/api/v1/triage/sessions' \
+  -H "X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "userId": "test_user_004_fr",
+    "initialSymptoms": "Mal de tête persistant depuis 3 jours",
+    "language": "fr",
+    "medicalHistory": {
+      "age": 35,
+      "gender": "female",
+      "allergies": ["pénicilline"]
+    }
+  }'
+```
+
+**Test 5: Inviare messaggio**:
 ```bash
 # Prima salva sessionId dalla risposta precedente
 SESSION_ID="c2e50230-6d37-4c99-8e8e-6118fb21221c"
@@ -1245,7 +1283,7 @@ curl -X POST "https://ciry.app/api/v1/triage/sessions/${SESSION_ID}/messages" \
   }'
 ```
 
-**Test 4: Recuperare storico**:
+**Test 6: Recuperare storico**:
 ```bash
 curl -X GET "https://ciry.app/api/v1/triage/sessions/${SESSION_ID}/messages" \
   -H "X-API-Key: ciry_Ldv1ZgklZhJq9AERbZfuf0ic-14U1-DTLYNmwBq4tuM"
@@ -1381,7 +1419,23 @@ CIRY ha timeout di 60s per risposte AI. Se timeout:
 
 ### Q7: API supporta multilingua?
 
-Attualmente solo **Italiano**. AI risponde in italiano basandosi su training dati italiani.
+**Sì!** L'API supporta 5 lingue:
+- `"it"` - Italiano (default)
+- `"en"` - English
+- `"fr"` - Français
+- `"de"` - Deutsch
+- `"es"` - Español
+
+**Come usarlo**:
+```json
+{
+  "userId": "prohmed_user_123",
+  "initialSymptoms": "Persistent headache for 3 days",
+  "language": "en"
+}
+```
+
+La lingua si imposta alla creazione della sessione e rimane costante per tutta la conversazione. Le risposte AI saranno nella lingua scelta.
 
 ---
 

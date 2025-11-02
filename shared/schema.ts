@@ -1320,6 +1320,9 @@ export const triageSessions = pgTable("triage_sessions", {
   // Context
   documentContext: text("document_context"), // Relevant prevention document excerpts
   
+  // Medical history context (for external API integrations like ProhMed)
+  medicalHistory: jsonb("medical_history"), // { age, gender, allergies[], chronicConditions[], currentMedications[], previousSurgeries[] }
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   closedAt: timestamp("closed_at"),
@@ -1332,6 +1335,17 @@ export const insertTriageSessionSchema = createInsertSchema(triageSessions).omit
   updatedAt: true,
 });
 export type InsertTriageSession = z.infer<typeof insertTriageSessionSchema>;
+
+// Medical History schema for external API integrations (e.g., ProhMed)
+export const medicalHistorySchema = z.object({
+  age: z.number().int().min(0).max(150).optional(),
+  gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
+  allergies: z.array(z.string()).optional(), // e.g., ["Penicillina", "Lattosio"]
+  chronicConditions: z.array(z.string()).optional(), // e.g., ["Diabete tipo 2", "Ipertensione"]
+  currentMedications: z.array(z.string()).optional(), // e.g., ["Metformina 500mg", "Ramipril 5mg"]
+  previousSurgeries: z.array(z.string()).optional(), // e.g., ["Appendicectomia 2018", "Colecistectomia 2020"]
+}).optional();
+export type MedicalHistory = z.infer<typeof medicalHistorySchema>;
 
 // Triage Messages (conversation messages)
 export const triageMessages = pgTable("triage_messages", {

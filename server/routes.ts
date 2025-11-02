@@ -11636,6 +11636,228 @@ Format as JSON: {
     }
   });
 
+  // ========== EXTERNAL TRIAGE API (v1) ==========
+  
+  const { authenticateApiKey, apiRateLimiter } = await import('./apiMiddleware');
+  
+  // Create triage session (POST /api/v1/triage/sessions)
+  app.post('/api/v1/triage/sessions', authenticateApiKey, apiRateLimiter, async (req, res) => {
+    try {
+      const { userId, metadata } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'Bad Request', message: 'userId is required' });
+      }
+      
+      // Create new triage session for the user
+      const session = await storage.createTriageSession({
+        userId,
+        status: 'active',
+      });
+      
+      res.status(201).json({
+        sessionId: session.id,
+        userId: session.userId,
+        status: session.status,
+        createdAt: session.createdAt,
+      });
+    } catch (error: any) {
+      console.error('Create triage session error:', error);
+      res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+  });
+  
+  // Get user's triage sessions (GET /api/v1/triage/sessions)
+  app.get('/api/v1/triage/sessions', authenticateApiKey, apiRateLimiter, async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId || typeof userId !== 'string') {
+        return res.status(400).json({ error: 'Bad Request', message: 'userId query parameter is required' });
+      }
+      
+      const sessions = await storage.getTriageSessionsByUser(userId);
+      
+      res.json({
+        sessions: sessions.map(s => ({
+          sessionId: s.id,
+          userId: s.userId,
+          status: s.status,
+          createdAt: s.createdAt,
+        })),
+      });
+    } catch (error: any) {
+      console.error('Get triage sessions error:', error);
+      res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+  });
+  
+  // Get triage session details (GET /api/v1/triage/sessions/:sessionId)
+  app.get('/api/v1/triage/sessions/:sessionId', authenticateApiKey, apiRateLimiter, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      const session = await storage.getTriageSessionById(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Not Found', message: 'Session not found' });
+      }
+      
+      res.json({
+        sessionId: session.id,
+        userId: session.userId,
+        status: session.status,
+        createdAt: session.createdAt,
+      });
+    } catch (error: any) {
+      console.error('Get triage session error:', error);
+      res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+  });
+  
+  // Send message in triage session (POST /api/v1/triage/sessions/:sessionId/messages)
+  app.post('/api/v1/triage/sessions/:sessionId/messages', authenticateApiKey, apiRateLimiter, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { message, userContext } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'Bad Request', message: 'message is required' });
+      }
+      
+      const session = await storage.getTriageSessionById(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Not Found', message: 'Session not found' });
+      }
+      
+      // Save user message
+      const userMsg = await storage.createTriageMessage({
+        sessionId,
+        role: 'user',
+        content: message,
+      });
+      
+      // Generate AI response with medical context
+      const response = await generateTriageResponse(message, userContext || {});
+      
+      // Save AI message
+      const aiMsg = await storage.createTriageMessage({
+        sessionId,
+        role: 'assistant',
+        content: response.content,
+      });
+      
+      res.json({
+        sessionId,
+        userMessage: {
+          id: userMsg.id,
+          role: 'user',
+          content: userMsg.content,
+          timestamp: userMsg.createdAt,
+        },
+        aiResponse: {
+          id: aiMsg.id,
+          role: 'assistant',
+          content: response.content,
+          timestamp: aiMsg.createdAt,
+        },
+        metadata: {
+          urgencyLevel: response.urgency || 'MEDIUM',
+          recommendedActions: response.recommendations || [],
+          disclaimer: 'Questo servizio non sostituisce un consulto medico professionale.',
+        },
+      });
+    } catch (error: any) {
+      console.error('Send triage message error:', error);
+      res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+  });
+  
+  // Get triage session messages (GET /api/v1/triage/sessions/:sessionId/messages)
+  app.get('/api/v1/triage/sessions/:sessionId/messages', authenticateApiKey, apiRateLimiter, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { limit = 50, offset = 0 } = req.query;
+      
+      const session = await storage.getTriageSessionById(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Not Found', message: 'Session not found' });
+      }
+      
+      const messages = await storage.getTriageMessagesBySession(sessionId);
+      
+      // Apply pagination
+      const paginatedMessages = messages
+        .slice(Number(offset), Number(offset) + Number(limit));
+      
+      res.json({
+        sessionId,
+        messages: paginatedMessages.map(m => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: m.createdAt,
+        })),
+        pagination: {
+          total: messages.length,
+          limit: Number(limit),
+          offset: Number(offset),
+        },
+      });
+    } catch (error: any) {
+      console.error('Get triage messages error:', error);
+      res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+  });
+  
+  // Get triage session AI summary (GET /api/v1/triage/sessions/:sessionId/summaries)
+  app.get('/api/v1/triage/sessions/:sessionId/summaries', authenticateApiKey, apiRateLimiter, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      const session = await storage.getTriageSessionById(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Not Found', message: 'Session not found' });
+      }
+      
+      const messages = await storage.getTriageMessagesBySession(sessionId);
+      
+      if (messages.length === 0) {
+        return res.status(404).json({ error: 'Not Found', message: 'No messages in session' });
+      }
+      
+      // Generate AI summary from conversation history
+      const conversationText = messages
+        .map(m => `${m.role === 'user' ? 'Paziente' : 'AI'}: ${m.content}`)
+        .join('\n\n');
+      
+      const summaryPrompt = `Analizza questa conversazione di triage medico e genera un sommario strutturato:
+
+${conversationText}
+
+Fornisci:
+1. Sintomi principali menzionati
+2. Livello di urgenza (LOW/MEDIUM/HIGH/EMERGENCY)
+3. Raccomandazioni immediate
+4. Note per il medico`;
+      
+      const summary = await generateGeminiContent(summaryPrompt, 'gemini-2.0-flash-exp');
+      
+      res.json({
+        sessionId,
+        summary: summary.text,
+        generatedAt: new Date().toISOString(),
+        disclaimer: 'Questo sommario è generato da AI e non sostituisce una valutazione medica professionale.',
+      });
+    } catch (error: any) {
+      console.error('Get triage summary error:', error);
+      res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+  });
+
   // Universal Prohmed App Download Link (GET /download-prohmed)
   // Detects device and redirects to appropriate app store
   app.get('/download-prohmed', (req, res) => {

@@ -61,9 +61,10 @@ export async function authenticateApiKey(req: Request, res: Response, next: Next
     }
     
     // Check if key has required scope for this endpoint
-    const requiredScope = getRequiredScope(req.path);
+    const requiredScope = getRequiredScope(req.path, req.method);
     const scopes = apiKey.scopes as string[];
-    if (requiredScope && !scopes.includes(requiredScope)) {
+    
+    if (requiredScope && !hasRequiredScope(scopes, requiredScope)) {
       return res.status(403).json({
         error: 'Forbidden',
         message: `API key does not have required scope: ${requiredScope}`,
@@ -160,13 +161,41 @@ export function apiRateLimiter(req: Request, res: Response, next: NextFunction) 
 }
 
 /**
- * Helper: Determine required scope based on API path
+ * Helper: Determine required scope based on API path and HTTP method
  */
-function getRequiredScope(path: string): string | null {
+function getRequiredScope(path: string, method: string): string | null {
   if (path.startsWith('/api/v1/triage')) {
-    return 'triage';
+    // Check if read or write operation
+    const isWriteOperation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+    return isWriteOperation ? 'triage:write' : 'triage:read';
   }
   
   // Add more scope mappings as needed
   return null;
+}
+
+/**
+ * Helper: Check if API key has required scope
+ * Supports exact match and wildcard (e.g., triage:* grants all triage operations)
+ */
+function hasRequiredScope(scopes: string[], requiredScope: string): boolean {
+  // Check for exact match
+  if (scopes.includes(requiredScope)) {
+    return true;
+  }
+  
+  // Check for wildcard (e.g., "triage:*" grants all "triage:read" and "triage:write")
+  const [requiredResource] = requiredScope.split(':');
+  if (scopes.includes(`${requiredResource}:*`)) {
+    return true;
+  }
+  
+  // Legacy support: if key has both :read and :write, it's equivalent to :*
+  const hasRead = scopes.includes(`${requiredResource}:read`);
+  const hasWrite = scopes.includes(`${requiredResource}:write`);
+  if (hasRead && hasWrite) {
+    return true;
+  }
+  
+  return false;
 }

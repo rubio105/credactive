@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Server, 
   Database, 
@@ -17,6 +18,12 @@ import {
 
 export default function AdminDocumentazionePage() {
   const { user, isLoading } = useAuth();
+  
+  // Fetch documentazione ProhMed completa
+  const { data: prohmedDocs, isLoading: isLoadingDocs } = useQuery({
+    queryKey: ['/api/admin/prohmed-docs'],
+    enabled: !!(user as any)?.isAdmin,
+  });
 
   if (isLoading) {
     return (
@@ -283,70 +290,42 @@ export default function AdminDocumentazionePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>📚 Documentazione Completa (1500+ righe)</CardTitle>
+                <CardTitle>📚 Documentazione Completa (1503 righe)</CardTitle>
                 <CardDescription>
                   Documentazione tecnica completa con esempi React Native, Flutter, TypeScript types, testing multilingua e FAQ
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-blue-900 dark:text-blue-100 mb-2">
-                        📥 <strong>Download Documentazione Completa</strong>
-                      </p>
-                      <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-                        File: <code>docs/API_INTEGRATION_PROHMED.md</code> (1503 righe)
-                      </p>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>Panoramica architettura e separazione responsabilità</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>Autenticazione e sicurezza (API keys, headers, HTTPS)</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>Reference completa API con tutti gli endpoint</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>TypeScript types e strutture dati</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>Error handling e retry logic</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>Esempi completi React Native e Flutter</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>Testing cURL per 5 lingue (it/en/fr/de/es)</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>Best practices e pattern consigliati</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600">✓</span>
-                          <span>FAQ con 10+ domande comuni</span>
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          💡 Per consultare il file completo: accedi al server via SSH e visualizza 
-                          <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded ml-1">
-                            /var/www/credactive/docs/API_INTEGRATION_PROHMED.md
-                          </code>
-                        </p>
-                      </div>
+                {isLoadingDocs ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-sm text-muted-foreground">Caricamento documentazione...</p>
                     </div>
                   </div>
-                </div>
+                ) : prohmedDocs ? (
+                  <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                        📄 API_INTEGRATION_PROHMED.md - Documentazione Completa
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        Scroll per navigare • 1503 righe • Aggiornato: 2 Novembre 2025
+                      </p>
+                    </div>
+                    <div className="max-h-[600px] overflow-y-auto">
+                      <pre className="p-6 text-xs leading-relaxed whitespace-pre-wrap font-mono text-gray-800 dark:text-gray-200">
+                        {prohmedDocs}
+                      </pre>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      Errore nel caricamento della documentazione
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

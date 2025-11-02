@@ -11709,6 +11709,27 @@ Format as JSON: {
     }
   });
 
+  // Endpoint per servire documentazione API ProhMed (solo admin)
+  app.get('/api/admin/prohmed-docs', async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const docPath = path.join(process.cwd(), 'docs', 'API_INTEGRATION_PROHMED.md');
+      const content = await fs.readFile(docPath, 'utf-8');
+      
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.send(content);
+    } catch (error: any) {
+      console.error('Error reading ProhMed docs:', error);
+      res.status(500).json({ error: 'Failed to load documentation' });
+    }
+  });
+
   // ========== EXTERNAL TRIAGE API (v1) ==========
   
   const { authenticateApiKey, apiRateLimiter } = await import('./apiMiddleware');

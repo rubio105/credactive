@@ -2,6 +2,14 @@
 
 CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform that uses AI for medical document analysis, patient-doctor communication, and preventive health monitoring. It aims to improve patient outcomes through early detection and personalized health management, initially leveraging Google Gemini AI with a strategic plan to transition to proprietary ML models via Active Learning.
 
+## External API Integration (ProhMed)
+
+CIRY provides a REST API v1 for external app integration (e.g., ProhMed Android/iOS app). The API supports:
+- **Medical History Context**: Apps can pass patient data (age, gender, allergies, chronic conditions, medications, surgeries) when creating triage sessions
+- **Data Storage**: Triage sessions and medical history are stored on CIRY database, associated with external app's userId
+- **Doctor Contact Flag**: API returns `requiresDoctorContact: true` when AI recommends medical consultation - external app intercepts this to redirect to booking/appointments
+- **Authentication**: SHA-256 hashed API keys with scope-based permissions and rate limiting (60 req/min default)
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

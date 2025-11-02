@@ -2619,6 +2619,77 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // ========== ADMIN - API KEYS MANAGEMENT ==========
+
+  // Create API Key
+  app.post('/api/admin/api-keys', isAdmin, async (req, res) => {
+    try {
+      const { name, scopes, rateLimitPerMinute, expiresAt } = req.body;
+      const user = req.user as any;
+
+      if (!name || !scopes || !Array.isArray(scopes)) {
+        return res.status(400).json({ message: 'Name and scopes (array) are required' });
+      }
+
+      const result = await storage.createApiKey(
+        name,
+        scopes,
+        user.id,
+        rateLimitPerMinute || 60,
+        expiresAt ? new Date(expiresAt) : undefined
+      );
+
+      res.status(201).json({
+        success: true,
+        apiKey: result.key, // ⚠️ ONLY TIME the plaintext key is returned
+        id: result.id,
+        message: 'API key created successfully. Save this key securely - it cannot be retrieved again.',
+      });
+    } catch (error: any) {
+      console.error('Create API key error:', error);
+      res.status(500).json({ message: error.message || 'Failed to create API key' });
+    }
+  });
+
+  // List API Keys
+  app.get('/api/admin/api-keys', isAdmin, async (req, res) => {
+    try {
+      const { activeOnly } = req.query;
+      const keys = await storage.listApiKeys(activeOnly === 'true');
+
+      res.json({
+        apiKeys: keys.map(k => ({
+          id: k.id,
+          name: k.name,
+          keyPrefix: k.keyPrefix, // Only prefix shown (e.g., "ciry_abc...")
+          scopes: k.scopes,
+          active: k.active,
+          rateLimitPerMinute: k.rateLimitPerMinute,
+          lastUsedAt: k.lastUsedAt,
+          requestCount: k.requestCount,
+          expiresAt: k.expiresAt,
+          createdAt: k.createdAt,
+          revokedAt: k.revokedAt,
+        })),
+      });
+    } catch (error: any) {
+      console.error('List API keys error:', error);
+      res.status(500).json({ message: error.message || 'Failed to list API keys' });
+    }
+  });
+
+  // Revoke API Key
+  app.delete('/api/admin/api-keys/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.revokeApiKey(id);
+      res.json({ success: true, message: 'API key revoked successfully' });
+    } catch (error: any) {
+      console.error('Revoke API key error:', error);
+      res.status(500).json({ message: error.message || 'Failed to revoke API key' });
+    }
+  });
+
   // Admin - Create user
   app.post('/api/admin/users', isAdmin, async (req, res) => {
     try {
@@ -11639,6 +11710,211 @@ Format as JSON: {
   // ========== EXTERNAL TRIAGE API (v1) ==========
   
   const { authenticateApiKey, apiRateLimiter } = await import('./apiMiddleware');
+  
+  // API Documentation (GET /api/v1/docs)
+  app.get('/api/v1/docs', (req, res) => {
+    const docs = {
+      title: 'CIRY Triage API v1',
+      version: '1.0.0',
+      description: 'External API for integrating CIRY AI-powered medical triage system into external applications',
+      baseUrl: req.protocol + '://' + req.get('host'),
+      authentication: {
+        type: 'API Key',
+        header: 'X-API-Key',
+        description: 'Obtain an API key from the CIRY admin dashboard. Contact your administrator to generate keys.',
+      },
+      rateLimits: {
+        default: '60 requests per minute per API key',
+        headers: {
+          'X-RateLimit-Limit': 'Maximum requests per minute',
+          'X-RateLimit-Remaining': 'Remaining requests in current window',
+          'X-RateLimit-Reset': 'Time when rate limit resets (ISO 8601)',
+          'Retry-After': 'Seconds to wait before retrying (only when rate limited)',
+        },
+      },
+      endpoints: [
+        {
+          method: 'POST',
+          path: '/api/v1/triage/sessions',
+          description: 'Create a new triage session for a user',
+          authentication: true,
+          requestBody: {
+            userId: 'string (required) - User ID from your system',
+            metadata: 'object (optional) - Additional metadata',
+          },
+          response: {
+            sessionId: 'string - Unique session identifier',
+            userId: 'string - User ID',
+            status: 'string - Session status (active/completed)',
+            createdAt: 'string (ISO 8601) - Creation timestamp',
+          },
+          exampleCurl: `curl -X POST '${req.protocol}://${req.get('host')}/api/v1/triage/sessions' \\
+  -H 'X-API-Key: YOUR_API_KEY' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"userId": "user123"}'`,
+        },
+        {
+          method: 'GET',
+          path: '/api/v1/triage/sessions',
+          description: 'Get all triage sessions for a user',
+          authentication: true,
+          queryParameters: {
+            userId: 'string (required) - Filter sessions by user ID',
+          },
+          response: {
+            sessions: 'array - List of session objects',
+          },
+          exampleCurl: `curl '${req.protocol}://${req.get('host')}/api/v1/triage/sessions?userId=user123' \\
+  -H 'X-API-Key: YOUR_API_KEY'`,
+        },
+        {
+          method: 'GET',
+          path: '/api/v1/triage/sessions/:sessionId',
+          description: 'Get details of a specific triage session',
+          authentication: true,
+          pathParameters: {
+            sessionId: 'string - Session ID',
+          },
+          response: {
+            sessionId: 'string',
+            userId: 'string',
+            status: 'string',
+            createdAt: 'string (ISO 8601)',
+          },
+          exampleCurl: `curl '${req.protocol}://${req.get('host')}/api/v1/triage/sessions/SESSION_ID' \\
+  -H 'X-API-Key: YOUR_API_KEY'`,
+        },
+        {
+          method: 'POST',
+          path: '/api/v1/triage/sessions/:sessionId/messages',
+          description: 'Send a message in a triage session and receive AI response',
+          authentication: true,
+          pathParameters: {
+            sessionId: 'string - Session ID',
+          },
+          requestBody: {
+            message: 'string (required) - User message/symptom description',
+            userContext: 'object (optional) - Additional context (age, gender, medical history)',
+          },
+          response: {
+            sessionId: 'string',
+            userMessage: 'object - User message details',
+            aiResponse: 'object - AI-generated medical response',
+            metadata: {
+              urgencyLevel: 'string - Urgency level (LOW/MEDIUM/HIGH/EMERGENCY)',
+              recommendedActions: 'array - List of recommended actions',
+              disclaimer: 'string - Medical disclaimer',
+            },
+          },
+          exampleCurl: `curl -X POST '${req.protocol}://${req.get('host')}/api/v1/triage/sessions/SESSION_ID/messages' \\
+  -H 'X-API-Key: YOUR_API_KEY' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"message": "Ho mal di testa da 2 giorni", "userContext": {"age": 35, "gender": "male"}}'`,
+        },
+        {
+          method: 'GET',
+          path: '/api/v1/triage/sessions/:sessionId/messages',
+          description: 'Get message history for a triage session',
+          authentication: true,
+          pathParameters: {
+            sessionId: 'string - Session ID',
+          },
+          queryParameters: {
+            limit: 'number (optional, default: 50) - Max messages to return',
+            offset: 'number (optional, default: 0) - Pagination offset',
+          },
+          response: {
+            sessionId: 'string',
+            messages: 'array - List of messages',
+            pagination: {
+              total: 'number - Total messages',
+              limit: 'number - Applied limit',
+              offset: 'number - Applied offset',
+            },
+          },
+          exampleCurl: `curl '${req.protocol}://${req.get('host')}/api/v1/triage/sessions/SESSION_ID/messages?limit=20' \\
+  -H 'X-API-Key: YOUR_API_KEY'`,
+        },
+        {
+          method: 'GET',
+          path: '/api/v1/triage/sessions/:sessionId/summaries',
+          description: 'Get AI-generated summary of a triage session',
+          authentication: true,
+          pathParameters: {
+            sessionId: 'string - Session ID',
+          },
+          response: {
+            sessionId: 'string',
+            summary: 'string - AI-generated medical summary',
+            generatedAt: 'string (ISO 8601)',
+            disclaimer: 'string - Medical disclaimer',
+          },
+          exampleCurl: `curl '${req.protocol}://${req.get('host')}/api/v1/triage/sessions/SESSION_ID/summaries' \\
+  -H 'X-API-Key: YOUR_API_KEY'`,
+        },
+      ],
+      errorCodes: {
+        '400': 'Bad Request - Invalid request parameters',
+        '401': 'Unauthorized - Missing or invalid API key',
+        '403': 'Forbidden - API key lacks required scope or is expired',
+        '404': 'Not Found - Resource not found',
+        '429': 'Too Many Requests - Rate limit exceeded',
+        '500': 'Internal Server Error - Server error occurred',
+      },
+      exampleJavaScript: `
+// Initialize triage session
+const apiKey = 'YOUR_API_KEY';
+const baseUrl = '${req.protocol}://${req.get('host')}';
+
+async function createTriageSession(userId) {
+  const response = await fetch(\`\${baseUrl}/api/v1/triage/sessions\`, {
+    method: 'POST',
+    headers: {
+      'X-API-Key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`HTTP error! status: \${response.status}\`);
+  }
+  
+  return await response.json();
+}
+
+async function sendMessage(sessionId, message, userContext = {}) {
+  const response = await fetch(\`\${baseUrl}/api/v1/triage/sessions/\${sessionId}/messages\`, {
+    method: 'POST',
+    headers: {
+      'X-API-Key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message, userContext }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`HTTP error! status: \${response.status}\`);
+  }
+  
+  return await response.json();
+}
+
+// Usage example
+const session = await createTriageSession('user123');
+const result = await sendMessage(
+  session.sessionId,
+  'Ho mal di testa da 2 giorni',
+  { age: 35, gender: 'male' }
+);
+
+console.log('AI Response:', result.aiResponse.content);
+console.log('Urgency Level:', result.metadata.urgencyLevel);
+      `.trim(),
+    };
+    
+    res.json(docs);
+  });
   
   // Create triage session (POST /api/v1/triage/sessions)
   app.post('/api/v1/triage/sessions', authenticateApiKey, apiRateLimiter, async (req, res) => {

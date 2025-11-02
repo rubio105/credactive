@@ -62,7 +62,8 @@ export async function authenticateApiKey(req: Request, res: Response, next: Next
     
     // Check if key has required scope for this endpoint
     const requiredScope = getRequiredScope(req.path);
-    if (requiredScope && !apiKey.scopes.includes(requiredScope)) {
+    const scopes = apiKey.scopes as string[];
+    if (requiredScope && !scopes.includes(requiredScope)) {
       return res.status(403).json({
         error: 'Forbidden',
         message: `API key does not have required scope: ${requiredScope}`,

@@ -20,10 +20,17 @@ export default function AdminDocumentazionePage() {
   const { user, isLoading } = useAuth();
   
   // Fetch documentazione ProhMed completa
-  const { data: prohmedDocs, isLoading: isLoadingDocs, error: docsError } = useQuery({
+  const { data: prohmedDocs, isLoading: isLoadingDocs, error: docsError } = useQuery<string>({
     queryKey: ['/api/admin/prohmed-docs'],
     enabled: !!(user as any)?.isAdmin,
     retry: 1,
+    queryFn: async () => {
+      const response = await fetch('/api/admin/prohmed-docs');
+      if (!response.ok) {
+        throw new Error('Failed to load documentation');
+      }
+      return response.text(); // Return as text, not JSON
+    },
   });
 
   if (isLoading) {

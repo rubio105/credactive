@@ -55,6 +55,7 @@ interface User {
   isPremium: boolean;
   subscriptionTier: string;
   isAdmin: boolean;
+  isDoctor: boolean;
   aiOnlyAccess: boolean;
   createdAt: string;
 }
@@ -67,6 +68,7 @@ interface NewUser {
   isPremium: boolean;
   subscriptionTier: string;
   isAdmin: boolean;
+  isDoctor: boolean;
   aiOnlyAccess: boolean;
 }
 
@@ -89,6 +91,7 @@ export default function AdminUsers() {
     isPremium: false,
     subscriptionTier: 'free',
     isAdmin: false,
+    isDoctor: false,
     aiOnlyAccess: false,
   });
 
@@ -148,6 +151,7 @@ export default function AdminUsers() {
         isPremium: false,
         subscriptionTier: 'free',
         isAdmin: false,
+        isDoctor: false,
         aiOnlyAccess: false,
       });
     },
@@ -182,6 +186,7 @@ export default function AdminUsers() {
         isPremium: editingUser.subscriptionTier !== 'free',
         subscriptionTier: editingUser.subscriptionTier,
         isAdmin: editingUser.isAdmin,
+        isDoctor: editingUser.isDoctor,
         aiOnlyAccess: editingUser.aiOnlyAccess,
       },
     });
@@ -405,7 +410,7 @@ export default function AdminUsers() {
               <TableHead>Lingua</TableHead>
               <TableHead>Consenso Newsletter</TableHead>
               <TableHead>Premium</TableHead>
-              <TableHead>Admin</TableHead>
+              <TableHead>Ruolo</TableHead>
               <TableHead>Data Registrazione</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
@@ -444,7 +449,12 @@ export default function AdminUsers() {
                   )}
                 </TableCell>
                 <TableCell>
-                  {user.isAdmin && <Badge variant="destructive" data-testid={`badge-admin-${user.id}`}>Admin</Badge>}
+                  <div className="flex gap-1">
+                    {user.isAdmin && <Badge variant="destructive" data-testid={`badge-admin-${user.id}`}>Admin</Badge>}
+                    {user.isDoctor && <Badge variant="default" className="bg-blue-600" data-testid={`badge-doctor-${user.id}`}>Dottore</Badge>}
+                    {user.aiOnlyAccess && <Badge variant="outline" data-testid={`badge-ai-only-${user.id}`}>AI-Only</Badge>}
+                    {!user.isAdmin && !user.isDoctor && !user.aiOnlyAccess && <Badge variant="secondary" data-testid={`badge-patient-${user.id}`}>Paziente</Badge>}
+                  </div>
                 </TableCell>
                 <TableCell>{new Date(user.createdAt).toLocaleDateString('it-IT')}</TableCell>
                 <TableCell className="text-right">
@@ -672,6 +682,15 @@ export default function AdminUsers() {
                 />
               </div>
               <div className="flex items-center justify-between">
+                <Label htmlFor="isDoctor">Dottore</Label>
+                <Switch
+                  id="isDoctor"
+                  checked={editingUser.isDoctor}
+                  onCheckedChange={(checked) => setEditingUser({ ...editingUser, isDoctor: checked })}
+                  data-testid="switch-isDoctor"
+                />
+              </div>
+              <div className="flex items-center justify-between">
                 <Label htmlFor="aiOnlyAccess">Accesso Solo AI</Label>
                 <Switch
                   id="aiOnlyAccess"
@@ -770,6 +789,15 @@ export default function AdminUsers() {
               />
             </div>
             <div className="flex items-center justify-between">
+              <Label htmlFor="newIsDoctor">Dottore</Label>
+              <Switch
+                id="newIsDoctor"
+                checked={newUser.isDoctor}
+                onCheckedChange={(checked) => setNewUser({ ...newUser, isDoctor: checked })}
+                data-testid="switch-new-isDoctor"
+              />
+            </div>
+            <div className="flex items-center justify-between">
               <Label htmlFor="newAiOnlyAccess">Accesso Solo AI</Label>
               <Switch
                 id="newAiOnlyAccess"
@@ -792,6 +820,7 @@ export default function AdminUsers() {
                   isPremium: false,
                   subscriptionTier: 'free',
                   isAdmin: false,
+                  isDoctor: false,
                   aiOnlyAccess: false,
                 });
               }}

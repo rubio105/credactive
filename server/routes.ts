@@ -849,7 +849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             process.env.VAPID_PRIVATE_KEY
           );
 
-          await Promise.allSettled(
+          const results = await Promise.allSettled(
             subscriptions.map(async (sub) => 
               webPush.sendNotification({
                 endpoint: sub.endpoint,
@@ -857,11 +857,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   p256dh: sub.p256dh,
                   auth: sub.auth,
                 },
-              }, payload)
+              }, payload).then(() => sub.endpoint)
             )
           );
           
-          console.log(`[Push] Sent notification to patient ${patientId} for new doctor note`);
+          // Process results and cleanup invalid subscriptions
+          let successCount = 0;
+          let failureCount = 0;
+          
+          for (let i = 0; i < results.length; i++) {
+            const result = results[i];
+            const subscription = subscriptions[i];
+            
+            if (result.status === 'fulfilled') {
+              successCount++;
+            } else {
+              failureCount++;
+              const error = result.reason;
+              
+              // Log the error
+              console.error(`[Push] Failed to send to subscription ${subscription.endpoint.substring(0, 50)}...`, error?.message || error);
+              
+              // Clean up expired/invalid subscriptions (410 Gone, 404 Not Found)
+              if (error?.statusCode === 410 || error?.statusCode === 404) {
+                console.log(`[Push] Removing invalid subscription (${error.statusCode}) for patient ${patientId}`);
+                try {
+                  await storage.deletePushSubscription(subscription.endpoint);
+                } catch (deleteError) {
+                  console.error(`[Push] Failed to delete invalid subscription:`, deleteError);
+                }
+              }
+            }
+          }
+          
+          console.log(`[Push] Notification results for patient ${patientId}: ${successCount} succeeded, ${failureCount} failed (total: ${subscriptions.length})`);
         }
       } catch (pushError) {
         console.error(`[Push] Failed to send notification for doctor note:`, pushError);
@@ -11693,23 +11722,36 @@ Format as JSON: {
         )
       );
 
-      // Clean up stale subscriptions
+      // Process results and clean up stale subscriptions
+      let sent = 0;
+      let failed = 0;
+      
       for (let i = 0; i < results.length; i++) {
         const result = results[i];
-        if (result.status === 'rejected') {
+        const subscription = subscriptions[i];
+        
+        if (result.status === 'fulfilled') {
+          sent++;
+        } else {
+          failed++;
           const error = result.reason as any;
+          
+          // Log detailed error
+          console.error(`[Push] Admin broadcast failed for subscription ${subscription.endpoint.substring(0, 50)}...`, error?.message || error);
+          
           // Delete subscription on permanent failures (410 Gone, 404 Not Found)
           if (error?.statusCode === 410 || error?.statusCode === 404) {
-            console.log(`Deleting stale push subscription: ${subscriptions[i].endpoint}`);
-            await storage.deletePushSubscription(subscriptions[i].endpoint);
+            console.log(`[Push] Removing stale subscription (${error.statusCode}): ${subscription.endpoint.substring(0, 50)}...`);
+            try {
+              await storage.deletePushSubscription(subscription.endpoint);
+            } catch (deleteError) {
+              console.error(`[Push] Failed to delete stale subscription:`, deleteError);
+            }
           }
         }
       }
 
-      const sent = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-
-      console.log(`[Push] Sending response: sent=${sent}, failed=${failed}, total=${subscriptions.length}`);
+      console.log(`[Push] Admin broadcast results: ${sent} succeeded, ${failed} failed (total: ${subscriptions.length})`);
 
       res.json({ 
         success: true, 

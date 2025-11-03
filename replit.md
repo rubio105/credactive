@@ -60,8 +60,12 @@ PostgreSQL, managed by Drizzle ORM, handles data for users, subscriptions, medic
 - **Professional Registration Workflow**: Doctors register via a contact request and admin approval, while patient registration is admin-only.
 
 ### Communication & Notifications
-- **Email Notification Queue**: Intelligent scheduling for template-based transactional emails via Brevo (Sendinblue).
-- **Push Notification System**: Real-time browser notifications using Web Push API, with VAPID keys managed via Replit Secrets. Triggers include doctor notes and admin broadcasts.
+- **Email Notification Queue**: Intelligent scheduling for template-based transactional emails via Brevo (Sendinblube).
+- **Push Notification System**: Real-time browser notifications using Web Push API, with VAPID keys managed via Replit Secrets. Triggers include doctor notes and admin broadcasts. Features:
+  - **Auto-cleanup**: Automatically removes stale subscriptions (HTTP 410/404 errors) from database
+  - **Detailed logging**: Logs every failed subscription with endpoint and error details for debugging
+  - **Success metrics**: Tracks sent/failed counts for monitoring delivery reliability
+  - **Resilient error handling**: Subscription cleanup failures don't block notification flow
 - **In-App Notification System**: Real-time notification bell with unread count, priority levels, custom icons, and click-to-navigate functionality.
 
 ### ML Training Data Collection System (Active Learning)

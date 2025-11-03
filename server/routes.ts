@@ -958,6 +958,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get triage conversation for an alert (doctor access)
+  app.get('/api/doctor/alerts/:alertId/conversation', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
+      }
+
+      const { alertId } = req.params;
+      
+      // Get alert to verify access and get sessionId
+      const alert = await storage.getTriageAlertById(alertId);
+      if (!alert) {
+        return res.status(404).json({ message: "Alert non trovato" });
+      }
+
+      // Verify that this alert belongs to one of doctor's patients
+      const patientAlerts = await storage.getPatientAlertsByDoctor(req.user.id);
+      const hasAccess = patientAlerts.some((a: any) => a.id === alertId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Non hai accesso a questo alert" });
+      }
+
+      // Get the conversation messages
+      const messages = await storage.getTriageMessagesBySession(alert.sessionId);
+      const session = await storage.getTriageSessionById(alert.sessionId);
+
+      res.json({
+        alert,
+        session,
+        messages,
+      });
+    } catch (error) {
+      console.error("Error getting triage conversation:", error);
+      res.status(500).json({ message: "Errore durante il recupero della conversazione" });
+    }
+  });
+
   // Delete doctor note
   app.delete('/api/doctor/notes/:noteId', isAuthenticated, async (req, res) => {
     try {

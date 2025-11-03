@@ -41,7 +41,7 @@ export default function AdminAuditPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
-    resourceType: '',
+    resourceType: 'all',
     userId: '',
     startDate: '',
     endDate: '',
@@ -58,7 +58,7 @@ export default function AdminAuditPage() {
       params.append('limit', '50');
       
       if (appliedFilters.userId) params.append('userId', appliedFilters.userId);
-      if (appliedFilters.resourceType) params.append('resourceType', appliedFilters.resourceType);
+      if (appliedFilters.resourceType && appliedFilters.resourceType !== 'all') params.append('resourceType', appliedFilters.resourceType);
       if (appliedFilters.startDate) params.append('startDate', appliedFilters.startDate);
       if (appliedFilters.endDate) params.append('endDate', appliedFilters.endDate);
 
@@ -103,7 +103,7 @@ export default function AdminAuditPage() {
   const handleExportCSV = () => {
     const params = new URLSearchParams();
     if (appliedFilters.userId) params.append('userId', appliedFilters.userId);
-    if (appliedFilters.resourceType) params.append('resourceType', appliedFilters.resourceType);
+    if (appliedFilters.resourceType && appliedFilters.resourceType !== 'all') params.append('resourceType', appliedFilters.resourceType);
     if (appliedFilters.startDate) params.append('startDate', appliedFilters.startDate);
     if (appliedFilters.endDate) params.append('endDate', appliedFilters.endDate);
 
@@ -117,7 +117,7 @@ export default function AdminAuditPage() {
 
   const handleResetFilters = () => {
     const resetFilters = {
-      resourceType: '',
+      resourceType: 'all',
       userId: '',
       startDate: '',
       endDate: '',
@@ -173,7 +173,7 @@ export default function AdminAuditPage() {
                     <SelectValue placeholder="Tutte" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tutte</SelectItem>
+                    <SelectItem value="all">Tutte</SelectItem>
                     <SelectItem value="health_report">Referti Sanitari</SelectItem>
                     <SelectItem value="prevention_document">Documenti Prevenzione</SelectItem>
                     <SelectItem value="doctor_note">Note Mediche</SelectItem>

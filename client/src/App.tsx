@@ -124,6 +124,9 @@ function Router() {
       <Route path="/admin/users">
         {() => <ProtectedRoute requireNonAiOnly><AdminUsers /></ProtectedRoute>}
       </Route>
+      <Route path="/admin/gestione-utenti">
+        {() => <ProtectedRoute requireNonAiOnly><AdminUsers /></ProtectedRoute>}
+      </Route>
       <Route path="/admin/webinar">
         {() => <ProtectedRoute requireNonAiOnly><AdminWebinar /></ProtectedRoute>}
       </Route>

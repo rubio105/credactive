@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Crown, Sparkles, CheckCircle, Video, Calendar, Headphones, Users, Settings as SettingsIcon, User, Globe, Camera, Upload, Edit2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Crown, Sparkles, CheckCircle, Video, Calendar, Headphones, Users, Settings as SettingsIcon, User, Globe, Camera, Upload, Edit2, MessageCircle, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect } from "react";
@@ -20,6 +21,8 @@ export default function Settings() {
   const [isUploading, setIsUploading] = useState(false);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nickname, setNickname] = useState(user?.nickname || '');
+  const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
+  const [whatsappEnabled, setWhatsappEnabled] = useState(user?.whatsappNotificationsEnabled || false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -81,6 +84,27 @@ export default function Settings() {
     },
   });
 
+  const updateWhatsAppMutation = useMutation({
+    mutationFn: async (data: { whatsappNumber: string; whatsappNotificationsEnabled: boolean }) => {
+      const response = await apiRequest('/api/user/whatsapp-settings', 'PATCH', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      toast({
+        title: "Impostazioni WhatsApp salvate",
+        description: "Le tue preferenze WhatsApp sono state aggiornate con successo",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante il salvataggio delle impostazioni WhatsApp",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSaveNickname = () => {
     if (!nickname || nickname.trim().length === 0) {
       toast({
@@ -101,6 +125,33 @@ export default function Settings() {
     }
 
     updateNicknameMutation.mutate(nickname.trim());
+  };
+
+  const handleSaveWhatsApp = () => {
+    // Validate phone number format if enabled
+    if (whatsappEnabled && (!whatsappNumber || whatsappNumber.trim().length === 0)) {
+      toast({
+        title: "Errore",
+        description: "Inserisci un numero WhatsApp valido per attivare le notifiche",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic phone validation (international format)
+    if (whatsappEnabled && !whatsappNumber.match(/^\+?\d{10,15}$/)) {
+      toast({
+        title: "Formato non valido",
+        description: "Inserisci un numero nel formato internazionale (es. +393331234567)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateWhatsAppMutation.mutate({
+      whatsappNumber: whatsappNumber.trim(),
+      whatsappNotificationsEnabled: whatsappEnabled,
+    });
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,6 +209,15 @@ export default function Settings() {
       setNickname(user.nickname);
     }
   }, [user?.nickname]);
+
+  useEffect(() => {
+    if (user?.whatsappNumber) {
+      setWhatsappNumber(user.whatsappNumber);
+    }
+    if (user?.whatsappNotificationsEnabled !== undefined && user?.whatsappNotificationsEnabled !== null) {
+      setWhatsappEnabled(user.whatsappNotificationsEnabled);
+    }
+  }, [user?.whatsappNumber, user?.whatsappNotificationsEnabled]);
 
   if (isLoading) {
     return (
@@ -636,6 +696,72 @@ export default function Settings() {
                       <p className="text-lg" data-testid="text-user-company">{user.companyName}</p>
                       <Badge variant="secondary" className="ml-2">Accesso Corporate</Badge>
                     </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* WhatsApp Notifications */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-green-600" />
+                  Notifiche WhatsApp
+                </CardTitle>
+                <CardDescription>
+                  Ricevi notifiche importanti via WhatsApp per alert medici urgenti
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-3">
+                    <Bell className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="font-semibold text-sm">Abilita notifiche WhatsApp</p>
+                      <p className="text-xs text-muted-foreground">
+                        Riceverai messaggi solo per alert EMERGENCY
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={whatsappEnabled}
+                    onCheckedChange={setWhatsappEnabled}
+                    data-testid="switch-whatsapp-enabled"
+                  />
+                </div>
+
+                {whatsappEnabled && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Numero WhatsApp</label>
+                    <Input
+                      type="tel"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                      placeholder="+393331234567"
+                      className="font-mono"
+                      data-testid="input-whatsapp-number"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Formato internazionale (es. +39 per Italia, +1 per USA)
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleSaveWhatsApp}
+                  disabled={updateWhatsAppMutation.isPending}
+                  className="w-full"
+                  data-testid="button-save-whatsapp"
+                >
+                  {updateWhatsAppMutation.isPending ? 'Salvataggio...' : 'Salva impostazioni WhatsApp'}
+                </Button>
+
+                {user?.whatsappNotificationsEnabled && user?.whatsappNumber && (
+                  <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      WhatsApp configurato: {user.whatsappNumber}
+                    </p>
                   </div>
                 )}
               </CardContent>

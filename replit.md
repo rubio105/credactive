@@ -79,14 +79,16 @@ PostgreSQL, managed by Drizzle ORM, handles data for users, subscriptions, medic
   - **Interactive Controls**: Play/stop buttons on each AI message, optional auto-play mode
   - **Hands-Free Operation**: Microphone button with visual feedback (red pulse when recording)
 - **Teleconsulto System**: Complete video consultation platform with automated booking and reminders:
-  - **Doctor Availability**: Recurring weekly slots with configurable duration (30/60 min) and appointment types (video/in-person/both)
-  - **Patient Booking Flow**: Complete form with doctor selection, date/time picker, voice input for notes (Web Speech API with proper cleanup)
-  - **Doctor Selection Options**: Patients can choose from linked doctors (with "Collegato" badge) or ProhMed default team (info@prohmed.ai)
+  - **Doctor Availability Management**: Full CRUD operations for recurring weekly slots (create, edit, delete) with configurable duration (30/60 min) and appointment types (video/in-person/both). Doctors access via "Appuntamenti" menu link and "Disponibilità" tab
+  - **Smart Slot Picker**: Real-time availability display showing only free slots from `/api/appointments/available-slots/:doctorId` endpoint - eliminates manual date/time input and prevents double-booking
+  - **Patient Booking Flow**: Complete form with doctor selection (linked doctors show "Collegato" badge), smart slot picker, voice input for notes (Web Speech API with proper cleanup), and back button for navigation
+  - **Doctor Selection Options**: Patients can choose from linked doctors or ProhMed default team (info@prohmed.ai)
   - **Navigation Integration**: "Contatta il medico" button in prevention path dialog navigates to `/teleconsulto` instead of external ProhMed link
   - **Automated Notifications**: WhatsApp to doctor, email to patient, scheduled reminders (24h + 2h before appointment)
   - **Video Meeting Integration**: Jitsi video room generation with direct "Entra in Chiamata" links when appointment confirmed
   - **Database Schema**: `doctorAvailability` + `appointmentReminders` tables with Zod validation and error mapping (23503, 23505, 22P02)
-  - **Routes**: `/teleconsulto` for patients, "Disponibilità" tab in doctor dashboard
+  - **UX Enhancements**: Automatic slot reset when changing doctors (prevents booking errors), edit button with prefilled form for availability slots, responsive UI for mobile/desktop
+  - **Routes**: `/teleconsulto` for patients, `/appuntamenti` (Appuntamenti menu) for doctor availability + appointment management
   - **ProhMed Account**: Default doctor account (ID: 7903dae2-2de6-48c0-8a9a-b7e9fca071ca) available as fallback option for all patients
 
 ### ML Training Data Collection System (Active Learning)

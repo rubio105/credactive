@@ -3119,6 +3119,74 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Admin - Real-Time Medical Analytics Dashboard
+  app.get('/api/admin/analytics/medical-realtime', isAdmin, async (req, res) => {
+    try {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      
+      // Active users (logged in last 24h)
+      const users = await storage.getAllUsers();
+      const activeUsers = users.filter(u => u.lastLoginAt && new Date(u.lastLoginAt) >= last24h).length;
+      
+      // Documents uploaded today
+      const allReports = await db.select().from(healthReports);
+      const documentsToday = allReports.filter(r => new Date(r.createdAt) >= today).length;
+      
+      // Medical alerts by urgency
+      const allAlerts = await db.select().from(medicalAlerts);
+      const alertsToday = allAlerts.filter(a => new Date(a.createdAt) >= today);
+      const alertsByUrgency = {
+        EMERGENCY: alertsToday.filter(a => a.urgencyLevel === 'EMERGENCY').length,
+        HIGH: alertsToday.filter(a => a.urgencyLevel === 'HIGH').length,
+        MEDIUM: alertsToday.filter(a => a.urgencyLevel === 'MEDIUM').length,
+        LOW: alertsToday.filter(a => a.urgencyLevel === 'LOW').length,
+      };
+      
+      // OCR Success Rate (from ML training data)
+      const mlData = await db.select().from(mlTrainingData)
+        .where(eq(mlTrainingData.requestType, 'medical_report_ocr'));
+      const ocrTotal = mlData.length;
+      const ocrSuccessful = mlData.filter(d => !d.errorMessage).length;
+      const ocrSuccessRate = ocrTotal > 0 ? ((ocrSuccessful / ocrTotal) * 100).toFixed(1) : '0.0';
+      
+      // Push Notification Stats (estimate from subscriptions)
+      const pushSubs = await db.select().from(pushSubscriptions);
+      const pushTotal = pushSubs.length;
+      
+      res.json({
+        timestamp: now.toISOString(),
+        users: {
+          total: users.length,
+          activeLast24h: activeUsers,
+          patients: users.filter(u => !u.isDoctor && !u.isAdmin).length,
+          doctors: users.filter(u => u.isDoctor).length,
+        },
+        documents: {
+          uploadedToday: documentsToday,
+          totalStored: allReports.length,
+        },
+        alerts: {
+          totalToday: alertsToday.length,
+          byUrgency: alertsByUrgency,
+        },
+        ocr: {
+          successRate: parseFloat(ocrSuccessRate),
+          totalProcessed: ocrTotal,
+          successful: ocrSuccessful,
+          failed: ocrTotal - ocrSuccessful,
+        },
+        pushNotifications: {
+          activeSubscriptions: pushTotal,
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching medical analytics:", error);
+      res.status(500).json({ message: "Failed to fetch medical analytics" });
+    }
+  });
+
   // Admin - Send prevention invite email
   app.post('/api/admin/send-prevention-invite', isAdmin, async (req, res) => {
     try {

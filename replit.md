@@ -78,6 +78,13 @@ PostgreSQL, managed by Drizzle ORM, handles data for users, subscriptions, medic
   - **Text-to-Speech**: `window.speechSynthesis` reads AI responses aloud (rate: 0.9 for clarity)
   - **Interactive Controls**: Play/stop buttons on each AI message, optional auto-play mode
   - **Hands-Free Operation**: Microphone button with visual feedback (red pulse when recording)
+- **Teleconsulto System**: Complete video consultation platform with automated booking and reminders:
+  - **Doctor Availability**: Recurring weekly slots with configurable duration (30/60 min) and appointment types (video/in-person/both)
+  - **Patient Booking Flow**: Complete form with doctor selection, date/time picker, voice input for notes (Web Speech API with proper cleanup)
+  - **Automated Notifications**: WhatsApp to doctor, email to patient, scheduled reminders (24h + 2h before appointment)
+  - **Video Meeting Integration**: Jitsi video room generation with direct "Entra in Chiamata" links when appointment confirmed
+  - **Database Schema**: `doctorAvailability` + `appointmentReminders` tables with Zod validation and error mapping (23503, 23505, 22P02)
+  - **Routes**: `/teleconsulto` for patients, "Disponibilità" tab in doctor dashboard
 
 ### ML Training Data Collection System (Active Learning)
 - **Data Collection Architecture**: A universal interceptor captures all platform interactions (AI, medical data, user feedback) to build a dataset for proprietary ML model training.

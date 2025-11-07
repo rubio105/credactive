@@ -23,7 +23,7 @@ type Appointment = {
   type: string;
   status: string;
   description: string | null;
-  videoMeetingUrl: string | null;
+  meetingUrl: string | null;
   cancellationReason: string | null;
   doctor?: {
     firstName: string;
@@ -245,9 +245,9 @@ export default function AppointmentsPage() {
                         </div>
                       )}
 
-                      {apt.videoMeetingUrl && (
+                      {apt.meetingUrl && (
                         <Button size="sm" variant="outline" className="w-full" asChild>
-                          <a href={apt.videoMeetingUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-video-${apt.id}`}>
+                          <a href={apt.meetingUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-video-${apt.id}`}>
                             <Video className="w-4 h-4 mr-2" />
                             Accedi alla Videocall
                           </a>

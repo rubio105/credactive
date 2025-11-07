@@ -11653,7 +11653,7 @@ Format as JSON: {
                 doctorName,
                 appointmentDate,
                 appointmentTime,
-                videoMeetingUrl: updated.videoMeetingUrl || undefined,
+                meetingUrl: updated.meetingUrl || undefined,
               });
             } else if (status === 'cancelled') {
               await sendAppointmentCancelledToPatientEmail(patient.email, {
@@ -12745,11 +12745,11 @@ Fornisci:
         INSERT INTO appointments (
           doctor_id, patient_id, start_time, end_time, 
           title, type, status, notes, voice_notes, 
-          appointment_type, video_room_url
+          appointment_type, meeting_url, meeting_platform
         ) VALUES (
           ${doctorId}, ${user.id}, ${startTime}, ${endTime},
           'Teleconsulto', 'teleconsult', 'pending', ${notes || ''}, ${voiceNotes || ''},
-          ${appointmentType || 'video'}, ${videoRoomUrl}
+          ${appointmentType || 'video'}, ${videoRoomUrl}, ${videoRoomUrl ? 'jitsi' : null}
         ) RETURNING *
       `);
 
@@ -12790,7 +12790,7 @@ Fornisci:
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
           }),
           appointmentTime: new Date(startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-          videoMeetingUrl: videoRoomUrl,
+          meetingUrl: videoRoomUrl,
         });
       } catch (emailError) {
         console.error('Email send failed:', emailError);

@@ -29,7 +29,7 @@ type Appointment = {
   endTime: string;
   status: string;
   appointmentType?: string;
-  videoMeetingUrl?: string | null;
+  meetingUrl?: string | null;
   notes?: string;
   doctor?: Doctor;
 };
@@ -280,13 +280,13 @@ export default function TeleconsultoPage() {
                         <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>
                           {apt.status === 'confirmed' ? 'Confermato' : 'In attesa'}
                         </Badge>
-                        {apt.videoMeetingUrl && apt.status === 'confirmed' && (
+                        {apt.meetingUrl && apt.status === 'confirmed' && (
                           <Button 
                             size="sm" 
                             asChild
                             data-testid={`button-join-video-${apt.id}`}
                           >
-                            <a href={apt.videoMeetingUrl} target="_blank" rel="noopener noreferrer">
+                            <a href={apt.meetingUrl} target="_blank" rel="noopener noreferrer">
                               <Video className="w-4 h-4 mr-2" />
                               Entra in Chiamata
                             </a>

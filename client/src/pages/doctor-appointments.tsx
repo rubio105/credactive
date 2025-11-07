@@ -25,7 +25,7 @@ type Appointment = {
   type: string;
   status: string;
   description: string | null;
-  videoMeetingUrl: string | null;
+  meetingUrl: string | null;
   cancellationReason: string | null;
   patient?: {
     firstName: string;
@@ -401,6 +401,14 @@ export default function DoctorAppointmentsPage() {
                       </div>
 
                       <div className="flex flex-col gap-2 ml-4">
+                        {apt.meetingUrl && (apt.status === 'confirmed' || apt.status === 'booked') && (
+                          <Button size="sm" variant="outline" asChild data-testid={`button-video-${apt.id}`}>
+                            <a href={apt.meetingUrl} target="_blank" rel="noopener noreferrer">
+                              <Video className="w-4 h-4 mr-2" />
+                              Entra in Chiamata
+                            </a>
+                          </Button>
+                        )}
                         {apt.status === 'booked' && (
                           <>
                             <Button 

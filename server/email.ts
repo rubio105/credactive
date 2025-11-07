@@ -1756,10 +1756,10 @@ export async function sendAppointmentConfirmedToPatientEmail(
     doctorName: string;
     appointmentDate: string;
     appointmentTime: string;
-    videoMeetingUrl?: string;
+    meetingUrl?: string;
   }
 ): Promise<void> {
-  const { doctorName, appointmentDate, appointmentTime, videoMeetingUrl } = appointmentData;
+  const { doctorName, appointmentDate, appointmentTime, meetingUrl } = appointmentData;
   
   const htmlContent = `
     <!DOCTYPE html>
@@ -1791,10 +1791,10 @@ export async function sendAppointmentConfirmedToPatientEmail(
             <p><strong>⏰ Orario:</strong> ${sanitizeUserInput(appointmentTime)}</p>
           </div>
           
-          ${videoMeetingUrl ? `
+          ${meetingUrl ? `
             <p>La visita si terrà online. Ecco il link per la videocall:</p>
             <p style="text-align: center;">
-              <a href="${sanitizeUserInput(videoMeetingUrl)}" class="button">Accedi alla Videocall</a>
+              <a href="${sanitizeUserInput(meetingUrl)}" class="button">Accedi alla Videocall</a>
             </p>
           ` : ''}
           
@@ -1821,7 +1821,7 @@ Il suo appuntamento è stato confermato:
 Medico: ${doctorName}
 Data: ${appointmentDate}
 Orario: ${appointmentTime}
-${videoMeetingUrl ? `Link videocall: ${videoMeetingUrl}` : ''}
+${meetingUrl ? `Link videocall: ${meetingUrl}` : ''}
 
 Vedi i tuoi appuntamenti: ${getBaseUrl()}/appointments
 

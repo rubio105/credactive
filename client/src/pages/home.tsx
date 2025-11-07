@@ -462,17 +462,24 @@ export default function Home() {
         </div>
 
 
-        {/* Role-based Tabs - Patients get Prevenzione + Referti, Doctors get Pazienti + Shortcuts */}
+        {/* Role-based Tabs - Patients get Prevenzione + Referti + Appuntamenti, Doctors get Pazienti + Shortcuts */}
         {!(user as UserType)?.aiOnlyAccess && !(user as UserType)?.isDoctor && (
           <Tabs defaultValue="prevention" className="mb-8">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
               <TabsTrigger value="prevention" className="text-base" data-testid="tab-prevention">
                 <Shield className="w-4 h-4 mr-2" />
-                Prevenzione
+                <span className="hidden sm:inline">Prevenzione</span>
+                <span className="sm:hidden">AI</span>
               </TabsTrigger>
               <TabsTrigger value="reports" className="text-base" data-testid="tab-reports">
                 <FileText className="w-4 h-4 mr-2" />
-                I Tuoi Referti
+                <span className="hidden sm:inline">I Tuoi Referti</span>
+                <span className="sm:hidden">Referti</span>
+              </TabsTrigger>
+              <TabsTrigger value="appointments" className="text-base" data-testid="tab-appointments">
+                <Calendar className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Appuntamenti</span>
+                <span className="sm:hidden">Visite</span>
               </TabsTrigger>
             </TabsList>
 
@@ -628,6 +635,51 @@ export default function Home() {
             </CardContent>
           </Card>
         )}
+      </TabsContent>
+
+      <TabsContent value="appointments" className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold mb-1">I Tuoi Appuntamenti</h2>
+                <p className="text-muted-foreground">
+                  Visualizza e gestisci i tuoi appuntamenti medici
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              <Button 
+                asChild 
+                className="w-full h-auto py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg" 
+                data-testid="button-view-appointments"
+              >
+                <Link href="/appointments">
+                  <div className="flex flex-col items-center gap-2">
+                    <Calendar className="w-8 h-8" />
+                    <span className="font-semibold text-lg">Vedi Appuntamenti</span>
+                  </div>
+                </Link>
+              </Button>
+              <Button 
+                asChild
+                variant="outline" 
+                className="w-full h-auto py-6 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600" 
+                data-testid="button-book-teleconsult"
+              >
+                <Link href="/teleconsulto">
+                  <div className="flex flex-col items-center gap-2">
+                    <Video className="w-8 h-8" />
+                    <span className="font-semibold text-lg">Prenota Teleconsulto</span>
+                  </div>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </TabsContent>
     </Tabs>
   )}

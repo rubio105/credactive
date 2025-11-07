@@ -48,10 +48,22 @@ export default function TeleconsultoPage() {
     queryKey: ['/api/appointments/my-appointments'],
   });
 
-  // Get doctors list
-  const { data: doctors = [] } = useQuery<Doctor[]>({
-    queryKey: ['/api/users/doctors'],
+  // Get patient's linked doctors
+  const { data: linkedDoctors = [] } = useQuery<Doctor[]>({
+    queryKey: ['/api/patient/doctors'],
   });
+
+  // ProhMed default doctor option
+  const prohmedDoctor: Doctor = {
+    id: '7903dae2-2de6-48c0-8a9a-b7e9fca071ca',
+    email: 'info@prohmed.ai',
+    firstName: 'Team',
+    lastName: 'Prohmed',
+    specialization: 'Medicina Generale',
+  };
+
+  // Combine linked doctors + ProhMed
+  const doctors = [...linkedDoctors, prohmedDoctor];
 
   // Cleanup on unmount or dialog close
   useEffect(() => {
@@ -282,12 +294,24 @@ export default function TeleconsultoPage() {
                   <SelectValue placeholder="Seleziona medico" />
                 </SelectTrigger>
                 <SelectContent>
-                  {doctors.map(doctor => (
-                    <SelectItem key={doctor.id} value={doctor.id}>
-                      Dr. {doctor.firstName} {doctor.lastName}
-                      {doctor.specialization && ` - ${doctor.specialization}`}
-                    </SelectItem>
-                  ))}
+                  {doctors.map(doctor => {
+                    const isProhmed = doctor.id === prohmedDoctor.id;
+                    return (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        <div className="flex items-center gap-2">
+                          <span>
+                            Dr. {doctor.firstName} {doctor.lastName}
+                            {doctor.specialization && ` - ${doctor.specialization}`}
+                          </span>
+                          {!isProhmed && (
+                            <Badge variant="outline" className="text-xs">
+                              Collegato
+                            </Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

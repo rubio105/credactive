@@ -203,7 +203,7 @@ export default function DoctorAppointmentsPage() {
       </div>
 
       <Tabs defaultValue="booked" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="booked" data-testid="tab-booked">
             Prenotate ({bookedAppointments.length})
           </TabsTrigger>
@@ -212,6 +212,9 @@ export default function DoctorAppointmentsPage() {
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
             Completate ({completedAppointments.length})
+          </TabsTrigger>
+          <TabsTrigger value="availability" data-testid="tab-availability">
+            Disponibilità
           </TabsTrigger>
         </TabsList>
 
@@ -372,6 +375,28 @@ export default function DoctorAppointmentsPage() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="availability" className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestione Disponibilità Settimanale</CardTitle>
+              <CardDescription>
+                Configura i tuoi orari ricorrenti per i teleconsulti. I pazienti vedranno questi slot disponibili.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                🚧 Funzionalità in fase di sviluppo. API teleconsulto già attive:
+              </p>
+              <ul className="text-sm space-y-2">
+                <li>✅ POST /api/doctor/availability - Crea disponibilità</li>
+                <li>✅ GET /api/doctor/availability - Visualizza slot</li>
+                <li>✅ DELETE /api/doctor/availability/:id - Rimuovi slot</li>
+                <li>✅ POST /api/appointments/book-teleconsult - Booking completo</li>
+              </ul>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

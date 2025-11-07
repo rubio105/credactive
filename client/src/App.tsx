@@ -53,6 +53,7 @@ import WebinarHealth from "@/pages/webinar-health";
 import CrosswordPage from "@/pages/crossword";
 import PatientAI from "@/pages/patient-ai";
 import PacchettoProhmed from "@/pages/pacchetto-prohmed";
+import TeleconsultoPage from "@/pages/teleconsulto";
 import Security from "@/pages/security";
 import Guida from "@/pages/guida";
 import Documenti from "@/pages/documenti";
@@ -93,6 +94,9 @@ function Router() {
       </Route>
       <Route path="/appointments">
         {() => <ProtectedRoute requireNonAiOnly><AppointmentsPage /></ProtectedRoute>}
+      </Route>
+      <Route path="/teleconsulto">
+        {() => <ProtectedRoute requireNonAiOnly><TeleconsultoPage /></ProtectedRoute>}
       </Route>
       <Route path="/doctor/appointments">
         {() => <ProtectedRoute requireNonAiOnly><DoctorAppointmentsPage /></ProtectedRoute>}

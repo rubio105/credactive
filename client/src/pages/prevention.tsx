@@ -7,11 +7,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus, Calendar, Paperclip } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import PreventionAssessment from "@/components/PreventionAssessment";
 import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
@@ -138,6 +143,12 @@ export default function PreventionPage() {
   const [reportFilter, setReportFilter] = useState<string>('all');
   const [reportSort, setReportSort] = useState<'recent' | 'oldest' | 'type'>('recent');
   const [reportSearch, setReportSearch] = useState<string>('');
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [bookingSummary, setBookingSummary] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
+  const [attachedReports, setAttachedReports] = useState<File[]>([]);
+  const [selectedBookingDoctor, setSelectedBookingDoctor] = useState<string>("");
+  const [selectedBookingSlot, setSelectedBookingSlot] = useState<any>(null);
   // Auto-detect role based on user type: doctor for diagnosis, patient for prevention
   const userRole = (user as any)?.isDoctor ? 'doctor' : 'patient';
   const [showArchive, setShowArchive] = useState<boolean>(false);
@@ -190,10 +201,38 @@ export default function PreventionPage() {
     enabled: !!user,
   });
 
+  // Query for linked doctors (for booking dialog)
+  const { data: linkedDoctors = [] } = useQuery<any[]>({
+    queryKey: ['/api/patient/doctors'],
+    enabled: isBookingDialogOpen && userRole === 'patient',
+  });
+
+  // ProhMed default doctor option
+  const prohmedDoctor = {
+    id: '7903dae2-2de6-48c0-8a9a-b7e9fca071ca',
+    firstName: 'Team',
+    lastName: 'Prohmed',
+    specialization: 'Medicina Generale',
+  };
+
+  // Combine linked doctors + ProhMed
+  const doctors = [...linkedDoctors, prohmedDoctor];
+
+  // Get available slots for selected doctor (for booking dialog)
+  const { data: availableSlots = [], isLoading: isSlotsLoading } = useQuery<any[]>({
+    queryKey: ['/api/appointments/available-slots', selectedBookingDoctor],
+    enabled: !!selectedBookingDoctor && isBookingDialogOpen,
+  });
+
   // Sync uploadQueue state with ref for reliable access
   useEffect(() => {
     uploadQueueRef.current = uploadQueue;
   }, [uploadQueue]);
+
+  // Reset selected slot when doctor changes (for booking dialog)
+  useEffect(() => {
+    setSelectedBookingSlot(null);
+  }, [selectedBookingDoctor]);
 
   // Get doctor notes from prevention documents (fileType: 'doctor_note')
   const doctorNotes = (documents || []).filter((doc: any) => doc.fileType === 'doctor_note');
@@ -761,6 +800,75 @@ export default function PreventionPage() {
         title: "Errore", 
         description: error.message || "Errore durante la generazione del percorso",
         variant: "destructive" 
+      });
+    },
+  });
+
+  // Book Teleconsult Mutation (from AI chat)
+  const bookTeleconsultFromChatMutation = useMutation({
+    mutationFn: async ({ bookingData, files }: { bookingData: any; files: File[] }) => {
+      // First, upload attached reports if any
+      const uploadedFileIds: string[] = [];
+      
+      if (files.length > 0) {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('report', file);
+          formData.append('userConsent', 'true');
+          if (sessionId) {
+            formData.append('triageSessionId', sessionId);
+          }
+
+          const uploadResponse = await fetch('/api/health-score/upload', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          });
+
+          if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json().catch(() => ({}));
+            throw new Error(`Impossibile caricare il file "${file.name}": ${errorData.message || uploadResponse.statusText}`);
+          }
+
+          const uploadResult = await uploadResponse.json();
+          if (uploadResult.report?.id) {
+            uploadedFileIds.push(uploadResult.report.id);
+          } else {
+            throw new Error(`Caricamento del file "${file.name}" fallito: nessun ID ricevuto`);
+          }
+        }
+      }
+
+      // Then book the appointment with uploaded file IDs
+      const finalData = {
+        ...bookingData,
+        attachedReportIds: uploadedFileIds,
+      };
+
+      const response = await apiRequest('/api/appointments/book-teleconsult', 'POST', finalData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments/my-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments/available-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/health-score/reports'] });
+      toast({
+        title: "✅ Teleconsulto prenotato!",
+        description: "Riceverai email di conferma con il link per la videochiamata",
+      });
+      setIsBookingDialogOpen(false);
+      setBookingSummary("");
+      setAdditionalNotes("");
+      setAttachedReports([]);
+      setSelectedBookingDoctor("");
+      setSelectedBookingSlot(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore prenotazione",
+        description: error.message || "Impossibile prenotare il teleconsulto",
+        variant: "destructive",
       });
     },
   });
@@ -1694,13 +1802,17 @@ export default function PreventionPage() {
                         <Button
                           size="sm"
                           onClick={() => {
-                            contactProhmedMutation.mutate(pendingAlert.id);
+                            const summary = pendingAlert.reason || "Richiesta consulenza medica";
+                            setBookingSummary(summary);
+                            setAdditionalNotes("");
+                            setAttachedReports([]);
+                            setIsBookingDialogOpen(true);
                           }}
-                          disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending || contactProhmedMutation.isPending}
+                          disabled={resolveAlertMutation.isPending || monitorAlertMutation.isPending}
                           className="bg-blue-600 hover:bg-blue-700 text-white"
                           data-testid="button-contact-prohmed"
                         >
-                          🩺 Contatta Medico Prohmed
+                          🩺 Prenota Consulto Medico
                         </Button>
                       </div>
                     </AlertDescription>
@@ -1967,14 +2079,16 @@ export default function PreventionPage() {
                                       <Button
                                         size="sm"
                                         onClick={() => {
-                                          // Send email to user
-                                          contactDoctorDirectMutation.mutate();
+                                          const summary = msg.content || "Richiesta consulenza medica dalla chat AI";
+                                          setBookingSummary(summary);
+                                          setAdditionalNotes("");
+                                          setAttachedReports([]);
+                                          setIsBookingDialogOpen(true);
                                         }}
-                                        disabled={contactDoctorDirectMutation.isPending}
                                         className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
                                         data-testid="button-contact-doctor-message"
                                       >
-                                        🩺 Contatta Medico Prohmed
+                                        🩺 Prenota Consulto Medico
                                       </Button>
                                     </div>
                                   )}
@@ -2525,6 +2639,196 @@ export default function PreventionPage() {
               <X className="w-4 h-4 mr-2" />
               Chiudi
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Book Teleconsult Dialog (from AI chat) */}
+      <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-book-teleconsult">
+          <DialogHeader>
+            <DialogTitle>Prenota Consulto Medico</DialogTitle>
+            <DialogDescription>
+              Prenota un teleconsulto con il tuo medico. Compila i campi richiesti per completare la prenotazione.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* AI Summary Section (readonly) */}
+            {bookingSummary && (
+              <div className="space-y-2">
+                <Label>Riepilogo dalla Chat AI</Label>
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-md">
+                  <p className="text-sm text-emerald-900 dark:text-emerald-100 whitespace-pre-wrap">
+                    {bookingSummary}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Additional Notes Section */}
+            <div className="space-y-2">
+              <Label htmlFor="additional-notes">Note Aggiuntive (opzionale)</Label>
+              <Textarea
+                id="additional-notes"
+                value={additionalNotes}
+                onChange={(e) => setAdditionalNotes(e.target.value)}
+                placeholder="Aggiungi ulteriori dettagli, sintomi specifici, domande..."
+                rows={4}
+                data-testid="textarea-additional-notes"
+              />
+            </div>
+
+            {/* File Attachment Section */}
+            <div className="space-y-2">
+              <Label>Allega Referti (opzionale)</Label>
+              <div className="border-2 border-dashed rounded-lg p-4">
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setAttachedReports(files);
+                  }}
+                  className="hidden"
+                  id="attach-reports"
+                  data-testid="input-attach-reports"
+                />
+                <label 
+                  htmlFor="attach-reports"
+                  className="cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <Paperclip className="w-8 h-8 text-gray-400" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Clicca per allegare file (PDF, JPG, PNG)
+                  </p>
+                </label>
+                {attachedReports.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {attachedReports.map((file, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                        <span className="truncate">{file.name}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setAttachedReports(prev => prev.filter((_, idx) => idx !== i));
+                          }}
+                          data-testid={`button-remove-file-${i}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Doctor Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="doctor-select">Seleziona Medico</Label>
+              <Select value={selectedBookingDoctor} onValueChange={setSelectedBookingDoctor}>
+                <SelectTrigger data-testid="select-booking-doctor">
+                  <SelectValue placeholder="Scegli un medico" />
+                </SelectTrigger>
+                <SelectContent>
+                  {doctors.map(doctor => {
+                    const isProhmed = doctor.id === prohmedDoctor.id;
+                    return (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        <div className="flex items-center gap-2">
+                          <span>
+                            Dr. {doctor.firstName} {doctor.lastName}
+                            {doctor.specialization && ` - ${doctor.specialization}`}
+                          </span>
+                          {!isProhmed && (
+                            <Badge variant="outline" className="text-xs">
+                              Collegato
+                            </Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Available Slots */}
+            {selectedBookingDoctor && (
+              <div className="space-y-2">
+                <Label>Slot Disponibili</Label>
+                {isSlotsLoading ? (
+                  <p className="text-sm text-muted-foreground">Caricamento slot...</p>
+                ) : availableSlots.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nessuno slot disponibile nei prossimi 14 giorni</p>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto space-y-2 border rounded-lg p-3">
+                    {availableSlots.map((slot: any, index: number) => (
+                      <Button
+                        key={index}
+                        variant={selectedBookingSlot?.date === slot.date && selectedBookingSlot?.startTime === slot.startTime ? "default" : "outline"}
+                        className="w-full justify-start"
+                        onClick={() => setSelectedBookingSlot(slot)}
+                        data-testid={`button-booking-slot-${index}`}
+                      >
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {format(new Date(slot.date), "EEEE dd MMMM", { locale: it })} - {slot.startTime} / {slot.endTime}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsBookingDialogOpen(false)}
+                className="flex-1"
+                data-testid="button-cancel-booking-dialog"
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!selectedBookingDoctor || !selectedBookingSlot) {
+                    toast({
+                      title: "Campi mancanti",
+                      description: "Seleziona medico e slot orario",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  const startTime = new Date(`${selectedBookingSlot.date}T${selectedBookingSlot.startTime}:00`);
+                  const endTime = new Date(`${selectedBookingSlot.date}T${selectedBookingSlot.endTime}:00`);
+
+                  const combinedNotes = bookingSummary 
+                    ? `Riassunto AI:\n${bookingSummary}\n\nNote aggiuntive:\n${additionalNotes || 'Nessuna'}`
+                    : additionalNotes;
+
+                  bookTeleconsultFromChatMutation.mutate({
+                    bookingData: {
+                      doctorId: selectedBookingDoctor,
+                      startTime: startTime.toISOString(),
+                      endTime: endTime.toISOString(),
+                      notes: combinedNotes,
+                      appointmentType: 'video',
+                    },
+                    files: attachedReports,
+                  });
+                }}
+                disabled={bookTeleconsultFromChatMutation.isPending}
+                className="flex-1"
+                data-testid="button-confirm-booking-dialog"
+              >
+                {bookTeleconsultFromChatMutation.isPending ? "Prenotazione..." : "Prenota Teleconsulto"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

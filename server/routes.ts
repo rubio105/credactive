@@ -11833,6 +11833,60 @@ Format as JSON: {
     }
   });
 
+  // ========== WHATSAPP NOTIFICATION ENDPOINTS ==========
+  
+  // Send WhatsApp notification (manual trigger - admin only)
+  app.post('/api/admin/whatsapp/send', isAdmin, async (req, res) => {
+    try {
+      const { userId, message } = req.body;
+      
+      if (!userId || !message) {
+        return res.status(400).json({ message: 'userId and message required' });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      if (!user.whatsappNumber || !user.whatsappNotificationsEnabled) {
+        return res.status(400).json({ 
+          message: 'User has not enabled WhatsApp notifications or phone number not set' 
+        });
+      }
+      
+      const { sendWhatsAppMessage } = await import('./twilio');
+      const result = await sendWhatsAppMessage(user.whatsappNumber, message);
+      
+      if (result.success) {
+        res.json({ success: true, sid: result.sid, message: 'WhatsApp message sent successfully' });
+      } else {
+        res.status(500).json({ success: false, error: result.error });
+      }
+    } catch (error: any) {
+      console.error('WhatsApp send error:', error);
+      res.status(500).json({ message: error.message || 'Failed to send WhatsApp message' });
+    }
+  });
+  
+  // Update user's WhatsApp settings
+  app.patch('/api/user/whatsapp-settings', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { whatsappNumber, whatsappNotificationsEnabled } = req.body;
+      
+      await storage.updateUser(userId, {
+        whatsappNumber,
+        whatsappNotificationsEnabled,
+      });
+      
+      res.json({ success: true, message: 'WhatsApp settings updated' });
+    } catch (error: any) {
+      console.error('Update WhatsApp settings error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update WhatsApp settings' });
+    }
+  });
+
   // ========== ML TRAINING DATA ENDPOINTS ==========
   
   // Get ML training statistics (admin only)

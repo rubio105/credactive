@@ -56,6 +56,8 @@ export const users = pgTable("users", {
   dateOfBirth: timestamp("date_of_birth"),
   gender: varchar("gender", { length: 50 }), // male, female, other, prefer_not_to_say
   phone: varchar("phone", { length: 50 }),
+  whatsappNumber: varchar("whatsapp_number", { length: 50 }), // WhatsApp number for notifications (format: +39xxxxxxxxxx)
+  whatsappNotificationsEnabled: boolean("whatsapp_notifications_enabled").default(false), // User consent for WhatsApp notifications
   // Patient health profile
   heightCm: integer("height_cm"), // Height in centimeters
   weightKg: integer("weight_kg"), // Weight in kilograms

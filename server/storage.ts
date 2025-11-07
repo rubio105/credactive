@@ -3128,6 +3128,24 @@ export class DatabaseStorage implements IStorage {
   // Triage alert operations
   async createTriageAlert(alert: InsertTriageAlert): Promise<TriageAlert> {
     const [newAlert] = await db.insert(triageAlerts).values(alert).returning();
+    
+    // Auto-send WhatsApp for EMERGENCY alerts
+    if (newAlert.urgencyLevel === 'EMERGENCY') {
+      try {
+        const user = await this.getUser(newAlert.userId);
+        if (user?.whatsappNumber && user?.whatsappNotificationsEnabled) {
+          const { sendWhatsAppMessage } = await import('./twilio');
+          const message = `🚨 CIRY - ALERT EMERGENZA\n\nÈ stato rilevato un segnale che richiede attenzione medica urgente.\n\nAccedi subito all'app per visualizzare i dettagli e contattare il tuo medico.\n\nhttps://ciry.app`;
+          
+          await sendWhatsAppMessage(user.whatsappNumber, message);
+          console.log(`[WhatsApp] Emergency alert sent to user ${user.id}`);
+        }
+      } catch (error) {
+        console.error('[WhatsApp] Failed to send emergency alert:', error);
+        // Don't block alert creation if WhatsApp fails
+      }
+    }
+    
     return newAlert;
   }
 

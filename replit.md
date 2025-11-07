@@ -67,6 +67,17 @@ PostgreSQL, managed by Drizzle ORM, handles data for users, subscriptions, medic
   - **Success metrics**: Tracks sent/failed counts for monitoring delivery reliability
   - **Resilient error handling**: Subscription cleanup failures don't block notification flow
 - **In-App Notification System**: Real-time notification bell with unread count, priority levels, custom icons, and click-to-navigate functionality.
+- **WhatsApp Notifications (Twilio)**: Automated WhatsApp messaging for critical alerts and appointment reminders:
+  - **Auto-trigger EMERGENCY**: Automatic WhatsApp message sent when triage alert has `urgencyLevel: 'EMERGENCY'`
+  - **User Consent**: Users opt-in via `whatsappNumber` + `whatsappNotificationsEnabled` in profile settings
+  - **Admin Control**: Manual send via POST `/api/admin/whatsapp/send` for custom notifications
+  - **Patient Settings**: PATCH `/api/user/whatsapp-settings` endpoint for WhatsApp number configuration
+  - **Integration**: Twilio Connector with SMS fallback capability via `server/twilio.ts`
+- **Voice-Enabled AI Chat**: Accessibility features for elderly and visually impaired patients:
+  - **Speech-to-Text**: Web Speech API with `it-IT` voice recognition for hands-free message input
+  - **Text-to-Speech**: `window.speechSynthesis` reads AI responses aloud (rate: 0.9 for clarity)
+  - **Interactive Controls**: Play/stop buttons on each AI message, optional auto-play mode
+  - **Hands-Free Operation**: Microphone button with visual feedback (red pulse when recording)
 
 ### ML Training Data Collection System (Active Learning)
 - **Data Collection Architecture**: A universal interceptor captures all platform interactions (AI, medical data, user feedback) to build a dataset for proprietary ML model training.

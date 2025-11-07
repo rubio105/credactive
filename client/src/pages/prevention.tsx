@@ -141,9 +141,12 @@ export default function PreventionPage() {
   // Auto-detect role based on user type: doctor for diagnosis, patient for prevention
   const userRole = (user as any)?.isDoctor ? 'doctor' : 'patient';
   const [showArchive, setShowArchive] = useState<boolean>(false);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [autoPlaySpeech, setAutoPlaySpeech] = useState<boolean>(false); // Auto-read AI responses
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const doctorAutoStartedRef = useRef<boolean>(false);
@@ -1126,6 +1129,49 @@ export default function PreventionPage() {
     }
   };
 
+  // Text-to-Speech: Leggi ad alta voce il messaggio
+  const speakText = (text: string) => {
+    if (!window.speechSynthesis) {
+      toast({
+        title: "Sintesi vocale non supportata",
+        description: "Il tuo browser non supporta la lettura vocale",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Stop any ongoing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'it-IT';
+    utterance.rate = 0.9; // Velocità leggermente più lenta per comprensione
+    utterance.pitch = 1.0;
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    speechSynthesisRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  // Auto-read AI responses when enabled
+  useEffect(() => {
+    if (autoPlaySpeech && messages && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === 'assistant' && lastMessage?.content) {
+        // Delay to ensure message is fully rendered
+        setTimeout(() => speakText(lastMessage.content), 500);
+      }
+    }
+  }, [messages, autoPlaySpeech]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
       <Navigation />
@@ -1892,6 +1938,25 @@ export default function PreventionPage() {
                                   <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">
                                     {msg.content}
                                   </p>
+                                  
+                                  {/* Text-to-Speech Button for AI messages */}
+                                  {msg.role === 'assistant' && (
+                                    <div className="mt-2 flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => isSpeaking ? stopSpeaking() : speakText(msg.content)}
+                                        className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 px-2 py-1 h-auto"
+                                        data-testid={`button-speak-${msg.id}`}
+                                      >
+                                        {isSpeaking ? (
+                                          <><MicOff className="w-3 h-3 mr-1" /> Stop Audio</>
+                                        ) : (
+                                          <><Mic className="w-3 h-3 mr-1" /> Ascolta</>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  )}
                                   
                                   {/* Contact Doctor Button for patients when AI suggests it */}
                                   {msg.role === 'assistant' && msg.aiSuggestDoctor && userRole === 'patient' && (

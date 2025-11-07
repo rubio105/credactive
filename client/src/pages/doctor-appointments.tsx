@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2 } from "lucide-react";
+import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -34,12 +34,26 @@ type Appointment = {
   };
 };
 
+type DoctorAvailability = {
+  id: string;
+  doctorId: string;
+  dayOfWeek: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
+  startTime: string; // HH:MM format
+  endTime: string; // HH:MM format
+  slotDuration: number; // minutes: 30 or 60
+  appointmentType: string; // video, in_person, both
+  isActive: boolean;
+  createdAt: string;
+};
+
 export default function DoctorAppointmentsPage() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
+  const [editingAvailability, setEditingAvailability] = useState<DoctorAvailability | null>(null);
   
   // Form state for creating appointment
   const [newAppointment, setNewAppointment] = useState({
@@ -48,6 +62,15 @@ export default function DoctorAppointmentsPage() {
     endTime: "10:00",
     title: "Visita generale",
     type: "consultation",
+  });
+
+  // Form state for creating availability slot
+  const [newAvailability, setNewAvailability] = useState({
+    dayOfWeek: 1, // Monday
+    startTime: "09:00",
+    endTime: "17:00",
+    slotDuration: 30,
+    appointmentType: "video",
   });
 
   // Get all appointments
@@ -146,6 +169,109 @@ export default function DoctorAppointmentsPage() {
     },
   });
 
+  // Get doctor availability slots
+  const { data: availabilitySlots = [] } = useQuery<DoctorAvailability[]>({
+    queryKey: ['/api/doctor/availability'],
+  });
+
+  // Create availability mutation
+  const createAvailabilityMutation = useMutation({
+    mutationFn: async (data: typeof newAvailability) => {
+      const response = await apiRequest('/api/doctor/availability', 'POST', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/doctor/availability'] });
+      toast({
+        title: "Disponibilità creata",
+        description: "La disponibilità ricorrente è stata aggiunta con successo",
+      });
+      setIsAvailabilityDialogOpen(false);
+      setEditingAvailability(null);
+      setNewAvailability({
+        dayOfWeek: 1,
+        startTime: "09:00",
+        endTime: "17:00",
+        slotDuration: 30,
+        appointmentType: "video",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile creare la disponibilità",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update availability mutation
+  const updateAvailabilityMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof newAvailability }) => {
+      const response = await apiRequest(`/api/doctor/availability/${id}`, 'PUT', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/doctor/availability'] });
+      toast({
+        title: "Disponibilità aggiornata",
+        description: "La disponibilità ricorrente è stata modificata con successo",
+      });
+      setIsAvailabilityDialogOpen(false);
+      setEditingAvailability(null);
+      setNewAvailability({
+        dayOfWeek: 1,
+        startTime: "09:00",
+        endTime: "17:00",
+        slotDuration: 30,
+        appointmentType: "video",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile aggiornare la disponibilità",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete availability mutation
+  const deleteAvailabilityMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest(`/api/doctor/availability/${id}`, 'DELETE');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/doctor/availability'] });
+      toast({
+        title: "Disponibilità eliminata",
+        description: "La disponibilità ricorrente è stata rimossa",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile eliminare la disponibilità",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Pre-fill form when editing availability
+  useEffect(() => {
+    if (editingAvailability) {
+      setNewAvailability({
+        dayOfWeek: editingAvailability.dayOfWeek,
+        startTime: editingAvailability.startTime,
+        endTime: editingAvailability.endTime,
+        slotDuration: editingAvailability.slotDuration,
+        appointmentType: editingAvailability.appointmentType,
+      });
+      setIsAvailabilityDialogOpen(true);
+    }
+  }, [editingAvailability]);
+
   const handleCreateAppointment = () => {
     const startDateTime = new Date(`${newAppointment.date}T${newAppointment.startTime}`);
     const endDateTime = new Date(`${newAppointment.date}T${newAppointment.endTime}`);
@@ -156,6 +282,19 @@ export default function DoctorAppointmentsPage() {
       title: newAppointment.title,
       type: newAppointment.type,
     });
+  };
+
+  const handleSaveAvailability = () => {
+    if (editingAvailability) {
+      // Update existing
+      updateAvailabilityMutation.mutate({
+        id: editingAvailability.id,
+        data: newAvailability,
+      });
+    } else {
+      // Create new
+      createAvailabilityMutation.mutate(newAvailability);
+    }
   };
 
   const handleStatusUpdate = (appointment: Appointment) => {
@@ -379,22 +518,71 @@ export default function DoctorAppointmentsPage() {
 
         <TabsContent value="availability" className="space-y-4 mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Gestione Disponibilità Settimanale</CardTitle>
-              <CardDescription>
-                Configura i tuoi orari ricorrenti per i teleconsulti. I pazienti vedranno questi slot disponibili.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Gestione Disponibilità Settimanale</CardTitle>
+                <CardDescription>
+                  Configura i tuoi orari ricorrenti per i teleconsulti. I pazienti vedranno questi slot disponibili.
+                </CardDescription>
+              </div>
+              <Button onClick={() => setIsAvailabilityDialogOpen(true)} data-testid="button-add-availability">
+                <Plus className="w-4 h-4 mr-2" />
+                Aggiungi Disponibilità
+              </Button>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                🚧 Funzionalità in fase di sviluppo. API teleconsulto già attive:
-              </p>
-              <ul className="text-sm space-y-2">
-                <li>✅ POST /api/doctor/availability - Crea disponibilità</li>
-                <li>✅ GET /api/doctor/availability - Visualizza slot</li>
-                <li>✅ DELETE /api/doctor/availability/:id - Rimuovi slot</li>
-                <li>✅ POST /api/appointments/book-teleconsult - Booking completo</li>
-              </ul>
+              {availabilitySlots.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Nessuna disponibilità configurata. Clicca su "Aggiungi Disponibilità" per iniziare.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'].map((dayName, dayIndex) => {
+                    const daySlots = availabilitySlots.filter(slot => slot.dayOfWeek === (dayIndex + 1) % 7);
+                    if (daySlots.length === 0) return null;
+                    
+                    return (
+                      <div key={dayIndex} className="space-y-2">
+                        <h3 className="font-semibold text-sm">{dayName}</h3>
+                        <div className="grid gap-2">
+                          {daySlots.map(slot => (
+                            <div key={slot.id} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`availability-slot-${slot.id}`}>
+                              <div className="flex items-center gap-4">
+                                <Clock className="w-4 h-4 text-muted-foreground" />
+                                <div>
+                                  <p className="text-sm font-medium">{slot.startTime} - {slot.endTime}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Slot: {slot.slotDuration} min • Tipo: {slot.appointmentType === 'video' ? 'Video' : slot.appointmentType === 'in_person' ? 'In presenza' : 'Entrambi'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingAvailability(slot)}
+                                  data-testid={`button-edit-availability-${slot.id}`}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteAvailabilityMutation.mutate(slot.id)}
+                                  disabled={deleteAvailabilityMutation.isPending}
+                                  data-testid={`button-delete-availability-${slot.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -529,6 +717,120 @@ export default function DoctorAppointmentsPage() {
                 data-testid="button-confirm-cancel"
               >
                 {updateStatusMutation.isPending ? "Rifiuto..." : "Conferma Rifiuto"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Availability Dialog */}
+      <Dialog open={isAvailabilityDialogOpen} onOpenChange={setIsAvailabilityDialogOpen}>
+        <DialogContent data-testid="dialog-add-availability">
+          <DialogHeader>
+            <DialogTitle>{editingAvailability ? "Modifica Disponibilità" : "Aggiungi Disponibilità Ricorrente"}</DialogTitle>
+            <DialogDescription>
+              {editingAvailability ? "Modifica lo slot ricorrente settimanale" : "Crea uno slot ricorrente settimanale per i teleconsulti"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="dayOfWeek">Giorno della settimana</Label>
+              <Select 
+                value={String(newAvailability.dayOfWeek)} 
+                onValueChange={(value) => setNewAvailability({ ...newAvailability, dayOfWeek: parseInt(value) })}
+              >
+                <SelectTrigger data-testid="select-day">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Lunedì</SelectItem>
+                  <SelectItem value="2">Martedì</SelectItem>
+                  <SelectItem value="3">Mercoledì</SelectItem>
+                  <SelectItem value="4">Giovedì</SelectItem>
+                  <SelectItem value="5">Venerdì</SelectItem>
+                  <SelectItem value="6">Sabato</SelectItem>
+                  <SelectItem value="0">Domenica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="availStartTime">Ora inizio</Label>
+                <Input
+                  id="availStartTime"
+                  type="time"
+                  value={newAvailability.startTime}
+                  onChange={(e) => setNewAvailability({ ...newAvailability, startTime: e.target.value })}
+                  data-testid="input-avail-start-time"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="availEndTime">Ora fine</Label>
+                <Input
+                  id="availEndTime"
+                  type="time"
+                  value={newAvailability.endTime}
+                  onChange={(e) => setNewAvailability({ ...newAvailability, endTime: e.target.value })}
+                  data-testid="input-avail-end-time"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="slotDuration">Durata slot</Label>
+                <Select 
+                  value={String(newAvailability.slotDuration)} 
+                  onValueChange={(value) => setNewAvailability({ ...newAvailability, slotDuration: parseInt(value) })}
+                >
+                  <SelectTrigger data-testid="select-slot-duration">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 minuti</SelectItem>
+                    <SelectItem value="60">60 minuti</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="appointmentType">Tipo appuntamento</Label>
+                <Select 
+                  value={newAvailability.appointmentType} 
+                  onValueChange={(value) => setNewAvailability({ ...newAvailability, appointmentType: value })}
+                >
+                  <SelectTrigger data-testid="select-appointment-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="video">Solo Video</SelectItem>
+                    <SelectItem value="in_person">Solo In presenza</SelectItem>
+                    <SelectItem value="both">Entrambi</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAvailabilityDialogOpen(false)}
+                className="flex-1"
+                data-testid="button-cancel-availability"
+              >
+                Annulla
+              </Button>
+              <Button 
+                onClick={handleSaveAvailability}
+                disabled={createAvailabilityMutation.isPending || updateAvailabilityMutation.isPending}
+                className="flex-1"
+                data-testid="button-confirm-availability"
+              >
+                {editingAvailability 
+                  ? (updateAvailabilityMutation.isPending ? "Salvataggio..." : "Salva Modifiche")
+                  : (createAvailabilityMutation.isPending ? "Creazione..." : "Crea Disponibilità")
+                }
               </Button>
             </div>
           </div>

@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Video, Mic, StopCircle } from "lucide-react";
+import { Calendar, Clock, Video, Mic, StopCircle, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useLocation } from "wouter";
 
 type Doctor = {
   id: string;
@@ -33,12 +34,20 @@ type Appointment = {
   doctor?: Doctor;
 };
 
+type AvailableSlot = {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  date: string; // Full date: YYYY-MM-DD
+  doctorId: string;
+};
+
 export default function TeleconsultoPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<string>("");
-  const [bookingDate, setBookingDate] = useState("");
-  const [bookingTime, setBookingTime] = useState("09:00");
+  const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const [bookingNotes, setBookingNotes] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -64,6 +73,12 @@ export default function TeleconsultoPage() {
   // Combine linked doctors + ProhMed
   const doctors = [...linkedDoctors, prohmedDoctor];
 
+  // Get available slots for selected doctor (for next 14 days)
+  const { data: availableSlots = [], isLoading: isSlotsLoading } = useQuery<AvailableSlot[]>({
+    queryKey: ['/api/appointments/available-slots', selectedDoctor],
+    enabled: !!selectedDoctor,
+  });
+
   // Cleanup on unmount or dialog close
   useEffect(() => {
     return () => {
@@ -81,6 +96,11 @@ export default function TeleconsultoPage() {
       setIsRecording(false);
     }
   }, [isBookingDialogOpen]);
+
+  // Reset selected slot when doctor changes
+  useEffect(() => {
+    setSelectedSlot(null);
+  }, [selectedDoctor]);
 
   // Voice recording for notes
   const toggleVoiceRecording = () => {
@@ -140,10 +160,8 @@ export default function TeleconsultoPage() {
   // Book teleconsult mutation
   const bookTeleconsultMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/appointments/book-teleconsult', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest('/api/appointments/book-teleconsult', 'POST', data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/my-appointments'] });
@@ -153,8 +171,7 @@ export default function TeleconsultoPage() {
       });
       setIsBookingDialogOpen(false);
       setSelectedDoctor("");
-      setBookingDate("");
-      setBookingTime("09:00");
+      setSelectedSlot(null);
       setBookingNotes("");
     },
     onError: (error: any) => {
@@ -167,17 +184,17 @@ export default function TeleconsultoPage() {
   });
 
   const handleBookTeleconsult = () => {
-    if (!selectedDoctor || !bookingDate || !bookingTime) {
+    if (!selectedDoctor || !selectedSlot) {
       toast({
         title: "Campi mancanti",
-        description: "Seleziona medico, data e orario",
+        description: "Seleziona medico e slot orario",
         variant: "destructive",
       });
       return;
     }
 
-    const startTime = new Date(`${bookingDate}T${bookingTime}:00`);
-    const endTime = new Date(startTime.getTime() + 30 * 60000); // +30 min
+    const startTime = new Date(`${selectedSlot.date}T${selectedSlot.startTime}:00`);
+    const endTime = new Date(`${selectedSlot.date}T${selectedSlot.endTime}:00`);
 
     bookTeleconsultMutation.mutate({
       doctorId: selectedDoctor,
@@ -197,9 +214,19 @@ export default function TeleconsultoPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Teleconsulto</h1>
-          <p className="text-muted-foreground">Prenota una videochiamata con il tuo medico</p>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setLocation('/prevention')} 
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Teleconsulto</h1>
+            <p className="text-muted-foreground">Prenota una videochiamata con il tuo medico</p>
+          </div>
         </div>
         <Button onClick={() => setIsBookingDialogOpen(true)} data-testid="button-book-teleconsult">
           <Video className="w-4 h-4 mr-2" />
@@ -315,29 +342,32 @@ export default function TeleconsultoPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Available Slots Section */}
+            {selectedDoctor && (
               <div className="space-y-2">
-                <Label htmlFor="date">Data</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  data-testid="input-booking-date"
-                />
+                <Label>Slot Disponibili</Label>
+                {isSlotsLoading ? (
+                  <p className="text-sm text-muted-foreground">Caricamento slot disponibili...</p>
+                ) : availableSlots.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nessuno slot disponibile per questo medico nei prossimi giorni.</p>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3">
+                    {availableSlots.map((slot, index) => (
+                      <Button
+                        key={index}
+                        variant={selectedSlot?.date === slot.date && selectedSlot?.startTime === slot.startTime ? "default" : "outline"}
+                        className="w-full justify-start"
+                        onClick={() => setSelectedSlot(slot)}
+                        data-testid={`button-slot-${index}`}
+                      >
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {format(new Date(slot.date), "EEEE dd MMMM", { locale: it })} - {slot.startTime} / {slot.endTime}
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Orario</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={bookingTime}
-                  onChange={(e) => setBookingTime(e.target.value)}
-                  data-testid="input-booking-time"
-                />
-              </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">

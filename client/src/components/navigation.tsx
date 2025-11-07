@@ -159,6 +159,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                         Refertazione
                       </Button>
                     </Link>
+                    <Link href="/doctor/appointments">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-appointments">
+                        <Video className="w-4 h-4 mr-2" />
+                        Appuntamenti
+                      </Button>
+                    </Link>
                     <Link href="/prevention">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
                         <Stethoscope className="w-4 h-4 mr-2" />

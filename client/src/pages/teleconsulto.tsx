@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ type Appointment = {
   endTime: string;
   status: string;
   appointmentType?: string;
-  videoRoomUrl?: string;
+  videoMeetingUrl?: string | null;
   notes?: string;
   doctor?: Doctor;
 };
@@ -41,6 +41,7 @@ export default function TeleconsultoPage() {
   const [bookingTime, setBookingTime] = useState("09:00");
   const [bookingNotes, setBookingNotes] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // Get patient's appointments
   const { data: appointments = [], isLoading } = useQuery<Appointment[]>({
@@ -52,8 +53,36 @@ export default function TeleconsultoPage() {
     queryKey: ['/api/users/doctors'],
   });
 
+  // Cleanup on unmount or dialog close
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isBookingDialogOpen && recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      setIsRecording(false);
+    }
+  }, [isBookingDialogOpen]);
+
   // Voice recording for notes
   const toggleVoiceRecording = () => {
+    // Feature detection
+    if (!(window as any).webkitSpeechRecognition) {
+      toast({
+        title: "Funzione non disponibile",
+        description: "Il riconoscimento vocale non è supportato su questo browser",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!isRecording) {
       // Start recording
       const recognition = new (window as any).webkitSpeechRecognition();
@@ -66,15 +95,33 @@ export default function TeleconsultoPage() {
         setBookingNotes(prev => prev ? `${prev} ${transcript}` : transcript);
       };
 
+      recognition.onend = () => {
+        setIsRecording(false);
+        recognitionRef.current = null;
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        recognitionRef.current = null;
+      };
+
       recognition.start();
+      recognitionRef.current = recognition;
       setIsRecording(true);
 
       // Auto-stop after 30 seconds
       setTimeout(() => {
-        recognition.stop();
-        setIsRecording(false);
+        if (recognitionRef.current) {
+          recognitionRef.current.stop();
+        }
       }, 30000);
     } else {
+      // Stop recording
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
       setIsRecording(false);
     }
   };
@@ -195,13 +242,13 @@ export default function TeleconsultoPage() {
                         <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>
                           {apt.status === 'confirmed' ? 'Confermato' : 'In attesa'}
                         </Badge>
-                        {apt.videoRoomUrl && apt.status === 'confirmed' && (
+                        {apt.videoMeetingUrl && apt.status === 'confirmed' && (
                           <Button 
                             size="sm" 
                             asChild
                             data-testid={`button-join-video-${apt.id}`}
                           >
-                            <a href={apt.videoRoomUrl} target="_blank" rel="noopener noreferrer">
+                            <a href={apt.videoMeetingUrl} target="_blank" rel="noopener noreferrer">
                               <Video className="w-4 h-4 mr-2" />
                               Entra in Chiamata
                             </a>

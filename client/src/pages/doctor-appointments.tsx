@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2 } from "lucide-react";
+import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLocation } from "wouter";
 
 type Appointment = {
   id: string;
@@ -48,6 +49,7 @@ type DoctorAvailability = {
 
 export default function DoctorAppointmentsPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
@@ -331,9 +333,19 @@ export default function DoctorAppointmentsPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Gestione Appuntamenti</h1>
-          <p className="text-muted-foreground">Crea slot e gestisci le visite con i pazienti</p>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => setLocation('/')}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Gestione Appuntamenti</h1>
+            <p className="text-muted-foreground">Crea slot singoli o definisci disponibilità ricorrenti</p>
+          </div>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-slot">
           <Plus className="w-4 h-4 mr-2" />

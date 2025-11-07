@@ -85,9 +85,12 @@ PostgreSQL, managed by Drizzle ORM, handles data for users, subscriptions, medic
   - **Doctor Selection Options**: Patients can choose from linked doctors or ProhMed default team (info@prohmed.ai)
   - **Navigation Integration**: "Contatta il medico" button in prevention path dialog navigates to `/teleconsulto` instead of external ProhMed link
   - **Automated Notifications**: WhatsApp to doctor, email to patient, scheduled reminders (24h + 2h before appointment)
-  - **Video Meeting Integration**: Jitsi video room generation with direct "Entra in Chiamata" links when appointment confirmed
-  - **Database Schema**: `doctorAvailability` + `appointmentReminders` tables with Zod validation and error mapping (23503, 23505, 22P02)
-  - **UX Enhancements**: Automatic slot reset when changing doctors (prevents booking errors), edit button with prefilled form for availability slots, responsive UI for mobile/desktop
+  - **Video Meeting Integration**: Jitsi video room auto-generation (`https://meet.jit.si/ciry-{randomID}`) with direct "Entra in Chiamata" buttons for doctors and patients when appointment confirmed. No API keys required - uses public Jitsi Meet service
+  - **Database Schema**: `doctorAvailability` + `appointmentReminders` tables with Zod validation and error mapping (23503, 23505, 22P02). Meeting URLs stored in `meeting_url` field (Drizzle camelCase: `meetingUrl`) with `meeting_platform: 'jitsi'`
+  - **UX Enhancements**: Back button in doctor appointments page for navigation to homepage, automatic slot reset when changing doctors (prevents booking errors), edit button with prefilled form for availability slots, responsive UI for mobile/desktop
+  - **Doctor UI Features**: 
+    - **"Crea Slot"** button: Creates a single appointment for a specific date/time (one-off appointments)
+    - **"Aggiungi Disponibilità"** (Disponibilità tab): Creates recurring weekly availability slots (e.g., "Every Monday 9-17") that auto-generate appointment slots
   - **Routes**: `/teleconsulto` for patients, `/appuntamenti` (Appuntamenti menu) for doctor availability + appointment management
   - **ProhMed Account**: Default doctor account (ID: 7903dae2-2de6-48c0-8a9a-b7e9fca071ca) available as fallback option for all patients
 

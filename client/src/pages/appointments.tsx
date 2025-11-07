@@ -7,11 +7,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Clock, User, Video, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Video, CheckCircle, XCircle, AlertCircle, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 type Appointment = {
   id: string;
@@ -147,6 +148,12 @@ export default function AppointmentsPage() {
           <h1 className="text-3xl font-bold">Prenota Visita</h1>
           <p className="text-muted-foreground">Gestisci i tuoi appuntamenti medici</p>
         </div>
+        <Button asChild data-testid="button-new-teleconsult">
+          <Link href="/teleconsulto">
+            <Plus className="w-4 h-4 mr-2" />
+            Prenota Teleconsulto
+          </Link>
+        </Button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

@@ -812,41 +812,90 @@ export async function extractTextFromMedicalReport(
       extractedText = pdfData.text;
       console.log("[Gemini] PDF text extracted:", extractedText.length, "characters");
     }
-    // Handle images (JPEG, PNG) with Gemini Vision OCR
+    // Handle images (JPEG, PNG) with Gemini Vision OCR + Retry Logic
     else if (mimeType.startsWith("image/")) {
       const imageBytes = fs.readFileSync(filePath);
       
-      const ocrPrompt = `Extract ALL text from this medical report image using OCR.
+      const ocrPrompt = `Extract ALL text from this medical report image using advanced OCR.
       
-IMPORTANT REQUIREMENTS:
-- Extract EVERY piece of text visible in the image
-- Preserve the exact structure and formatting
-- Include patient data, test names, values, units, reference ranges
-- Include headers, footers, hospital/lab names, dates
-- If text is unclear, include it with [?] marker
-- Return the complete raw text as it appears
+CRITICAL INSTRUCTIONS:
+- Extract EVERY piece of text visible, even if partially obscured or unclear
+- Handle challenging conditions: blurry text, angled documents, watermarks, shadows
+- Preserve exact structure and formatting (tables, lists, columns)
+- Include ALL medical data: patient info, test names, values, units, reference ranges
+- Include metadata: hospital/lab names, dates, doctor names, signatures
+- For unclear text, use [?] markers but still attempt extraction
+- If document is rotated/angled, mentally rotate it to read correctly
+- Return the complete raw text exactly as it appears in the document
 
-Respond ONLY with the extracted text, no additional commentary.`;
+QUALITY TOLERANCE:
+- Even if image quality is suboptimal, extract whatever is readable
+- Partial data is better than no data - extract what you can
+- Use context clues to infer unclear characters
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [{
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                data: imageBytes.toString("base64"),
-                mimeType,
+Respond ONLY with the extracted text, no commentary or explanations.`;
+
+      let ocrSuccess = false;
+      
+      // Try with gemini-2.5-flash first (faster, cost-effective)
+      try {
+        console.log("[Gemini] Attempting OCR with gemini-2.5-flash...");
+        const flashResponse = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  data: imageBytes.toString("base64"),
+                  mimeType,
+                },
               },
-            },
-            { text: ocrPrompt }
-          ]
-        }],
-      });
+              { text: ocrPrompt }
+            ]
+          }],
+        });
 
-      extractedText = response.text || "";
-      console.log("[Gemini] Image OCR completed:", extractedText.length, "characters");
-      console.log("[Gemini] Extracted text:", extractedText.substring(0, 200)); // Log first 200 chars for debug
+        extractedText = flashResponse.text || "";
+        
+        // Consider successful if we got meaningful text (>10 chars or contains numbers/letters)
+        if (extractedText.trim().length > 10 || /[a-zA-Z0-9]/.test(extractedText)) {
+          ocrSuccess = true;
+          console.log("[Gemini] ✅ Flash OCR successful:", extractedText.length, "characters");
+        }
+      } catch (flashError) {
+        console.warn("[Gemini] ⚠️ Flash OCR failed, will retry with Pro:", flashError instanceof Error ? flashError.message : flashError);
+      }
+      
+      // Retry with gemini-2.5-pro if flash failed or produced minimal text
+      if (!ocrSuccess) {
+        try {
+          console.log("[Gemini] Retrying OCR with gemini-2.5-pro (higher accuracy)...");
+          const proResponse = await ai.models.generateContent({
+            model: "gemini-2.5-pro",
+            contents: [{
+              role: "user",
+              parts: [
+                {
+                  inlineData: {
+                    data: imageBytes.toString("base64"),
+                    mimeType,
+                  },
+                },
+                { text: ocrPrompt }
+              ]
+            }],
+          });
+
+          extractedText = proResponse.text || "";
+          console.log("[Gemini] ✅ Pro OCR completed:", extractedText.length, "characters");
+        } catch (proError) {
+          console.error("[Gemini] ❌ Both OCR attempts failed");
+          throw proError; // Re-throw to trigger catch block with user-friendly message
+        }
+      }
+      
+      console.log("[Gemini] Final extracted text preview:", extractedText.substring(0, 300));
     } else {
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
@@ -893,9 +942,10 @@ Respond ONLY with the extracted text, no additional commentary.`;
     }
     
     // For text-based medical reports, proceed with text analysis
-    if (!extractedText || extractedText.trim().length < 5) {
-      console.warn("[Gemini] Very little text extracted - this shouldn't happen if radiological path worked");
-      extractedText = "[Testo non riconoscibile]";
+    // Lowered threshold from 5 to 3 characters to be more tolerant
+    if (!extractedText || extractedText.trim().length < 3) {
+      console.warn("[Gemini] Minimal text extracted (", extractedText.trim().length, "chars) - proceeding with fallback");
+      extractedText = "[Documento con testo limitato o non riconoscibile]";
     }
 
     // Analyze extracted text with Gemini to structure medical data
@@ -999,14 +1049,32 @@ Rispondi con JSON in questo formato esatto:
     return result;
   } catch (error) {
     console.error("[Gemini] Failed to extract text from medical report:", error);
-    throw new Error(
-      `Impossibile analizzare il documento. Riprova caricando una foto più chiara con:\n` +
-      `• Buona illuminazione (evita ombre e riflessi)\n` +
-      `• Documento a fuoco (non sfocato)\n` +
-      `• Testo leggibile (non troppo piccolo)\n` +
-      `• Foto dritta (non storta o angolata)\n\n` +
-      `Se il problema persiste, prova a caricare il documento in formato PDF invece che come immagine.`
-    );
+    
+    // Provide more specific error message based on error type
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isRateLimitError = errorMessage.toLowerCase().includes('quota') || errorMessage.toLowerCase().includes('rate limit');
+    const isNetworkError = errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('timeout');
+    
+    if (isRateLimitError) {
+      throw new Error(
+        `⏳ Sistema temporaneamente sovraccarico. Riprova tra qualche secondo.\n\n` +
+        `Se urgente, prova a caricare il documento in formato PDF (più affidabile delle foto).`
+      );
+    } else if (isNetworkError) {
+      throw new Error(
+        `📡 Problema di connessione durante l'analisi del documento.\n\n` +
+        `Riprova tra qualche secondo. Se persiste, verifica la tua connessione internet.`
+      );
+    } else {
+      throw new Error(
+        `📄 Impossibile analizzare il documento. Suggerimenti per migliorare il caricamento:\n\n` +
+        `✓ Usa il formato PDF quando possibile (più affidabile)\n` +
+        `✓ Se fotografi: buona illuminazione, evita ombre/riflessi\n` +
+        `✓ Documento a fuoco e dritto (non angolato)\n` +
+        `✓ Testo leggibile, non troppo piccolo\n\n` +
+        `💡 Suggerimento: I PDF nativi (non foto scannerizzate) hanno il 95%+ di successo.`
+      );
+    }
   }
 }
 

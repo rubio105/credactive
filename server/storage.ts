@@ -158,6 +158,10 @@ import {
   type InsertPreventionAssessmentQuestion,
   type PreventionUserResponse,
   type InsertPreventionUserResponse,
+  // Health Risk Predictions
+  healthRiskPredictions,
+  type HealthRiskPrediction,
+  type InsertHealthRiskPrediction,
   // Crossword game
   crosswordPuzzles,
   crosswordAttempts,
@@ -212,7 +216,7 @@ import {
   type InsertApiKey,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, asc, sql, and, or, gte, lte, inArray } from "drizzle-orm";
+import { eq, desc, asc, sql, and, or, gte, lte, gt, lt, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -544,6 +548,11 @@ export interface IStorage {
   createPreventionUserResponse(response: InsertPreventionUserResponse): Promise<PreventionUserResponse>;
   getPreventionUserResponses(assessmentId: string): Promise<PreventionUserResponse[]>;
   getUserResponsesByQuestion(questionId: string): Promise<PreventionUserResponse[]>;
+
+  // Health risk prediction operations
+  createHealthRiskPrediction(prediction: InsertHealthRiskPrediction): Promise<HealthRiskPrediction>;
+  getActiveHealthRiskPredictionsForUser(userId: string): Promise<HealthRiskPrediction[]>;
+  deactivateExpiredPredictions(): Promise<void>;
 
   // ========== CROSSWORD GAME ==========
   
@@ -3424,6 +3433,38 @@ export class DatabaseStorage implements IStorage {
       .from(preventionUserResponses)
       .where(eq(preventionUserResponses.questionId, questionId))
       .orderBy(preventionUserResponses.createdAt);
+  }
+
+  // Health risk prediction operations
+  async createHealthRiskPrediction(prediction: InsertHealthRiskPrediction): Promise<HealthRiskPrediction> {
+    const [newPrediction] = await db.insert(healthRiskPredictions).values(prediction).returning();
+    return newPrediction;
+  }
+
+  async getActiveHealthRiskPredictionsForUser(userId: string): Promise<HealthRiskPrediction[]> {
+    return await db
+      .select()
+      .from(healthRiskPredictions)
+      .where(
+        and(
+          eq(healthRiskPredictions.userId, userId),
+          eq(healthRiskPredictions.isActive, true),
+          gt(healthRiskPredictions.expiresAt, new Date())
+        )
+      )
+      .orderBy(desc(healthRiskPredictions.riskScore));
+  }
+
+  async deactivateExpiredPredictions(): Promise<void> {
+    await db
+      .update(healthRiskPredictions)
+      .set({ isActive: false })
+      .where(
+        and(
+          eq(healthRiskPredictions.isActive, true),
+          lt(healthRiskPredictions.expiresAt, new Date())
+        )
+      );
   }
 
   // ========== CROSSWORD GAME IMPLEMENTATIONS ==========

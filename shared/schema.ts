@@ -1514,6 +1514,44 @@ export const insertPreventionIndexSchema = createInsertSchema(preventionIndices)
 });
 export type InsertPreventionIndex = z.infer<typeof insertPreventionIndexSchema>;
 
+// Health Risk Predictions (AI-powered predictive health analysis)
+export const healthRiskPredictions = pgTable("health_risk_predictions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Risk identification
+  riskType: varchar("risk_type", { length: 100 }).notNull(), // diabetes, cardiovascular, hypertension, obesity, etc.
+  riskScore: integer("risk_score").notNull(), // 0-100 probability score
+  riskLevel: varchar("risk_level", { length: 20 }).notNull(), // low, medium, high, critical
+  
+  // Prediction timeframe
+  predictedTimeframe: varchar("predicted_timeframe", { length: 50 }).notNull(), // next_year, 1-3_years, 3-5_years, 5+_years
+  
+  // AI analysis details
+  contributingFactors: text("contributing_factors").array(), // ["Sedentary lifestyle", "Family history", "High BMI"]
+  recommendations: text("recommendations").array(), // ["Increase physical activity", "Regular blood sugar monitoring"]
+  basedOnDocuments: text("based_on_documents").array(), // Array of document IDs analyzed
+  aiAnalysis: text("ai_analysis").notNull(), // Detailed AI explanation
+  
+  // Model metadata
+  modelUsed: varchar("model_used", { length: 50 }).default("gemini-2.5-pro"), // AI model identifier
+  confidenceLevel: varchar("confidence_level", { length: 20 }).notNull(), // high, medium, low
+  
+  // Lifecycle
+  isActive: boolean("is_active").default(true), // Active predictions shown to user
+  expiresAt: timestamp("expires_at").notNull(), // Predictions expire after 6 months
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type HealthRiskPrediction = typeof healthRiskPredictions.$inferSelect;
+export const insertHealthRiskPredictionSchema = createInsertSchema(healthRiskPredictions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHealthRiskPrediction = z.infer<typeof insertHealthRiskPredictionSchema>;
+
 // Prohmed Access Codes (telemedicine app access codes)
 export const prohmedCodes = pgTable("prohmed_codes", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

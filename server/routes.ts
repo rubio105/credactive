@@ -8720,6 +8720,86 @@ Explicación de audio:`
     }
   });
 
+  // ========== HEALTH RISK PREDICTIONS ==========
+
+  // Generate health risk predictions (POST /api/health-risk/generate)
+  app.post('/api/health-risk/generate', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Import ML prediction module
+      const { generateHealthRiskPredictions, predictionToInsert } = await import('./ml-prediction');
+      
+      // Gather user medical data
+      const medicalDocuments = await storage.getPreventionDocumentsByUser(user.id);
+      const triageSessions = await storage.getTriageSessionsByUser(user.id);
+      
+      // Build prediction input
+      const input = {
+        userId: user.id,
+        userProfile: {
+          age: user.dateOfBirth ? new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear() : undefined,
+          gender: user.gender,
+          heightCm: user.heightCm,
+          weightKg: user.weightKg,
+          smokingStatus: user.smokingStatus,
+          physicalActivity: user.physicalActivity,
+        },
+        medicalDocuments: medicalDocuments.map(doc => ({
+          id: doc.id,
+          type: doc.documentType || 'medical',
+          content: doc.content || '',
+          summary: doc.summary,
+          date: new Date(doc.createdAt),
+        })),
+        triageHistory: triageSessions.slice(0, 10).map(session => ({
+          urgencyLevel: session.urgencyLevel || 'low',
+          content: session.title || 'No content',
+          date: new Date(session.createdAt),
+        })),
+      };
+      
+      // Generate predictions using AI
+      const predictions = await generateHealthRiskPredictions(input);
+      
+      // Deactivate old predictions first
+      await storage.deactivateExpiredPredictions();
+      
+      // Save predictions to database
+      const savedPredictions = await Promise.all(
+        predictions.map(pred => 
+          storage.createHealthRiskPrediction(predictionToInsert(user.id, pred))
+        )
+      );
+      
+      res.json({
+        message: 'Health risk predictions generated successfully',
+        predictions: savedPredictions,
+      });
+    } catch (error: any) {
+      console.error('Generate predictions error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate predictions' });
+    }
+  });
+
+  // Get active health risk predictions (GET /api/health-risk/predictions)
+  app.get('/api/health-risk/predictions', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Deactivate expired predictions
+      await storage.deactivateExpiredPredictions();
+      
+      // Get active predictions
+      const predictions = await storage.getActiveHealthRiskPredictionsForUser(user.id.toString());
+      
+      res.json(predictions);
+    } catch (error: any) {
+      console.error('Get predictions error:', error);
+      res.status(500).json({ message: error.message || 'Failed to retrieve predictions' });
+    }
+  });
+
   // Get latest assessment for user (GET /api/prevention/assessment/latest) - Optional auth
   app.get('/api/prevention/assessment/latest', async (req, res) => {
     try {

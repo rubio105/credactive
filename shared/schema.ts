@@ -2384,5 +2384,58 @@ export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
 });
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 
+// ========== TELECONSULTO SYSTEM ==========
+
+// Doctor availability slots for teleconsultation booking
+export const doctorAvailability = pgTable("doctor_availability", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  dayOfWeek: integer("day_of_week").notNull(), // 0=Sunday, 1=Monday, ..., 6=Saturday
+  startTime: varchar("start_time", { length: 5 }).notNull(), // HH:MM format (e.g., "09:00")
+  endTime: varchar("end_time", { length: 5 }).notNull(), // HH:MM format (e.g., "17:00")
+  slotDuration: integer("slot_duration").default(30).notNull(), // minutes: 30 or 60
+  appointmentType: varchar("appointment_type", { length: 20 }).default('both'), // video, in_person, both
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_doctor_availability_doctor").on(table.doctorId),
+  index("idx_doctor_availability_active").on(table.isActive),
+]);
+
+export type DoctorAvailability = typeof doctorAvailability.$inferSelect;
+export const insertDoctorAvailabilitySchema = createInsertSchema(doctorAvailability).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertDoctorAvailability = z.infer<typeof insertDoctorAvailabilitySchema>;
+
+// Appointment reminders for automated notifications
+export const appointmentReminders = pgTable("appointment_reminders", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  appointmentId: uuid("appointment_id").notNull().references(() => appointments.id, { onDelete: 'cascade' }),
+  reminderType: varchar("reminder_type", { length: 20 }).notNull(), // confirmation, reminder_24h, reminder_2h
+  scheduledFor: timestamp("scheduled_for").notNull(),
+  sentAt: timestamp("sent_at"),
+  status: varchar("status", { length: 20 }).default('pending').notNull(), // pending, sent, failed
+  channel: varchar("channel", { length: 20 }).notNull(), // email, whatsapp, both
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_appointment_reminders_appointment").on(table.appointmentId),
+  index("idx_appointment_reminders_status").on(table.status),
+  index("idx_appointment_reminders_scheduled").on(table.scheduledFor),
+  unique("unique_reminder_per_appointment").on(table.appointmentId, table.reminderType), // Prevent duplicate reminders
+]);
+
+export type AppointmentReminder = typeof appointmentReminders.$inferSelect;
+export const insertAppointmentReminderSchema = createInsertSchema(appointmentReminders).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+});
+export type InsertAppointmentReminder = z.infer<typeof insertAppointmentReminderSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

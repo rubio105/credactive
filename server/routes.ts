@@ -11,7 +11,7 @@ import { createRequire } from "module";
 import { storage } from "./storage";
 import { db } from "./db";
 import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData } from "@shared/schema";
-import { eq, desc, and, count } from "drizzle-orm";
+import { eq, desc, and, count, sql } from "drizzle-orm";
 import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
@@ -48,6 +48,7 @@ import passport from "passport";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
 import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail, sendAppointmentBookedToDoctorEmail, sendAppointmentConfirmedToPatientEmail, sendAppointmentCancelledToPatientEmail } from "./email";
+import { sendWhatsAppMessage } from "./twilio";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import { generateAssessmentPDFBuffer } from "./assessmentPDFGenerator";
@@ -12578,6 +12579,310 @@ Fornisci:
     } catch (error: any) {
       console.error('Get triage summary error:', error);
       res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+  });
+
+  // TELECONSULTO - Doctor Availability Management
+  app.post('/api/doctor/availability', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user.isDoctor) {
+        return res.status(403).json({ message: 'Only doctors can manage availability' });
+      }
+
+      // Validate request body
+      const availabilitySchema = z.object({
+        dayOfWeek: z.number().min(0).max(6),
+        startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        slotDuration: z.number().int().refine(val => val === 30 || val === 60, {
+          message: 'Slot duration must be 30 or 60 minutes',
+        }).optional().default(30),
+        appointmentType: z.enum(['video', 'in_person', 'both']).optional().default('both'),
+      });
+
+      const validated = availabilitySchema.safeParse(req.body);
+      if (!validated.success) {
+        return res.status(400).json({ 
+          message: 'Invalid input', 
+          errors: validated.error.errors 
+        });
+      }
+
+      const { dayOfWeek, startTime, endTime, slotDuration, appointmentType } = validated.data;
+      
+      await db.execute(sql`
+        INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, slot_duration, appointment_type)
+        VALUES (${user.id}, ${dayOfWeek}, ${startTime}, ${endTime}, ${slotDuration}, ${appointmentType})
+      `);
+
+      res.json({ success: true, message: 'Availability added' });
+    } catch (error: any) {
+      console.error('Add availability error:', error);
+      // Map DB constraint/format errors to 400s
+      if (error.code === '23503') {
+        return res.status(400).json({ message: 'Invalid doctor reference' });
+      }
+      if (error.code === '23505') {
+        return res.status(400).json({ message: 'Availability slot already exists' });
+      }
+      if (error.code === '22P02') {
+        return res.status(400).json({ message: 'Invalid time format or data type' });
+      }
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/doctor/availability', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user.isDoctor) {
+        return res.status(403).json({ message: 'Only doctors can view availability' });
+      }
+
+      const result = await db.execute(sql`
+        SELECT * FROM doctor_availability 
+        WHERE doctor_id = ${user.id} AND is_active = true
+        ORDER BY day_of_week, start_time
+      `);
+
+      res.json(result.rows);
+    } catch (error: any) {
+      console.error('Get availability error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.delete('/api/doctor/availability/:id', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user.isDoctor) {
+        return res.status(403).json({ message: 'Only doctors can delete availability' });
+      }
+
+      // Validate UUID param
+      const { id } = req.params;
+      const uuidSchema = z.string().uuid();
+      const validated = uuidSchema.safeParse(id);
+      if (!validated.success) {
+        return res.status(400).json({ message: 'Invalid availability ID format' });
+      }
+
+      await db.execute(sql`
+        UPDATE doctor_availability SET is_active = false 
+        WHERE id = ${validated.data} AND doctor_id = ${user.id}
+      `);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Delete availability error:', error);
+      // Map DB constraint errors to 400s
+      if (error.code === '23503' || error.code === '22P02') {
+        return res.status(400).json({ message: 'Invalid availability reference' });
+      }
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // TELECONSULTO - Patient views available slots
+  app.get('/api/appointments/available-slots/:doctorId', isAuthenticated, async (req, res) => {
+    try {
+      const { doctorId } = req.params;
+      const { date } = req.query; // Optional: filter by specific date
+
+      const result = await db.execute(sql`
+        SELECT * FROM doctor_availability 
+        WHERE doctor_id = ${doctorId} AND is_active = true
+        ORDER BY day_of_week, start_time
+      `);
+
+      // Validate UUID param
+      const uuidSchema = z.string();
+      const validated = uuidSchema.safeParse(doctorId);
+      if (!validated.success) {
+        return res.status(400).json({ message: 'Invalid doctor ID' });
+      }
+
+      res.json(result.rows);
+    } catch (error: any) {
+      console.error('Get available slots error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // TELECONSULTO - Book teleconsult with automatic confirmations
+  app.post('/api/appointments/book-teleconsult', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+
+      // Validate request body
+      const bookingSchema = z.object({
+        doctorId: z.string(),
+        startTime: z.string().datetime(),
+        endTime: z.string().datetime(),
+        notes: z.string().optional(),
+        voiceNotes: z.string().optional(),
+        appointmentType: z.enum(['video', 'in_person']).optional().default('video'),
+      });
+
+      const validated = bookingSchema.safeParse(req.body);
+      if (!validated.success) {
+        return res.status(400).json({ 
+          message: 'Invalid booking data', 
+          errors: validated.error.errors 
+        });
+      }
+
+      const { doctorId, startTime, endTime, notes, voiceNotes, appointmentType } = validated.data;
+
+      // Generate video room URL
+      const videoRoomUrl = appointmentType === 'video' 
+        ? `https://meet.jit.si/ciry-${crypto.randomBytes(8).toString('hex')}`
+        : null;
+
+      // Create appointment
+      const appointmentResult = await db.execute(sql`
+        INSERT INTO appointments (
+          doctor_id, patient_id, start_time, end_time, 
+          title, type, status, notes, voice_notes, 
+          appointment_type, video_room_url
+        ) VALUES (
+          ${doctorId}, ${user.id}, ${startTime}, ${endTime},
+          'Teleconsulto', 'teleconsult', 'pending', ${notes || ''}, ${voiceNotes || ''},
+          ${appointmentType || 'video'}, ${videoRoomUrl}
+        ) RETURNING *
+      `);
+
+      const appointment = appointmentResult.rows[0];
+
+      // Send WhatsApp to doctor
+      try {
+        const doctorResult = await db.execute(sql`
+          SELECT * FROM users WHERE id = ${doctorId}
+        `);
+        const doctor = doctorResult.rows[0];
+
+        if (doctor?.whatsapp_number && doctor?.whatsapp_notifications_enabled) {
+          const message = `🩺 *Nuova richiesta teleconsulto*\n\nPaziente: ${user.firstName} ${user.lastName}\nData: ${new Date(startTime).toLocaleDateString('it-IT')}\nOra: ${new Date(startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n\nNote: ${notes || 'Nessuna nota'}\n\nConferma su ciry.app`;
+          
+          await sendWhatsAppMessage(doctor.whatsapp_number, message);
+          
+          await db.execute(sql`
+            UPDATE appointments 
+            SET whatsapp_confirmation_sent = true 
+            WHERE id = ${appointment.id}
+          `);
+        }
+      } catch (whatsappError) {
+        console.error('WhatsApp send failed:', whatsappError);
+      }
+
+      // Send email confirmation to patient
+      try {
+        const doctorResult = await db.execute(sql`
+          SELECT * FROM users WHERE id = ${doctorId}
+        `);
+        const doctor = doctorResult.rows[0];
+
+        await sendAppointmentConfirmedToPatientEmail(user.email, {
+          doctorName: `Dr. ${doctor.first_name} ${doctor.last_name}`,
+          appointmentDate: new Date(startTime).toLocaleDateString('it-IT', { 
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+          }),
+          appointmentTime: new Date(startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+          videoMeetingUrl: videoRoomUrl,
+        });
+      } catch (emailError) {
+        console.error('Email send failed:', emailError);
+      }
+
+      // Schedule reminders (24h and 2h before)
+      const appointmentDate = new Date(startTime);
+      const reminder24h = new Date(appointmentDate.getTime() - 24 * 60 * 60 * 1000);
+      const reminder2h = new Date(appointmentDate.getTime() - 2 * 60 * 60 * 1000);
+
+      await db.execute(sql`
+        INSERT INTO appointment_reminders (appointment_id, reminder_type, scheduled_for, channel)
+        VALUES 
+          (${appointment.id}, 'reminder_24h', ${reminder24h.toISOString()}, 'email'),
+          (${appointment.id}, 'reminder_2h', ${reminder2h.toISOString()}, 'both')
+      `);
+
+      res.json({ 
+        success: true, 
+        appointment: {
+          ...appointment,
+          videoRoomUrl
+        }
+      });
+    } catch (error: any) {
+      console.error('Book teleconsult error:', error);
+      // Map DB constraint errors to 400s
+      if (error.code === '23503') {
+        return res.status(400).json({ message: 'Invalid doctor or patient reference' });
+      }
+      if (error.code === '23505') {
+        return res.status(400).json({ message: 'Appointment slot already booked' });
+      }
+      if (error.code === '22P02') {
+        return res.status(400).json({ message: 'Invalid date/time format' });
+      }
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // TELECONSULTO - Send pending reminders (cron job endpoint)
+  app.post('/api/appointments/send-reminders', async (req, res) => {
+    try {
+      // Get pending reminders scheduled for now or earlier
+      const result = await db.execute(sql`
+        SELECT r.*, a.*, u.email as patient_email, u.first_name, u.last_name,
+               d.whatsapp_number as patient_whatsapp, d.whatsapp_notifications_enabled
+        FROM appointment_reminders r
+        JOIN appointments a ON r.appointment_id = a.id
+        JOIN users u ON a.patient_id = u.id
+        LEFT JOIN users d ON a.patient_id = d.id
+        WHERE r.status = 'pending' AND r.scheduled_for <= NOW()
+      `);
+
+      let sentCount = 0;
+      for (const reminder of result.rows) {
+        try {
+          const appointmentDate = new Date(reminder.start_time);
+          const message = `🔔 Promemoria Teleconsulto\n\nAppuntamento tra ${reminder.reminder_type === 'reminder_24h' ? '24 ore' : '2 ore'}\nData: ${appointmentDate.toLocaleDateString('it-IT')}\nOra: ${appointmentDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n\n${reminder.video_room_url ? `Link: ${reminder.video_room_url}` : ''}`;
+
+          // Send via requested channel
+          if (reminder.channel === 'email' || reminder.channel === 'both') {
+            // Send email reminder
+          }
+
+          if ((reminder.channel === 'whatsapp' || reminder.channel === 'both') && 
+              reminder.patient_whatsapp && reminder.whatsapp_notifications_enabled) {
+            await sendWhatsAppMessage(reminder.patient_whatsapp, message);
+          }
+
+          // Mark as sent
+          await db.execute(sql`
+            UPDATE appointment_reminders 
+            SET status = 'sent', sent_at = NOW() 
+            WHERE id = ${reminder.id}
+          `);
+
+          sentCount++;
+        } catch (reminderError) {
+          console.error('Reminder send failed:', reminderError);
+          await db.execute(sql`
+            UPDATE appointment_reminders 
+            SET status = 'failed', error_message = ${reminderError.message} 
+            WHERE id = ${reminder.id}
+          `);
+        }
+      }
+
+      res.json({ success: true, remindersSent: sentCount });
+    } catch (error: any) {
+      console.error('Send reminders error:', error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   });
 

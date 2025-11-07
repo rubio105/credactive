@@ -29,7 +29,12 @@ Preferred communication style: Simple, everyday language.
 
 The frontend uses React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod. The design focuses on medical professionalism with features like color-coded health indicators, modern chat interfaces, and severity badges for medical reports. Key UI elements include:
 - **Color-Coded Medical Alerts**: Sticky-positioned alerts with 4 urgency levels (EMERGENCY 🚨, HIGH ⚡, MEDIUM ℹ️, LOW ✓) using healthcare-appropriate colors (red, orange, yellow, green)
-- **Role-Based Homepage Tabs**: Patients see "Prevenzione" + "I Tuoi Referti" tabs, Doctors see "I Tuoi Pazienti" + "Shortcuts Rapidi" tabs
+- **Role-Based Homepage Tabs**: 
+  - **Patients**: 3 tabs - "Prevenzione" (AI chat + report upload), "I Tuoi Referti" (medical documents), "Appuntamenti" (view appointments + book teleconsulto)
+  - **Doctors**: 2 tabs - "I Tuoi Pazienti" (patient dashboard), "Shortcuts Rapidi" (quick links)
+  - **Responsive Design**: Mobile (< 640px) shows abbreviated labels ("AI", "Referti", "Visite") and stacks tabs vertically; Desktop shows full labels in 3-column grid
+- **WhatsApp Notifications**: All users (patients + doctors) can configure WhatsApp number and notifications in Settings → Profilo tab for emergency alerts
+- **Navigation Improvements**: Back button added to doctor appointments page (→ homepage), clear UI labels explaining "Crea Slot" (one-off) vs "Aggiungi Disponibilità" (recurring weekly)
 - User guide, AI prevention chat, emergency alerts, premium subscription system, MFA, and role-based routing
 
 ## Technical Implementations

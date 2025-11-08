@@ -3,7 +3,8 @@ import { z } from "zod";
 import type { IStorage } from "./storage";
 import { 
   insertWearableDeviceSchema, 
-  insertBloodPressureReadingSchema 
+  insertBloodPressureReadingSchema,
+  insertWearableDailyReportSchema
 } from "@shared/schema";
 
 // Validation schemas
@@ -514,6 +515,207 @@ export function registerWearableRoutes(app: Express, deps: { storage: IStorage; 
       return res.status(500).json({ 
         success: false, 
         message: 'Errore durante il recupero delle statistiche' 
+      });
+    }
+  });
+
+  // ========== WEARABLE DAILY REPORTS (DOCTORS ONLY) ==========
+
+  // Generate daily report for a patient (doctor only)
+  app.post('/api/wearable/reports/generate', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      if (!req.user.isDoctor && !req.user.isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Solo i medici possono generare report' 
+        });
+      }
+
+      const { patientId, startDate, endDate, notes } = req.body;
+
+      if (!patientId || !startDate || !endDate) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'patientId, startDate e endDate sono obbligatori' 
+        });
+      }
+
+      // Fetch patient's blood pressure readings for the period
+      const readings = await storage.getBloodPressureReadingsByUser(
+        patientId, 
+        new Date(startDate), 
+        new Date(endDate)
+      );
+
+      if (readings.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Nessuna misurazione trovata per questo periodo' 
+        });
+      }
+
+      // Calculate aggregated stats
+      const totalReadings = readings.length;
+      const avgSystolic = Math.round(readings.reduce((sum, r) => sum + r.systolic, 0) / totalReadings);
+      const avgDiastolic = Math.round(readings.reduce((sum, r) => sum + r.diastolic, 0) / totalReadings);
+      const avgHeartRate = Math.round(
+        readings.filter(r => r.heartRate).reduce((sum, r) => sum + (r.heartRate || 0), 0) / 
+        readings.filter(r => r.heartRate).length
+      );
+      const anomalies = readings.filter(r => r.isAnomalous);
+      const anomalyCount = anomalies.length;
+
+      // Generate AI-optimized context text
+      const aiContextText = `
+=== REPORT DISPOSITIVI WEARABLE ===
+Periodo: ${new Date(startDate).toLocaleDateString('it-IT')} - ${new Date(endDate).toLocaleDateString('it-IT')}
+Paziente ID: ${patientId}
+
+STATISTICHE AGGREGATE:
+- Misurazioni totali: ${totalReadings}
+- Pressione media: ${avgSystolic}/${avgDiastolic} mmHg
+- Battiti cardiaci medi: ${avgHeartRate || '--'} bpm
+- Anomalie rilevate: ${anomalyCount} (${Math.round(anomalyCount / totalReadings * 100)}%)
+
+DETTAGLIO ANOMALIE:
+${anomalies.length > 0 ? anomalies.map(a => 
+  `- ${new Date(a.measurementTime).toLocaleString('it-IT')}: ${a.systolic}/${a.diastolic} mmHg${a.heartRate ? `, ${a.heartRate} bpm` : ''} - ${a.aiAnalysis || 'Nessuna analisi'}`
+).join('\n') : '- Nessuna anomalia rilevata'}
+
+${notes ? `\nNOTE MEDICHE:\n${notes}` : ''}
+
+RACCOMANDAZIONI:
+${anomalyCount > totalReadings * 0.3 ? '⚠️ ATTENZIONE: Più del 30% delle misurazioni sono anomale. Consigliato approfondimento.' : ''}
+${avgSystolic >= 140 || avgDiastolic >= 90 ? '⚠️ Pressione media elevata - possibile ipertensione.' : ''}
+${avgSystolic < 90 || avgDiastolic < 60 ? '⚠️ Pressione media bassa - possibile ipotensione.' : ''}
+${avgHeartRate && avgHeartRate > 100 ? '⚠️ Frequenza cardiaca media elevata (tachicardia).' : ''}
+${avgHeartRate && avgHeartRate < 50 ? '⚠️ Frequenza cardiaca media bassa (bradicardia).' : ''}
+`.trim();
+
+      // Save report to database
+      const report = await storage.createWearableDailyReport({
+        patientId,
+        doctorId: req.user.id,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        reportData: {
+          totalReadings,
+          avgSystolic,
+          avgDiastolic,
+          avgHeartRate,
+          anomalyCount,
+          anomalyPercentage: Math.round(anomalyCount / totalReadings * 100),
+          readings: readings.map(r => ({
+            time: r.measurementTime,
+            systolic: r.systolic,
+            diastolic: r.diastolic,
+            heartRate: r.heartRate,
+            isAnomalous: r.isAnomalous,
+          })),
+        },
+        aiContextText,
+        notes,
+      });
+
+      return res.json({ 
+        success: true, 
+        report,
+        message: 'Report generato con successo' 
+      });
+    } catch (error: any) {
+      console.error('Error generating wearable report:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Errore durante la generazione del report' 
+      });
+    }
+  });
+
+  // Get single report by ID
+  app.get('/api/wearable/reports/:id', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const reportId = req.params.id;
+      const report = await storage.getWearableDailyReportById(reportId);
+
+      if (!report) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Report non trovato' 
+        });
+      }
+
+      // Only doctor who created it, the patient, or admin can view
+      if (report.doctorId !== req.user.id && 
+          report.patientId !== req.user.id && 
+          !req.user.isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Non autorizzato' 
+        });
+      }
+
+      return res.json({ 
+        success: true, 
+        report 
+      });
+    } catch (error: any) {
+      console.error('Error fetching report:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Errore durante il recupero del report' 
+      });
+    }
+  });
+
+  // Get all reports for a patient (patient themselves, their doctor, or admin)
+  app.get('/api/wearable/reports/patient/:patientId', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const patientId = req.params.patientId;
+      
+      // Only the patient themselves, doctors, or admin can access
+      if (patientId !== req.user.id && !req.user.isDoctor && !req.user.isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Non autorizzato' 
+        });
+      }
+
+      const reports = await storage.getWearableDailyReportsByPatient(patientId, 50);
+
+      return res.json({ 
+        success: true, 
+        reports 
+      });
+    } catch (error: any) {
+      console.error('Error fetching patient reports:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Errore durante il recupero dei report del paziente' 
+      });
+    }
+  });
+
+  // Get all reports created by current doctor
+  app.get('/api/wearable/reports/doctor/my-reports', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      if (!req.user.isDoctor && !req.user.isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Solo i medici possono accedere a questo endpoint' 
+        });
+      }
+
+      const reports = await storage.getWearableDailyReportsByDoctor(req.user.id, 100);
+
+      return res.json({ 
+        success: true, 
+        reports 
+      });
+    } catch (error: any) {
+      console.error('Error fetching doctor reports:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Errore durante il recupero dei report del medico' 
       });
     }
   });

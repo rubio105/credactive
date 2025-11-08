@@ -8,8 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Activity, Heart, TrendingUp, TrendingDown, AlertTriangle, Calendar, Plus, Trash2 } from "lucide-react";
+import { Activity, Heart, TrendingUp, TrendingDown, AlertTriangle, Calendar, Plus, Trash2, FileText, Copy } from "lucide-react";
 import { useState, useMemo } from "react";
 import { BackButton } from "@/components/BackButton";
 import { format, subDays } from "date-fns";
@@ -59,6 +60,34 @@ interface WearableDevice {
   createdAt: string;
 }
 
+interface WearableDailyReport {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  startDate: string;
+  endDate: string;
+  reportData: {
+    totalReadings: number;
+    avgSystolic: number;
+    avgDiastolic: number;
+    avgHeartRate: number;
+    anomalyCount: number;
+    anomalyPercentage: number;
+  };
+  aiContextText: string;
+  notes: string | null;
+  createdAt: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  isDoctor: boolean;
+  isAdmin: boolean;
+}
+
 // Form schema for adding new device
 const addDeviceSchema = z.object({
   deviceType: z.enum(['blood_pressure', 'glucose', 'heart_rate', 'weight', 'oximeter', 'ecg']),
@@ -69,10 +98,22 @@ const addDeviceSchema = z.object({
 
 type AddDeviceForm = z.infer<typeof addDeviceSchema>;
 
+// Form schema for generating daily report
+const generateReportSchema = z.object({
+  patientId: z.string().min(1, "Seleziona un paziente"),
+  startDate: z.string().min(1, "La data di inizio è obbligatoria"),
+  endDate: z.string().min(1, "La data di fine è obbligatoria"),
+  notes: z.string().optional(),
+});
+
+type GenerateReportForm = z.infer<typeof generateReportSchema>;
+
 export default function WearablePage() {
   console.log('[WearablePage] Component mounting');
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
+  const [generateReportOpen, setGenerateReportOpen] = useState(false);
+  const [generatedReport, setGeneratedReport] = useState<WearableDailyReport | null>(null);
   const { toast } = useToast();
   console.log('[WearablePage] Hooks initialized');
   
@@ -158,6 +199,53 @@ export default function WearablePage() {
   const { data: anomalies, isLoading: loadingAnomalies, error: anomaliesError } = useQuery<BloodPressureReading[]>({
     queryKey: ['/api/wearable/blood-pressure/anomalies'],
     select: (data: any) => data?.anomalies || [],
+  });
+
+  // Fetch current user (to check if doctor)
+  const { data: currentUser } = useQuery<User>({
+    queryKey: ['/api/user'],
+  });
+
+  // Fetch doctor's patients (only if user is doctor)
+  const { data: patientsData } = useQuery<{ patients: User[] }>({
+    queryKey: ['/api/doctor/patients'],
+    enabled: !!currentUser?.isDoctor || !!currentUser?.isAdmin,
+  });
+
+  const patients = patientsData?.patients || [];
+
+  // Form for generating report
+  const generateReportForm = useForm<GenerateReportForm>({
+    resolver: zodResolver(generateReportSchema),
+    defaultValues: {
+      patientId: '',
+      startDate: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
+      endDate: format(new Date(), 'yyyy-MM-dd'),
+      notes: '',
+    },
+  });
+
+  // Generate report mutation
+  const generateReportMutation = useMutation({
+    mutationFn: async (data: GenerateReportForm) => {
+      return await apiRequest('/api/wearable/reports/generate', 'POST', data);
+    },
+    onSuccess: (response: any) => {
+      toast({
+        title: "Report generato",
+        description: "Il report giornaliero è stato creato con successo",
+      });
+      setGeneratedReport(response.report);
+      setGenerateReportOpen(false);
+      generateReportForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile generare il report",
+        variant: "destructive",
+      });
+    },
   });
 
   console.log('[WearablePage] Queries completed', {loadingReadings, loadingDevices, loadingAnomalies});

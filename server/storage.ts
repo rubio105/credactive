@@ -216,12 +216,15 @@ import {
   type InsertApiKey,
   wearableDevices,
   bloodPressureReadings,
+  wearableDailyReports,
   proactiveHealthTriggers,
   proactiveNotifications,
   type WearableDevice,
   type InsertWearableDevice,
   type BloodPressureReading,
   type InsertBloodPressureReading,
+  type WearableDailyReport,
+  type InsertWearableDailyReport,
   type ProactiveHealthTrigger,
   type InsertProactiveHealthTrigger,
   type ProactiveNotification,
@@ -746,6 +749,12 @@ export interface IStorage {
   getBloodPressureReadingById(id: string): Promise<BloodPressureReading | undefined>;
   getAnomalousBloodPressureReadings(userId?: string): Promise<Array<BloodPressureReading & { userName?: string; userEmail?: string }>>;
   updateBloodPressureReading(id: string, updates: Partial<BloodPressureReading>): Promise<BloodPressureReading>;
+
+  // Wearable Daily Reports
+  createWearableDailyReport(report: InsertWearableDailyReport): Promise<WearableDailyReport>;
+  getWearableDailyReportById(id: string): Promise<WearableDailyReport | undefined>;
+  getWearableDailyReportsByPatient(patientId: string, limit?: number): Promise<WearableDailyReport[]>;
+  getWearableDailyReportsByDoctor(doctorId: string, limit?: number): Promise<WearableDailyReport[]>;
 
   // ========== PROACTIVE HEALTH TRIGGERS ==========
 
@@ -4741,6 +4750,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bloodPressureReadings.id, id))
       .returning();
     return updated;
+  }
+
+  // Wearable Daily Reports
+  async createWearableDailyReport(report: InsertWearableDailyReport): Promise<WearableDailyReport> {
+    const [created] = await db
+      .insert(wearableDailyReports)
+      .values({
+        ...report,
+        createdAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async getWearableDailyReportById(id: string): Promise<WearableDailyReport | undefined> {
+    const [report] = await db
+      .select()
+      .from(wearableDailyReports)
+      .where(eq(wearableDailyReports.id, id));
+    return report;
+  }
+
+  async getWearableDailyReportsByPatient(patientId: string, limit: number = 50): Promise<WearableDailyReport[]> {
+    return await db
+      .select()
+      .from(wearableDailyReports)
+      .where(eq(wearableDailyReports.patientId, patientId))
+      .orderBy(desc(wearableDailyReports.createdAt))
+      .limit(limit);
+  }
+
+  async getWearableDailyReportsByDoctor(doctorId: string, limit: number = 50): Promise<WearableDailyReport[]> {
+    return await db
+      .select()
+      .from(wearableDailyReports)
+      .where(eq(wearableDailyReports.doctorId, doctorId))
+      .orderBy(desc(wearableDailyReports.createdAt))
+      .limit(limit);
   }
 
   // ========== PROACTIVE HEALTH TRIGGERS ==========

@@ -774,6 +774,17 @@ export default function Home() {
               </CardContent>
             </Card>
           </Link>
+          <Link href="/settings">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-settings">
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="font-semibold mb-1">Impostazioni</h3>
+                <p className="text-sm text-muted-foreground">Configura WhatsApp e profilo</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </TabsContent>
     </Tabs>

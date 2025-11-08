@@ -1284,6 +1284,67 @@ export default function PreventionPage() {
         if (lastAiMessage?.content) {
           setIsListening(false); // Show "CIRY Risponde..."
 
+          // Voice-triggered booking: Detect if AI suggests booking appointment
+          // Use sentence-level negation check to avoid false positives
+          const aiResponse = lastAiMessage.content;
+          
+          // Split by sentence-ending punctuation
+          const sentences = aiResponse.split(/[.!?]+/).map(s => s.trim());
+          
+          const bookingPatterns = [
+            /vuoi\s+(prenotare|un\s+appuntamento|una\s+visita)/i,
+            /posso\s+(prenotare|trovare.*appuntamento|mostrarti.*date)/i,
+            /ti\s+(mostro|trovo|propongo).*date\s+disponibili/i,
+            /ti\s+(aiuto|assisto).*prenotare/i,
+            /procediamo.*prenotazione/i,
+            /book.*appointment|schedule.*visit/i, // English fallback
+          ];
+          
+          // Check if any sentence matches AND doesn't start with negation
+          const shouldOpenBooking = sentences.some(sentence => {
+            const hasBookingIntent = bookingPatterns.some(pattern => pattern.test(sentence));
+            const hasNegation = /^\s*(non|no|senza)\b/i.test(sentence);
+            return hasBookingIntent && !hasNegation;
+          });
+
+          if (shouldOpenBooking && userRole === 'patient') {
+            // Pause voice conversation and open booking dialog
+            cleanupConversation();
+            
+            // Speak response first, then open dialog
+            const ttsResponseQuick = await fetch('/api/voice/speak', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                text: "Perfetto! Ti apro il modulo di prenotazione.", 
+                voice: 'nova' 
+              }),
+              credentials: 'include',
+            });
+
+            if (ttsResponseQuick.ok) {
+              const audioBlob = await ttsResponseQuick.blob();
+              const audioUrl = URL.createObjectURL(audioBlob);
+              const audio = new Audio(audioUrl);
+              
+              audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                // Open booking dialog after speech ends
+                setIsBookingDialogOpen(true);
+                toast({
+                  title: "Prenotazione guidata",
+                  description: "Seleziona data e ora nel modulo che si è aperto",
+                });
+              };
+
+              await audio.play();
+            } else {
+              setIsBookingDialogOpen(true);
+            }
+            
+            return; // Stop conversation cycle
+          }
+
           // Step 4: Speak AI response
           const ttsResponse = await fetch('/api/voice/speak', {
             method: 'POST',

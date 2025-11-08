@@ -70,9 +70,11 @@ const addDeviceSchema = z.object({
 type AddDeviceForm = z.infer<typeof addDeviceSchema>;
 
 export default function WearablePage() {
+  console.log('[WearablePage] Component mounting');
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
   const { toast } = useToast();
+  console.log('[WearablePage] Hooks initialized');
   
   // Memoize date range to prevent infinite fetch loop
   const { startDate, endDate } = useMemo(() => {
@@ -156,8 +158,39 @@ export default function WearablePage() {
     queryKey: ['/api/wearable/blood-pressure/anomalies'],
   });
 
+  console.log('[WearablePage] Queries completed', {loadingReadings, loadingDevices, loadingAnomalies});
+  
+  // Check loading state BEFORE processing data
+  if (loadingReadings || loadingDevices || loadingAnomalies) {
+    console.log('[WearablePage] Still loading...');
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  console.log('[WearablePage] Loading complete, processing data');
+  
   const readings = readingsData?.readings || [];
-  const stats = readingsData?.stats || {
+  const rawStats = readingsData?.stats;
+  
+  console.log('[WearablePage] Raw data', {readings: readings.length, rawStats});
+  
+  // Ensure stats values are safe for rendering (no NaN)
+  const stats = rawStats ? {
+    total: rawStats.total || 0,
+    anomalous: rawStats.anomalous || 0,
+    averageSystolic: Number.isFinite(rawStats.averageSystolic) ? Math.round(rawStats.averageSystolic) : 0,
+    averageDiastolic: Number.isFinite(rawStats.averageDiastolic) ? Math.round(rawStats.averageDiastolic) : 0,
+    averageHeartRate: Number.isFinite(rawStats.averageHeartRate) ? Math.round(rawStats.averageHeartRate) : 0,
+    maxSystolic: rawStats.maxSystolic || 0,
+    maxDiastolic: rawStats.maxDiastolic || 0,
+    minSystolic: rawStats.minSystolic || 0,
+    minDiastolic: rawStats.minDiastolic || 0,
+  } : {
     total: 0,
     anomalous: 0,
     averageSystolic: 0,
@@ -193,17 +226,9 @@ export default function WearablePage() {
     }
   };
 
-  if (loadingReadings || loadingDevices || loadingAnomalies) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
-
+  // Check errors after data processing but before rendering
   if (readingsError || devicesError || anomaliesError) {
+    console.error('[WearablePage] Error detected:', {readingsError, devicesError, anomaliesError});
     const errorMessage = readingsError instanceof Error ? readingsError.message : 
                          devicesError instanceof Error ? devicesError.message : 
                          anomaliesError instanceof Error ? anomaliesError.message :
@@ -236,22 +261,24 @@ export default function WearablePage() {
       </div>
     );
   }
+  
+  console.log('[WearablePage] Rendering main UI');
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <BackButton
-            label="Indietro"
-            variant="ghost"
-            testId="button-back"
-          />
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold" data-testid="title-page">Monitoraggio Salute</h1>
-            <p className="text-muted-foreground">Dati da dispositivi indossabili</p>
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <BackButton
+              label="Indietro"
+              variant="ghost"
+              testId="button-back"
+            />
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold" data-testid="title-page">Monitoraggio Salute</h1>
+              <p className="text-muted-foreground">Dati da dispositivi indossabili</p>
+            </div>
           </div>
-        </div>
         
         <Select value={dateRange} onValueChange={(v) => setDateRange(v as any)}>
           <SelectTrigger className="w-[140px]" data-testid="select-date-range">
@@ -301,7 +328,7 @@ export default function WearablePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-avg-hr">
-              {stats.averageHeartRate || '--'}
+              {stats.averageHeartRate > 0 ? stats.averageHeartRate : '--'}
             </div>
             <p className="text-xs text-muted-foreground">bpm</p>
           </CardContent>

@@ -10,7 +10,7 @@ import fs from "fs";
 import { createRequire } from "module";
 import { storage } from "./storage";
 import { db } from "./db";
-import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData } from "@shared/schema";
+import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData, proactiveHealthTriggers } from "@shared/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";

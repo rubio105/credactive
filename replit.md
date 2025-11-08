@@ -4,6 +4,11 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 # Recent Changes (November 2025)
 
+**Production Deployment Features - November 8, 2025:**
+- **Studio Address Integration**: Complete system for in-person appointments with studioAddress field in doctorAvailability and appointments tables, conditional UI in doctor-appointments.tsx, email notifications including physical address, validation requiring address for in_person/both appointment types
+- **WhatsApp Settings**: Existing UI in settings.tsx (lines 704-768) allows doctors and patients to enable/disable WhatsApp notifications and configure phone numbers
+- **Jitsi Video System Verification**: Auto-generated Jitsi URLs for video/both appointments (`https://meet.jit.si/ciry-${randomId}`), accessible via "Entra in Chiamata" button in appointments dashboard, URLs included in confirmation emails
+
 **Wearable Device Integration - Complete System (Phases 1-3):**
 - **Dashboard Frontend** (/wearable): Interactive recharts LineCharts for BP/HR trends, date range filtering (7/30/90 days), anomaly alerts table, device stats cards, resilient error handling with retry refetch, mobile-responsive grid layout
 - **Device Management UI**: Full CRUD operations with registration dialog (Zod validation), delete confirmation AlertDialogs, device list with real-time status updates

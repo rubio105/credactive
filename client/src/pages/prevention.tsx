@@ -162,6 +162,8 @@ export default function PreventionPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const conversationModeRef = useRef<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const doctorAutoStartedRef = useRef<boolean>(false);
@@ -1185,12 +1187,40 @@ export default function PreventionPage() {
     };
   }, []);
 
+  // Cleanup function to release all resources
+  const cleanupConversation = () => {
+    conversationModeRef.current = false;
+    setIsConversationMode(false);
+    setIsListening(false);
+
+    // Stop media recorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    mediaRecorderRef.current = null;
+
+    // Stop all microphone tracks (CRITICAL: prevents resource leak)
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+
+    // Stop current audio playback
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+
+    audioChunksRef.current = [];
+  };
+
   // Continuous conversation: record → transcribe → send to AI → speak response → loop
-  const startConversationCycle = async (stream: MediaStream) => {
-    if (!isConversationMode) return;
+  const startConversationCycle = async () => {
+    // CRITICAL: Check ref before every cycle restart
+    if (!conversationModeRef.current || !mediaStreamRef.current) return;
     
     audioChunksRef.current = [];
-    const mediaRecorder = new MediaRecorder(stream);
+    const mediaRecorder = new MediaRecorder(mediaStreamRef.current);
     mediaRecorderRef.current = mediaRecorder;
 
     mediaRecorder.ondataavailable = (event) => {
@@ -1200,7 +1230,8 @@ export default function PreventionPage() {
     };
 
     mediaRecorder.onstop = async () => {
-      if (!isConversationMode) return;
+      // CRITICAL: Check ref immediately after async operation
+      if (!conversationModeRef.current) return;
 
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
       
@@ -1222,19 +1253,20 @@ export default function PreventionPage() {
         const transcribeData = await transcribeResponse.json();
         const userText = transcribeData.text;
 
+        // CRITICAL: Check ref after async operation
+        if (!conversationModeRef.current) return;
+
         if (!userText || userText.trim() === '') {
           // No speech detected, restart listening
-          if (isConversationMode) {
-            setTimeout(() => startConversationCycle(stream), 500);
-          }
+          setTimeout(() => startConversationCycle(), 500);
           return;
         }
 
         // Step 2: Send to Gemini AI
-        const triageResponse = await apiRequest(`/api/triage/${sessionId}/message`, {
-          method: 'POST',
-          body: JSON.stringify({ message: userText }),
-        });
+        await apiRequest(`/api/triage/${sessionId}/message`, 'POST', { message: userText });
+
+        // CRITICAL: Check ref after async operation
+        if (!conversationModeRef.current) return;
 
         // Refresh messages
         await queryClient.invalidateQueries({ queryKey: [`/api/triage/${sessionId}/messages`] });
@@ -1244,9 +1276,14 @@ export default function PreventionPage() {
           queryKey: [`/api/triage/${sessionId}/messages`],
         }) as TriageMessage[];
 
+        // CRITICAL: Check ref after async operation
+        if (!conversationModeRef.current) return;
+
         const lastAiMessage = messages?.filter(m => m.role === 'assistant').pop();
 
         if (lastAiMessage?.content) {
+          setIsListening(false); // Show "CIRY Risponde..."
+
           // Step 4: Speak AI response
           const ttsResponse = await fetch('/api/voice/speak', {
             method: 'POST',
@@ -1254,6 +1291,9 @@ export default function PreventionPage() {
             body: JSON.stringify({ text: lastAiMessage.content, voice: 'nova' }),
             credentials: 'include',
           });
+
+          // CRITICAL: Check ref after async operation
+          if (!conversationModeRef.current) return;
 
           if (ttsResponse.ok) {
             const audioBlob = await ttsResponse.blob();
@@ -1266,43 +1306,43 @@ export default function PreventionPage() {
               URL.revokeObjectURL(audioUrl);
               currentAudioRef.current = null;
               // Step 5: Restart listening automatically
-              if (isConversationMode) {
-                setTimeout(() => startConversationCycle(stream), 500);
+              if (conversationModeRef.current) {
+                setTimeout(() => startConversationCycle(), 500);
               }
             };
 
             audio.onerror = () => {
               URL.revokeObjectURL(audioUrl);
               currentAudioRef.current = null;
-              if (isConversationMode) {
-                setTimeout(() => startConversationCycle(stream), 500);
+              if (conversationModeRef.current) {
+                setTimeout(() => startConversationCycle(), 500);
               }
             };
 
             await audio.play();
           } else {
             // TTS failed, but continue conversation
-            if (isConversationMode) {
-              setTimeout(() => startConversationCycle(stream), 500);
+            if (conversationModeRef.current) {
+              setTimeout(() => startConversationCycle(), 500);
             }
           }
         } else {
           // No AI response, restart listening
-          if (isConversationMode) {
-            setTimeout(() => startConversationCycle(stream), 500);
+          if (conversationModeRef.current) {
+            setTimeout(() => startConversationCycle(), 500);
           }
         }
       } catch (error) {
         console.error('Conversation cycle error:', error);
+        
+        // CRITICAL ERROR HANDLING: Stop conversation on failure
+        cleanupConversation();
+        
         toast({
           title: "Errore conversazione",
-          description: "Si è verificato un errore. La conversazione continua.",
+          description: "Si è verificato un errore. Riprova.",
           variant: "destructive"
         });
-        // Continue conversation despite error
-        if (isConversationMode) {
-          setTimeout(() => startConversationCycle(stream), 1000);
-        }
       }
     };
 
@@ -1319,16 +1359,8 @@ export default function PreventionPage() {
 
   const toggleVoiceInput = async () => {
     // Stop conversation mode
-    if (isConversationMode) {
-      setIsConversationMode(false);
-      setIsListening(false);
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
-      }
-      if (currentAudioRef.current) {
-        currentAudioRef.current.pause();
-        currentAudioRef.current = null;
-      }
+    if (conversationModeRef.current) {
+      cleanupConversation();
       return;
     }
 
@@ -1344,8 +1376,10 @@ export default function PreventionPage() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      conversationModeRef.current = true;
       setIsConversationMode(true);
-      startConversationCycle(stream);
+      startConversationCycle();
     } catch (error) {
       console.error('Microphone access error:', error);
       toast({
@@ -1353,8 +1387,7 @@ export default function PreventionPage() {
         description: "Consenti l'accesso al microfono per usare la conversazione vocale.",
         variant: "destructive"
       });
-      setIsConversationMode(false);
-      setIsListening(false);
+      cleanupConversation();
     }
   };
 

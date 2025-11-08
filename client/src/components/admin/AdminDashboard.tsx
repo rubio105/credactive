@@ -9,7 +9,8 @@ import {
   CreditCard,
   TrendingUp,
   Activity,
-  Shield
+  Shield,
+  LogIn
 } from "lucide-react";
 
 interface AnalyticsData {
@@ -301,6 +302,30 @@ export function AdminDashboard() {
               <Button variant="outline" className="w-full sm:w-auto" data-testid="link-audit-logs">
                 <Shield className="w-4 h-4 mr-2" />
                 Accedi ai Log di Audit
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-200 dark:border-blue-900 mt-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+              <LogIn className="w-5 h-5" />
+              Log Accessi Sistema
+            </CardTitle>
+            <CardDescription>
+              Monitoraggio completo dei tentativi di autenticazione (successi e fallimenti)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Traccia tutti gli accessi al sistema con timestamp, IP, ruolo e motivo dei fallimenti.
+              Export CSV disponibile per analisi di sicurezza e compliance.
+            </p>
+            <Link href="/admin/login-logs">
+              <Button variant="outline" className="w-full sm:w-auto" data-testid="link-login-logs">
+                <LogIn className="w-4 h-4 mr-2" />
+                Accedi ai Log di Accesso
               </Button>
             </Link>
           </CardContent>

@@ -1412,6 +1412,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Password provided:', !!req.body.password);
     console.log('MFA code provided:', !!req.body.mfaCode);
     
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.get('user-agent') || 'unknown';
+    
     passport.authenticate('local', async (err: any, user: any, info: any) => {
       console.log('Passport authenticate callback:');
       console.log('- Error:', err);
@@ -1420,10 +1423,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (err) {
         console.error('Login error:', err);
+        // Log failed login attempt
+        if (req.body.email) {
+          try {
+            await storage.createLoginLog({
+              userId: null,
+              userEmail: req.body.email,
+              userName: null,
+              userRole: null,
+              success: false,
+              ipAddress: clientIp,
+              userAgent,
+              failureReason: 'Server error during authentication',
+            });
+          } catch (logError) {
+            console.error('Failed to log failed login:', logError);
+          }
+        }
         return res.status(500).json({ message: "Errore durante il login" });
       }
       if (!user) {
         console.log('Login failed - no user returned');
+        // Log failed login attempt
+        if (req.body.email) {
+          try {
+            await storage.createLoginLog({
+              userId: null,
+              userEmail: req.body.email,
+              userName: null,
+              userRole: null,
+              success: false,
+              ipAddress: clientIp,
+              userAgent,
+              failureReason: info?.message || 'Invalid email or password',
+            });
+          } catch (logError) {
+            console.error('Failed to log failed login:', logError);
+          }
+        }
         return res.status(401).json({ message: info?.message || "Email o password non corretti" });
       }
 
@@ -1451,6 +1488,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (!verified) {
           console.log('Invalid MFA code');
+          // Log failed MFA attempt
+          try {
+            await storage.createLoginLog({
+              userId: user.id,
+              userEmail: user.email,
+              userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+              userRole: user.role,
+              success: false,
+              ipAddress: clientIp,
+              userAgent,
+              failureReason: 'Invalid MFA code',
+            });
+          } catch (logError) {
+            console.error('Failed to log failed MFA:', logError);
+          }
           return res.status(401).json({ 
             message: "Codice MFA non valido" 
           });
@@ -1462,6 +1514,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.login(user, async (err) => {
         if (err) {
           console.error('Session login error:', err);
+          // Log session error
+          try {
+            await storage.createLoginLog({
+              userId: user.id,
+              userEmail: user.email,
+              userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+              userRole: user.role,
+              success: false,
+              ipAddress: clientIp,
+              userAgent,
+              failureReason: 'Session creation error',
+            });
+          } catch (logError) {
+            console.error('Failed to log session error:', logError);
+          }
           return res.status(500).json({ message: "Errore durante il login" });
         }
         
@@ -1471,6 +1538,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (loginCountError) {
           console.error('Failed to increment login count:', loginCountError);
           // Don't fail the login if this fails
+        }
+        
+        // Log successful login
+        try {
+          await storage.createLoginLog({
+            userId: user.id,
+            userEmail: user.email,
+            userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+            userRole: user.role,
+            success: true,
+            ipAddress: clientIp,
+            userAgent,
+            failureReason: null,
+          });
+        } catch (logError) {
+          console.error('Failed to log successful login:', logError);
+          // Don't fail the login if logging fails
         }
         
         console.log('Login successful!');
@@ -4090,6 +4174,103 @@ Restituisci SOLO un JSON con:
     } catch (error: any) {
       console.error('Error exporting audit logs:', error);
       res.status(500).json({ message: 'Failed to export audit logs' });
+    }
+  });
+
+  // Admin - Get login logs with pagination and filters
+  app.get('/api/admin/login-logs', isAdmin, async (req, res) => {
+    try {
+      const { 
+        userId, 
+        userEmail, 
+        success, 
+        startDate, 
+        endDate, 
+        page = '1', 
+        limit = '50' 
+      } = req.query;
+
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const offset = (pageNum - 1) * limitNum;
+
+      const filters: any = { limit: limitNum, offset };
+      if (userId) filters.userId = userId as string;
+      if (userEmail) filters.userEmail = userEmail as string;
+      if (success !== undefined) filters.success = success === 'true';
+      if (startDate) filters.startDate = new Date(startDate as string);
+      if (endDate) filters.endDate = new Date(endDate as string);
+
+      const [logs, total] = await Promise.all([
+        storage.getLoginLogs(filters),
+        storage.getLoginLogsCount(filters),
+      ]);
+
+      res.json({
+        logs,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      });
+    } catch (error: any) {
+      console.error('Error fetching login logs:', error);
+      res.status(500).json({ message: 'Failed to fetch login logs' });
+    }
+  });
+
+  // Admin - Export login logs as CSV
+  app.get('/api/admin/login-logs/export', isAdmin, async (req, res) => {
+    try {
+      const { 
+        userId, 
+        userEmail, 
+        success, 
+        startDate, 
+        endDate 
+      } = req.query;
+
+      const filters: any = {};
+      if (userId) filters.userId = userId as string;
+      if (userEmail) filters.userEmail = userEmail as string;
+      if (success !== undefined) filters.success = success === 'true';
+      if (startDate) filters.startDate = new Date(startDate as string);
+      if (endDate) filters.endDate = new Date(endDate as string);
+
+      const logs = await storage.getLoginLogs(filters);
+
+      // Generate CSV
+      const csvRows = [
+        ['ID', 'Email', 'Nome', 'Ruolo', 'Successo', 'IP Address', 'User Agent', 'Motivo Fallimento', 'Timestamp'].join(',')
+      ];
+
+      for (const log of logs) {
+        const row = [
+          log.id,
+          log.userEmail,
+          log.userName || 'N/A',
+          log.userRole || 'N/A',
+          log.success ? 'Sì' : 'No',
+          log.ipAddress || 'N/A',
+          log.userAgent || 'N/A',
+          log.failureReason || 'N/A',
+          log.createdAt ? new Date(log.createdAt).toISOString() : 'N/A',
+        ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
+        
+        csvRows.push(row);
+      }
+
+      const csv = csvRows.join('\n');
+      const filename = `login_logs_${new Date().toISOString().split('T')[0]}.csv`;
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csv);
+    } catch (error: any) {
+      console.error('Error exporting login logs:', error);
+      res.status(500).json({ message: 'Failed to export login logs' });
     }
   });
 
@@ -10433,6 +10614,9 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
 
   // Patient AI login with Prohmed code (POST /api/patient-ai/login)
   app.post('/api/patient-ai/login', async (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.get('user-agent') || 'unknown';
+    
     try {
       const { code } = req.body;
 
@@ -10442,6 +10626,21 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
 
       const codeRecord = await storage.getProhmedCodeByCode(code);
       if (!codeRecord) {
+        // Log failed login - invalid code
+        try {
+          await storage.createLoginLog({
+            userId: null,
+            userEmail: `prohmed-${code}`,
+            userName: null,
+            userRole: null,
+            success: false,
+            ipAddress: clientIp,
+            userAgent,
+            failureReason: 'Invalid Prohmed code',
+          });
+        } catch (logError) {
+          console.error('Failed to log failed Prohmed login:', logError);
+        }
         return res.status(404).json({ message: 'Codice non valido' });
       }
 
@@ -10483,10 +10682,42 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         });
       }
 
-      req.login(user, (err) => {
+      req.login(user, async (err) => {
         if (err) {
           console.error('Login error:', err);
+          // Log session error
+          try {
+            await storage.createLoginLog({
+              userId: user.id,
+              userEmail: user.email,
+              userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+              userRole: user.role || 'patient',
+              success: false,
+              ipAddress: clientIp,
+              userAgent,
+              failureReason: 'Session creation error (Prohmed)',
+            });
+          } catch (logError) {
+            console.error('Failed to log Prohmed session error:', logError);
+          }
           return res.status(500).json({ message: 'Errore durante il login' });
+        }
+        
+        // Log successful Prohmed login
+        try {
+          await storage.createLoginLog({
+            userId: user.id,
+            userEmail: user.email,
+            userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+            userRole: user.role || 'patient',
+            success: true,
+            ipAddress: clientIp,
+            userAgent,
+            failureReason: null,
+          });
+        } catch (logError) {
+          console.error('Failed to log successful Prohmed login:', logError);
+          // Don't fail the login if logging fails
         }
         
         // Sanitize user data - only return safe public fields

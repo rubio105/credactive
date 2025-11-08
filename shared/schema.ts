@@ -2069,6 +2069,32 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
 });
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
+// Login Logs (Track user authentication events)
+export const loginLogs = pgTable("login_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }), // Nullable to track failed logins
+  userEmail: varchar("user_email", { length: 255 }).notNull(),
+  userName: varchar("user_name", { length: 255 }),
+  userRole: varchar("user_role", { length: 50 }),
+  success: boolean("success").notNull().default(true), // true = successful login, false = failed attempt
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  failureReason: text("failure_reason"), // Why login failed (wrong password, account locked, etc.)
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_login_user").on(table.userId),
+  index("idx_login_email").on(table.userEmail),
+  index("idx_login_created").on(table.createdAt),
+  index("idx_login_success").on(table.success),
+]);
+
+export type LoginLog = typeof loginLogs.$inferSelect;
+export const insertLoginLogSchema = createInsertSchema(loginLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertLoginLog = z.infer<typeof insertLoginLogSchema>;
+
 // Appointments (Calendar system for doctor-patient appointments)
 export const appointments = pgTable("appointments", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

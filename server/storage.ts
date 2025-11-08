@@ -209,6 +209,9 @@ import {
   auditLogs,
   type AuditLog,
   type InsertAuditLog,
+  loginLogs,
+  type LoginLog,
+  type InsertLoginLog,
   pushSubscriptions,
   type PushSubscription,
   type InsertPushSubscription,
@@ -694,6 +697,25 @@ export interface IStorage {
     userId?: string;
     resourceType?: string;
     resourceOwnerId?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<number>;
+
+  // Login Log operations (Track authentication events)
+  createLoginLog(log: InsertLoginLog): Promise<LoginLog>;
+  getLoginLogs(filters?: {
+    userId?: string;
+    userEmail?: string;
+    success?: boolean;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<LoginLog[]>;
+  getLoginLogsCount(filters?: {
+    userId?: string;
+    userEmail?: string;
+    success?: boolean;
     startDate?: Date;
     endDate?: Date;
   }): Promise<number>;
@@ -4361,6 +4383,108 @@ export class DatabaseStorage implements IStorage {
     let query = db
       .select({ count: sql<number>`count(*)::int` })
       .from(auditLogs);
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const [result] = await query;
+    return result?.count || 0;
+  }
+
+  // ========== LOGIN LOG OPERATIONS (TRACK AUTHENTICATION) ==========
+
+  async createLoginLog(log: InsertLoginLog): Promise<LoginLog> {
+    const [created] = await db
+      .insert(loginLogs)
+      .values(log)
+      .returning();
+    return created;
+  }
+
+  async getLoginLogs(filters?: {
+    userId?: string;
+    userEmail?: string;
+    success?: boolean;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<LoginLog[]> {
+    const conditions = [];
+    
+    if (filters?.userId) {
+      conditions.push(eq(loginLogs.userId, filters.userId));
+    }
+    
+    if (filters?.userEmail) {
+      conditions.push(eq(loginLogs.userEmail, filters.userEmail));
+    }
+    
+    if (filters?.success !== undefined) {
+      conditions.push(eq(loginLogs.success, filters.success));
+    }
+    
+    if (filters?.startDate) {
+      conditions.push(gte(loginLogs.createdAt, filters.startDate));
+    }
+    
+    if (filters?.endDate) {
+      conditions.push(sql`${loginLogs.createdAt} <= ${filters.endDate}`);
+    }
+
+    let query = db
+      .select()
+      .from(loginLogs)
+      .orderBy(desc(loginLogs.createdAt));
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit) as any;
+    }
+
+    if (filters?.offset) {
+      query = query.offset(filters.offset) as any;
+    }
+
+    return await query;
+  }
+
+  async getLoginLogsCount(filters?: {
+    userId?: string;
+    userEmail?: string;
+    success?: boolean;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<number> {
+    const conditions = [];
+    
+    if (filters?.userId) {
+      conditions.push(eq(loginLogs.userId, filters.userId));
+    }
+    
+    if (filters?.userEmail) {
+      conditions.push(eq(loginLogs.userEmail, filters.userEmail));
+    }
+    
+    if (filters?.success !== undefined) {
+      conditions.push(eq(loginLogs.success, filters.success));
+    }
+    
+    if (filters?.startDate) {
+      conditions.push(gte(loginLogs.createdAt, filters.startDate));
+    }
+    
+    if (filters?.endDate) {
+      conditions.push(sql`${loginLogs.createdAt} <= ${filters.endDate}`);
+    }
+
+    let query = db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(loginLogs);
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as any;

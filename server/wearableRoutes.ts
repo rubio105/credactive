@@ -31,7 +31,7 @@ const dateRangeQuerySchema = z.object({
   endDate: z.string().datetime().optional(),
 });
 
-// Anomaly detection utility
+// Anomaly detection utility for blood pressure
 function detectBloodPressureAnomaly(systolic: number, diastolic: number): {
   isAnomalous: boolean;
   analysis: string;
@@ -70,6 +70,49 @@ function detectBloodPressureAnomaly(systolic: number, diastolic: number): {
   const analysis = isAnomalous 
     ? `⚠️ Anomalia rilevata: ${issues.join('. ')}. Consigliato controllo medico se persistente.`
     : `✓ Pressione nella norma (${systolic}/${diastolic} mmHg). Valori ottimali: <120/<80 mmHg.`;
+
+  return { isAnomalous, analysis, severity };
+}
+
+// Anomaly detection utility for heart rate
+function detectHeartRateAnomaly(heartRate: number, context: 'resting' | 'active' = 'resting'): {
+  isAnomalous: boolean;
+  analysis: string;
+  severity: 'normal' | 'elevated' | 'high' | 'low';
+} {
+  const issues: string[] = [];
+  let severity: 'normal' | 'elevated' | 'high' | 'low' = 'normal';
+
+  if (context === 'resting') {
+    // Bradycardia (resting heart rate too low)
+    if (heartRate < 50) {
+      issues.push(`Bradicardia rilevata (${heartRate} bpm a riposo)`);
+      severity = 'low';
+    }
+    
+    // Tachycardia (resting heart rate too high)
+    else if (heartRate > 100) {
+      issues.push(`Tachicardia rilevata (${heartRate} bpm a riposo)`);
+      severity = 'high';
+    }
+    
+    // Elevated resting heart rate
+    else if (heartRate > 85) {
+      issues.push(`Battito cardiaco elevato (${heartRate} bpm) - monitorare`);
+      severity = 'elevated';
+    }
+  } else {
+    // Post-activity thresholds
+    if (heartRate > 120) {
+      issues.push(`Battito elevato post-attività (${heartRate} bpm)`);
+      severity = 'elevated';
+    }
+  }
+
+  const isAnomalous = issues.length > 0;
+  const analysis = isAnomalous 
+    ? `⚠️ Anomalia battito cardiaco: ${issues.join('. ')}. Consigliato controllo medico se persistente.`
+    : `✓ Battito cardiaco nella norma (${heartRate} bpm). Range ottimale a riposo: 60-100 bpm.`;
 
   return { isAnomalous, analysis, severity };
 }
@@ -244,14 +287,47 @@ export function registerWearableRoutes(app: Express, deps: { storage: IStorage; 
         });
       }
 
-      // Inline anomaly detection
-      const { isAnomalous, analysis, severity } = detectBloodPressureAnomaly(
+      // Inline anomaly detection for blood pressure
+      const bpAnomaly = detectBloodPressureAnomaly(
         parsed.systolic, 
         parsed.diastolic
       );
 
-      // Create reading with anomaly flag
-      const reading = await storage.createBloodPressureReading({
+      // Inline anomaly detection for heart rate (if provided)
+      let hrAnomaly = null;
+      if (parsed.heartRate) {
+        hrAnomaly = detectHeartRateAnomaly(parsed.heartRate, 'resting');
+      }
+
+      // Determine overall anomaly status, severity, and primary reading type
+      const isAnomalous = bpAnomaly.isAnomalous || (hrAnomaly?.isAnomalous ?? false);
+      
+      // Severity ranking: high > low > elevated > normal
+      const severityRank = { high: 4, low: 3, elevated: 2, normal: 1 };
+      const bpSeverityRank = severityRank[bpAnomaly.severity];
+      const hrSeverityRank = hrAnomaly ? severityRank[hrAnomaly.severity] : 0;
+      
+      let severity: 'normal' | 'elevated' | 'high' | 'low';
+      let readingType: 'blood_pressure' | 'heart_rate';
+      
+      if (hrSeverityRank > bpSeverityRank) {
+        // Heart rate anomaly is more severe
+        severity = hrAnomaly!.severity;
+        readingType = 'heart_rate';
+      } else {
+        // Blood pressure anomaly is more severe (or equal, prefer BP)
+        severity = bpAnomaly.severity;
+        readingType = 'blood_pressure';
+      }
+      
+      const analysisPoints = [bpAnomaly.analysis];
+      if (hrAnomaly) {
+        analysisPoints.push(hrAnomaly.analysis);
+      }
+      const analysis = analysisPoints.join('\n');
+
+      // Create reading
+      const createdReading = await storage.createBloodPressureReading({
         userId: req.user.id,
         deviceId: parsed.deviceId || null,
         systolic: parsed.systolic,
@@ -259,14 +335,32 @@ export function registerWearableRoutes(app: Express, deps: { storage: IStorage; 
         heartRate: parsed.heartRate || null,
         measurementTime: new Date(parsed.measurementTime),
         notes: parsed.notes || null,
+      });
+
+      // Update with anomaly analysis
+      const reading = await storage.updateBloodPressureReading(createdReading.id, {
         isAnomalous,
         aiAnalysis: analysis,
       });
 
-      // TODO: Enqueue background job for:
-      // 1. WhatsApp notification if severity === 'high' or 'low'
-      // 2. Alert doctor if linked
-      // 3. Add to proactive notifications log
+      // Send notifications if anomalies detected
+      if (isAnomalous && (severity === 'high' || severity === 'low')) {
+        const { getWearableNotificationService } = await import('./wearableNotifications');
+        const notificationService = getWearableNotificationService(storage);
+        
+        await notificationService.sendAnomalyNotification({
+          userId: req.user.id,
+          readingType, // Correctly set based on which anomaly is more severe
+          severity,
+          analysis,
+          readingData: {
+            systolic: parsed.systolic,
+            diastolic: parsed.diastolic,
+            heartRate: parsed.heartRate || undefined,
+            measurementTime: new Date(parsed.measurementTime),
+          },
+        });
+      }
 
       return res.json({ 
         success: true, 

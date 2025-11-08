@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, CheckCircle, Clock, User, Calendar, MessageSquare, Eye } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, CheckCircle, Clock, User, Calendar, MessageSquare, Eye, Filter, X } from "lucide-react";
+import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface TriageAlert {
   id: string;
@@ -34,10 +35,36 @@ export default function AdminAlertsPage() {
   const [selectedAlert, setSelectedAlert] = useState<TriageAlert | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [showReviewDialog, setShowReviewDialog] = useState(false);
+  
+  // Filter states - Default to only RED and YELLOW alerts
+  const [severityFilter, setSeverityFilter] = useState<string[]>(['emergency', 'high']);
+  const [patientNameFilter, setPatientNameFilter] = useState("");
 
-  const { data: allAlerts = [], isLoading } = useQuery<TriageAlert[]>({
+  const { data: rawAlerts = [], isLoading } = useQuery<TriageAlert[]>({
     queryKey: ["/api/triage/alerts"],
   });
+
+  // Apply filters to alerts
+  const allAlerts = useMemo(() => {
+    let filtered = rawAlerts;
+
+    // Filter by severity (only show selected levels)
+    if (severityFilter.length > 0) {
+      filtered = filtered.filter(alert => severityFilter.includes(alert.urgencyLevel));
+    }
+
+    // Filter by patient name or email (search both fields independently)
+    if (patientNameFilter.trim()) {
+      const searchTerm = patientNameFilter.toLowerCase();
+      filtered = filtered.filter(alert => {
+        const name = (alert.userName || '').toLowerCase();
+        const email = (alert.userEmail || '').toLowerCase();
+        return name.includes(searchTerm) || email.includes(searchTerm);
+      });
+    }
+
+    return filtered;
+  }, [rawAlerts, severityFilter, patientNameFilter]);
 
   const reviewMutation = useMutation({
     mutationFn: async ({ alertId, notes }: { alertId: string; notes: string }) => {
@@ -169,6 +196,21 @@ export default function AdminAlertsPage() {
     </Card>
   );
 
+  const toggleSeverity = (severity: string) => {
+    setSeverityFilter(prev => 
+      prev.includes(severity)
+        ? prev.filter(s => s !== severity)
+        : [...prev, severity]
+    );
+  };
+
+  const resetFilters = () => {
+    setSeverityFilter(['emergency', 'high']);
+    setPatientNameFilter("");
+  };
+
+  const hasActiveFilters = severityFilter.length !== 2 || !severityFilter.includes('emergency') || !severityFilter.includes('high') || patientNameFilter.trim() !== "";
+
   return (
     <AdminLayout>
       <div className="p-8">
@@ -176,6 +218,92 @@ export default function AdminAlertsPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Alert Medici</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Gestisci alert triage e urgenze</p>
         </div>
+
+        {/* Filters Section */}
+        <Card className="mb-6">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">Filtri Alert</CardTitle>
+              </div>
+              {hasActiveFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetFilters}
+                  data-testid="button-reset-filters"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Reset
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Patient Name Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="patient-filter" className="text-sm font-medium">
+                  Cerca Paziente
+                </Label>
+                <Input
+                  id="patient-filter"
+                  placeholder="Nome o email paziente..."
+                  value={patientNameFilter}
+                  onChange={(e) => setPatientNameFilter(e.target.value)}
+                  data-testid="input-patient-filter"
+                  className="w-full"
+                />
+              </div>
+
+              {/* Severity Filter */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Gravità (default: solo rossi e gialli)
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={severityFilter.includes('emergency') ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleSeverity('emergency')}
+                    data-testid="button-filter-emergency"
+                    className={severityFilter.includes('emergency') ? "bg-red-600 hover:bg-red-700" : ""}
+                  >
+                    🔴 Emergenza
+                  </Button>
+                  <Button
+                    variant={severityFilter.includes('high') ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleSeverity('high')}
+                    data-testid="button-filter-high"
+                    className={severityFilter.includes('high') ? "bg-orange-600 hover:bg-orange-700" : ""}
+                  >
+                    🟠 Alta
+                  </Button>
+                  <Button
+                    variant={severityFilter.includes('medium') ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleSeverity('medium')}
+                    data-testid="button-filter-medium"
+                    className={severityFilter.includes('medium') ? "bg-yellow-600 hover:bg-yellow-700" : ""}
+                  >
+                    🟡 Media
+                  </Button>
+                  <Button
+                    variant={severityFilter.includes('low') ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleSeverity('low')}
+                    data-testid="button-filter-low"
+                    className={severityFilter.includes('low') ? "bg-blue-600 hover:bg-blue-700" : ""}
+                  >
+                    🔵 Bassa
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>

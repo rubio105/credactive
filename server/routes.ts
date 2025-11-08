@@ -12769,7 +12769,21 @@ Fornisci:
         ORDER BY day_of_week, start_time
       `);
 
-      res.json(result.rows);
+      // Map snake_case to camelCase for frontend
+      const slots = result.rows.map((row: any) => ({
+        id: row.id,
+        doctorId: row.doctor_id,
+        dayOfWeek: row.day_of_week,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        slotDuration: row.slot_duration,
+        appointmentType: row.appointment_type,
+        studioAddress: row.studio_address,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+      }));
+
+      res.json(slots);
     } catch (error: any) {
       console.error('Get availability error:', error);
       res.status(500).json({ message: 'Internal server error' });

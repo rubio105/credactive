@@ -99,10 +99,7 @@ export default function WearablePage() {
   // Add device mutation
   const addDeviceMutation = useMutation({
     mutationFn: async (data: AddDeviceForm) => {
-      return await apiRequest('/api/wearable/devices', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return await apiRequest('/api/wearable/devices', 'POST', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/wearable/devices'] });
@@ -125,9 +122,7 @@ export default function WearablePage() {
   // Delete device mutation
   const deleteDeviceMutation = useMutation({
     mutationFn: async (deviceId: string) => {
-      return await apiRequest(`/api/wearable/devices/${deviceId}`, {
-        method: 'DELETE',
-      });
+      return await apiRequest(`/api/wearable/devices/${deviceId}`, 'DELETE');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/wearable/devices'] });

@@ -22,7 +22,7 @@ export function BackButton({
   const { user } = useAuth();
 
   const handleBack = () => {
-    if (window.history.length > 2) {
+    if (window.history.length > 1) {
       window.history.back();
     } else {
       let defaultRoute = fallbackRoute;

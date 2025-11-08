@@ -4,12 +4,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Activity, Heart, TrendingUp, TrendingDown, AlertTriangle, Calendar, ArrowLeft } from "lucide-react";
+import { Activity, Heart, TrendingUp, TrendingDown, AlertTriangle, Calendar, ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { format, subDays } from "date-fns";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { BluetoothConnector } from "@/components/BluetoothConnector";
 
 interface BloodPressureReading {
   id: string;
@@ -49,9 +59,21 @@ interface WearableDevice {
   createdAt: string;
 }
 
+// Form schema for adding new device
+const addDeviceSchema = z.object({
+  deviceType: z.enum(['blood_pressure', 'glucose', 'heart_rate', 'weight', 'oximeter', 'ecg']),
+  manufacturer: z.string().min(1, "Il produttore è obbligatorio"),
+  model: z.string().min(1, "Il modello è obbligatorio"),
+  deviceId: z.string().min(1, "L'ID dispositivo è obbligatorio"),
+});
+
+type AddDeviceForm = z.infer<typeof addDeviceSchema>;
+
 export default function WearablePage() {
   const [, navigate] = useLocation();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [addDeviceOpen, setAddDeviceOpen] = useState(false);
+  const { toast } = useToast();
   
   // Memoize date range to prevent infinite fetch loop
   const { startDate, endDate } = useMemo(() => {
@@ -61,6 +83,66 @@ export default function WearablePage() {
       endDate: new Date(),
     };
   }, [dateRange]);
+  
+  // Form for adding device
+  const addDeviceForm = useForm<AddDeviceForm>({
+    resolver: zodResolver(addDeviceSchema),
+    defaultValues: {
+      deviceType: 'blood_pressure',
+      manufacturer: '',
+      model: '',
+      deviceId: '',
+    },
+  });
+  
+  // Add device mutation
+  const addDeviceMutation = useMutation({
+    mutationFn: async (data: AddDeviceForm) => {
+      return await apiRequest('/api/wearable/devices', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/wearable/devices'] });
+      toast({
+        title: "Dispositivo aggiunto",
+        description: "Il dispositivo è stato registrato con successo",
+      });
+      setAddDeviceOpen(false);
+      addDeviceForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile aggiungere il dispositivo",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Delete device mutation
+  const deleteDeviceMutation = useMutation({
+    mutationFn: async (deviceId: string) => {
+      return await apiRequest(`/api/wearable/devices/${deviceId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/wearable/devices'] });
+      toast({
+        title: "Dispositivo eliminato",
+        description: "Il dispositivo è stato rimosso con successo",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile eliminare il dispositivo",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Fetch blood pressure readings
   const { data: readingsData, isLoading: loadingReadings, error: readingsError } = useQuery<{
@@ -415,13 +497,121 @@ export default function WearablePage() {
       )}
 
       {/* Devices List */}
-      {devices && devices.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>I Tuoi Dispositivi</CardTitle>
-            <CardDescription>Dispositivi connessi al monitoraggio</CardDescription>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>I Tuoi Dispositivi</CardTitle>
+              <CardDescription>Dispositivi connessi al monitoraggio</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <BluetoothConnector />
+              <Dialog open={addDeviceOpen} onOpenChange={setAddDeviceOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" data-testid="button-add-device">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Aggiungi Dispositivo
+                  </Button>
+                </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Registra Nuovo Dispositivo</DialogTitle>
+                  <DialogDescription>
+                    Aggiungi un dispositivo wearable per monitorare i tuoi parametri vitali
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...addDeviceForm}>
+                  <form onSubmit={addDeviceForm.handleSubmit((data) => addDeviceMutation.mutate(data))} className="space-y-4">
+                    <FormField
+                      control={addDeviceForm.control}
+                      name="deviceType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo Dispositivo</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-device-type">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="blood_pressure">Misuratore Pressione</SelectItem>
+                              <SelectItem value="glucose">Glucometro</SelectItem>
+                              <SelectItem value="heart_rate">Cardiofrequenzimetro</SelectItem>
+                              <SelectItem value="weight">Bilancia</SelectItem>
+                              <SelectItem value="oximeter">Saturimetro</SelectItem>
+                              <SelectItem value="ecg">ECG</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addDeviceForm.control}
+                      name="manufacturer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Produttore</FormLabel>
+                          <FormControl>
+                            <Input placeholder="es. Omron, Beurer" {...field} data-testid="input-manufacturer" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addDeviceForm.control}
+                      name="model"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Modello</FormLabel>
+                          <FormControl>
+                            <Input placeholder="es. M3 Comfort, BM 27" {...field} data-testid="input-model" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addDeviceForm.control}
+                      name="deviceId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ID Dispositivo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Identificativo univoco" {...field} data-testid="input-device-id" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setAddDeviceOpen(false)}
+                        data-testid="button-cancel-add"
+                      >
+                        Annulla
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={addDeviceMutation.isPending}
+                        data-testid="button-submit-add"
+                      >
+                        {addDeviceMutation.isPending ? "Registrazione..." : "Registra Dispositivo"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {devices && devices.length > 0 ? (
             <div className="space-y-3">
               {devices.map((device) => (
                 <div 
@@ -429,7 +619,7 @@ export default function WearablePage() {
                   className="flex items-center justify-between p-3 border rounded-lg"
                   data-testid={`device-${device.id}`}
                 >
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium">{device.manufacturer} {device.model}</p>
                     <p className="text-sm text-muted-foreground">
                       {device.deviceType.replace('_', ' ')} • ID: {device.deviceId}
@@ -440,15 +630,53 @@ export default function WearablePage() {
                       </p>
                     )}
                   </div>
-                  <Badge variant={device.isActive ? "default" : "secondary"}>
-                    {device.isActive ? "Attivo" : "Inattivo"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={device.isActive ? "default" : "secondary"}>
+                      {device.isActive ? "Attivo" : "Inattivo"}
+                    </Badge>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          data-testid={`button-delete-${device.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Sei sicuro di voler eliminare il dispositivo <strong>{device.manufacturer} {device.model}</strong>? 
+                            Questa azione non può essere annullata.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteDeviceMutation.mutate(device.id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                            data-testid="button-confirm-delete"
+                          >
+                            Elimina
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">Nessun dispositivo registrato</p>
+              <p className="text-sm mt-2">Aggiungi il tuo primo dispositivo per iniziare il monitoraggio</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

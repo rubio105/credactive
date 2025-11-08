@@ -2,6 +2,7 @@ import { storage } from './storage';
 import { extractTextFromMedicalReport } from './gemini';
 import { anonymizeMedicalText } from './gemini';
 import { analyzeRadiologicalImage } from './gemini';
+import { WearableNotificationService } from './wearableNotifications';
 import path from 'path';
 import fs from 'fs';
 
@@ -58,6 +59,8 @@ export class JobWorker {
 
       if (job.jobType === 'medical_report_analysis') {
         await this.processMedicalReportAnalysis(job.id, job.inputData, job.userId);
+      } else if (job.jobType === 'wearable_trend_analysis') {
+        await this.processWearableTrendAnalysis(job.id, job.inputData, job.userId);
       } else {
         throw new Error(`Unknown job type: ${job.jobType}`);
       }
@@ -237,6 +240,155 @@ Il referto è ora disponibile nel contesto della conversazione e verrà incluso 
     }
 
     console.log('[JobWorker] Job completed successfully:', jobId, '→ Report:', healthReport.id);
+  }
+
+  private async processWearableTrendAnalysis(jobId: string, inputData: any, userId: string) {
+    const { analysisType = 'daily_summary' } = inputData;
+
+    await storage.updateJobProgress(jobId, 10, 'Fetching wearable data...');
+
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setHours(startDate.getHours() - 24); // Last 24 hours
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      throw new Error(`User not found: ${userId}`);
+    }
+
+    // Get blood pressure readings from last 24h
+    const readings = await storage.getBloodPressureReadingsByUser(
+      userId,
+      startDate,
+      endDate
+    );
+
+    await storage.updateJobProgress(jobId, 30, 'Analyzing trends...');
+
+    if (readings.length === 0) {
+      await storage.completeJob(jobId, {
+        message: 'No readings to analyze',
+        readingsCount: 0,
+      });
+      return;
+    }
+
+    // Trend analysis
+    const anomalousReadings = readings.filter((r: any) => r.isAnomalous);
+    const highSeverityCount = readings.filter((r: any) => r.severity === 'high').length;
+    const lowSeverityCount = readings.filter((r: any) => r.severity === 'low').length;
+    const elevatedCount = readings.filter((r: any) => r.severity === 'elevated').length;
+
+    // Check for concerning patterns
+    const consecutiveHigh = this.detectConsecutiveAnomalies(readings, 'high', 3);
+    const consecutiveLow = this.detectConsecutiveAnomalies(readings, 'low', 3);
+
+    await storage.updateJobProgress(jobId, 60, 'Generating summary...');
+
+    // Generate summary message
+    let summary = `📊 Riepilogo Monitoraggio (ultime 24h)\n\n`;
+    summary += `Letture totali: ${readings.length}\n`;
+    summary += `Anomalie rilevate: ${anomalousReadings.length}\n\n`;
+
+    if (highSeverityCount > 0) {
+      summary += `⚠️ Pressione Alta: ${highSeverityCount} letture\n`;
+    }
+    if (lowSeverityCount > 0) {
+      summary += `⚠️ Pressione Bassa: ${lowSeverityCount} letture\n`;
+    }
+    if (elevatedCount > 0) {
+      summary += `⚡ Pressione Elevata: ${elevatedCount} letture\n`;
+    }
+
+    // Add trend warnings
+    if (consecutiveHigh) {
+      summary += `\n🚨 ATTENZIONE: Rilevate ${consecutiveHigh} letture consecutive con pressione alta. Consigliato contattare il medico.\n`;
+    }
+    if (consecutiveLow) {
+      summary += `\n🚨 ATTENZIONE: Rilevate ${consecutiveLow} letture consecutive con pressione bassa. Consigliato contattare il medico.\n`;
+    }
+
+    // Calculate averages
+    const avgSystolic = Math.round(
+      readings.reduce((sum: number, r: any) => sum + r.systolic, 0) / readings.length
+    );
+    const avgDiastolic = Math.round(
+      readings.reduce((sum: number, r: any) => sum + r.diastolic, 0) / readings.length
+    );
+    const heartRateReadings = readings.filter((r: any) => r.heartRate);
+    const avgHeartRate = heartRateReadings.length > 0
+      ? Math.round(
+          heartRateReadings.reduce((sum: number, r: any) => sum + (r.heartRate || 0), 0) / heartRateReadings.length
+        )
+      : null;
+
+    summary += `\n📈 Medie:\n`;
+    summary += `Pressione: ${avgSystolic}/${avgDiastolic} mmHg\n`;
+    if (avgHeartRate) {
+      summary += `Battito: ${avgHeartRate} bpm\n`;
+    }
+
+    await storage.updateJobProgress(jobId, 80, 'Sending notifications...');
+
+    // Send summary notification if there are concerning trends
+    if (consecutiveHigh || consecutiveLow || highSeverityCount >= 3 || lowSeverityCount >= 3) {
+      const notificationService = new WearableNotificationService(storage);
+      
+      // Send WhatsApp if enabled
+      if (user.whatsappNotificationsEnabled && user.whatsappNumber) {
+        const { sendWhatsAppMessage } = await import('./twilio');
+        await sendWhatsAppMessage(user.whatsappNumber, summary);
+      }
+
+      // Record notification
+      await storage.createProactiveNotification({
+        userId,
+        notificationType: 'health_summary',
+        channel: user.whatsappNotificationsEnabled ? 'whatsapp' : 'push',
+        message: summary,
+        status: 'sent',
+      });
+    }
+
+    await storage.completeJob(jobId, {
+      summary,
+      readingsAnalyzed: readings.length,
+      anomaliesFound: anomalousReadings.length,
+      consecutiveHighCount: consecutiveHigh,
+      consecutiveLowCount: consecutiveLow,
+      averages: {
+        systolic: avgSystolic,
+        diastolic: avgDiastolic,
+        heartRate: avgHeartRate,
+      },
+    });
+
+    console.log('[JobWorker] Wearable trend analysis completed:', jobId, '→', readings.length, 'readings analyzed');
+  }
+
+  private detectConsecutiveAnomalies(
+    readings: any[],
+    severity: 'high' | 'low' | 'elevated',
+    threshold: number
+  ): number {
+    let maxConsecutive = 0;
+    let currentConsecutive = 0;
+
+    // Sort by measurement time
+    const sorted = readings.sort(
+      (a, b) => new Date(a.measurementTime).getTime() - new Date(b.measurementTime).getTime()
+    );
+
+    for (const reading of sorted) {
+      if (reading.severity === severity) {
+        currentConsecutive++;
+        maxConsecutive = Math.max(maxConsecutive, currentConsecutive);
+      } else {
+        currentConsecutive = 0;
+      }
+    }
+
+    return maxConsecutive >= threshold ? maxConsecutive : 0;
   }
 }
 

@@ -15,7 +15,8 @@ import {
   LogOut,
   ArrowLeft,
   MessageSquare,
-  Brain
+  Brain,
+  Zap
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -30,6 +31,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/users", icon: Users, label: "Gestione Utenti", testId: "nav-admin-users" },
     { href: "/admin/subscriptions", icon: Crown, label: "Abbonamenti", testId: "nav-admin-subscriptions" },
     { href: "/admin/alerts", icon: AlertTriangle, label: "Alert Medici", testId: "nav-admin-alerts" },
+    { href: "/admin/proactive-triggers", icon: Zap, label: "Trigger Proattivi", testId: "nav-admin-proactive-triggers" },
     { href: "/admin/webinar", icon: Video, label: "Webinar Health", testId: "nav-admin-webinar" },
     { href: "/admin/feedback", icon: MessageSquare, label: "Feedback Utenti", testId: "nav-admin-feedback" },
     { href: "/admin/mail", icon: Mail, label: "Email Templates", testId: "nav-admin-mail" },

@@ -7694,6 +7694,83 @@ Explicación de audio:`
     }
   });
 
+  // ========== PROACTIVE HEALTH TRIGGERS (ADMIN) ==========
+  
+  // Get all proactive health triggers
+  app.get('/api/admin/proactive-triggers', isAdmin, async (req, res) => {
+    try {
+      const triggers = await db.select().from(proactiveHealthTriggers).orderBy(desc(proactiveHealthTriggers.createdAt));
+      res.json(triggers);
+    } catch (error) {
+      console.error('Error fetching proactive triggers:', error);
+      res.status(500).json({ message: 'Failed to fetch proactive triggers' });
+    }
+  });
+
+  // Create proactive health trigger
+  app.post('/api/admin/proactive-triggers', isAdmin, async (req, res) => {
+    try {
+      const { name, description, triggerType, condition, action, targetAudience, frequency, isActive } = req.body;
+      
+      if (!name || !triggerType || !condition || !action) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      const [trigger] = await db.insert(proactiveHealthTriggers).values({
+        name,
+        description: description || null,
+        triggerType,
+        condition,
+        action,
+        targetAudience: targetAudience || 'all',
+        frequency: frequency || null,
+        isActive: isActive !== undefined ? isActive : true,
+      }).returning();
+
+      res.json(trigger);
+    } catch (error) {
+      console.error('Error creating proactive trigger:', error);
+      res.status(500).json({ message: 'Failed to create proactive trigger' });
+    }
+  });
+
+  // Update proactive health trigger
+  app.patch('/api/admin/proactive-triggers/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const [trigger] = await db
+        .update(proactiveHealthTriggers)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(proactiveHealthTriggers.id, id))
+        .returning();
+
+      if (!trigger) {
+        return res.status(404).json({ message: 'Trigger not found' });
+      }
+
+      res.json(trigger);
+    } catch (error) {
+      console.error('Error updating proactive trigger:', error);
+      res.status(500).json({ message: 'Failed to update proactive trigger' });
+    }
+  });
+
+  // Delete proactive health trigger
+  app.delete('/api/admin/proactive-triggers/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      await db.delete(proactiveHealthTriggers).where(eq(proactiveHealthTriggers.id, id));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting proactive trigger:', error);
+      res.status(500).json({ message: 'Failed to delete proactive trigger' });
+    }
+  });
+
   // Register gamification routes
   registerGamificationRoutes(app);
 

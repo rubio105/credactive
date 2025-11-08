@@ -103,12 +103,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// One-time application bootstrap (executes once at module load, not per-request)
 (async () => {
   const server = await registerRoutes(app);
 
   // Start job worker for async document processing
   const { jobWorker } = await import("./jobWorker");
   jobWorker.start();
+
+  // Start wearable scheduler for daily trend analysis
+  const { WearableScheduler } = await import("./wearableScheduler");
+  const { storage } = await import("./storage");
+  const wearableScheduler = new WearableScheduler(storage);
+  wearableScheduler.start();
   console.log('[Job Worker] Background processing started');
 
   // Webinar reminder system - Check every hour for sessions starting in 24 hours
@@ -250,4 +257,7 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
   });
-})();
+})().catch((err) => {
+  console.error('[Bootstrap] Fatal error during application startup:', err);
+  process.exit(1);
+});

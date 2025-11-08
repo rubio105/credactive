@@ -735,6 +735,7 @@ export interface IStorage {
   // Wearable Device operations
   createWearableDevice(device: InsertWearableDevice): Promise<WearableDevice>;
   getWearableDevicesByUser(userId: string): Promise<WearableDevice[]>;
+  getAllWearableDevices(): Promise<WearableDevice[]>;
   getWearableDeviceById(id: string): Promise<WearableDevice | undefined>;
   updateWearableDevice(id: string, updates: Partial<WearableDevice>): Promise<WearableDevice>;
   deleteWearableDevice(id: string): Promise<void>;
@@ -4644,6 +4645,13 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(wearableDevices)
       .where(eq(wearableDevices.userId, userId))
+      .orderBy(desc(wearableDevices.createdAt));
+  }
+
+  async getAllWearableDevices(): Promise<WearableDevice[]> {
+    return await db
+      .select()
+      .from(wearableDevices)
       .orderBy(desc(wearableDevices.createdAt));
   }
 

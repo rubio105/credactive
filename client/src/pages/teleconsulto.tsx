@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Video, Mic, StopCircle, ArrowLeft } from "lucide-react";
+import { Calendar, Clock, Video, Mic, StopCircle, ArrowLeft, FileText, Upload, X } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -53,7 +53,9 @@ export default function TeleconsultoPage() {
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const [bookingNotes, setBookingNotes] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const recognitionRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get patient's appointments
   const { data: appointments = [], isLoading } = useQuery<Appointment[]>({
@@ -166,16 +168,59 @@ export default function TeleconsultoPage() {
       const response = await apiRequest('/api/appointments/book-teleconsult', 'POST', data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (appointmentData) => {
+      let uploadSuccess = true;
+      let uploadError = '';
+      
+      // Upload files if any were selected
+      if (selectedFiles.length > 0 && appointmentData.id) {
+        try {
+          const formData = new FormData();
+          selectedFiles.forEach(file => {
+            formData.append('files', file);
+          });
+          formData.append('appointmentId', appointmentData.id);
+          
+          const uploadResponse = await fetch('/api/appointments/upload-attachments', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          });
+          
+          if (!uploadResponse.ok) {
+            uploadSuccess = false;
+            const errorData = await uploadResponse.json().catch(() => ({ message: 'Upload failed' }));
+            uploadError = errorData.message || 'Errore caricamento documenti';
+          }
+        } catch (error) {
+          console.error('Error uploading attachments:', error);
+          uploadSuccess = false;
+          uploadError = 'Errore di rete durante caricamento documenti';
+        }
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/appointments/my-appointments'] });
-      toast({
-        title: "✅ Teleconsulto prenotato!",
-        description: "Riceverai email di conferma con il link per la videochiamata",
-      });
+      
+      if (uploadSuccess) {
+        toast({
+          title: "✅ Teleconsulto prenotato!",
+          description: selectedFiles.length > 0 
+            ? `Appuntamento confermato con ${selectedFiles.length} documento/i allegato/i`
+            : "Riceverai email di conferma con il link per la videochiamata",
+        });
+      } else {
+        toast({
+          title: "⚠️ Teleconsulto prenotato con avviso",
+          description: `Appuntamento creato ma ${uploadError}. Puoi allegare documenti successivamente.`,
+          variant: "destructive",
+        });
+      }
+      
       setIsBookingDialogOpen(false);
       setSelectedDoctor("");
       setSelectedSlot(null);
       setBookingNotes("");
+      setSelectedFiles([]);
     },
     onError: (error: any) => {
       toast({
@@ -404,6 +449,68 @@ export default function TeleconsultoPage() {
                 rows={4}
                 data-testid="textarea-booking-notes"
               />
+            </div>
+
+            {/* File Upload Section */}
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">Allegati (opzionale)</Label>
+              <p className="text-sm text-muted-foreground">
+                Carica referti, esami o documenti medici (PDF, immagini)
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                id="file-upload"
+                multiple
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    const newFiles = Array.from(e.target.files);
+                    setSelectedFiles(prev => [...prev, ...newFiles]);
+                  }
+                }}
+                data-testid="input-file-upload"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full"
+                data-testid="button-upload-files"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Seleziona File
+              </Button>
+              
+              {selectedFiles.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  {selectedFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-secondary rounded-lg"
+                      data-testid={`file-item-${index}`}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm truncate">{file.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({(file.size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== index))}
+                        data-testid={`button-remove-file-${index}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">

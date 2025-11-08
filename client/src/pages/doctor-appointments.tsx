@@ -8,13 +8,22 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin } from "lucide-react";
+import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin, FileText, Download } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackButton } from "@/components/BackButton";
+
+type AppointmentAttachment = {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  fileType: string;
+  uploadedBy: string;
+};
 
 type Appointment = {
   id: string;
@@ -29,6 +38,7 @@ type Appointment = {
   meetingUrl: string | null;
   studioAddress: string | null;
   cancellationReason: string | null;
+  attachments?: AppointmentAttachment[];
   patient?: {
     firstName: string;
     lastName: string;
@@ -414,6 +424,38 @@ export default function DoctorAppointmentsPage() {
                             <div>
                               <p className="font-medium mb-1 text-amber-900 dark:text-amber-100">Indirizzo Studio:</p>
                               <p className="text-amber-700 dark:text-amber-300">{apt.studioAddress}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {apt.attachments && apt.attachments.length > 0 && (
+                          <div className="bg-secondary p-3 rounded">
+                            <p className="font-medium mb-2 flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              Documenti allegati ({apt.attachments.length})
+                            </p>
+                            <div className="space-y-2">
+                              {apt.attachments.map((attachment: AppointmentAttachment) => (
+                                <a
+                                  key={attachment.id}
+                                  href={attachment.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between p-2 bg-background hover:bg-muted rounded transition-colors"
+                                  data-testid={`attachment-${attachment.id}`}
+                                >
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <p className="text-sm truncate">{attachment.fileName}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {(attachment.fileSize / 1024).toFixed(1)} KB
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Download className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                </a>
+                              ))}
                             </div>
                           </div>
                         )}

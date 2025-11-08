@@ -125,8 +125,11 @@ import {
   type InsertScenarioMessage,
   userFeedback,
   appointments,
+  appointmentAttachments,
   type Appointment,
   type InsertAppointment,
+  type AppointmentAttachment,
+  type InsertAppointmentAttachment,
   type UserFeedback,
   type InsertUserFeedback,
   // Prevention system
@@ -4378,7 +4381,7 @@ export class DatabaseStorage implements IStorage {
     return appointment;
   }
 
-  async getAppointmentsByDoctor(doctorId: string, startDate?: Date, endDate?: Date): Promise<Appointment[]> {
+  async getAppointmentsByDoctor(doctorId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
     const conditions = [eq(appointments.doctorId, doctorId)];
     
     if (startDate && endDate) {
@@ -4386,10 +4389,26 @@ export class DatabaseStorage implements IStorage {
       conditions.push(lte(appointments.startTime, endDate));
     }
     
-    return await db.select()
+    const appointmentsList = await db.select()
       .from(appointments)
       .where(and(...conditions))
       .orderBy(asc(appointments.startTime));
+    
+    // Fetch attachments for each appointment
+    const appointmentsWithAttachments = await Promise.all(
+      appointmentsList.map(async (apt) => {
+        const attachments = await db.select()
+          .from(appointmentAttachments)
+          .where(eq(appointmentAttachments.appointmentId, apt.id));
+        
+        return {
+          ...apt,
+          attachments
+        };
+      })
+    );
+    
+    return appointmentsWithAttachments;
   }
 
   async getAppointmentsByPatient(patientId: string, status?: string): Promise<Appointment[]> {

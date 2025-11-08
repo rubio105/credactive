@@ -10,7 +10,7 @@ import fs from "fs";
 import { createRequire } from "module";
 import { storage } from "./storage";
 import { db } from "./db";
-import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData, proactiveHealthTriggers } from "@shared/schema";
+import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData, proactiveHealthTriggers, appointmentAttachments } from "@shared/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
@@ -112,6 +112,40 @@ const upload = multer({
       return cb(null, true);
     } else {
       cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
+
+// Configure multer for appointment attachments (PRIVATE - not in public/)
+const appointmentAttachmentsDir = path.join(process.cwd(), 'uploads', 'appointment-attachments');
+if (!fs.existsSync(appointmentAttachmentsDir)) {
+  fs.mkdirSync(appointmentAttachmentsDir, { recursive: true });
+}
+
+const appointmentAttachmentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, appointmentAttachmentsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    // Only use the file extension, not the original filename to prevent security issues
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `attachment-${uniqueSuffix}${ext}`);
+  }
+});
+
+const uploadAppointmentAttachment = multer({
+  storage: appointmentAttachmentStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = file.mimetype === 'application/pdf' || /image\/(jpeg|jpg|png|gif|webp)/.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Solo file PDF e immagini sono consentiti'));
     }
   }
 });
@@ -12990,6 +13024,122 @@ Fornisci:
         return res.status(400).json({ message: 'Invalid date/time format' });
       }
       res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // TELECONSULTO - Upload appointment attachments
+  app.post('/api/appointments/upload-attachments', isAuthenticated, uploadAppointmentAttachment.array('files', 5), async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { appointmentId } = req.body;
+      const files = req.files as Express.Multer.File[];
+
+      if (!appointmentId) {
+        return res.status(400).json({ message: 'Appointment ID is required' });
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: 'No files uploaded' });
+      }
+
+      // Verify the appointment exists and belongs to the user
+      const appointmentCheck = await db.execute(sql`
+        SELECT * FROM appointments WHERE id = ${appointmentId} AND patient_id = ${user.id}
+      `);
+
+      if (appointmentCheck.rows.length === 0) {
+        // Delete uploaded files if appointment validation fails
+        files.forEach(file => {
+          fs.unlinkSync(file.path);
+        });
+        return res.status(404).json({ message: 'Appointment not found or unauthorized' });
+      }
+
+      // Save attachment records in database (private path, served via authenticated endpoint)
+      const attachmentPromises = files.map(file => {
+        const fileUrl = `/api/appointments/attachment/${file.filename}`;
+        return db.execute(sql`
+          INSERT INTO appointment_attachments (
+            appointment_id, uploaded_by, file_name, file_url, file_size, file_type
+          ) VALUES (
+            ${appointmentId}, ${user.id}, ${file.originalname}, ${fileUrl}, ${file.size}, ${file.mimetype}
+          ) RETURNING *
+        `);
+      });
+
+      const results = await Promise.all(attachmentPromises);
+      const attachments = results.map(r => r.rows[0]);
+
+      res.json({ 
+        success: true, 
+        message: `${files.length} file(s) uploaded successfully`,
+        attachments 
+      });
+    } catch (error: any) {
+      console.error('Upload attachments error:', error);
+      // Clean up uploaded files on error
+      if (req.files) {
+        (req.files as Express.Multer.File[]).forEach(file => {
+          try {
+            fs.unlinkSync(file.path);
+          } catch (unlinkError) {
+            console.error('Failed to delete file:', unlinkError);
+          }
+        });
+      }
+      res.status(500).json({ message: 'Failed to upload attachments' });
+    }
+  });
+
+  // TELECONSULTO - Download appointment attachment (authenticated)
+  app.get('/api/appointments/attachment/:filename', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { filename } = req.params;
+
+      // Security: validate filename to prevent path traversal
+      if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return res.status(400).json({ message: 'Invalid filename' });
+      }
+
+      // Find attachment record in database
+      const attachmentResult = await db.execute(sql`
+        SELECT a.*, ap.doctor_id, ap.patient_id
+        FROM appointment_attachments a
+        JOIN appointments ap ON a.appointment_id = ap.id
+        WHERE a.file_url = ${`/api/appointments/attachment/${filename}`}
+      `);
+
+      if (attachmentResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Attachment not found' });
+      }
+
+      const attachment = attachmentResult.rows[0];
+
+      // Authorization: only patient who uploaded or doctor of appointment can download
+      const isPatient = attachment.uploaded_by === user.id;
+      const isDoctor = attachment.doctor_id === user.id;
+      
+      if (!isPatient && !isDoctor) {
+        return res.status(403).json({ message: 'Unauthorized to access this file' });
+      }
+
+      // Serve file from private directory
+      const filePath = path.join(appointmentAttachmentsDir, filename);
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'File not found on disk' });
+      }
+
+      // Set appropriate headers and send file
+      res.setHeader('Content-Type', attachment.file_type || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
+      
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error: any) {
+      console.error('Download attachment error:', error);
+      res.status(500).json({ message: 'Failed to download attachment' });
     }
   });
 

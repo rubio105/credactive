@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 import { getApiKey } from './config';
 
 let openaiInstance: OpenAI | null = null;
@@ -24,25 +24,15 @@ export function clearOpenAIInstance() {
 export async function transcribeAudio(audioBuffer: Buffer, filename: string): Promise<string> {
   const openai = await getOpenAI();
   
+  const file = await toFile(audioBuffer, filename);
+  
   const transcription = await openai.audio.transcriptions.create({
-    file: await toFile(audioBuffer, filename),
+    file,
     model: 'whisper-1',
     language: 'it',
   });
   
   return transcription.text;
-}
-
-async function toFile(buffer: Buffer, filename: string): Promise<any> {
-  return {
-    [Symbol.toStringTag]: 'File',
-    name: filename,
-    size: buffer.length,
-    type: filename.endsWith('.webm') ? 'audio/webm' : 'audio/wav',
-    arrayBuffer: async () => buffer,
-    text: async () => buffer.toString('utf-8'),
-    slice: () => buffer,
-  };
 }
 
 export async function textToSpeech(

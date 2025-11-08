@@ -214,6 +214,18 @@ import {
   type InsertNotification,
   type ApiKey,
   type InsertApiKey,
+  wearableDevices,
+  bloodPressureReadings,
+  proactiveHealthTriggers,
+  proactiveNotifications,
+  type WearableDevice,
+  type InsertWearableDevice,
+  type BloodPressureReading,
+  type InsertBloodPressureReading,
+  type ProactiveHealthTrigger,
+  type InsertProactiveHealthTrigger,
+  type ProactiveNotification,
+  type InsertProactiveNotification,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, sql, and, or, gte, lte, gt, lt, inArray } from "drizzle-orm";
@@ -717,6 +729,43 @@ export interface IStorage {
   listApiKeys(activeOnly?: boolean): Promise<ApiKey[]>;
   revokeApiKey(id: string): Promise<void>;
   updateApiKeyUsage(keyHash: string): Promise<void>;
+
+  // ========== WEARABLE INTEGRATION ==========
+
+  // Wearable Device operations
+  createWearableDevice(device: InsertWearableDevice): Promise<WearableDevice>;
+  getWearableDevicesByUser(userId: string): Promise<WearableDevice[]>;
+  getWearableDeviceById(id: string): Promise<WearableDevice | undefined>;
+  updateWearableDevice(id: string, updates: Partial<WearableDevice>): Promise<WearableDevice>;
+  deleteWearableDevice(id: string): Promise<void>;
+
+  // Blood Pressure Reading operations
+  createBloodPressureReading(reading: InsertBloodPressureReading): Promise<BloodPressureReading>;
+  getBloodPressureReadingsByUser(userId: string, startDate?: Date, endDate?: Date): Promise<BloodPressureReading[]>;
+  getBloodPressureReadingById(id: string): Promise<BloodPressureReading | undefined>;
+  getAnomalousBloodPressureReadings(userId?: string): Promise<Array<BloodPressureReading & { userName?: string; userEmail?: string }>>;
+  updateBloodPressureReading(id: string, updates: Partial<BloodPressureReading>): Promise<BloodPressureReading>;
+
+  // ========== PROACTIVE HEALTH TRIGGERS ==========
+
+  // Proactive Trigger operations
+  createProactiveHealthTrigger(trigger: InsertProactiveHealthTrigger): Promise<ProactiveHealthTrigger>;
+  getProactiveHealthTriggers(activeOnly?: boolean): Promise<ProactiveHealthTrigger[]>;
+  getProactiveHealthTriggerById(id: string): Promise<ProactiveHealthTrigger | undefined>;
+  updateProactiveHealthTrigger(id: string, updates: Partial<ProactiveHealthTrigger>): Promise<ProactiveHealthTrigger>;
+  deleteProactiveHealthTrigger(id: string): Promise<void>;
+
+  // Proactive Notification operations
+  createProactiveNotification(notification: InsertProactiveNotification): Promise<ProactiveNotification>;
+  getProactiveNotificationsByUser(userId: string, limit?: number): Promise<ProactiveNotification[]>;
+  getProactiveNotificationStats(startDate?: Date, endDate?: Date): Promise<{
+    total: number;
+    sent: number;
+    failed: number;
+    clicked: number;
+    byChannel: Record<string, number>;
+    byType: Record<string, number>;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4574,6 +4623,229 @@ export class DatabaseStorage implements IStorage {
         requestCount: sql`${apiKeys.requestCount} + 1`,
       })
       .where(eq(apiKeys.keyHash, keyHash));
+  }
+
+  // ========== WEARABLE INTEGRATION ==========
+
+  async createWearableDevice(device: InsertWearableDevice): Promise<WearableDevice> {
+    const [created] = await db
+      .insert(wearableDevices)
+      .values({
+        ...device,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async getWearableDevicesByUser(userId: string): Promise<WearableDevice[]> {
+    return await db
+      .select()
+      .from(wearableDevices)
+      .where(eq(wearableDevices.userId, userId))
+      .orderBy(desc(wearableDevices.createdAt));
+  }
+
+  async getWearableDeviceById(id: string): Promise<WearableDevice | undefined> {
+    const [device] = await db
+      .select()
+      .from(wearableDevices)
+      .where(eq(wearableDevices.id, id));
+    return device;
+  }
+
+  async updateWearableDevice(id: string, updates: Partial<WearableDevice>): Promise<WearableDevice> {
+    const [updated] = await db
+      .update(wearableDevices)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(wearableDevices.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteWearableDevice(id: string): Promise<void> {
+    await db.delete(wearableDevices).where(eq(wearableDevices.id, id));
+  }
+
+  async createBloodPressureReading(reading: InsertBloodPressureReading): Promise<BloodPressureReading> {
+    const [created] = await db
+      .insert(bloodPressureReadings)
+      .values({
+        ...reading,
+        createdAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async getBloodPressureReadingsByUser(userId: string, startDate?: Date, endDate?: Date): Promise<BloodPressureReading[]> {
+    let query = db
+      .select()
+      .from(bloodPressureReadings)
+      .where(eq(bloodPressureReadings.userId, userId))
+      .$dynamic();
+
+    if (startDate) {
+      query = query.where(gte(bloodPressureReadings.measurementTime, startDate));
+    }
+    if (endDate) {
+      query = query.where(lte(bloodPressureReadings.measurementTime, endDate));
+    }
+
+    return await query.orderBy(desc(bloodPressureReadings.measurementTime));
+  }
+
+  async getBloodPressureReadingById(id: string): Promise<BloodPressureReading | undefined> {
+    const [reading] = await db
+      .select()
+      .from(bloodPressureReadings)
+      .where(eq(bloodPressureReadings.id, id));
+    return reading;
+  }
+
+  async getAnomalousBloodPressureReadings(userId?: string): Promise<Array<BloodPressureReading & { userName?: string; userEmail?: string }>> {
+    let query = db
+      .select({
+        ...bloodPressureReadings,
+        userName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        userEmail: users.email,
+      })
+      .from(bloodPressureReadings)
+      .leftJoin(users, eq(bloodPressureReadings.userId, users.id))
+      .where(eq(bloodPressureReadings.isAnomalous, true))
+      .$dynamic();
+
+    if (userId) {
+      query = query.where(eq(bloodPressureReadings.userId, userId));
+    }
+
+    return await query.orderBy(desc(bloodPressureReadings.measurementTime));
+  }
+
+  async updateBloodPressureReading(id: string, updates: Partial<BloodPressureReading>): Promise<BloodPressureReading> {
+    const [updated] = await db
+      .update(bloodPressureReadings)
+      .set(updates)
+      .where(eq(bloodPressureReadings.id, id))
+      .returning();
+    return updated;
+  }
+
+  // ========== PROACTIVE HEALTH TRIGGERS ==========
+
+  async createProactiveHealthTrigger(trigger: InsertProactiveHealthTrigger): Promise<ProactiveHealthTrigger> {
+    const [created] = await db
+      .insert(proactiveHealthTriggers)
+      .values({
+        ...trigger,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async getProactiveHealthTriggers(activeOnly: boolean = false): Promise<ProactiveHealthTrigger[]> {
+    let query = db.select().from(proactiveHealthTriggers).$dynamic();
+
+    if (activeOnly) {
+      query = query.where(eq(proactiveHealthTriggers.isActive, true));
+    }
+
+    return await query.orderBy(desc(proactiveHealthTriggers.createdAt));
+  }
+
+  async getProactiveHealthTriggerById(id: string): Promise<ProactiveHealthTrigger | undefined> {
+    const [trigger] = await db
+      .select()
+      .from(proactiveHealthTriggers)
+      .where(eq(proactiveHealthTriggers.id, id));
+    return trigger;
+  }
+
+  async updateProactiveHealthTrigger(id: string, updates: Partial<ProactiveHealthTrigger>): Promise<ProactiveHealthTrigger> {
+    const [updated] = await db
+      .update(proactiveHealthTriggers)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(proactiveHealthTriggers.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteProactiveHealthTrigger(id: string): Promise<void> {
+    await db.delete(proactiveHealthTriggers).where(eq(proactiveHealthTriggers.id, id));
+  }
+
+  async createProactiveNotification(notification: InsertProactiveNotification): Promise<ProactiveNotification> {
+    const [created] = await db
+      .insert(proactiveNotifications)
+      .values({
+        ...notification,
+        createdAt: new Date(),
+        sentAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async getProactiveNotificationsByUser(userId: string, limit: number = 50): Promise<ProactiveNotification[]> {
+    return await db
+      .select()
+      .from(proactiveNotifications)
+      .where(eq(proactiveNotifications.userId, userId))
+      .orderBy(desc(proactiveNotifications.sentAt))
+      .limit(limit);
+  }
+
+  async getProactiveNotificationStats(startDate?: Date, endDate?: Date): Promise<{
+    total: number;
+    sent: number;
+    failed: number;
+    clicked: number;
+    byChannel: Record<string, number>;
+    byType: Record<string, number>;
+  }> {
+    let query = db
+      .select({
+        status: proactiveNotifications.status,
+        channel: proactiveNotifications.channel,
+        notificationType: proactiveNotifications.notificationType,
+        clickedAt: proactiveNotifications.clickedAt,
+      })
+      .from(proactiveNotifications)
+      .$dynamic();
+
+    if (startDate) {
+      query = query.where(gte(proactiveNotifications.sentAt, startDate));
+    }
+    if (endDate) {
+      query = query.where(lte(proactiveNotifications.sentAt, endDate));
+    }
+
+    const notifications = await query;
+
+    const stats = {
+      total: notifications.length,
+      sent: notifications.filter(n => n.status === 'sent' || n.status === 'clicked').length,
+      failed: notifications.filter(n => n.status === 'failed').length,
+      clicked: notifications.filter(n => n.clickedAt !== null).length,
+      byChannel: {} as Record<string, number>,
+      byType: {} as Record<string, number>,
+    };
+
+    notifications.forEach(n => {
+      stats.byChannel[n.channel] = (stats.byChannel[n.channel] || 0) + 1;
+      stats.byType[n.notificationType] = (stats.byType[n.notificationType] || 0) + 1;
+    });
+
+    return stats;
   }
 }
 

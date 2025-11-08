@@ -2,6 +2,15 @@
 
 CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform leveraging AI for medical document analysis, patient-doctor communication, and preventive health monitoring. Its core purpose is to improve patient outcomes through early detection and personalized health management, initially using Google Gemini AI with a strategic plan to transition to proprietary ML models via Active Learning. The platform also includes a REST API for external app integration (e.g., ProhMed) to support features like medical history context, data storage, and doctor contact recommendations.
 
+# Recent Changes (November 2025)
+
+**Wearable Device Integration - Phase 1 Complete:**
+- **Dashboard Frontend** (/wearable): Interactive charts for BP and heart rate trends with recharts LineChart, date range filtering (7/30/90 days), anomaly alerts table, device stats cards, resilient error handling with retry refetch
+- **Heart Rate Monitoring**: Anomaly detection for tachycardia (>100 bpm) and bradycardia (<50 bpm) with activity-aware thresholds
+- **Centralized Notification Service** (wearableNotifications.ts): Integrated WhatsApp via Twilio + push notifications, respects user consent, sends alerts only for high/low severity anomalies
+- **Data Fetching Stability**: UseMemo for derived query keys prevents infinite refetch loops
+- **Security**: Device ownership validation preventing cross-user data injection
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -65,10 +74,12 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 
 ### Wearable Device Integration System
 - **Database Schema**: Four tables support continuous health monitoring: `wearableDevices`, `bloodPressureReadings`, `proactiveHealthTriggers`, and `proactiveNotifications`.
-- **API Endpoints**: For device management, blood pressure ingestion (with inline anomaly detection), readings history, and anomaly detection.
-- **Security Features**: Device ownership validation and support for manual readings.
-- **Anomaly Detection**: Inline algorithm flags blood pressure readings with severity levels.
-- **Extensible Architecture**: Supports multiple device types.
+- **API Endpoints**: 9 endpoints for device CRUD, BP/HR ingestion with inline anomaly detection, readings history, anomaly detection, and admin analytics.
+- **Security Features**: Device ownership validation preventing cross-user data injection, support for manual readings (deviceId optional).
+- **Anomaly Detection**: Inline algorithm for blood pressure (systolic >140/<90, diastolic >90/<60, 130-139/80-89 elevated) and heart rate (>100 tachycardia, <50 bradycardia resting).
+- **Notification System** (server/wearableNotifications.ts): Centralized service integrating WhatsApp (via Twilio) and push notifications with 15-min debouncing, user consent checks (whatsappNotificationsEnabled), alerts only for high/low severity.
+- **Dashboard Frontend** (client/src/pages/wearable.tsx): Interactive recharts LineCharts for BP/HR trends, date range filtering (7/30/90 days), anomaly alerts table, device stats cards, resilient error handling with retry refetch, mobile-responsive grid layout.
+- **Extensible Architecture**: Supports multiple device categories (pressure, glucose, heart_rate) via deviceCategory enum.
 
 ### Additional Features
 - **Appointment Scheduling**: Calendar-based booking.

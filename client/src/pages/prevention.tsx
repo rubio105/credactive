@@ -158,6 +158,9 @@ export default function PreventionPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const doctorAutoStartedRef = useRef<boolean>(false);
@@ -1168,104 +1171,147 @@ export default function PreventionPage() {
     }, 150); // Delay to ensure DOM is updated with new message
   }, [messages]);
 
-  // Initialize speech recognition
+  // Cleanup audio on unmount
   useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.lang = 'it-IT';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
+    };
+  }, []);
 
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
+  const toggleVoiceInput = async () => {
+    if (isListening) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
 
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setUserInput(transcript);
-      };
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
 
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        if (event.error === 'not-allowed') {
-          toast({ 
-            title: "Microfono non autorizzato", 
-            description: "Consenti l'accesso al microfono per usare l'input vocale.",
-            variant: "destructive" 
-          });
-        } else if (event.error === 'no-speech') {
-          toast({ 
-            title: "Nessun audio rilevato", 
-            description: "Prova a parlare più vicino al microfono.",
-            variant: "destructive" 
-          });
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
       };
 
-      recognition.onend = () => {
-        setIsListening(false);
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        
+        try {
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'recording.webm');
+
+          const response = await fetch('/api/voice/transcribe', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          });
+
+          if (!response.ok) {
+            throw new Error('Transcription failed');
+          }
+
+          const data = await response.json();
+          setUserInput(data.text);
+        } catch (error) {
+          console.error('Transcription error:', error);
+          toast({
+            title: "Errore di trascrizione",
+            description: "Non è stato possibile trascrivere l'audio. Riprova.",
+            variant: "destructive"
+          });
+        } finally {
+          stream.getTracks().forEach(track => track.stop());
+          setIsListening(false);
+        }
       };
 
-      recognitionRef.current = recognition;
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, [toast]);
-
-  const toggleVoiceInput = () => {
-    if (!recognitionRef.current) {
-      toast({ 
-        title: "Browser non supportato", 
-        description: "L'input vocale non è supportato da questo browser. Usa Chrome o Safari.",
-        variant: "destructive" 
+      mediaRecorder.start();
+      setIsListening(true);
+    } catch (error) {
+      console.error('Microphone access error:', error);
+      toast({
+        title: "Microfono non autorizzato",
+        description: "Consenti l'accesso al microfono per usare l'input vocale.",
+        variant: "destructive"
       });
-      return;
-    }
-
-    if (isListening) {
-      recognitionRef.current.stop();
-    } else {
-      recognitionRef.current.start();
+      setIsListening(false);
     }
   };
 
-  // Text-to-Speech: Leggi ad alta voce il messaggio
-  const speakText = (text: string) => {
-    if (!window.speechSynthesis) {
+  // Text-to-Speech using OpenAI TTS
+  const speakText = async (text: string) => {
+    try {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
+
+      setIsSpeaking(true);
+
+      const response = await fetch('/api/voice/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: 'alloy' }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Text-to-speech failed');
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      const audio = new Audio(audioUrl);
+      currentAudioRef.current = audio;
+
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        currentAudioRef.current = null;
+      };
+
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        currentAudioRef.current = null;
+        toast({
+          title: "Errore audio",
+          description: "Non è stato possibile riprodurre l'audio",
+          variant: "destructive"
+        });
+      };
+
+      await audio.play();
+    } catch (error) {
+      console.error('Text-to-speech error:', error);
+      setIsSpeaking(false);
       toast({
-        title: "Sintesi vocale non supportata",
-        description: "Il tuo browser non supporta la lettura vocale",
+        title: "Errore sintesi vocale",
+        description: "Non è stato possibile generare l'audio. Riprova.",
         variant: "destructive"
       });
-      return;
     }
-
-    // Stop any ongoing speech
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'it-IT';
-    utterance.rate = 0.9; // Velocità leggermente più lenta per comprensione
-    utterance.pitch = 1.0;
-    
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    
-    speechSynthesisRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
   };
 
   const stopSpeaking = () => {
-    window.speechSynthesis.cancel();
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
     setIsSpeaking(false);
   };
 

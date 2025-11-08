@@ -62,6 +62,7 @@ import {
 import { registerGamificationRoutes } from "./gamificationRoutes";
 import { registerWearableRoutes } from "./wearableRoutes";
 import { processQuizCompletion } from "./gamification";
+import { transcribeAudio, textToSpeech, clearOpenAIInstance as clearVoiceOpenAI } from "./voice";
 
 // pdf-parse (CommonJS module) - use createRequire for compatibility
 const require = createRequire(import.meta.url);
@@ -310,6 +311,24 @@ const uploadDoctorNoteAttachment = multer({
       return cb(null, true);
     } else {
       cb(new Error('Only PDF, DOC, DOCX, JPG, PNG files are allowed for note attachments!'));
+    }
+  }
+});
+
+// Configure multer for audio files (memory storage for security - no disk persistence)
+const uploadAudio = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit (Whisper max)
+  fileFilter: (req, file, cb) => {
+    const allowedExtensions = /webm|wav|mp3|m4a|mp4|mpeg|mpga|ogg|oga/;
+    const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
+    const allowedMimetypes = /audio\/(webm|wav|mp3|mpeg|ogg|m4a|x-m4a)|video\/(webm|mp4)/; // webm video for browser recorder
+    const mimetype = allowedMimetypes.test(file.mimetype) || file.mimetype === 'application/octet-stream';
+    
+    if (extname || mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only audio files (WEBM, WAV, MP3, M4A, OGG) are allowed'));
     }
   }
 });
@@ -10553,6 +10572,44 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
     }
   });
 
+  // ========== VOICE INTERACTION ROUTES (OpenAI Whisper + TTS) ==========
+  
+  // Speech-to-Text using OpenAI Whisper (POST /api/voice/transcribe)
+  app.post('/api/voice/transcribe', uploadAudio.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'Audio file is required' });
+      }
+
+      const transcribedText = await transcribeAudio(req.file.buffer, req.file.originalname);
+      
+      res.json({ text: transcribedText });
+    } catch (error: any) {
+      console.error('Voice transcription error:', error);
+      res.status(500).json({ message: error.message || 'Failed to transcribe audio' });
+    }
+  });
+
+  // Text-to-Speech using OpenAI TTS (POST /api/voice/speak)
+  app.post('/api/voice/speak', async (req, res) => {
+    try {
+      const { text, voice } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ message: 'Text is required' });
+      }
+
+      const audioBuffer = await textToSpeech(text, voice || 'alloy');
+      
+      res.set('Content-Type', 'audio/mpeg');
+      res.set('Content-Length', audioBuffer.length.toString());
+      res.send(audioBuffer);
+    } catch (error: any) {
+      console.error('Text-to-speech error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate speech' });
+    }
+  });
+
   // ========== CROSSWORD GAME ROUTES ==========
   
   // Get all crossword puzzles (GET /api/crossword/puzzles)
@@ -13288,6 +13345,135 @@ Fornisci:
     } catch (error: any) {
       console.error('Pre-visit report error:', error);
       res.status(500).json({ message: 'Failed to generate pre-visit report' });
+    }
+  });
+
+  // Generate post-visit prevention report (POST /api/appointments/:appointmentId/generate-prevention-report)
+  app.post('/api/appointments/:appointmentId/generate-prevention-report', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { appointmentId } = req.params;
+
+      // Get appointment details
+      const appointmentResult = await db.execute(sql`
+        SELECT a.*, 
+               p.first_name as patient_first_name, p.last_name as patient_last_name, p.email as patient_email,
+               p.date_of_birth, p.gender, p.height_cm, p.weight_kg, p.smoking_status, p.physical_activity, p.user_bio
+        FROM appointments a
+        JOIN users p ON a.patient_id = p.id
+        WHERE a.id = ${appointmentId}
+      `);
+
+      if (appointmentResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      const appointment = appointmentResult.rows[0];
+
+      // Authorization: only the assigned doctor can generate post-visit report
+      if (appointment.doctor_id !== user.id) {
+        return res.status(403).json({ message: 'Unauthorized: only the assigned doctor can generate this report' });
+      }
+
+      const patientId = appointment.patient_id;
+
+      // Calculate age
+      let age = null;
+      if (appointment.date_of_birth) {
+        const birthDate = new Date(appointment.date_of_birth);
+        const today = new Date();
+        age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+      }
+
+      // Get recent medical reports
+      const reportsResult = await db.execute(sql`
+        SELECT title, summary, ai_analysis, created_at
+        FROM prevention_documents
+        WHERE uploaded_by_id = ${patientId}
+        ORDER BY created_at DESC
+        LIMIT 5
+      `);
+
+      const recentReports = reportsResult.rows.map((r: any) => ({
+        title: r.title,
+        summary: r.summary || r.ai_analysis?.patientSummary,
+        date: new Date(r.created_at).toLocaleDateString('it-IT'),
+      }));
+
+      // Get triage alerts
+      const alertsResult = await db.execute(sql`
+        SELECT reason, urgency_level, created_at
+        FROM triage_alerts
+        WHERE user_id = ${patientId}
+        ORDER BY created_at DESC
+        LIMIT 3
+      `);
+
+      const recentAlerts = alertsResult.rows.map((a: any) => ({
+        reason: a.reason,
+        urgencyLevel: a.urgency_level,
+        date: new Date(a.created_at).toLocaleDateString('it-IT'),
+      }));
+
+      // Prepare prompt for Gemini
+      const promptContext = `
+Sei un medico specialista in medicina preventiva. Genera un report di prevenzione post-visita dettagliato e personalizzato.
+
+DATI PAZIENTE:
+- Nome: ${appointment.patient_first_name} ${appointment.patient_last_name}
+- Età: ${age || 'Non disponibile'} anni
+- Genere: ${appointment.gender || 'Non specificato'}
+- Altezza: ${appointment.height_cm ? appointment.height_cm + ' cm' : 'Non disponibile'}
+- Peso: ${appointment.weight_kg ? appointment.weight_kg + ' kg' : 'Non disponibile'}
+- Fumo: ${appointment.smoking_status || 'Non specificato'}
+- Attività fisica: ${appointment.physical_activity || 'Non specificata'}
+
+DATI VISITA:
+- Data: ${new Date(appointment.start_time).toLocaleDateString('it-IT')}
+- Tipo: ${appointment.appointment_type}
+- Note visita: ${appointment.notes || 'Nessuna nota'}
+
+STORIA CLINICA RECENTE:
+${recentReports.length > 0 ? recentReports.map((r: any) => `- ${r.title} (${r.date}): ${r.summary}`).join('\n') : 'Nessun referto recente'}
+
+ALERT RECENTI:
+${recentAlerts.length > 0 ? recentAlerts.map((a: any) => `- ${a.reason} (${a.urgencyLevel}, ${a.date})`).join('\n') : 'Nessun alert'}
+
+GENERA UN REPORT STRUTTURATO CON:
+1. Sintesi della visita
+2. Raccomandazioni preventive personalizzate (almeno 5)
+3. Esami di screening consigliati (se applicabili)
+4. Modifiche allo stile di vita
+5. Follow-up consigliato
+
+Il report deve essere professionale, dettagliato e orientato alla prevenzione.
+      `.trim();
+
+      // Generate report using Gemini
+      const reportText = await generateGeminiContent(promptContext, 'gemini-2.0-flash');
+
+      // Save as doctor note
+      const doctorNote = await storage.createDoctorNote({
+        doctorId: user.id,
+        patientId: patientId,
+        noteTitle: `Report Prevenzione - ${new Date(appointment.start_time).toLocaleDateString('it-IT')}`,
+        noteText: reportText,
+        category: 'Report Prevenzione',
+        isReport: true,
+      });
+
+      res.json({ 
+        success: true, 
+        report: doctorNote,
+        reportText 
+      });
+    } catch (error: any) {
+      console.error('Generate prevention report error:', error);
+      res.status(500).json({ message: 'Failed to generate prevention report' });
     }
   });
 

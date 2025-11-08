@@ -68,6 +68,8 @@ export default function DoctorAppointmentsPage() {
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
   const [editingAvailability, setEditingAvailability] = useState<DoctorAvailability | null>(null);
   const [reportAppointmentId, setReportAppointmentId] = useState<string | null>(null);
+  const [preventionReportAppointmentId, setPreventionReportAppointmentId] = useState<string | null>(null);
+  const [preventionReportContent, setPreventionReportContent] = useState<string>("");
   
   // Form state for creating appointment
   const [newAppointment, setNewAppointment] = useState({
@@ -165,6 +167,28 @@ export default function DoctorAppointmentsPage() {
         description: error.message || "Impossibile eliminare lo slot",
         variant: "destructive",
       });
+    },
+  });
+
+  // Generate prevention report mutation
+  const generatePreventionReportMutation = useMutation({
+    mutationFn: async (appointmentId: string) => {
+      return await apiRequest(`/api/appointments/${appointmentId}/generate-prevention-report`, 'POST');
+    },
+    onSuccess: (data: any) => {
+      setPreventionReportContent(data.reportText);
+      toast({
+        title: "Report generato",
+        description: "Il report di prevenzione è stato generato con successo",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile generare il report",
+        variant: "destructive",
+      });
+      setPreventionReportAppointmentId(null);
     },
   });
 
@@ -517,6 +541,21 @@ export default function DoctorAppointmentsPage() {
                               Rifiuta
                             </Button>
                           </>
+                        )}
+                        {apt.status === 'completed' && apt.patient && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => {
+                              setPreventionReportAppointmentId(apt.id);
+                              generatePreventionReportMutation.mutate(apt.id);
+                            }}
+                            disabled={generatePreventionReportMutation.isPending}
+                            data-testid={`button-prevention-report-${apt.id}`}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            {generatePreventionReportMutation.isPending ? 'Generando...' : 'Report Prevenzione'}
+                          </Button>
                         )}
                         {apt.status === 'confirmed' && (
                           <Button 
@@ -1109,6 +1148,49 @@ export default function DoctorAppointmentsPage() {
 
           <div className="flex justify-end mt-4">
             <Button onClick={() => setReportAppointmentId(null)} data-testid="button-close-report">
+              Chiudi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Prevention Report Dialog */}
+      <Dialog open={!!preventionReportAppointmentId} onOpenChange={() => {
+        setPreventionReportAppointmentId(null);
+        setPreventionReportContent("");
+      }}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="dialog-prevention-report">
+          <DialogHeader>
+            <DialogTitle>Report di Prevenzione Post-Visita</DialogTitle>
+            <DialogDescription>
+              Raccomandazioni preventive personalizzate generate dall'AI
+            </DialogDescription>
+          </DialogHeader>
+
+          {generatePreventionReportMutation.isPending ? (
+            <div className="py-12 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-muted-foreground">Generazione report in corso...</p>
+              </div>
+            </div>
+          ) : preventionReportContent ? (
+            <div className="space-y-4">
+              <div className="prose prose-sm max-w-none bg-secondary p-6 rounded-lg">
+                <div className="whitespace-pre-wrap">{preventionReportContent}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-12 text-center text-muted-foreground">
+              Nessun report disponibile
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => {
+              setPreventionReportAppointmentId(null);
+              setPreventionReportContent("");
+            }} data-testid="button-close-prevention-report">
               Chiudi
             </Button>
           </div>

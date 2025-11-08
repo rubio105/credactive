@@ -60,6 +60,7 @@ import {
   aiGenerationLimiter 
 } from "./rateLimits";
 import { registerGamificationRoutes } from "./gamificationRoutes";
+import { registerWearableRoutes } from "./wearableRoutes";
 import { processQuizCompletion } from "./gamification";
 
 // pdf-parse (CommonJS module) - use createRequire for compatibility
@@ -7695,6 +7696,9 @@ Explicación de audio:`
 
   // Register gamification routes
   registerGamificationRoutes(app);
+
+  // Register wearable device routes
+  registerWearableRoutes(app, { storage, isAuthenticated, isAdmin });
 
   const httpServer = createServer(app);
   

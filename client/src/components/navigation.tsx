@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle, Video, Phone, FileCheck, HeartPulse } from "lucide-react";
+import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle, Video, Phone, FileCheck, HeartPulse, Activity } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
@@ -297,6 +297,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             AI Prevenzione
                           </DropdownMenuItem>
                         </Link>
+                        <Link href="/wearable">
+                          <DropdownMenuItem data-testid="menu-wearable">
+                            <Activity className="w-4 h-4 mr-2" />
+                            Dispositivi Wearable
+                          </DropdownMenuItem>
+                        </Link>
                         <Link href="/guida">
                           <DropdownMenuItem data-testid="menu-guide">
                             <HelpCircle className="w-4 h-4 mr-2" />
@@ -312,6 +318,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                           <DropdownMenuItem data-testid="menu-prevention">
                             <Stethoscope className="w-4 h-4 mr-2" />
                             AI Prevenzione
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/wearable">
+                          <DropdownMenuItem data-testid="menu-wearable">
+                            <Activity className="w-4 h-4 mr-2" />
+                            Dispositivi Wearable
                           </DropdownMenuItem>
                         </Link>
                         <DropdownMenuSeparator />
@@ -336,6 +348,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                           <DropdownMenuItem data-testid="menu-prevention">
                             <Stethoscope className="w-4 h-4 mr-2" />
                             AI Prevenzione
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/wearable">
+                          <DropdownMenuItem data-testid="menu-wearable">
+                            <Activity className="w-4 h-4 mr-2" />
+                            Dispositivi Wearable
                           </DropdownMenuItem>
                         </Link>
                         <DropdownMenuSeparator />

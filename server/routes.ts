@@ -13154,6 +13154,143 @@ Fornisci:
     }
   });
 
+  // TELECONSULTO - Generate pre-visit patient summary report for doctor
+  app.get('/api/appointments/:appointmentId/pre-visit-report', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { appointmentId } = req.params;
+
+      if (!appointmentId) {
+        return res.status(400).json({ message: 'Appointment ID is required' });
+      }
+
+      // Get appointment and verify user is the assigned doctor
+      const appointmentResult = await db.execute(sql`
+        SELECT a.*, u.first_name as patient_first_name, u.last_name as patient_last_name, u.email as patient_email
+        FROM appointments a
+        JOIN users u ON a.patient_id = u.id
+        WHERE a.id = ${appointmentId}
+      `);
+
+      if (appointmentResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      const appointment = appointmentResult.rows[0];
+
+      // Authorization: only the assigned doctor can access pre-visit report
+      if (appointment.doctor_id !== user.id) {
+        return res.status(403).json({ message: 'Unauthorized: only the assigned doctor can access this report' });
+      }
+
+      const patientId = appointment.patient_id;
+
+      // 1. Get patient onboarding data
+      const patientResult = await db.execute(sql`
+        SELECT date_of_birth, gender, height_cm, weight_kg, smoking_status, physical_activity, user_bio,
+               first_name, last_name, email, phone
+        FROM users
+        WHERE id = ${patientId}
+      `);
+
+      const patient = patientResult.rows[0] || {};
+
+      // Calculate age from date_of_birth
+      let age = null;
+      if (patient.date_of_birth) {
+        const birthDate = new Date(patient.date_of_birth);
+        const today = new Date();
+        age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+      }
+
+      // 2. Get last 5 medical reports uploaded by patient
+      const reportsResult = await db.execute(sql`
+        SELECT title, description, summary, ai_analysis, created_at
+        FROM prevention_documents
+        WHERE uploaded_by_id = ${patientId}
+        ORDER BY created_at DESC
+        LIMIT 5
+      `);
+
+      const recentReports = reportsResult.rows.map((report: any) => ({
+        title: report.title,
+        date: report.created_at,
+        summary: report.summary || (report.ai_analysis?.patientSummary),
+      }));
+
+      // 3. Get relevant triage conversations (those with alerts or high urgency)
+      const triageResult = await db.execute(sql`
+        SELECT ts.id, ts.title, ts.urgency_level, ts.created_at,
+               (SELECT COUNT(*) FROM triage_alerts WHERE session_id = ts.id) as alert_count
+        FROM triage_sessions ts
+        WHERE ts.user_id = ${patientId}
+          AND (ts.urgency_level IN ('high', 'emergency') OR ts.id IN (
+            SELECT DISTINCT session_id FROM triage_alerts WHERE user_id = ${patientId}
+          ))
+        ORDER BY ts.created_at DESC
+        LIMIT 5
+      `);
+
+      const relevantConversations = triageResult.rows.map((session: any) => ({
+        id: session.id,
+        title: session.title,
+        urgencyLevel: session.urgency_level,
+        date: session.created_at,
+        alertCount: session.alert_count || 0,
+      }));
+
+      // 4. Get appointment attachments
+      const attachmentsResult = await db.execute(sql`
+        SELECT file_name, file_size, file_type, created_at
+        FROM appointment_attachments
+        WHERE appointment_id = ${appointmentId}
+        ORDER BY created_at DESC
+      `);
+
+      const appointmentAttachments = attachmentsResult.rows.map((att: any) => ({
+        fileName: att.file_name,
+        fileSize: att.file_size,
+        uploadedAt: att.created_at,
+      }));
+
+      // Prepare report data
+      const reportData = {
+        patient: {
+          name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim(),
+          email: patient.email,
+          phone: patient.phone,
+          age,
+          gender: patient.gender,
+          heightCm: patient.height_cm,
+          weightKg: patient.weight_kg,
+          smokingStatus: patient.smoking_status,
+          physicalActivity: patient.physical_activity,
+          userBio: patient.user_bio,
+        },
+        recentReports,
+        relevantConversations,
+        appointmentAttachments,
+        appointment: {
+          startTime: appointment.start_time,
+          notes: appointment.notes,
+          appointmentType: appointment.appointment_type,
+        },
+      };
+
+      res.json({ 
+        success: true, 
+        reportData 
+      });
+    } catch (error: any) {
+      console.error('Pre-visit report error:', error);
+      res.status(500).json({ message: 'Failed to generate pre-visit report' });
+    }
+  });
+
   // TELECONSULTO - Send pending reminders (cron job endpoint)
   app.post('/api/appointments/send-reminders', async (req, res) => {
     try {

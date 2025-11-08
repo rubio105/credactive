@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin, FileText, Download } from "lucide-react";
+import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin, FileText, Download, ClipboardList, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -67,6 +67,7 @@ export default function DoctorAppointmentsPage() {
   const [cancellationReason, setCancellationReason] = useState("");
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
   const [editingAvailability, setEditingAvailability] = useState<DoctorAvailability | null>(null);
+  const [reportAppointmentId, setReportAppointmentId] = useState<string | null>(null);
   
   // Form state for creating appointment
   const [newAppointment, setNewAppointment] = useState({
@@ -170,6 +171,21 @@ export default function DoctorAppointmentsPage() {
   // Get doctor availability slots
   const { data: availabilitySlots = [] } = useQuery<DoctorAvailability[]>({
     queryKey: ['/api/doctor/availability'],
+  });
+
+  // Get pre-visit report for selected appointment
+  const { data: preVisitReport, isLoading: isLoadingReport } = useQuery({
+    queryKey: ['/api/appointments', reportAppointmentId, 'pre-visit-report'],
+    queryFn: async () => {
+      const response = await fetch(`/api/appointments/${reportAppointmentId}/pre-visit-report`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch report: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    enabled: !!reportAppointmentId,
   });
 
   // Create availability mutation
@@ -462,6 +478,17 @@ export default function DoctorAppointmentsPage() {
                       </div>
 
                       <div className="flex flex-col gap-2 ml-4">
+                        {apt.patient && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setReportAppointmentId(apt.id)}
+                            data-testid={`button-pre-visit-report-${apt.id}`}
+                          >
+                            <ClipboardList className="w-4 h-4 mr-2" />
+                            Report Pre-Visita
+                          </Button>
+                        )}
                         {apt.meetingUrl && (apt.status === 'confirmed' || apt.status === 'booked') && (
                           <Button size="sm" variant="outline" asChild data-testid={`button-video-${apt.id}`}>
                             <a href={apt.meetingUrl} target="_blank" rel="noopener noreferrer">
@@ -919,6 +946,171 @@ export default function DoctorAppointmentsPage() {
                 }
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pre-Visit Report Dialog */}
+      <Dialog open={!!reportAppointmentId} onOpenChange={() => setReportAppointmentId(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" data-testid="dialog-pre-visit-report">
+          <DialogHeader>
+            <DialogTitle>Report Pre-Visita Paziente</DialogTitle>
+            <DialogDescription>
+              Riassunto dei dati del paziente per prepararsi alla visita
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingReport ? (
+            <div className="py-12 text-center text-muted-foreground">
+              Caricamento report...
+            </div>
+          ) : preVisitReport?.reportData ? (
+            <div className="space-y-6">
+              {/* Patient Info */}
+              <div className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Informazioni Paziente
+                </h3>
+                <div className="grid grid-cols-2 gap-3 p-4 bg-secondary rounded-lg text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Nome</p>
+                    <p className="font-medium">{preVisitReport.reportData.patient.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Email</p>
+                    <p className="font-medium">{preVisitReport.reportData.patient.email || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Età</p>
+                    <p className="font-medium">{preVisitReport.reportData.patient.age ? `${preVisitReport.reportData.patient.age} anni` : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Genere</p>
+                    <p className="font-medium">{preVisitReport.reportData.patient.gender || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Peso</p>
+                    <p className="font-medium">{preVisitReport.reportData.patient.weightKg ? `${preVisitReport.reportData.patient.weightKg} kg` : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Altezza</p>
+                    <p className="font-medium">{preVisitReport.reportData.patient.heightCm ? `${preVisitReport.reportData.patient.heightCm} cm` : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Fumo</p>
+                    <p className="font-medium">{preVisitReport.reportData.patient.smokingStatus || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Attività Fisica</p>
+                    <p className="font-medium">{preVisitReport.reportData.patient.physicalActivity || 'N/A'}</p>
+                  </div>
+                </div>
+                {preVisitReport.reportData.patient.userBio && (
+                  <div className="p-4 bg-secondary rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Note Anamnestiche</p>
+                    <p className="text-sm">{preVisitReport.reportData.patient.userBio}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Recent Medical Reports */}
+              {preVisitReport.reportData.recentReports.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Ultimi Referti Caricati ({preVisitReport.reportData.recentReports.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {preVisitReport.reportData.recentReports.map((report: any, idx: number) => (
+                      <div key={idx} className="p-3 border rounded-lg space-y-1">
+                        <div className="flex items-start justify-between">
+                          <p className="font-medium text-sm">{report.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(report.date), 'dd/MM/yyyy')}
+                          </p>
+                        </div>
+                        {report.summary && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {report.summary}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Relevant Conversations */}
+              {preVisitReport.reportData.relevantConversations.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    Conversazioni Rilevanti ({preVisitReport.reportData.relevantConversations.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {preVisitReport.reportData.relevantConversations.map((conv: any, idx: number) => (
+                      <div key={idx} className="p-3 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{conv.title || 'Conversazione senza titolo'}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={
+                                conv.urgencyLevel === 'emergency' ? 'bg-red-600' :
+                                conv.urgencyLevel === 'high' ? 'bg-orange-600' :
+                                'bg-yellow-600'
+                              }>
+                                {conv.urgencyLevel}
+                              </Badge>
+                              {conv.alertCount > 0 && (
+                                <Badge variant="outline">
+                                  {conv.alertCount} alert
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(conv.date), 'dd/MM/yyyy')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Appointment Attachments */}
+              {preVisitReport.reportData.appointmentAttachments.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Documenti Allegati All'Appuntamento ({preVisitReport.reportData.appointmentAttachments.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {preVisitReport.reportData.appointmentAttachments.map((att: any, idx: number) => (
+                      <div key={idx} className="p-3 border rounded-lg flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{att.fileName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(att.fileSize / 1024).toFixed(1)} KB • Caricato il {format(new Date(att.uploadedAt), 'dd/MM/yyyy HH:mm')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-muted-foreground">
+              Nessun dato disponibile per questo appuntamento
+            </div>
+          )}
+
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setReportAppointmentId(null)} data-testid="button-close-report">
+              Chiudi
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

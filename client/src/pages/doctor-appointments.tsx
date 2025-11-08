@@ -14,7 +14,6 @@ import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLocation } from "wouter";
 import { BackButton } from "@/components/BackButton";
 
 type Appointment = {
@@ -50,7 +49,6 @@ type DoctorAvailability = {
 
 export default function DoctorAppointmentsPage() {
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
@@ -84,13 +82,7 @@ export default function DoctorAppointmentsPage() {
   // Create appointment mutation
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch('/api/appointments', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to create appointment');
-      return response.json();
+      return await apiRequest('/api/appointments', 'POST', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
@@ -119,13 +111,7 @@ export default function DoctorAppointmentsPage() {
   // Update status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
-      const response = await fetch(`/api/appointments/${id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status, reason }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to update status');
-      return response.json();
+      return await apiRequest(`/api/appointments/${id}/status`, 'PUT', { status, reason });
     },
     onSuccess: () => {
       // Invalidate all appointment queries to refresh all views
@@ -150,11 +136,7 @@ export default function DoctorAppointmentsPage() {
   // Delete appointment mutation
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/appointments/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete appointment');
-      return response.json();
+      return await apiRequest(`/api/appointments/${id}`, 'DELETE');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
@@ -336,7 +318,6 @@ export default function DoctorAppointmentsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <BackButton
-            fallbackRoute="/doctor/appointments"
             label="Indietro"
             variant="outline"
             testId="button-back"

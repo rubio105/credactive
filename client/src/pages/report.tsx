@@ -1,4 +1,4 @@
-import { useRoute, useLocation } from "wouter";
+import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import {
   TrendingDown,
   Lightbulb,
   Download,
-  ArrowLeft,
   Trophy,
   Target,
   Clock,
@@ -28,6 +27,7 @@ import {
   BookOpen,
   Briefcase,
 } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
 
 interface ReportData {
   score: number;
@@ -109,7 +109,6 @@ interface QuizReport {
 export default function ReportPage() {
   const [, params] = useRoute("/report/:attemptId");
   const attemptId = params?.attemptId;
-  const [, setLocation] = useLocation();
 
   const { data: report, isLoading } = useQuery<QuizReport>({
     queryKey: [`/api/quiz-reports/${attemptId}`],
@@ -137,10 +136,11 @@ export default function ReportPage() {
         <Card>
           <CardContent className="p-8 text-center">
             <p className="text-muted-foreground">Report non trovato</p>
-            <Button onClick={() => setLocation("/")} className="mt-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Torna alla Home
-            </Button>
+            <BackButton
+              label="Torna Indietro"
+              className="mt-4"
+              testId="button-back-home"
+            />
           </CardContent>
         </Card>
       </div>
@@ -167,15 +167,12 @@ export default function ReportPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <Button
+            <BackButton
+              label="Torna Indietro"
               variant="ghost"
-              onClick={() => setLocation("/")}
               className="mb-2"
-              data-testid="button-back-home"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Torna alla Home
-            </Button>
+              testId="button-back-home"
+            />
             <h1 className="text-3xl font-bold">Il Tuo Profilo Insight Discovery</h1>
             <p className="text-muted-foreground mt-1">
               {data.profileType}
@@ -610,15 +607,12 @@ export default function ReportPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Button
+          <BackButton
+            label="Torna Indietro"
             variant="ghost"
-            onClick={() => setLocation("/")}
             className="mb-2"
-            data-testid="button-back-home"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna alla Home
-          </Button>
+            testId="button-back-home"
+          />
           <h1 className="text-3xl font-bold">Report Quiz Dettagliato</h1>
           <p className="text-muted-foreground mt-1">
             Analisi completa delle tue performance

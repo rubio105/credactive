@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Activity, Heart, TrendingUp, TrendingDown, AlertTriangle, Calendar, Plus, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { useLocation } from "wouter";
 import { BackButton } from "@/components/BackButton";
 import { format, subDays } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -71,7 +70,6 @@ const addDeviceSchema = z.object({
 type AddDeviceForm = z.infer<typeof addDeviceSchema>;
 
 export default function WearablePage() {
-  const [, navigate] = useLocation();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
   const { toast } = useToast();
@@ -245,7 +243,6 @@ export default function WearablePage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <BackButton
-            fallbackRoute="/dashboard"
             label="Indietro"
             variant="ghost"
             testId="button-back"

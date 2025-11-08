@@ -1,5 +1,6 @@
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/BackButton";
 import { 
   LayoutDashboard,
   Users,
@@ -13,7 +14,6 @@ import {
   Shield,
   BookOpen,
   LogOut,
-  ArrowLeft,
   MessageSquare,
   Brain,
   Zap
@@ -105,16 +105,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Top Bar with Back Button */}
         {!isHomePage && (
           <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
-            <Button
+            <BackButton
+              fallbackRoute="/admin"
+              label="Torna alla Dashboard"
               variant="ghost"
-              size="sm"
-              onClick={() => setLocation("/admin")}
-              className="text-muted-foreground hover:text-foreground"
-              data-testid="button-back-to-dashboard"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Torna alla Dashboard
-            </Button>
+              className="text-muted-foreground hover:text-foreground text-sm h-9 px-3"
+              testId="button-back-to-dashboard"
+            />
           </div>
         )}
 

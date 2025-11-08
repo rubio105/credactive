@@ -1364,16 +1364,27 @@ export default function PreventionPage() {
       return;
     }
 
-    // Start conversation mode
+    // Auto-create session if not exists (allows immediate voice conversation)
     if (!sessionId) {
-      toast({
-        title: "Avvia prima una conversazione",
-        description: "Scrivi o seleziona un esempio per iniziare.",
-        variant: "destructive"
-      });
-      return;
+      try {
+        await startTriageMutation.mutateAsync({
+          symptom: "Ciao, sono pronto per parlare con te.",
+          role: userRole,
+        });
+        // Session created, wait a moment for state to update
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.error('Failed to create session:', error);
+        toast({
+          title: "Errore",
+          description: "Impossibile avviare la conversazione. Riprova.",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
+    // Start conversation mode
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;

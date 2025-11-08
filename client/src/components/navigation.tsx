@@ -309,6 +309,13 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                             Guida
                           </DropdownMenuItem>
                         </Link>
+                        <DropdownMenuSeparator />
+                        <Link href="/settings">
+                          <DropdownMenuItem data-testid="menu-settings-doctor">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Impostazioni
+                          </DropdownMenuItem>
+                        </Link>
                       </>
                     )}
                     {/* AI-Only Prevention Patients - ONLY Prevention (SEPARATE from quiz) */}
@@ -337,6 +344,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                           <DropdownMenuItem data-testid="menu-guide">
                             <HelpCircle className="w-4 h-4 mr-2" />
                             Guida
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/settings">
+                          <DropdownMenuItem data-testid="menu-settings-patient-ai">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Impostazioni
                           </DropdownMenuItem>
                         </Link>
                       </>
@@ -385,6 +398,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                           <DropdownMenuItem data-testid="menu-guide">
                             <HelpCircle className="w-4 h-4 mr-2" />
                             Guida
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href="/settings">
+                          <DropdownMenuItem data-testid="menu-settings-patient">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Impostazioni
                           </DropdownMenuItem>
                         </Link>
                         {typedUser?.corporateAgreementId && (

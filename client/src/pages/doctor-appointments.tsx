@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2 } from "lucide-react";
+import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -27,6 +27,7 @@ type Appointment = {
   status: string;
   description: string | null;
   meetingUrl: string | null;
+  studioAddress: string | null;
   cancellationReason: string | null;
   patient?: {
     firstName: string;
@@ -404,6 +405,16 @@ export default function DoctorAppointmentsPage() {
                           <div className="text-sm bg-blue-50 dark:bg-blue-950 p-3 rounded">
                             <p className="font-medium mb-1">Note del paziente:</p>
                             <p className="text-muted-foreground">{apt.description}</p>
+                          </div>
+                        )}
+
+                        {apt.studioAddress && (
+                          <div className="flex items-start gap-2 text-sm bg-amber-50 dark:bg-amber-950/20 p-3 rounded border border-amber-200 dark:border-amber-800">
+                            <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-medium mb-1 text-amber-900 dark:text-amber-100">Indirizzo Studio:</p>
+                              <p className="text-amber-700 dark:text-amber-300">{apt.studioAddress}</p>
+                            </div>
                           </div>
                         )}
                       </div>

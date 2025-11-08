@@ -11767,6 +11767,7 @@ Format as JSON: {
                 appointmentDate,
                 appointmentTime,
                 meetingUrl: updated.meetingUrl || undefined,
+                studioAddress: updated.studioAddress || undefined,
               });
             } else if (status === 'cancelled') {
               await sendAppointmentCancelledToPatientEmail(patient.email, {
@@ -12713,6 +12714,7 @@ Fornisci:
           message: 'Slot duration must be 30 or 60 minutes',
         }).optional().default(30),
         appointmentType: z.enum(['video', 'in_person', 'both']).optional().default('both'),
+        studioAddress: z.string().optional(),
       });
 
       const validated = availabilitySchema.safeParse(req.body);
@@ -12723,11 +12725,18 @@ Fornisci:
         });
       }
 
-      const { dayOfWeek, startTime, endTime, slotDuration, appointmentType } = validated.data;
+      const { dayOfWeek, startTime, endTime, slotDuration, appointmentType, studioAddress } = validated.data;
+
+      // Validate studioAddress is required for in_person or both
+      if ((appointmentType === 'in_person' || appointmentType === 'both') && (!studioAddress || studioAddress.trim() === '')) {
+        return res.status(400).json({ 
+          message: 'L\'indirizzo dello studio è obbligatorio per appuntamenti in presenza' 
+        });
+      }
       
       await db.execute(sql`
-        INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, slot_duration, appointment_type)
-        VALUES (${user.id}, ${dayOfWeek}, ${startTime}, ${endTime}, ${slotDuration}, ${appointmentType})
+        INSERT INTO doctor_availability (doctor_id, day_of_week, start_time, end_time, slot_duration, appointment_type, studio_address)
+        VALUES (${user.id}, ${dayOfWeek}, ${startTime}, ${endTime}, ${slotDuration}, ${appointmentType}, ${studioAddress || null})
       `);
 
       res.json({ success: true, message: 'Availability added' });

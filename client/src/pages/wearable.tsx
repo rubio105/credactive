@@ -176,8 +176,10 @@ export default function WearablePage() {
   
   const readings = readingsData?.readings || [];
   const rawStats = readingsData?.stats;
+  const safeDevices = devices || [];
+  const safeAnomalies = anomalies || [];
   
-  console.log('[WearablePage] Raw data', {readings: readings.length, rawStats});
+  console.log('[WearablePage] Raw data', {readings: readings.length, rawStats, devices: safeDevices.length, anomalies: safeAnomalies.length});
   
   // Ensure stats values are safe for rendering (no NaN)
   const stats = rawStats ? {
@@ -341,7 +343,7 @@ export default function WearablePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-devices">
-              {devices?.filter(d => d.isActive).length || 0}
+              {safeDevices.filter(d => d.isActive).length}
             </div>
             <p className="text-xs text-muted-foreground">attivi</p>
           </CardContent>
@@ -475,7 +477,7 @@ export default function WearablePage() {
       </Tabs>
 
       {/* Anomalies */}
-      {anomalies && anomalies.length > 0 && (
+      {safeAnomalies.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -486,7 +488,7 @@ export default function WearablePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {anomalies.slice(0, 5).map((reading) => (
+              {safeAnomalies.slice(0, 5).map((reading) => (
                 <div 
                   key={reading.id} 
                   className="flex items-start justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -629,9 +631,9 @@ export default function WearablePage() {
           </div>
         </CardHeader>
         <CardContent>
-          {devices && devices.length > 0 ? (
+          {safeDevices.length > 0 ? (
             <div className="space-y-3">
-              {devices.map((device) => (
+              {safeDevices.map((device) => (
                 <div 
                   key={device.id} 
                   className="flex items-center justify-between p-3 border rounded-lg"

@@ -43,6 +43,7 @@ type DoctorAvailability = {
   endTime: string; // HH:MM format
   slotDuration: number; // minutes: 30 or 60
   appointmentType: string; // video, in_person, both
+  studioAddress: string | null; // Physical address for in-person appointments
   isActive: boolean;
   createdAt: string;
 };
@@ -72,6 +73,7 @@ export default function DoctorAppointmentsPage() {
     endTime: "17:00",
     slotDuration: 30,
     appointmentType: "video",
+    studioAddress: "",
   });
 
   // Get all appointments
@@ -179,6 +181,7 @@ export default function DoctorAppointmentsPage() {
         endTime: "17:00",
         slotDuration: 30,
         appointmentType: "video",
+        studioAddress: "",
       });
     },
     onError: (error: any) => {
@@ -210,6 +213,7 @@ export default function DoctorAppointmentsPage() {
         endTime: "17:00",
         slotDuration: 30,
         appointmentType: "video",
+        studioAddress: "",
       });
     },
     onError: (error: any) => {
@@ -252,6 +256,7 @@ export default function DoctorAppointmentsPage() {
         endTime: editingAvailability.endTime,
         slotDuration: editingAvailability.slotDuration,
         appointmentType: editingAvailability.appointmentType,
+        studioAddress: editingAvailability.studioAddress || "",
       });
       setIsAvailabilityDialogOpen(true);
     }
@@ -811,6 +816,23 @@ export default function DoctorAppointmentsPage() {
                 </Select>
               </div>
             </div>
+
+            {(newAvailability.appointmentType === 'in_person' || newAvailability.appointmentType === 'both') && (
+              <div className="space-y-2">
+                <Label htmlFor="studioAddress">Indirizzo Studio *</Label>
+                <Textarea
+                  id="studioAddress"
+                  placeholder="Via Roma 123, 20121 Milano (MI)"
+                  value={newAvailability.studioAddress}
+                  onChange={(e) => setNewAvailability({ ...newAvailability, studioAddress: e.target.value })}
+                  className="min-h-[80px]"
+                  data-testid="textarea-studio-address"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Questo indirizzo sarà comunicato ai pazienti via email quando prenotano un appuntamento in presenza.
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <Button 

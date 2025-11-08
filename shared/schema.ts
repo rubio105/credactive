@@ -2395,6 +2395,7 @@ export const doctorAvailability = pgTable("doctor_availability", {
   endTime: varchar("end_time", { length: 5 }).notNull(), // HH:MM format (e.g., "17:00")
   slotDuration: integer("slot_duration").default(30).notNull(), // minutes: 30 or 60
   appointmentType: varchar("appointment_type", { length: 20 }).default('both'), // video, in_person, both
+  studioAddress: text("studio_address"), // Physical address for in-person appointments
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

@@ -39,7 +39,7 @@ async function toFile(buffer: Buffer, filename: string): Promise<any> {
     name: filename,
     size: buffer.length,
     type: filename.endsWith('.webm') ? 'audio/webm' : 'audio/wav',
-    arrayBuffer: async () => buffer.buffer,
+    arrayBuffer: async () => buffer,
     text: async () => buffer.toString('utf-8'),
     slice: () => buffer,
   };

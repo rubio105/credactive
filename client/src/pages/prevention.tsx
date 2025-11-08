@@ -132,6 +132,7 @@ export default function PreventionPage() {
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [showContinueConversationDialog, setShowContinueConversationDialog] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isConversationMode, setIsConversationMode] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
@@ -1184,69 +1185,175 @@ export default function PreventionPage() {
     };
   }, []);
 
+  // Continuous conversation: record → transcribe → send to AI → speak response → loop
+  const startConversationCycle = async (stream: MediaStream) => {
+    if (!isConversationMode) return;
+    
+    audioChunksRef.current = [];
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunksRef.current.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      if (!isConversationMode) return;
+
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      
+      try {
+        // Step 1: Transcribe audio
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+
+        const transcribeResponse = await fetch('/api/voice/transcribe', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+
+        if (!transcribeResponse.ok) {
+          throw new Error('Transcription failed');
+        }
+
+        const transcribeData = await transcribeResponse.json();
+        const userText = transcribeData.text;
+
+        if (!userText || userText.trim() === '') {
+          // No speech detected, restart listening
+          if (isConversationMode) {
+            setTimeout(() => startConversationCycle(stream), 500);
+          }
+          return;
+        }
+
+        // Step 2: Send to Gemini AI
+        const triageResponse = await apiRequest(`/api/triage/${sessionId}/message`, {
+          method: 'POST',
+          body: JSON.stringify({ message: userText }),
+        });
+
+        // Refresh messages
+        await queryClient.invalidateQueries({ queryKey: [`/api/triage/${sessionId}/messages`] });
+
+        // Step 3: Get AI response text
+        const messages = await queryClient.fetchQuery({
+          queryKey: [`/api/triage/${sessionId}/messages`],
+        }) as TriageMessage[];
+
+        const lastAiMessage = messages?.filter(m => m.role === 'assistant').pop();
+
+        if (lastAiMessage?.content) {
+          // Step 4: Speak AI response
+          const ttsResponse = await fetch('/api/voice/speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: lastAiMessage.content, voice: 'nova' }),
+            credentials: 'include',
+          });
+
+          if (ttsResponse.ok) {
+            const audioBlob = await ttsResponse.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            const audio = new Audio(audioUrl);
+            currentAudioRef.current = audio;
+
+            audio.onended = () => {
+              URL.revokeObjectURL(audioUrl);
+              currentAudioRef.current = null;
+              // Step 5: Restart listening automatically
+              if (isConversationMode) {
+                setTimeout(() => startConversationCycle(stream), 500);
+              }
+            };
+
+            audio.onerror = () => {
+              URL.revokeObjectURL(audioUrl);
+              currentAudioRef.current = null;
+              if (isConversationMode) {
+                setTimeout(() => startConversationCycle(stream), 500);
+              }
+            };
+
+            await audio.play();
+          } else {
+            // TTS failed, but continue conversation
+            if (isConversationMode) {
+              setTimeout(() => startConversationCycle(stream), 500);
+            }
+          }
+        } else {
+          // No AI response, restart listening
+          if (isConversationMode) {
+            setTimeout(() => startConversationCycle(stream), 500);
+          }
+        }
+      } catch (error) {
+        console.error('Conversation cycle error:', error);
+        toast({
+          title: "Errore conversazione",
+          description: "Si è verificato un errore. La conversazione continua.",
+          variant: "destructive"
+        });
+        // Continue conversation despite error
+        if (isConversationMode) {
+          setTimeout(() => startConversationCycle(stream), 1000);
+        }
+      }
+    };
+
+    setIsListening(true);
+    mediaRecorder.start();
+    
+    // Auto-stop recording after 10 seconds max
+    setTimeout(() => {
+      if (mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+    }, 10000);
+  };
+
   const toggleVoiceInput = async () => {
-    if (isListening) {
+    // Stop conversation mode
+    if (isConversationMode) {
+      setIsConversationMode(false);
+      setIsListening(false);
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop();
       }
-      setIsListening(false);
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
+      return;
+    }
+
+    // Start conversation mode
+    if (!sessionId) {
+      toast({
+        title: "Avvia prima una conversazione",
+        description: "Scrivi o seleziona un esempio per iniziare.",
+        variant: "destructive"
+      });
       return;
     }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunksRef.current = [];
-      
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        
-        try {
-          const formData = new FormData();
-          formData.append('audio', audioBlob, 'recording.webm');
-
-          const response = await fetch('/api/voice/transcribe', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-          });
-
-          if (!response.ok) {
-            throw new Error('Transcription failed');
-          }
-
-          const data = await response.json();
-          setUserInput(data.text);
-        } catch (error) {
-          console.error('Transcription error:', error);
-          toast({
-            title: "Errore di trascrizione",
-            description: "Non è stato possibile trascrivere l'audio. Riprova.",
-            variant: "destructive"
-          });
-        } finally {
-          stream.getTracks().forEach(track => track.stop());
-          setIsListening(false);
-        }
-      };
-
-      mediaRecorder.start();
-      setIsListening(true);
+      setIsConversationMode(true);
+      startConversationCycle(stream);
     } catch (error) {
       console.error('Microphone access error:', error);
       toast({
         title: "Microfono non autorizzato",
-        description: "Consenti l'accesso al microfono per usare l'input vocale.",
+        description: "Consenti l'accesso al microfono per usare la conversazione vocale.",
         variant: "destructive"
       });
+      setIsConversationMode(false);
       setIsListening(false);
     }
   };
@@ -1998,23 +2105,23 @@ export default function PreventionPage() {
                       <Button
                         onClick={toggleVoiceInput}
                         className={`${
-                          isListening 
+                          isConversationMode 
                             ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
                             : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
                         } text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full h-auto py-6 rounded-xl group`}
                         data-testid="button-voice-conversation"
-                        title={isListening ? "Ferma registrazione vocale" : "Avvia conversazione vocale con l'AI"}
+                        title={isConversationMode ? "Ferma conversazione vocale" : "Avvia conversazione vocale con CIRY"}
                       >
                         <div className="flex items-center justify-center gap-3">
                           <div className="p-3 bg-white/20 rounded-full group-hover:scale-110 transition-transform">
-                            {isListening ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                            {isConversationMode ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
                           </div>
                           <div className="flex flex-col items-start">
                             <span className="text-lg font-bold">
-                              {isListening ? "Sto Ascoltando..." : "Parla con l'AI"}
+                              {isConversationMode ? (isListening ? "Sto Ascoltando..." : "CIRY Risponde...") : "Parla con CIRY"}
                             </span>
                             <span className="text-xs font-normal opacity-90">
-                              {isListening ? "Clicca per fermare" : "Conversazione vocale completa"}
+                              {isConversationMode ? "Clicca per fermare" : "Conversazione continua automatica"}
                             </span>
                           </div>
                         </div>

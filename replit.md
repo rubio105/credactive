@@ -4,12 +4,16 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 # Recent Changes (November 2025)
 
-**Wearable Device Integration - Phase 1 Complete:**
-- **Dashboard Frontend** (/wearable): Interactive charts for BP and heart rate trends with recharts LineChart, date range filtering (7/30/90 days), anomaly alerts table, device stats cards, resilient error handling with retry refetch
+**Wearable Device Integration - Complete System (Phases 1-3):**
+- **Dashboard Frontend** (/wearable): Interactive recharts LineCharts for BP/HR trends, date range filtering (7/30/90 days), anomaly alerts table, device stats cards, resilient error handling with retry refetch, mobile-responsive grid layout
+- **Device Management UI**: Full CRUD operations with registration dialog (Zod validation), delete confirmation AlertDialogs, device list with real-time status updates
+- **Web Bluetooth API Integration**: BluetoothConnector.tsx component using Web Bluetooth API for BP monitors (GATT Service 0x1810, Characteristic 0x2A35), client-side device pairing and data transmission, requires HTTPS and user gesture
 - **Heart Rate Monitoring**: Anomaly detection for tachycardia (>100 bpm) and bradycardia (<50 bpm) with activity-aware thresholds
-- **Centralized Notification Service** (wearableNotifications.ts): Integrated WhatsApp via Twilio + push notifications, respects user consent, sends alerts only for high/low severity anomalies
+- **Centralized Notification Service** (wearableNotifications.ts): Integrated WhatsApp via Twilio + push notifications, respects user consent, sends alerts only for high/low severity anomalies, 15-minute debouncing
+- **Background Scheduler** (WearableScheduler): Daily trend analysis (24h intervals), detects 3+ consecutive elevated readings (>130/80 BP or >85 bpm HR), creates proactive health trigger jobs via JobWorker, single bootstrap pattern with error handling
+- **Admin Proactive Triggers UI** (/admin/proactive-triggers): Complete admin interface for managing proactiveHealthTriggers with CRUD operations, JSON-based condition/action configuration, target audience selection, frequency settings
 - **Data Fetching Stability**: UseMemo for derived query keys prevents infinite refetch loops
-- **Security**: Device ownership validation preventing cross-user data injection
+- **Security**: Device ownership validation preventing cross-user data injection, admin-only trigger management
 
 # User Preferences
 
@@ -74,11 +78,15 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 
 ### Wearable Device Integration System
 - **Database Schema**: Four tables support continuous health monitoring: `wearableDevices`, `bloodPressureReadings`, `proactiveHealthTriggers`, and `proactiveNotifications`.
-- **API Endpoints**: 9 endpoints for device CRUD, BP/HR ingestion with inline anomaly detection, readings history, anomaly detection, and admin analytics.
-- **Security Features**: Device ownership validation preventing cross-user data injection, support for manual readings (deviceId optional).
+- **API Endpoints**: 9 endpoints for device CRUD, BP/HR ingestion with inline anomaly detection, readings history, anomaly detection, and admin analytics, plus 4 admin endpoints for proactive trigger management.
+- **Security Features**: Device ownership validation preventing cross-user data injection, support for manual readings (deviceId optional), admin-only access to proactive triggers.
 - **Anomaly Detection**: Inline algorithm for blood pressure (systolic >140/<90, diastolic >90/<60, 130-139/80-89 elevated) and heart rate (>100 tachycardia, <50 bradycardia resting).
 - **Notification System** (server/wearableNotifications.ts): Centralized service integrating WhatsApp (via Twilio) and push notifications with 15-min debouncing, user consent checks (whatsappNotificationsEnabled), alerts only for high/low severity.
+- **Background Scheduler** (server/wearableScheduler.ts): WearableScheduler runs daily trend analysis (every 24h), detects 3+ consecutive elevated readings (>130/80 BP or >85 bpm HR), creates proactive health trigger jobs processed by JobWorker, single-instance bootstrap pattern with error handling.
 - **Dashboard Frontend** (client/src/pages/wearable.tsx): Interactive recharts LineCharts for BP/HR trends, date range filtering (7/30/90 days), anomaly alerts table, device stats cards, resilient error handling with retry refetch, mobile-responsive grid layout.
+- **Device Management UI**: Complete CRUD interface for wearable devices with registration dialog (Zod validation), delete confirmation AlertDialogs, real-time status updates integrated in dashboard.
+- **Web Bluetooth API Integration** (client/src/components/BluetoothConnector.tsx): Client-side device pairing using Web Bluetooth API for BP monitors (GATT Service 0x1810, Characteristic 0x2A35), requires HTTPS and user gesture, transmits readings directly to backend.
+- **Admin Proactive Triggers** (client/src/pages/admin-proactive-triggers.tsx): Admin interface for configuring automated health monitoring triggers with JSON-based conditions/actions, target audience filtering, frequency settings, activation toggle.
 - **Extensible Architecture**: Supports multiple device categories (pressure, glucose, heart_rate) via deviceCategory enum.
 
 ### Additional Features

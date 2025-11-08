@@ -1284,67 +1284,6 @@ export default function PreventionPage() {
         if (lastAiMessage?.content) {
           setIsListening(false); // Show "CIRY Risponde..."
 
-          // Voice-triggered booking: Detect if AI suggests booking appointment
-          // Use sentence-level negation check to avoid false positives
-          const aiResponse = lastAiMessage.content;
-          
-          // Split by sentence-ending punctuation
-          const sentences = aiResponse.split(/[.!?]+/).map(s => s.trim());
-          
-          const bookingPatterns = [
-            /vuoi\s+(prenotare|un\s+appuntamento|una\s+visita)/i,
-            /posso\s+(prenotare|trovare.*appuntamento|mostrarti.*date)/i,
-            /ti\s+(mostro|trovo|propongo).*date\s+disponibili/i,
-            /ti\s+(aiuto|assisto).*prenotare/i,
-            /procediamo.*prenotazione/i,
-            /book.*appointment|schedule.*visit/i, // English fallback
-          ];
-          
-          // Check if any sentence matches AND doesn't start with negation
-          const shouldOpenBooking = sentences.some(sentence => {
-            const hasBookingIntent = bookingPatterns.some(pattern => pattern.test(sentence));
-            const hasNegation = /^\s*(non|no|senza)\b/i.test(sentence);
-            return hasBookingIntent && !hasNegation;
-          });
-
-          if (shouldOpenBooking && userRole === 'patient') {
-            // Pause voice conversation and open booking dialog
-            cleanupConversation();
-            
-            // Speak response first, then open dialog
-            const ttsResponseQuick = await fetch('/api/voice/speak', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                text: "Perfetto! Ti apro il modulo di prenotazione.", 
-                voice: 'nova' 
-              }),
-              credentials: 'include',
-            });
-
-            if (ttsResponseQuick.ok) {
-              const audioBlob = await ttsResponseQuick.blob();
-              const audioUrl = URL.createObjectURL(audioBlob);
-              const audio = new Audio(audioUrl);
-              
-              audio.onended = () => {
-                URL.revokeObjectURL(audioUrl);
-                // Open booking dialog after speech ends
-                setIsBookingDialogOpen(true);
-                toast({
-                  title: "Prenotazione guidata",
-                  description: "Seleziona data e ora nel modulo che si è aperto",
-                });
-              };
-
-              await audio.play();
-            } else {
-              setIsBookingDialogOpen(true);
-            }
-            
-            return; // Stop conversation cycle
-          }
-
           // Step 4: Speak AI response
           const ttsResponse = await fetch('/api/voice/speak', {
             method: 'POST',
@@ -2220,6 +2159,31 @@ export default function PreventionPage() {
                           </div>
                         </div>
                       </Button>
+
+                      {/* Quick Booking Button - Shows only during voice conversation for patients */}
+                      {isConversationMode && userRole === 'patient' && (
+                        <Button
+                          onClick={() => {
+                            cleanupConversation(); // Pause voice conversation
+                            setIsBookingDialogOpen(true); // Open booking dialog
+                            toast({
+                              title: "Prenotazione",
+                              description: "Seleziona data e ora per il tuo appuntamento",
+                            });
+                          }}
+                          variant="outline"
+                          className="w-full h-auto py-4 border-2 border-blue-500 dark:border-blue-600 hover:border-blue-600 dark:hover:border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 hover:shadow-lg transition-all duration-200"
+                          data-testid="button-quick-booking"
+                        >
+                          <div className="flex items-center justify-center gap-3">
+                            <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            <div className="flex flex-col items-start">
+                              <span className="text-base font-bold">Prenota Visita</span>
+                              <span className="text-xs opacity-80">Click per prenotare ora</span>
+                            </div>
+                          </div>
+                        </Button>
+                      )}
                     </div>
 
                     {/* Action Buttons */}

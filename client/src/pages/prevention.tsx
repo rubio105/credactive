@@ -1992,6 +1992,35 @@ export default function PreventionPage() {
                       </div>
                     </div>
 
+                    {/* Voice Conversation - Large Button */}
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-purple-700 dark:text-purple-400">Conversazione Vocale:</p>
+                      <Button
+                        onClick={toggleVoiceInput}
+                        className={`${
+                          isListening 
+                            ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                            : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                        } text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full h-auto py-6 rounded-xl group`}
+                        data-testid="button-voice-conversation"
+                        title={isListening ? "Ferma registrazione vocale" : "Avvia conversazione vocale con l'AI"}
+                      >
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="p-3 bg-white/20 rounded-full group-hover:scale-110 transition-transform">
+                            {isListening ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                          </div>
+                          <div className="flex flex-col items-start">
+                            <span className="text-lg font-bold">
+                              {isListening ? "Sto Ascoltando..." : "Parla con l'AI"}
+                            </span>
+                            <span className="text-xs font-normal opacity-90">
+                              {isListening ? "Clicca per fermare" : "Conversazione vocale completa"}
+                            </span>
+                          </div>
+                        </div>
+                      </Button>
+                    </div>
+
                     {/* Action Buttons */}
                     <div className="space-y-3">
                       <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Strumenti Avanzati:</p>
@@ -2037,18 +2066,6 @@ export default function PreventionPage() {
                           className="border-2 border-emerald-300 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all text-base bg-white dark:bg-gray-900 flex-1"
                           data-testid="input-triage-start"
                         />
-                        <Button
-                          onClick={toggleVoiceInput}
-                          className={`${
-                            isListening 
-                              ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                              : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
-                          } text-white shadow-lg h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0`}
-                          data-testid="button-voice-input-start"
-                          title={isListening ? "Ferma registrazione" : "Parla con l'AI (conversazione vocale)"}
-                        >
-                          {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                        </Button>
                         <Button
                           onClick={handleStart}
                           disabled={startTriageMutation.isPending}

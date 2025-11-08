@@ -2437,5 +2437,126 @@ export const insertAppointmentReminderSchema = createInsertSchema(appointmentRem
 });
 export type InsertAppointmentReminder = z.infer<typeof insertAppointmentReminderSchema>;
 
+// ========== WEARABLE INTEGRATION ==========
+
+// Registered wearable devices (blood pressure monitors, etc.)
+export const wearableDevices = pgTable("wearable_devices", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  deviceType: varchar("device_type", { length: 50 }).notNull(), // blood_pressure, glucose, heart_rate, etc.
+  manufacturer: varchar("manufacturer", { length: 100 }), // Omron, Withings, Apple, etc.
+  model: varchar("model", { length: 100 }),
+  deviceId: varchar("device_id", { length: 255 }).notNull(), // Unique device identifier from manufacturer
+  apiToken: varchar("api_token", { length: 500 }), // OAuth token for device API
+  isActive: boolean("is_active").default(true).notNull(),
+  lastSyncAt: timestamp("last_sync_at"),
+  metadata: jsonb("metadata"), // Additional device-specific data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_wearable_devices_user").on(table.userId),
+  index("idx_wearable_devices_type").on(table.deviceType),
+  unique("unique_device_id").on(table.deviceId, table.userId),
+]);
+
+export type WearableDevice = typeof wearableDevices.$inferSelect;
+export const insertWearableDeviceSchema = createInsertSchema(wearableDevices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastSyncAt: true,
+});
+export type InsertWearableDevice = z.infer<typeof insertWearableDeviceSchema>;
+
+// Blood pressure readings from wearable devices
+export const bloodPressureReadings = pgTable("blood_pressure_readings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  deviceId: uuid("device_id").references(() => wearableDevices.id, { onDelete: 'set null' }),
+  systolic: integer("systolic").notNull(), // mmHg (es. 120)
+  diastolic: integer("diastolic").notNull(), // mmHg (es. 80)
+  heartRate: integer("heart_rate"), // bpm (es. 72)
+  measurementTime: timestamp("measurement_time").notNull(), // Timestamp from device
+  notes: text("notes"), // Optional user notes about context (e.g., "after exercise")
+  isAnomalous: boolean("is_anomalous").default(false), // Flagged by AI if outside normal range
+  aiAnalysis: text("ai_analysis"), // AI-generated insights about the reading
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_blood_pressure_user").on(table.userId),
+  index("idx_blood_pressure_device").on(table.deviceId),
+  index("idx_blood_pressure_time").on(table.measurementTime),
+  index("idx_blood_pressure_anomalous").on(table.isAnomalous),
+]);
+
+export type BloodPressureReading = typeof bloodPressureReadings.$inferSelect;
+export const insertBloodPressureReadingSchema = createInsertSchema(bloodPressureReadings).omit({
+  id: true,
+  createdAt: true,
+  isAnomalous: true,
+  aiAnalysis: true,
+});
+export type InsertBloodPressureReading = z.infer<typeof insertBloodPressureReadingSchema>;
+
+// ========== PROACTIVE HEALTH TRIGGERS ==========
+
+// Configuration for proactive health monitoring triggers
+export const proactiveHealthTriggers = pgTable("proactive_health_triggers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  triggerType: varchar("trigger_type", { length: 50 }).notNull(), // periodic_checkup, wearable_anomaly, inactivity, missed_medication, custom
+  condition: jsonb("condition").notNull(), // Trigger rules (e.g., {type: "blood_pressure_high", threshold: 140})
+  action: jsonb("action").notNull(), // Action to take (e.g., {type: "notification", channels: ["email", "whatsapp"]})
+  targetAudience: varchar("target_audience", { length: 50 }).default('all'), // all, premium, specific_users
+  isActive: boolean("is_active").default(true).notNull(),
+  frequency: varchar("frequency", { length: 50 }), // daily, weekly, monthly (for periodic triggers)
+  lastTriggeredAt: timestamp("last_triggered_at"),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }), // Admin who created
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_health_triggers_type").on(table.triggerType),
+  index("idx_health_triggers_active").on(table.isActive),
+]);
+
+export type ProactiveHealthTrigger = typeof proactiveHealthTriggers.$inferSelect;
+export const insertProactiveHealthTriggerSchema = createInsertSchema(proactiveHealthTriggers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastTriggeredAt: true,
+});
+export type InsertProactiveHealthTrigger = z.infer<typeof insertProactiveHealthTriggerSchema>;
+
+// Log of proactive notifications sent to users
+export const proactiveNotifications = pgTable("proactive_notifications", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  triggerId: uuid("trigger_id").references(() => proactiveHealthTriggers.id, { onDelete: 'set null' }),
+  notificationType: varchar("notification_type", { length: 50 }).notNull(), // checkup_reminder, anomaly_alert, medication_reminder, etc.
+  channel: varchar("channel", { length: 20 }).notNull(), // email, whatsapp, push, sms
+  subject: varchar("subject", { length: 500 }),
+  message: text("message").notNull(),
+  metadata: jsonb("metadata"), // Additional context (e.g., blood pressure reading that triggered alert)
+  status: varchar("status", { length: 20 }).default('sent').notNull(), // sent, failed, clicked, dismissed
+  sentAt: timestamp("sent_at").defaultNow(),
+  clickedAt: timestamp("clicked_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_proactive_notif_user").on(table.userId),
+  index("idx_proactive_notif_trigger").on(table.triggerId),
+  index("idx_proactive_notif_type").on(table.notificationType),
+  index("idx_proactive_notif_sent").on(table.sentAt),
+]);
+
+export type ProactiveNotification = typeof proactiveNotifications.$inferSelect;
+export const insertProactiveNotificationSchema = createInsertSchema(proactiveNotifications).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+  clickedAt: true,
+});
+export type InsertProactiveNotification = z.infer<typeof insertProactiveNotificationSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

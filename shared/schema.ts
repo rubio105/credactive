@@ -2117,6 +2117,29 @@ export const insertAppointmentSchema = createInsertSchema(appointments).omit({
 });
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 
+// Appointment Attachments (documents uploaded by patients when booking)
+export const appointmentAttachments = pgTable("appointment_attachments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  appointmentId: uuid("appointment_id").notNull().references(() => appointments.id, { onDelete: 'cascade' }),
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id, { onDelete: 'cascade' }), // Patient who uploaded
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileUrl: text("file_url").notNull(), // Path to stored file
+  fileSize: integer("file_size"), // Size in bytes
+  fileType: varchar("file_type", { length: 100 }), // MIME type
+  description: text("description"), // Optional description from patient
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_attachment_appointment").on(table.appointmentId),
+  index("idx_attachment_uploader").on(table.uploadedBy),
+]);
+
+export type AppointmentAttachment = typeof appointmentAttachments.$inferSelect;
+export const insertAppointmentAttachmentSchema = createInsertSchema(appointmentAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertAppointmentAttachment = z.infer<typeof insertAppointmentAttachmentSchema>;
+
 // Clinic Organizations (Multi-tenant B2B for hospitals/clinics)
 export const clinicOrganizations = pgTable("clinic_organizations", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

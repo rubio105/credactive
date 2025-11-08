@@ -396,6 +396,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // ===== HEALTH CHECK ENDPOINT =====
+  app.get('/api/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
   // Serve uploaded images statically (non-sensitive public content)
   app.use('/question-images', express.static(uploadDir));
   

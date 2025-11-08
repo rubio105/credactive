@@ -91,6 +91,9 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 - **Build Systems**: Vite for frontend, esbuild for backend.
 - **Version Control**: GitHub.
 - **Deployment Workflow**: Involves committing changes, pulling to the server, rebuilding, restarting PM2, and purging Cloudflare cache.
+- **Health Monitoring**: `/api/health` endpoint provides system status (uptime, timestamp, environment).
+- **Automated Deploy**: `deploy.sh` script handles full deployment pipeline (backup, build, migration, restart, health check).
+- **Login Logs Retention**: Automated daily cleanup of login logs older than 10 days via `LoginLogsScheduler`.
 
 # External Dependencies
 

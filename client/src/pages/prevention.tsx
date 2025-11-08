@@ -2029,26 +2029,26 @@ export default function PreventionPage() {
                     <div className="space-y-2">
                       <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Oppure scrivi la tua domanda:</p>
                       <div className="flex gap-3">
-                        <div className="relative flex-1">
-                          <Input
-                            placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                            className="border-2 border-emerald-300 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 pr-12 py-6 rounded-xl shadow-sm transition-all text-base bg-white dark:bg-gray-900"
-                            data-testid="input-triage-start"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={toggleVoiceInput}
-                            className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-full ${isListening ? 'text-red-500 animate-pulse bg-red-50 dark:bg-red-950' : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950'}`}
-                            data-testid="button-voice-input-start"
-                          >
-                            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                          </Button>
-                        </div>
+                        <Input
+                          placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
+                          value={userInput}
+                          onChange={(e) => setUserInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+                          className="border-2 border-emerald-300 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all text-base bg-white dark:bg-gray-900 flex-1"
+                          data-testid="input-triage-start"
+                        />
+                        <Button
+                          onClick={toggleVoiceInput}
+                          className={`${
+                            isListening 
+                              ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                              : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
+                          } text-white shadow-lg h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0`}
+                          data-testid="button-voice-input-start"
+                          title={isListening ? "Ferma registrazione" : "Parla con l'AI (conversazione vocale)"}
+                        >
+                          {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                        </Button>
                         <Button
                           onClick={handleStart}
                           disabled={startTriageMutation.isPending}
@@ -2173,26 +2173,26 @@ export default function PreventionPage() {
                     {session?.status === 'active' && (
                       <div className="space-y-3 mt-4 px-1">
                         <div className="flex gap-3 items-end">
-                          <div className="relative flex-1 min-w-0">
-                            <Input
-                              placeholder="Scrivi un messaggio..."
-                              value={userInput}
-                              onChange={(e) => setUserInput(e.target.value)}
-                              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                              className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 pr-12 py-6 rounded-xl shadow-sm transition-all w-full"
-                              data-testid="input-triage-message"
-                            />
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={toggleVoiceInput}
-                              className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900 ${isListening ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}
-                              data-testid="button-voice-input-message"
-                            >
-                              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                            </Button>
-                          </div>
+                          <Input
+                            placeholder="Scrivi un messaggio..."
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                            className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1"
+                            data-testid="input-triage-message"
+                          />
+                          <Button
+                            onClick={toggleVoiceInput}
+                            className={`${
+                              isListening 
+                                ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                                : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
+                            } text-white shadow-lg h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0`}
+                            data-testid="button-voice-input-message"
+                            title={isListening ? "Ferma registrazione" : "Parla con l'AI (conversazione vocale)"}
+                          >
+                            {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                          </Button>
                           <Button
                             onClick={handleSend}
                             disabled={sendMessageMutation.isPending || !userInput.trim()}

@@ -2081,11 +2081,15 @@ export const appointments = pgTable("appointments", {
   title: varchar("title", { length: 200 }),
   description: text("description"),
   type: varchar("type", { length: 50 }).default("consultation"), // consultation, follow_up, screening, emergency
+  appointmentType: varchar("appointment_type", { length: 20 }).default("video"), // video, in_person, both
   status: varchar("status", { length: 20 }).default("available"), // available, booked, confirmed, completed, cancelled, no_show
   
   // Online meeting details
   meetingUrl: text("meeting_url"), // Video call link (Google Meet, Zoom, etc)
   meetingPlatform: varchar("meeting_platform", { length: 50 }), // google_meet, zoom, teams
+  
+  // In-person appointment details
+  studioAddress: text("studio_address"), // Physical address for in-person appointments
   
   // Notifications
   reminderSentAt: timestamp("reminder_sent_at"),

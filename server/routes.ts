@@ -12804,20 +12804,36 @@ Fornisci:
       const { doctorId } = req.params;
       const { date } = req.query; // Optional: filter by specific date
 
-      const result = await db.execute(sql`
-        SELECT * FROM doctor_availability 
-        WHERE doctor_id = ${doctorId} AND is_active = true
-        ORDER BY day_of_week, start_time
-      `);
-
-      // Validate UUID param
+      // Validate UUID param first
       const uuidSchema = z.string();
       const validated = uuidSchema.safeParse(doctorId);
       if (!validated.success) {
         return res.status(400).json({ message: 'Invalid doctor ID' });
       }
 
-      res.json(result.rows);
+      const result = await db.execute(sql`
+        SELECT id, doctor_id, day_of_week, start_time, end_time, 
+               slot_duration, appointment_type, studio_address, is_active, created_at
+        FROM doctor_availability 
+        WHERE doctor_id = ${validated.data} AND is_active = true
+        ORDER BY day_of_week, start_time
+      `);
+
+      // Transform snake_case to camelCase for frontend
+      const slots = result.rows.map((row: any) => ({
+        id: row.id,
+        doctorId: row.doctor_id,
+        dayOfWeek: row.day_of_week,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        slotDuration: row.slot_duration,
+        appointmentType: row.appointment_type,
+        studioAddress: row.studio_address,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+      }));
+
+      res.json(slots);
     } catch (error: any) {
       console.error('Get available slots error:', error);
       res.status(500).json({ message: 'Internal server error' });
@@ -12836,7 +12852,8 @@ Fornisci:
         endTime: z.string().datetime(),
         notes: z.string().optional(),
         voiceNotes: z.string().optional(),
-        appointmentType: z.enum(['video', 'in_person']).optional().default('video'),
+        appointmentType: z.enum(['video', 'in_person', 'both']).optional().default('video'),
+        studioAddress: z.string().optional(),
       });
 
       const validated = bookingSchema.safeParse(req.body);
@@ -12847,10 +12864,17 @@ Fornisci:
         });
       }
 
-      const { doctorId, startTime, endTime, notes, voiceNotes, appointmentType } = validated.data;
+      const { doctorId, startTime, endTime, notes, voiceNotes, appointmentType, studioAddress } = validated.data;
 
-      // Generate video room URL
-      const videoRoomUrl = appointmentType === 'video' 
+      // Validate studioAddress is provided for in-person or both appointments
+      if ((appointmentType === 'in_person' || appointmentType === 'both') && (!studioAddress || studioAddress.trim() === '')) {
+        return res.status(400).json({ 
+          message: 'L\'indirizzo dello studio è obbligatorio per gli appuntamenti in presenza' 
+        });
+      }
+
+      // Generate video room URL for video or both appointments
+      const videoRoomUrl = (appointmentType === 'video' || appointmentType === 'both')
         ? `https://meet.jit.si/ciry-${crypto.randomBytes(8).toString('hex')}`
         : null;
 
@@ -12859,11 +12883,11 @@ Fornisci:
         INSERT INTO appointments (
           doctor_id, patient_id, start_time, end_time, 
           title, type, status, notes, voice_notes, 
-          appointment_type, meeting_url, meeting_platform
+          appointment_type, studio_address, meeting_url, meeting_platform
         ) VALUES (
           ${doctorId}, ${user.id}, ${startTime}, ${endTime},
           'Teleconsulto', 'teleconsult', 'pending', ${notes || ''}, ${voiceNotes || ''},
-          ${appointmentType || 'video'}, ${videoRoomUrl}, ${videoRoomUrl ? 'jitsi' : null}
+          ${appointmentType || 'video'}, ${studioAddress || null}, ${videoRoomUrl}, ${videoRoomUrl ? 'jitsi' : null}
         ) RETURNING *
       `);
 
@@ -12905,6 +12929,7 @@ Fornisci:
           }),
           appointmentTime: new Date(startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
           meetingUrl: videoRoomUrl,
+          studioAddress: studioAddress,
         });
       } catch (emailError) {
         console.error('Email send failed:', emailError);

@@ -29,6 +29,7 @@ type Appointment = {
   endTime: string;
   status: string;
   appointmentType?: string;
+  studioAddress?: string | null;
   meetingUrl?: string | null;
   notes?: string;
   doctor?: Doctor;
@@ -40,6 +41,8 @@ type AvailableSlot = {
   endTime: string;
   date: string; // Full date: YYYY-MM-DD
   doctorId: string;
+  appointmentType?: string;
+  studioAddress?: string | null;
 };
 
 export default function TeleconsultoPage() {
@@ -202,7 +205,8 @@ export default function TeleconsultoPage() {
       endTime: endTime.toISOString(),
       notes: bookingNotes,
       voiceNotes: isRecording ? bookingNotes : undefined,
-      appointmentType: 'video',
+      appointmentType: selectedSlot.appointmentType || 'video',
+      studioAddress: selectedSlot.studioAddress || undefined,
     });
   };
 

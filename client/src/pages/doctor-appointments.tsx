@@ -275,6 +275,17 @@ export default function DoctorAppointmentsPage() {
   };
 
   const handleSaveAvailability = () => {
+    // Validate studioAddress is required for in-person appointments
+    if ((newAvailability.appointmentType === 'in_person' || newAvailability.appointmentType === 'both') && 
+        (!newAvailability.studioAddress || newAvailability.studioAddress.trim() === '')) {
+      toast({
+        title: "Campo obbligatorio",
+        description: "L'indirizzo dello studio è obbligatorio per appuntamenti in presenza",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (editingAvailability) {
       // Update existing
       updateAvailabilityMutation.mutate({

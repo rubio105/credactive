@@ -1757,9 +1757,10 @@ export async function sendAppointmentConfirmedToPatientEmail(
     appointmentDate: string;
     appointmentTime: string;
     meetingUrl?: string;
+    studioAddress?: string;
   }
 ): Promise<void> {
-  const { doctorName, appointmentDate, appointmentTime, meetingUrl } = appointmentData;
+  const { doctorName, appointmentDate, appointmentTime, meetingUrl, studioAddress } = appointmentData;
   
   const htmlContent = `
     <!DOCTYPE html>
@@ -1798,6 +1799,13 @@ export async function sendAppointmentConfirmedToPatientEmail(
             </p>
           ` : ''}
           
+          ${studioAddress ? `
+            <p><strong>📍 Indirizzo Studio:</strong></p>
+            <div class="success-box">
+              <p>${sanitizeUserInput(studioAddress)}</p>
+            </div>
+          ` : ''}
+          
           <p>Si ricordi di presentarsi puntuale all'appuntamento.</p>
           <p style="text-align: center;">
             <a href="${getBaseUrl()}/appointments" class="button">Vedi i Miei Appuntamenti</a>
@@ -1822,6 +1830,7 @@ Medico: ${doctorName}
 Data: ${appointmentDate}
 Orario: ${appointmentTime}
 ${meetingUrl ? `Link videocall: ${meetingUrl}` : ''}
+${studioAddress ? `Indirizzo studio: ${studioAddress}` : ''}
 
 Vedi i tuoi appuntamenti: ${getBaseUrl()}/appointments
 

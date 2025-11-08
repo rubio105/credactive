@@ -9,9 +9,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Activity, Heart, TrendingUp, TrendingDown, AlertTriangle, Calendar, ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Activity, Heart, TrendingUp, TrendingDown, AlertTriangle, Calendar, Plus, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
+import { BackButton } from "@/components/BackButton";
 import { format, subDays } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -248,14 +249,12 @@ export default function WearablePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate('/')}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <BackButton
+            fallbackRoute="/dashboard"
+            label="Indietro"
+            variant="ghost"
+            testId="button-back"
+          />
           <div>
             <h1 className="text-2xl md:text-3xl font-bold" data-testid="title-page">Monitoraggio Salute</h1>
             <p className="text-muted-foreground">Dati da dispositivi indossabili</p>

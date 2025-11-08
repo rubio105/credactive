@@ -537,29 +537,31 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-full">
-                      <Activity className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-2xl font-bold mb-1">Dispositivi Indossabili</h2>
-                      <p className="text-muted-foreground">
-                        Monitora la tua salute con dispositivi wearable e ricevi alert proattivi
-                      </p>
-                    </div>
-                  </div>
-                  <Link href="/wearable">
-                    <Button className="w-full h-auto py-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg" data-testid="button-go-wearable">
-                      <div className="flex flex-col items-center gap-2">
-                        <Activity className="w-8 h-8" />
-                        <span className="font-semibold text-lg">Gestisci Dispositivi</span>
+              {!user?.isDoctor && (
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-full">
+                        <Activity className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                       </div>
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-bold mb-1">Dispositivi Indossabili</h2>
+                        <p className="text-muted-foreground">
+                          Monitora la tua salute con dispositivi wearable e ricevi alert proattivi
+                        </p>
+                      </div>
+                    </div>
+                    <Link href="/wearable">
+                      <Button className="w-full h-auto py-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg" data-testid="button-go-wearable">
+                        <div className="flex flex-col items-center gap-2">
+                          <Activity className="w-8 h-8" />
+                          <span className="font-semibold text-lg">Gestisci Dispositivi</span>
+                        </div>
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-6">

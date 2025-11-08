@@ -46,7 +46,7 @@ export default function AdminProactiveTriggersPage() {
     condition: "",
     action: "",
     targetAudience: "all",
-    frequency: "",
+    frequency: "none",
     isActive: true,
   });
 
@@ -76,7 +76,7 @@ export default function AdminProactiveTriggersPage() {
         condition: conditionObj,
         action: actionObj,
         targetAudience: data.targetAudience,
-        frequency: data.frequency || null,
+        frequency: data.frequency === "none" ? null : data.frequency,
         isActive: data.isActive,
       });
     },
@@ -90,7 +90,7 @@ export default function AdminProactiveTriggersPage() {
         condition: "",
         action: "",
         targetAudience: "all",
-        frequency: "",
+        frequency: "none",
         isActive: true,
       });
       toast({
@@ -298,7 +298,7 @@ export default function AdminProactiveTriggersPage() {
                       <SelectValue placeholder="Nessuna" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nessuna</SelectItem>
+                      <SelectItem value="none">Nessuna</SelectItem>
                       <SelectItem value="daily">Giornaliera</SelectItem>
                       <SelectItem value="weekly">Settimanale</SelectItem>
                       <SelectItem value="monthly">Mensile</SelectItem>

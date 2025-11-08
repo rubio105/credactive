@@ -1,31 +1,6 @@
 # Overview
 
-CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform leveraging AI for medical document analysis, patient-doctor communication, and preventive health monitoring. Its core purpose is to improve patient outcomes through early detection and personalized health management, initially using Google Gemini AI with a strategic plan to transition to proprietary ML models via Active Learning. The platform also includes a REST API for external app integration (e.g., ProhMed) to support features like medical history context, data storage, and doctor contact recommendations.
-
-# Recent Changes (November 2025)
-
-**Doctor Workflow Enhancements - November 8, 2025:**
-- **Advanced Alert Filtering**: Admin alerts dashboard defaults to RED/YELLOW severity filter with patient name/email search, reset button restores defaults, optimized for critical alert triage
-- **Pre-Visit Patient Reports**: GET `/api/appointments/:id/pre-visit-report` endpoint generates comprehensive patient summaries (demographics, medical reports, triage alerts, attachments) with Gemini AI analysis, doctor dashboard displays one-click access via "Report Pre-Visita" button
-- **OpenAI Voice Engine Integration**: Complete replacement of Web Speech API with OpenAI Whisper (STT) and TTS endpoints, server/voice.ts module with POST `/api/voice/transcribe` and `/api/voice/speak`, MediaRecorder frontend integration in prevention.tsx, memory-only storage prevents disk exposure
-- **Post-Visit Prevention Reports**: POST `/api/appointments/:id/generate-prevention-report` generates personalized prevention recommendations using Gemini AI, saves as doctorNote with category "Report Prevenzione", doctor dashboard "Report Prevenzione" button for completed appointments with dialog display
-
-**Production Deployment Features - November 8, 2025:**
-- **Studio Address Integration**: Complete system for in-person appointments with studioAddress field in doctorAvailability and appointments tables, conditional UI in doctor-appointments.tsx, email notifications including physical address, validation requiring address for in_person/both appointment types
-- **WhatsApp Settings**: Existing UI in settings.tsx (lines 704-768) allows doctors and patients to enable/disable WhatsApp notifications and configure phone numbers
-- **Jitsi Video System Verification**: Auto-generated Jitsi URLs for video/both appointments (`https://meet.jit.si/ciry-${randomId}`), accessible via "Entra in Chiamata" button in appointments dashboard, URLs included in confirmation emails
-
-**Wearable Device Integration - Complete System (Phases 1-3):**
-- **Dashboard Frontend** (/wearable): Interactive recharts LineCharts for BP/HR trends, date range filtering (7/30/90 days), anomaly alerts table, device stats cards, resilient error handling with retry refetch, mobile-responsive grid layout
-- **Device Management UI**: Full CRUD operations with registration dialog (Zod validation), delete confirmation AlertDialogs, device list with real-time status updates
-- **Web Bluetooth API Integration**: BluetoothConnector.tsx component using Web Bluetooth API for BP monitors (GATT Service 0x1810, Characteristic 0x2A35), client-side device pairing and data transmission, requires HTTPS and user gesture
-- **Heart Rate Monitoring**: Anomaly detection for tachycardia (>100 bpm) and bradycardia (<50 bpm) with activity-aware thresholds
-- **Centralized Notification Service** (wearableNotifications.ts): Integrated WhatsApp via Twilio + push notifications, respects user consent, sends alerts only for high/low severity anomalies, 15-minute debouncing
-- **Background Scheduler** (WearableScheduler): Daily trend analysis (24h intervals), detects 3+ consecutive elevated readings (>130/80 BP or >85 bpm HR), creates proactive health trigger jobs via JobWorker, single bootstrap pattern with error handling
-- **Admin Proactive Triggers UI** (/admin/proactive-triggers): Complete admin interface for managing proactiveHealthTriggers with CRUD operations, JSON-based condition/action configuration, target audience selection, frequency settings
-- **AI Conversation Context Integration**: Automatic wearable report integration in AI triage conversations - generateTriageResponse now accepts wearableContext parameter, both Gemma and Gemini models receive formatted wearable data (7-day BP/HR stats, anomalies, trends) in system prompts, storage layer provides getLatestWearableDailyReport for seamless context retrieval
-- **Data Fetching Stability**: UseMemo for derived query keys prevents infinite refetch loops
-- **Security**: Device ownership validation preventing cross-user data injection, admin-only trigger management
+CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform that uses AI for medical document analysis, patient-doctor communication, and preventive health monitoring. Its primary goal is to improve patient outcomes through early detection and personalized health management. The platform integrates with external applications via a REST API to provide comprehensive medical history context, data storage, and doctor recommendations. CIRY aims to transition from using Google Gemini AI to proprietary ML models through Active Learning.
 
 # User Preferences
 
@@ -35,7 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## UI/UX Decisions
 
-The frontend is built with React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod. The design emphasizes medical professionalism through:
+The frontend is built with React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod. The design prioritizes medical professionalism through:
 - **Color-Coded Medical Alerts**: Four urgency levels (EMERGENCY, HIGH, MEDIUM, LOW) using healthcare-appropriate colors.
 - **Role-Based Homepage Tabs**: Distinct tabs for Patients ("Prevenzione", "I Tuoi Referti", "Appuntamenti") and Doctors ("I Tuoi Pazienti", "Shortcuts Rapidi").
 - **Responsive Design**: Adapts for mobile and desktop views, including abbreviated labels and stacked tabs on smaller screens.
@@ -52,7 +27,7 @@ Built with React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, React H
 Developed using Express.js, Node.js, and TypeScript, providing a RESTful API. It uses Passport.js for authentication (local strategy with bcrypt) and Drizzle ORM for type-safe PostgreSQL access. Security measures include rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.
 
 ### Data Storage
-PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medical reports, prevention documents, doctor notes, appointments, triage sessions, alerts, notifications, audit logs, ML training data, and wearable device monitoring (devices, blood pressure readings, proactive health triggers, notifications).
+PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medical reports, prevention documents, doctor notes, appointments, triage sessions, alerts, notifications, audit logs, login logs, ML training data, and wearable device monitoring (devices, blood pressure readings, proactive health triggers, notifications).
 
 ## Feature Specifications
 
@@ -63,11 +38,14 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 - **Patient Documents Page**: A centralized hub for patients to view doctor connections, medical notes, and alerts.
 - **RAG Knowledge Base System**: Employs PostgreSQL + pgvector and Gemini text-embedding-004 for semantic search, enriching AI responses with scientific medical documents.
 - **Enhanced Doctor Contact Flow**: AI-guided prompts for doctor contact.
+- **Pre-Visit Patient Reports**: Comprehensive patient summaries generated by Gemini AI with one-click access for doctors.
+- **Post-Visit Prevention Reports**: Personalized prevention recommendations generated by Gemini AI and saved as doctor notes.
 
 ### Admin Features
 - **Admin Dashboard**: A comprehensive dashboard (`/admin`) for managing users, subscriptions, medical alerts, webinars, feedback, email templates, AI marketing, knowledge base, and notifications.
 - **User Management System**: Allows creation, editing, and deletion of all user types with role-based permissions.
 - **Audit Log System**: GDPR-compliant tracking of data access with filtering and export capabilities.
+- **Login Audit System**: Comprehensive authentication tracking system recording all login attempts (successful and failed) with detailed metadata and an admin interface for filtering and export.
 - **Professional Registration Workflow**: Doctors register via contact request and admin approval; patient registration is admin-only.
 
 ### Communication & Notifications
@@ -75,7 +53,7 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 - **Push Notification System**: Real-time browser notifications with auto-cleanup of stale subscriptions, detailed logging, and success metrics.
 - **In-App Notification System**: Real-time notification bell with unread count, priority levels, and custom icons.
 - **WhatsApp Notifications**: Automated messaging for critical alerts and appointment reminders via Twilio, with user consent and admin control.
-- **Voice-Enabled AI Chat**: Accessibility features via Web Speech API for speech-to-text and text-to-speech, with interactive controls.
+- **Voice-Enabled AI Chat**: Integrates OpenAI Whisper (STT) and TTS for speech-to-text and text-to-speech, replacing Web Speech API.
 - **Teleconsulto System**: A complete video consultation platform with automated booking and reminders:
     - **Doctor Availability Management**: CRUD operations for recurring weekly slots and appointment types.
     - **Smart Slot Picker**: Real-time availability display to prevent double-booking.
@@ -89,19 +67,18 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 - **12-Month Migration Strategy**: A phased approach to collect annotated data, train base models, and migrate to proprietary ML models.
 
 ### Wearable Device Integration System
-- **Database Schema**: Four tables support continuous health monitoring: `wearableDevices`, `bloodPressureReadings`, `proactiveHealthTriggers`, and `proactiveNotifications`.
-- **API Endpoints**: 9 endpoints for device CRUD, BP/HR ingestion with inline anomaly detection, readings history, anomaly detection, and admin analytics, plus 4 admin endpoints for proactive trigger management.
-- **Security Features**: Device ownership validation preventing cross-user data injection, support for manual readings (deviceId optional), admin-only access to proactive triggers.
-- **Anomaly Detection**: Inline algorithm for blood pressure (systolic >140/<90, diastolic >90/<60, 130-139/80-89 elevated) and heart rate (>100 tachycardia, <50 bradycardia resting).
-- **Notification System** (server/wearableNotifications.ts): Centralized service integrating WhatsApp (via Twilio) and push notifications with 15-min debouncing, user consent checks (whatsappNotificationsEnabled), alerts only for high/low severity.
-- **Background Scheduler** (server/wearableScheduler.ts): WearableScheduler runs daily trend analysis (every 24h), detects 3+ consecutive elevated readings (>130/80 BP or >85 bpm HR), creates proactive health trigger jobs processed by JobWorker, single-instance bootstrap pattern with error handling.
-- **Dashboard Frontend** (client/src/pages/wearable.tsx): Interactive recharts LineCharts for BP/HR trends, date range filtering (7/30/90 days), anomaly alerts table, device stats cards, resilient error handling with retry refetch, mobile-responsive grid layout.
-- **Device Management UI**: Complete CRUD interface for wearable devices with registration dialog (Zod validation), delete confirmation AlertDialogs, real-time status updates integrated in dashboard.
-- **Web Bluetooth API Integration** (client/src/components/BluetoothConnector.tsx): Client-side device pairing using Web Bluetooth API for BP monitors (GATT Service 0x1810, Characteristic 0x2A35), requires HTTPS and user gesture, transmits readings directly to backend.
-- **Admin Proactive Triggers** (client/src/pages/admin-proactive-triggers.tsx): Admin interface for configuring automated health monitoring triggers with JSON-based conditions/actions, target audience filtering, frequency settings, activation toggle.
-- **Extensible Architecture**: Supports multiple device categories (pressure, glucose, heart_rate) via deviceCategory enum.
+- **Dashboard Frontend** (`/wearable`): Interactive recharts LineCharts for BP/HR trends, date range filtering, anomaly alerts table, device stats cards.
+- **Device Management UI**: Full CRUD operations for wearable devices with registration and deletion capabilities.
+- **Web Bluetooth API Integration**: Client-side device pairing and data transmission for BP monitors using Web Bluetooth API.
+- **Anomaly Detection**: Inline algorithm for blood pressure and heart rate, with activity-aware thresholds for heart rate.
+- **Centralized Notification Service**: Integrated WhatsApp via Twilio and push notifications for high/low severity anomalies, with debouncing and user consent.
+- **Background Scheduler**: Daily trend analysis detects consecutive elevated readings and creates proactive health trigger jobs.
+- **Admin Proactive Triggers UI** (`/admin/proactive-triggers`): Complete admin interface for managing proactive health triggers with JSON-based condition/action configuration.
+- **AI Conversation Context Integration**: Automatic wearable report integration in AI triage conversations, providing formatted wearable data to Gemma and Gemini models.
+- **Security**: Device ownership validation and admin-only trigger management.
 
 ### Additional Features
+- **Studio Address Integration**: System for in-person appointments including studioAddress field in availability and appointments, conditional UI, and email notifications.
 - **Appointment Scheduling**: Calendar-based booking.
 - **Patient Onboarding**: Collects health profile data.
 - **Multi-Tenant B2B**: Supports clinic organizations with custom branding.
@@ -113,7 +90,7 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 - **Production Environment**: Hosted on Hetzner VPS with PM2, Neon PostgreSQL, Nginx, and Cloudflare SSL.
 - **Build Systems**: Vite for frontend, esbuild for backend.
 - **Version Control**: GitHub.
-- **Deployment Workflow**: Involves committing changes, pulling to the server, rebuilding, restarting PM2, and critically, purging Cloudflare cache.
+- **Deployment Workflow**: Involves committing changes, pulling to the server, rebuilding, restarting PM2, and purging Cloudflare cache.
 
 # External Dependencies
 
@@ -126,3 +103,4 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
     - **Strategy**: Automatic fallback to Gemini if the local Gemma model is unavailable.
 - **Twilio**: For WhatsApp messaging capabilities.
 - **Jitsi Meet**: For video teleconsultations.
+- **OpenAI**: Whisper (Speech-to-Text) and TTS (Text-to-Speech) for voice functionalities.

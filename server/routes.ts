@@ -4197,7 +4197,7 @@ Restituisci SOLO un JSON con:
       const filters: any = { limit: limitNum, offset };
       if (userId) filters.userId = userId as string;
       if (userEmail) filters.userEmail = userEmail as string;
-      if (success !== undefined) filters.success = success === 'true';
+      if (success !== undefined && success !== 'all') filters.success = success === 'true';
       if (startDate) filters.startDate = new Date(startDate as string);
       if (endDate) filters.endDate = new Date(endDate as string);
 
@@ -4235,7 +4235,7 @@ Restituisci SOLO un JSON con:
       const filters: any = {};
       if (userId) filters.userId = userId as string;
       if (userEmail) filters.userEmail = userEmail as string;
-      if (success !== undefined) filters.success = success === 'true';
+      if (success !== undefined && success !== 'all') filters.success = success === 'true';
       if (startDate) filters.startDate = new Date(startDate as string);
       if (endDate) filters.endDate = new Date(endDate as string);
 

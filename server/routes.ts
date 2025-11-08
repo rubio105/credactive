@@ -13042,17 +13042,28 @@ Fornisci:
         return res.status(400).json({ message: 'No files uploaded' });
       }
 
-      // Verify the appointment exists and belongs to the user
+      // Verify the appointment exists and user is the patient (only patients can upload during booking)
       const appointmentCheck = await db.execute(sql`
-        SELECT * FROM appointments WHERE id = ${appointmentId} AND patient_id = ${user.id}
+        SELECT * FROM appointments WHERE id = ${appointmentId}
       `);
 
       if (appointmentCheck.rows.length === 0) {
-        // Delete uploaded files if appointment validation fails
+        // Delete uploaded files if appointment not found
         files.forEach(file => {
-          fs.unlinkSync(file.path);
+          try { fs.unlinkSync(file.path); } catch (e) { console.error('File cleanup error:', e); }
         });
-        return res.status(404).json({ message: 'Appointment not found or unauthorized' });
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      const appointment = appointmentCheck.rows[0];
+
+      // Authorization: only the patient who booked can upload attachments
+      if (appointment.patient_id !== user.id) {
+        // Delete uploaded files if unauthorized
+        files.forEach(file => {
+          try { fs.unlinkSync(file.path); } catch (e) { console.error('File cleanup error:', e); }
+        });
+        return res.status(403).json({ message: 'Unauthorized: only the patient can upload documents to their appointment' });
       }
 
       // Save attachment records in database (private path, served via authenticated endpoint)

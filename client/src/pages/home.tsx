@@ -752,14 +752,14 @@ export default function Home() {
               </CardContent>
             </Card>
           </Link>
-          <Link href="/wearable">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-wearable">
+          <Link href="/appointments">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-appointments">
               <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="font-semibold mb-1">Dispositivi Wearable</h3>
-                <p className="text-sm text-muted-foreground">Monitora dati salute</p>
+                <h3 className="font-semibold mb-1">Appuntamenti</h3>
+                <p className="text-sm text-muted-foreground">Gestisci le visite</p>
               </CardContent>
             </Card>
           </Link>

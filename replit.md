@@ -4,6 +4,12 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 # Recent Changes (November 2025)
 
+**Doctor Workflow Enhancements - November 8, 2025:**
+- **Advanced Alert Filtering**: Admin alerts dashboard defaults to RED/YELLOW severity filter with patient name/email search, reset button restores defaults, optimized for critical alert triage
+- **Pre-Visit Patient Reports**: GET `/api/appointments/:id/pre-visit-report` endpoint generates comprehensive patient summaries (demographics, medical reports, triage alerts, attachments) with Gemini AI analysis, doctor dashboard displays one-click access via "Report Pre-Visita" button
+- **OpenAI Voice Engine Integration**: Complete replacement of Web Speech API with OpenAI Whisper (STT) and TTS endpoints, server/voice.ts module with POST `/api/voice/transcribe` and `/api/voice/speak`, MediaRecorder frontend integration in prevention.tsx, memory-only storage prevents disk exposure
+- **Post-Visit Prevention Reports**: POST `/api/appointments/:id/generate-prevention-report` generates personalized prevention recommendations using Gemini AI, saves as doctorNote with category "Report Prevenzione", doctor dashboard "Report Prevenzione" button for completed appointments with dialog display
+
 **Production Deployment Features - November 8, 2025:**
 - **Studio Address Integration**: Complete system for in-person appointments with studioAddress field in doctorAvailability and appointments tables, conditional UI in doctor-appointments.tsx, email notifications including physical address, validation requiring address for in_person/both appointment types
 - **WhatsApp Settings**: Existing UI in settings.tsx (lines 704-768) allows doctors and patients to enable/disable WhatsApp notifications and configure phone numbers

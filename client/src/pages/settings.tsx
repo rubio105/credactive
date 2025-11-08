@@ -7,17 +7,19 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Crown, Sparkles, CheckCircle, Video, Calendar, Headphones, Users, Settings as SettingsIcon, User, Globe, Camera, Upload, Edit2, MessageCircle, Bell } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Shield, Lock, Key, CheckCircle, User, Globe, Upload, Edit2, MessageCircle, Bell, Smartphone, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Settings() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'subscription' | 'profile'>('subscription');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
   const [isUploading, setIsUploading] = useState(false);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nickname, setNickname] = useState(user?.nickname || '');
@@ -25,6 +27,21 @@ export default function Settings() {
   const [whatsappEnabled, setWhatsappEnabled] = useState(user?.whatsappNotificationsEnabled || false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  // Security tab state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<string>("");
+  const [manualKey, setManualKey] = useState<string>("");
+
+  // Query MFA status
+  const { data: mfaStatus } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/auth/mfa/status"],
+    enabled: !!user,
+  });
 
   const uploadProfileImageMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -105,6 +122,87 @@ export default function Settings() {
     },
   });
 
+  // Security mutations
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const response = await apiRequest("/api/auth/change-password", "POST", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "✅ Password modificata con successo" });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante il cambio password",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const setupMfaMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/auth/mfa/enable", "POST", {});
+      return response.json();
+    },
+    onSuccess: (data: { qrCode: string; secret: string }) => {
+      setQrCodeData(data.qrCode);
+      setManualKey(data.secret);
+      setShowMfaSetup(true);
+      toast({ title: "MFA configurato", description: "Scansiona il QR code con l'app" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante il setup MFA",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const enableMfaMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const response = await apiRequest("/api/auth/mfa/verify", "POST", { code: token });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/mfa/status"] });
+      setShowMfaSetup(false);
+      setMfaCode("");
+      setQrCodeData("");
+      setManualKey("");
+      toast({ title: "✅ MFA attivato con successo!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Codice non valido", 
+        description: "Verifica il codice e riprova",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const disableMfaMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const response = await apiRequest("/api/auth/mfa/disable", "POST", { code: token });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/mfa/status"] });
+      toast({ title: "MFA disattivato" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante la disattivazione MFA",
+        variant: "destructive" 
+      });
+    },
+  });
+
   const handleSaveNickname = () => {
     if (!nickname || nickname.trim().length === 0) {
       toast({
@@ -152,6 +250,49 @@ export default function Settings() {
       whatsappNumber: whatsappNumber.trim(),
       whatsappNotificationsEnabled: whatsappEnabled,
     });
+  };
+
+  const handleChangePassword = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({ title: "Compila tutti i campi", variant: "destructive" });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Le password non coincidono", variant: "destructive" });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast({ title: "La password deve avere almeno 8 caratteri", variant: "destructive" });
+      return;
+    }
+
+    changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
+
+  const handleSetupMFA = () => {
+    setupMfaMutation.mutate();
+  };
+
+  const handleEnableMFA = () => {
+    if (!mfaCode || mfaCode.length !== 6) {
+      toast({ title: "Inserisci un codice a 6 cifre", variant: "destructive" });
+      return;
+    }
+    enableMfaMutation.mutate(mfaCode);
+  };
+
+  const handleDisableMFA = () => {
+    const code = prompt("Inserisci il codice MFA per confermare la disattivazione:");
+    if (!code) return;
+    
+    if (code.length !== 6) {
+      toast({ title: "Codice non valido", variant: "destructive" });
+      return;
+    }
+    
+    disableMfaMutation.mutate(code);
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,11 +374,6 @@ export default function Settings() {
     );
   }
 
-  const userTier = user?.subscriptionTier || 'free';
-  const isPremium = userTier === 'premium';
-  const isPremiumPlus = userTier === 'premium_plus';
-  const isFull = userTier === 'full';
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -246,24 +382,12 @@ export default function Settings() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Impostazioni</h1>
           <p className="text-xl text-muted-foreground">
-            Gestisci il tuo account e abbonamento
+            Gestisci il tuo profilo e la sicurezza del tuo account
           </p>
         </div>
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-8 border-b border-border">
-          <button
-            onClick={() => setActiveTab('subscription')}
-            className={`pb-3 px-2 font-semibold transition-colors ${
-              activeTab === 'subscription'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            data-testid="tab-subscription"
-          >
-            <Crown className="w-4 h-4 inline mr-2" />
-            Abbonamento
-          </button>
           <button
             onClick={() => setActiveTab('profile')}
             className={`pb-3 px-2 font-semibold transition-colors ${
@@ -276,272 +400,180 @@ export default function Settings() {
             <User className="w-4 h-4 inline mr-2" />
             Profilo
           </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`pb-3 px-2 font-semibold transition-colors ${
+              activeTab === 'security'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            data-testid="tab-security"
+          >
+            <Shield className="w-4 h-4 inline mr-2" />
+            Sicurezza
+          </button>
         </div>
 
-        {activeTab === 'subscription' && (
-          <div className="space-y-8">
-            {/* Current Plan */}
+        {activeTab === 'security' && (
+          <div className="space-y-6">
+            {/* Change Password */}
             <Card>
               <CardHeader>
-                <CardTitle>Piano Attuale</CardTitle>
-                <CardDescription>Il tuo abbonamento corrente</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="w-5 h-5" />
+                  Cambio Password
+                </CardTitle>
+                <CardDescription>Aggiorna la password del tuo account</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`inline-block p-3 rounded-lg ${
-                      isFull
-                        ? 'bg-gradient-to-br from-amber-500 to-orange-500'
-                        : isPremiumPlus 
-                          ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
-                          : isPremium 
-                            ? 'bg-primary/10' 
-                            : 'bg-muted'
-                    }`}>
-                      {isFull ? (
-                        <Users className="w-8 h-8 text-white" />
-                      ) : isPremiumPlus ? (
-                        <Sparkles className="w-8 h-8 text-white" />
-                      ) : isPremium ? (
-                        <Crown className="w-8 h-8 text-primary" />
-                      ) : (
-                        <SettingsIcon className="w-8 h-8 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold">
-                        {isFull ? 'Full' : isPremiumPlus ? 'Premium Plus' : isPremium ? 'Premium' : 'Free'}
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {isFull
-                          ? 'Piano aziendale - Contattaci per dettagli'
-                          : isPremiumPlus 
-                            ? '€149/anno - Rinnovo automatico' 
-                            : isPremium 
-                              ? '€99/anno - Rinnovo automatico' 
-                              : 'Piano gratuito con accesso limitato'}
-                      </p>
-                    </div>
-                  </div>
-                  {!isFull && !isPremiumPlus && (
-                    <Button
-                      onClick={() => window.location.href = '/subscribe'}
-                      className={isPremium ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' : ''}
-                      data-testid="button-upgrade"
-                    >
-                      {isPremium ? 'Passa a Premium Plus' : 'Passa a Premium'}
-                    </Button>
-                  )}
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="current-password">Password attuale</Label>
+                  <Input
+                    id="current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Inserisci password attuale"
+                    data-testid="input-current-password"
+                  />
                 </div>
+                <div>
+                  <Label htmlFor="new-password">Nuova password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimo 8 caratteri"
+                    data-testid="input-new-password"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirm-password">Conferma nuova password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Ripeti la nuova password"
+                    data-testid="input-confirm-password"
+                  />
+                </div>
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={changePasswordMutation.isPending}
+                  className="w-full"
+                  data-testid="button-change-password"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  {changePasswordMutation.isPending ? 'Modifica in corso...' : 'Cambia password'}
+                </Button>
               </CardContent>
             </Card>
 
-            {/* Available Plans */}
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Piani Disponibili</h2>
-              <p className="text-muted-foreground mb-6">
-                Scegli il piano più adatto alle tue esigenze di formazione
-              </p>
+            {/* MFA Setup */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Smartphone className="w-5 h-5" />
+                  Autenticazione a Due Fattori (MFA)
+                </CardTitle>
+                <CardDescription>
+                  Aggiungi un ulteriore livello di sicurezza al tuo account
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!mfaStatus?.enabled && !showMfaSetup && (
+                  <div className="space-y-4">
+                    <Alert>
+                      <Shield className="w-4 h-4" />
+                      <AlertDescription>
+                        L'autenticazione a due fattori (MFA) protegge il tuo account richiedendo
+                        un codice temporaneo in aggiunta alla password quando effettui il login.
+                      </AlertDescription>
+                    </Alert>
+                    <Button
+                      onClick={handleSetupMFA}
+                      disabled={setupMfaMutation.isPending}
+                      className="w-full"
+                      data-testid="button-enable-mfa"
+                    >
+                      <Key className="w-4 h-4 mr-2" />
+                      {setupMfaMutation.isPending ? 'Generazione QR Code...' : 'Attiva MFA'}
+                    </Button>
+                  </div>
+                )}
 
-              <div className="grid md:grid-cols-3 gap-8">
-                {/* Premium Plan */}
-                <Card className={`relative border-2 ${isPremium ? 'border-primary' : 'hover:border-primary'} transition-all`}>
-                  {isPremium && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <Badge className="px-4 py-1 bg-primary text-primary-foreground">
-                        PIANO ATTUALE
-                      </Badge>
-                    </div>
-                  )}
-                  <CardContent className="p-8">
-                    <div className="mb-6">
-                      <div className="inline-block p-3 bg-primary/10 rounded-lg mb-4">
-                        <Crown className="w-8 h-8 text-primary" />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-2">Premium</h3>
-                      <div className="flex items-baseline mb-4">
-                        <span className="text-5xl font-bold">€99</span>
-                        <span className="text-muted-foreground ml-2">/anno</span>
-                      </div>
-                      <p className="text-muted-foreground">
-                        Accesso completo a tutti i quiz professionali
-                      </p>
+                {showMfaSetup && qrCodeData && (
+                  <div className="space-y-4">
+                    <Alert>
+                      <AlertDescription>
+                        <strong>Scansiona il QR Code</strong> con la tua app di autenticazione
+                        (Google Authenticator, Microsoft Authenticator, Authy, ecc.)
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <div className="flex justify-center p-4 bg-white rounded-lg">
+                      <img src={qrCodeData} alt="QR Code MFA" className="w-64 h-64" />
                     </div>
 
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>10 categorie di quiz professionali</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>Oltre 1.000.000 di domande aggiornate</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>🏆 Sfide quotidiane e sistema gamificato</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>📊 Classifica globale e badge</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>Certificati di completamento</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>Dashboard e statistiche avanzate</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span>Supporto via email</span>
+                    <div className="space-y-2">
+                      <Label>Chiave manuale (se non puoi scansionare il QR code)</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={manualKey}
+                          readOnly
+                          className="font-mono text-sm"
+                          data-testid="input-mfa-secret"
+                        />
                       </div>
                     </div>
 
-                    {!isPremium && (
-                      <Button 
-                        onClick={() => window.location.href = '/subscribe'}
-                        className="w-full py-6 text-lg font-semibold"
-                        data-testid="button-select-premium-settings"
-                      >
-                        Scegli Premium
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Premium Plus Plan */}
-                <Card className={`relative border-2 ${isPremiumPlus ? 'border-primary' : 'border-primary hover:border-primary'} shadow-xl`}>
-                  {isPremiumPlus ? (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <Badge className="px-4 py-1 bg-primary text-primary-foreground">
-                        PIANO ATTUALE
-                      </Badge>
-                    </div>
-                  ) : (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <Badge className="px-4 py-1 bg-primary text-primary-foreground">
-                        PIÙ POPOLARE
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  <CardContent className="p-8">
-                    <div className="mb-6">
-                      <div className="inline-block p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg mb-4">
-                        <Sparkles className="w-8 h-8 text-white" />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-2">Premium Plus</h3>
-                      <div className="flex items-baseline mb-4">
-                        <span className="text-5xl font-bold">€149</span>
-                        <span className="text-muted-foreground ml-2">/anno</span>
-                      </div>
-                      <p className="text-muted-foreground">
-                        Tutto in Premium, più corsi e vantaggi esclusivi
-                      </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="mfa-code">Codice di verifica (6 cifre)</Label>
+                      <Input
+                        id="mfa-code"
+                        value={mfaCode}
+                        onChange={(e) => setMfaCode(e.target.value)}
+                        placeholder="123456"
+                        maxLength={6}
+                        className="font-mono text-center text-lg"
+                        data-testid="input-mfa-code"
+                      />
                     </div>
 
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="font-semibold">Tutto incluso in Premium</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <Video className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                        <span><strong>Corsi On-Demand</strong> - Videocorsi completi con quiz</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <Calendar className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                        <span><strong>Priorità Corsi Live</strong> - Accesso prioritario alle sessioni</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <Headphones className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                        <span><strong>Supporto Dedicato</strong> - Consulenza certificazioni</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <Users className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                        <span><strong>Eventi Esclusivi</strong> - Webinar e networking</span>
-                      </div>
-                    </div>
+                    <Button
+                      onClick={handleEnableMFA}
+                      disabled={enableMfaMutation.isPending}
+                      className="w-full"
+                      data-testid="button-verify-mfa"
+                    >
+                      {enableMfaMutation.isPending ? 'Verifica in corso...' : 'Verifica e attiva'}
+                    </Button>
+                  </div>
+                )}
 
-                    {!isPremiumPlus && (
-                      <Button 
-                        onClick={() => window.location.href = '/subscribe'}
-                        className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                        data-testid="button-select-premium-plus-settings"
-                      >
-                        Scegli Premium Plus
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Full Plan */}
-                <Card className={`relative border-2 ${isFull ? 'border-primary' : 'border-amber-500 hover:border-amber-600'} shadow-xl`}>
-                  {isFull && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <Badge className="px-4 py-1 bg-primary text-primary-foreground">
-                        PIANO ATTUALE
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  <CardContent className="p-8">
-                    <div className="mb-6">
-                      <div className="inline-block p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg mb-4">
-                        <Users className="w-8 h-8 text-white" />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-2">Full</h3>
-                      <div className="mb-4">
-                        <span className="text-2xl font-bold text-amber-600">Gratuito</span>
-                        <p className="text-sm text-muted-foreground mt-1">fino a 100 dipendenti</p>
-                      </div>
-                      <p className="text-muted-foreground">
-                        Tutto in Premium Plus, più formazione per il tuo team
-                      </p>
-                    </div>
-
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <span className="font-semibold">Tutto incluso in Premium Plus</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <Calendar className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <span><strong>2 Sessioni Annuali</strong> - Corsi live per i dipendenti</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <Users className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <span><strong>Accesso Team</strong> - Fino a 100 dipendenti</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <span><strong>Dashboard Aziendale</strong> - Monitoraggio team</span>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <Headphones className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <span><strong>Account Manager</strong> - Supporto dedicato</span>
-                      </div>
-                    </div>
-
-                    {!isFull && (
-                      <Button 
-                        onClick={() => window.location.href = 'mailto:info@ciry.app?subject=Richiesta Piano Full'}
-                        className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
-                        data-testid="button-contact-full"
-                      >
-                        Contattaci
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              <p className="text-center text-sm text-muted-foreground mt-6">
-                Pagamento sicuro con Stripe • Cancellabile in qualsiasi momento • Garanzia 30 giorni
-              </p>
-            </div>
+                {mfaStatus?.enabled && (
+                  <div className="space-y-4">
+                    <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <AlertDescription className="text-green-700 dark:text-green-400">
+                        <strong>MFA attivo</strong> - Il tuo account è protetto con autenticazione a due fattori
+                      </AlertDescription>
+                    </Alert>
+                    <Button
+                      onClick={handleDisableMFA}
+                      variant="destructive"
+                      disabled={disableMfaMutation.isPending}
+                      className="w-full"
+                      data-testid="button-disable-mfa"
+                    >
+                      {disableMfaMutation.isPending ? 'Disattivazione...' : 'Disattiva MFA'}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 

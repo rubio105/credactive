@@ -375,7 +375,8 @@ export async function generateTriageResponse(
   weightKg?: number | null,
   smokingStatus?: string | null,
   physicalActivity?: string | null,
-  userBio?: string | null
+  userBio?: string | null,
+  wearableContext?: string
 ): Promise<TriageResponse & { modelUsed?: string }> {
   // Prova prima Gemma locale se abilitato
   if (USE_LOCAL_MODEL_FALLBACK) {
@@ -398,7 +399,8 @@ export async function generateTriageResponse(
           weightKg,
           smokingStatus,
           physicalActivity,
-          userBio
+          userBio,
+          wearableContext
         );
         
         console.log('[AI] ✅ Gemma locale ha risposto con successo');
@@ -426,7 +428,8 @@ export async function generateTriageResponse(
     weightKg,
     smokingStatus,
     physicalActivity,
-    userBio
+    userBio,
+    wearableContext
   );
   
   return { ...result, modelUsed: 'gemini-2.5-flash' };
@@ -449,7 +452,8 @@ async function generateTriageResponseWithGemma(
   weightKg?: number | null,
   smokingStatus?: string | null,
   physicalActivity?: string | null,
-  userBio?: string | null
+  userBio?: string | null,
+  wearableContext?: string
 ): Promise<TriageResponse> {
   // Build il system prompt (identico a Gemini)
   const contextInfo = documentContext 
@@ -458,6 +462,10 @@ async function generateTriageResponseWithGemma(
   
   const scientificInfo = scientificContext
     ? `\n\nSCIENTIFIC EVIDENCE BASE (Medical literature):\n${scientificContext}\n\nIMPORTANT: Base your prevention recommendations on these scientific sources when relevant.`
+    : "";
+  
+  const wearableInfo = wearableContext
+    ? `\n\nWEARABLE DEVICE DATA (Continuous health monitoring):\n${wearableContext}\n\nIMPORTANT: Use this objective wearable data to provide personalized insights about blood pressure trends, heart rate patterns, and detected anomalies. Reference specific measurements when giving recommendations.`
     : "";
   
   const userGreeting = userName 
@@ -497,7 +505,7 @@ RESPONSE FORMAT - You MUST respond ONLY with valid JSON in this exact format:
   "needsReportUpload": boolean
 }
 
-IMPORTANT: Output ONLY the JSON, no other text before or after.${scientificInfo}${contextInfo}${userGreeting}${demographicContext}${roleContext}`;
+IMPORTANT: Output ONLY the JSON, no other text before or after.${scientificInfo}${wearableInfo}${contextInfo}${userGreeting}${demographicContext}${roleContext}`;
 
   const response = await gemmaClient.generateMedicalResponse(
     userMessage,
@@ -542,7 +550,8 @@ async function generateTriageResponseWithGemini(
   weightKg?: number | null,
   smokingStatus?: string | null,
   physicalActivity?: string | null,
-  userBio?: string | null
+  userBio?: string | null,
+  wearableContext?: string
 ): Promise<TriageResponse> {
   try {
     console.log('[Gemini] Generating response with language:', language);
@@ -553,6 +562,10 @@ async function generateTriageResponseWithGemini(
     
     const scientificInfo = scientificContext
       ? `\n\nSCIENTIFIC EVIDENCE BASE (Medical literature):\n${scientificContext}\n\nIMPORTANT: Base your prevention recommendations on these scientific sources when relevant.`
+      : "";
+    
+    const wearableInfo = wearableContext
+      ? `\n\nWEARABLE DEVICE DATA (Continuous health monitoring):\n${wearableContext}\n\nIMPORTANT: Use this objective wearable data to provide personalized insights about blood pressure trends, heart rate patterns, and detected anomalies. Reference specific measurements when giving recommendations.`
       : "";
     
     const userGreeting = userName 
@@ -647,7 +660,7 @@ Respond with JSON in this exact format:
   "urgencyLevel": "low" | "medium" | "high" | "emergency",
   "relatedTopics": ["prevention topic1", "prevention topic2", ...],
   "needsReportUpload": boolean (true if user wants to share medical reports for personalized learning)
-}${scientificInfo}${contextInfo}${userGreeting}${demographicContext}${roleContext}`;
+}${scientificInfo}${wearableInfo}${contextInfo}${userGreeting}${demographicContext}${roleContext}`;
 
     // Build contents array with proper message structure
     const contents = conversationHistory.map(msg => ({

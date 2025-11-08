@@ -755,6 +755,7 @@ export interface IStorage {
   getWearableDailyReportById(id: string): Promise<WearableDailyReport | undefined>;
   getWearableDailyReportsByPatient(patientId: string, limit?: number): Promise<WearableDailyReport[]>;
   getWearableDailyReportsByDoctor(doctorId: string, limit?: number): Promise<WearableDailyReport[]>;
+  getLatestWearableDailyReport(patientId: string): Promise<WearableDailyReport | undefined>;
 
   // ========== PROACTIVE HEALTH TRIGGERS ==========
 
@@ -4788,6 +4789,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(wearableDailyReports.doctorId, doctorId))
       .orderBy(desc(wearableDailyReports.createdAt))
       .limit(limit);
+  }
+
+  async getLatestWearableDailyReport(patientId: string): Promise<WearableDailyReport | undefined> {
+    const [report] = await db
+      .select()
+      .from(wearableDailyReports)
+      .where(eq(wearableDailyReports.patientId, patientId))
+      .orderBy(desc(wearableDailyReports.createdAt))
+      .limit(1);
+    return report;
   }
 
   // ========== PROACTIVE HEALTH TRIGGERS ==========

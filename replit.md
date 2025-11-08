@@ -12,6 +12,7 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 - **Centralized Notification Service** (wearableNotifications.ts): Integrated WhatsApp via Twilio + push notifications, respects user consent, sends alerts only for high/low severity anomalies, 15-minute debouncing
 - **Background Scheduler** (WearableScheduler): Daily trend analysis (24h intervals), detects 3+ consecutive elevated readings (>130/80 BP or >85 bpm HR), creates proactive health trigger jobs via JobWorker, single bootstrap pattern with error handling
 - **Admin Proactive Triggers UI** (/admin/proactive-triggers): Complete admin interface for managing proactiveHealthTriggers with CRUD operations, JSON-based condition/action configuration, target audience selection, frequency settings
+- **AI Conversation Context Integration**: Automatic wearable report integration in AI triage conversations - generateTriageResponse now accepts wearableContext parameter, both Gemma and Gemini models receive formatted wearable data (7-day BP/HR stats, anomalies, trends) in system prompts, storage layer provides getLatestWearableDailyReport for seamless context retrieval
 - **Data Fetching Stability**: UseMemo for derived query keys prevents infinite refetch loops
 - **Security**: Device ownership validation preventing cross-user data injection, admin-only trigger management
 

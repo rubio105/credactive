@@ -9609,6 +9609,21 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
         : undefined;
 
+      // Get latest wearable report for AI context
+      let wearableContext: string | undefined;
+      if (user?.id) {
+        try {
+          const latestReport = await storage.getLatestWearableDailyReport(String(user.id));
+          if (latestReport?.aiContextText) {
+            wearableContext = latestReport.aiContextText;
+            console.log('[Wearable] Included latest wearable report in conversation context');
+          }
+        } catch (wearableError) {
+          console.error('[Wearable] Failed to fetch latest report:', wearableError);
+          // Continue without wearable context if it fails
+        }
+      }
+
       // Get AI response (pass complete health profile for personalization)
       const aiResponse = await generateTriageResponse(
         initialSymptom, 
@@ -9624,7 +9639,8 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         user?.weightKg,
         user?.smokingStatus,
         user?.physicalActivity,
-        user?.userBio
+        user?.userBio,
+        wearableContext
       );
 
       // Save AI response
@@ -9839,6 +9855,21 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
         : undefined;
 
+      // Get latest wearable report for AI context
+      let wearableContext: string | undefined;
+      if (user?.id) {
+        try {
+          const latestReport = await storage.getLatestWearableDailyReport(String(user.id));
+          if (latestReport?.aiContextText) {
+            wearableContext = latestReport.aiContextText;
+            console.log('[Wearable] Included latest wearable report in conversation context');
+          }
+        } catch (wearableError) {
+          console.error('[Wearable] Failed to fetch latest report:', wearableError);
+          // Continue without wearable context if it fails
+        }
+      }
+
       // Get AI response (pass complete health profile for personalization)
       const aiResponse = await generateTriageResponse(
         content, 
@@ -9854,7 +9885,8 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         user?.weightKg,
         user?.smokingStatus,
         user?.physicalActivity,
-        user?.userBio
+        user?.userBio,
+        wearableContext
       );
 
       // Save AI response
@@ -12140,7 +12172,8 @@ Format as JSON: {
       undefined, // weightKg
       undefined, // smokingStatus
       undefined, // physicalActivity
-      mh ? `Allergie: ${mh.allergies?.join(', ') || 'nessuna'}. Patologie croniche: ${mh.chronicConditions?.join(', ') || 'nessuna'}. Farmaci attuali: ${mh.currentMedications?.join(', ') || 'nessuno'}. Interventi chirurgici pregressi: ${mh.previousSurgeries?.join(', ') || 'nessuno'}.` : undefined
+      mh ? `Allergie: ${mh.allergies?.join(', ') || 'nessuna'}. Patologie croniche: ${mh.chronicConditions?.join(', ') || 'nessuna'}. Farmaci attuali: ${mh.currentMedications?.join(', ') || 'nessuno'}. Interventi chirurgici pregressi: ${mh.previousSurgeries?.join(', ') || 'nessuno'}.` : undefined,
+      undefined // wearableContext (not available for external API)
     );
     
     return {

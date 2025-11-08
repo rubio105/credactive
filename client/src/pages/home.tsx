@@ -22,7 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { mapCategoriesToQuizCards } from "@/lib/quizUtils";
 import type { Category, QuizWithCount, User as UserType } from "@shared/schema";
-import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload, FileText, ArrowRight, Sparkles, Stethoscope, Users } from "lucide-react";
+import { Crown, ChartLine, BookOpen, Play, Video, Calendar, ChevronLeft, ChevronRight, Shield, Upload, FileText, ArrowRight, Sparkles, Stethoscope, Users, Activity } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 const prohmedLogo = "/images/ciry-logo.png";
 
@@ -536,6 +536,30 @@ export default function Home() {
                   )}
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-full">
+                      <Activity className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold mb-1">Dispositivi Indossabili</h2>
+                      <p className="text-muted-foreground">
+                        Monitora la tua salute con dispositivi wearable e ricevi alert proattivi
+                      </p>
+                    </div>
+                  </div>
+                  <Link href="/wearable">
+                    <Button className="w-full h-auto py-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg" data-testid="button-go-wearable">
+                      <div className="flex flex-col items-center gap-2">
+                        <Activity className="w-8 h-8" />
+                        <span className="font-semibold text-lg">Gestisci Dispositivi</span>
+                      </div>
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-6">
@@ -703,7 +727,7 @@ export default function Home() {
       </TabsContent>
 
       <TabsContent value="shortcuts" className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link href="/doctor/patients">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-all-patients">
               <CardContent className="p-6 text-center">
@@ -723,6 +747,17 @@ export default function Home() {
                 </div>
                 <h3 className="font-semibold mb-1">AI Diagnostica</h3>
                 <p className="text-sm text-muted-foreground">Chatta con l'AI medica</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/wearable">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-wearable">
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                </div>
+                <h3 className="font-semibold mb-1">Dispositivi Wearable</h3>
+                <p className="text-sm text-muted-foreground">Monitora dati salute</p>
               </CardContent>
             </Card>
           </Link>

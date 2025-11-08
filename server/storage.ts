@@ -719,6 +719,7 @@ export interface IStorage {
     startDate?: Date;
     endDate?: Date;
   }): Promise<number>;
+  deleteOldLoginLogs(retentionDays: number): Promise<number>;
 
   // Appointment operations
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
@@ -4492,6 +4493,18 @@ export class DatabaseStorage implements IStorage {
 
     const [result] = await query;
     return result?.count || 0;
+  }
+
+  async deleteOldLoginLogs(retentionDays: number): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
+    const result = await db
+      .delete(loginLogs)
+      .where(sql`${loginLogs.createdAt} < ${cutoffDate}`)
+      .returning({ id: loginLogs.id });
+
+    return result.length;
   }
 
   // Appointment operations

@@ -181,7 +181,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     <Link href="/prevention">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
                         <Stethoscope className="w-4 h-4 mr-2" />
-                        AI Prevenzione
+                        Paziente
                       </Button>
                     </Link>
                   </>
@@ -192,7 +192,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     <Link href="/prevention">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
                         <Stethoscope className="w-4 h-4 mr-2" />
-                        AI Prevenzione
+                        Paziente
                       </Button>
                     </Link>
                     <Link href="/teleconsulto">

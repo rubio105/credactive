@@ -161,9 +161,10 @@ const profileImageStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, profileImageDir);
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+  filename: (req: any, file, cb) => {
+    const userId = req.user?.claims?.sub || req.user?.id;
+    const uniqueSuffix = Date.now();
+    cb(null, `profile-${userId}-${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 
@@ -13500,13 +13501,14 @@ Fornisci:
         console.error('WhatsApp send failed:', whatsappError);
       }
 
-      // Send email confirmation to patient
+      // Send email confirmation to BOTH patient AND doctor
       try {
         const doctorResult = await db.execute(sql`
           SELECT * FROM users WHERE id = ${doctorId}
         `);
         const doctor = doctorResult.rows[0];
 
+        // Email to patient
         await sendAppointmentConfirmedToPatientEmail(user.email, {
           doctorName: `Dr. ${doctor.first_name} ${doctor.last_name}`,
           appointmentDate: new Date(startTime).toLocaleDateString('it-IT', { 
@@ -13516,6 +13518,19 @@ Fornisci:
           meetingUrl: videoRoomUrl,
           studioAddress: studioAddress,
         });
+
+        // Email to doctor
+        if (doctor?.email) {
+          await sendAppointmentBookedToDoctorEmail(doctor.email, {
+            patientName: `${user.firstName} ${user.lastName}`,
+            patientEmail: user.email,
+            appointmentDate: new Date(startTime).toLocaleDateString('it-IT', { 
+              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            }),
+            appointmentTime: new Date(startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+            notes: notes || 'Nessuna nota',
+          });
+        }
       } catch (emailError) {
         console.error('Email send failed:', emailError);
       }

@@ -102,7 +102,7 @@ export default function Dashboard() {
             description: "Il tuo abbonamento è stato attivato con successo.",
           });
           
-          window.history.replaceState({}, '', '/dashboard');
+          setLocation('/dashboard');
         })
         .catch((error) => {
           console.error('Payment verification error:', error);
@@ -128,7 +128,7 @@ export default function Dashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/login";
+        setLocation("/login");
       }, 500);
       return;
     }

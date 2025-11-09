@@ -22,23 +22,19 @@ export function BackButton({
   const { user } = useAuth();
 
   const handleBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      let defaultRoute = fallbackRoute;
-      
-      if (!defaultRoute && user) {
-        if (user.isAdmin) {
-          defaultRoute = '/admin';
-        } else if (user.isDoctor) {
-          defaultRoute = '/doctor/appointments';
-        } else {
-          defaultRoute = '/dashboard';
-        }
+    let defaultRoute = fallbackRoute;
+    
+    if (!defaultRoute && user) {
+      if (user.isAdmin) {
+        defaultRoute = '/admin';
+      } else if (user.isDoctor) {
+        defaultRoute = '/doctor/appointments';
+      } else {
+        defaultRoute = '/dashboard';
       }
-      
-      setLocation(defaultRoute || '/');
     }
+    
+    setLocation(defaultRoute || '/');
   };
 
   return (

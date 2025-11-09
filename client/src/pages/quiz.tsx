@@ -721,7 +721,7 @@ export default function QuizPage() {
           <CardContent>
             <h2 className="text-2xl font-bold mb-4">Quiz Non Trovato</h2>
             <p className="text-muted-foreground mb-4">Il quiz richiesto non esiste o non è disponibile.</p>
-            <Button onClick={() => window.history.back()}>
+            <Button onClick={() => setLocation('/dashboard')}>
               Torna Indietro
             </Button>
           </CardContent>
@@ -857,7 +857,7 @@ export default function QuizPage() {
             <Button 
               variant="outline" 
               className="flex-1"
-              onClick={() => window.history.back()}
+              onClick={() => setLocation('/dashboard')}
               data-testid="button-back-home"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />

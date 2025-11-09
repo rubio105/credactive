@@ -59,7 +59,7 @@ export default function TeleconsultoPage() {
 
   // Get patient's appointments
   const { data: appointments = [], isLoading } = useQuery<Appointment[]>({
-    queryKey: ['/api/appointments/my-appointments'],
+    queryKey: ['/api/appointments'],
   });
 
   // Get patient's linked doctors
@@ -199,7 +199,7 @@ export default function TeleconsultoPage() {
         }
       }
       
-      queryClient.invalidateQueries({ queryKey: ['/api/appointments/my-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
       
       if (uploadSuccess) {
         toast({

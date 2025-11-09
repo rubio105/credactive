@@ -11,12 +11,23 @@ Preferred communication style: Simple, everyday language.
 ## UI/UX Decisions
 
 The frontend is built with React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod. The design prioritizes medical professionalism through:
+- **Mobile-First Architecture**: Complete redesign with mobile-optimized navigation and role-aware dashboards.
+  - **BottomNavigation Component**: Fixed bottom tab bar (mobile only <768px) with 5 role-specific tabs and real-time badge counts for notifications/alerts (60s refetch interval).
+  - **Patient Tabs**: Home (Dashboard), CIRY (AI Chat), Medici (Doctors/Documents), Prenotazioni (Appointments), Notifiche (Notifications).
+  - **Doctor Tabs**: Home (Dashboard), CIRY (AI Chat), Alert (Medical Alerts), Pazienti (Patients), Agenda (Calendar).
+  - **AvatarMenu Component**: Role-based dropdown menu with quick access to settings (Sicurezza, Guida, Wearable, WhatsApp for patients; Condividi codice, Consensi, WhatsApp alerts for doctors).
+- **Role-Based Dashboards**: Smart routing at `/` based on user role (isDoctor/isAdmin).
+  - **PatientDashboard**: Personalized greeting, prevention score card with progress bar, next appointment countdown, quick action buttons (Start AI Chat, View Reports, Book Appointment).
+  - **DoctorDashboard**: Professional greeting, stats cards (Total Patients, Active Alerts, Today Appointments), urgent alerts table, quick actions (View Patients, Create Report, Manage Availability).
+- **Unified Mobile Pages**: New mobile-optimized pages for streamlined navigation.
+  - **MediciPage** (`/medici`): Tabbed interface combining connected doctors list and medical documents.
+  - **NotifichePage** (`/notifiche`): Notification center with filters (All/Unread) and mark-as-read functionality.
+  - **DoctorAlertsPage** (`/doctor/alerts`): Medical alerts dashboard with urgency filters and patient navigation.
 - **Color-Coded Medical Alerts**: Four urgency levels (EMERGENCY, HIGH, MEDIUM, LOW) using healthcare-appropriate colors.
-- **Role-Based Homepage Tabs**: Distinct tabs for Patients ("Prevenzione", "I Tuoi Referti", "Appuntamenti") and Doctors ("I Tuoi Pazienti", "Shortcuts Rapidi").
-- **Responsive Design**: Adapts for mobile and desktop views, including abbreviated labels and stacked tabs on smaller screens.
-- **WhatsApp Notifications**: User-configurable notifications for critical alerts.
-- **Navigation Improvements**: Enhanced user flows with features like back buttons and clear UI labels.
-- Additional features include a user guide, AI prevention chat, emergency alerts, premium subscription system, MFA, and role-based routing.
+- **Real-Time Badge System**: Notification and alert counts with TanStack Query auto-refetch every 60 seconds.
+- **Responsive Design**: Adaptive layouts with mobile-first approach (<768px bottom tabs, ≥768px desktop sidebar/navigation).
+- **WhatsApp Notifications**: User-configurable notifications for critical alerts and appointment reminders.
+- Additional features include a user guide, AI prevention chat, emergency alerts, premium subscription system, MFA, and comprehensive role-based routing.
 
 ## Technical Implementations
 

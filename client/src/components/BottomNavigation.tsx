@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, MessageSquare, Stethoscope, Calendar, Bell, AlertTriangle, Users } from "lucide-react";
+import { Home, MessageSquare, Stethoscope, Calendar, Bell, AlertTriangle, Users, Settings, Shield, FileText, Watch } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadNotifications, useUrgentAlerts } from "@/hooks/useNotificationBadge";
 import { cn } from "@/lib/utils";
@@ -28,32 +28,32 @@ const patientTabs: BottomNavTab[] = [
     testId: "bottom-nav-home",
   },
   {
-    route: "/chat",
-    icon: MessageSquare,
-    label: "CIRY",
+    route: "/settings",
+    icon: Settings,
+    label: "Impostazioni",
     badgeType: null,
-    testId: "bottom-nav-ciry",
+    testId: "bottom-nav-settings",
   },
   {
-    route: "/medici",
-    icon: Stethoscope,
-    label: "Medici",
+    route: "/settings/privacy",
+    icon: FileText,
+    label: "Guida",
     badgeType: null,
-    testId: "bottom-nav-medici",
+    testId: "bottom-nav-guida",
   },
   {
-    route: "/prenotazioni",
-    icon: Calendar,
-    label: "Prenota",
+    route: "/settings/security",
+    icon: Shield,
+    label: "Sicurezza",
     badgeType: null,
-    testId: "bottom-nav-prenotazioni",
+    testId: "bottom-nav-security",
   },
   {
-    route: "/notifiche",
-    icon: Bell,
-    label: "Notifiche",
-    badgeType: "notifications",
-    testId: "bottom-nav-notifiche",
+    route: "/wearable",
+    icon: Watch,
+    label: "Dispositivi",
+    badgeType: null,
+    testId: "bottom-nav-wearable",
   },
 ];
 

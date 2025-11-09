@@ -20,14 +20,17 @@ The frontend is built with React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tail
   - **BottomNavigation Component**: Fixed bottom tab bar (mobile only <768px) with 5 role-specific tabs and real-time badge counts for notifications/alerts (60s refetch interval).
   - **Patient Tabs**: Home (Dashboard), CIRY (AI Chat), Medici (Doctors/Documents), Prenotazioni (Appointments), Notifiche (Notifications).
   - **Doctor Tabs**: Home (Dashboard), CIRY (AI Chat), Alert (Medical Alerts), Pazienti (Patients), Agenda (Calendar).
-  - **AvatarMenu Component**: Role-based dropdown menu with quick access to settings (Sicurezza, Guida, Wearable, WhatsApp for patients; Condividi codice, Consensi, WhatsApp alerts for doctors).
+  - **AvatarMenu Component**: Simplified dropdown menu with user header (name/email) and logout option only.
 - **Role-Based Dashboards**: Smart routing at `/` based on user role (isDoctor/isAdmin).
   - **PatientDashboard**: Personalized greeting, prevention score card with progress bar, next appointment countdown, quick action buttons (Start AI Chat, View Reports, Book Appointment).
   - **DoctorDashboard**: Mobile-first optimized layout with orange gradient background (`from-orange-50`), responsive grid (1 column mobile, 2 columns desktop), horizontal service cards with leading icons, professional greeting, stats cards (Total Patients, Active Alerts, Today Appointments), urgent alerts table, quick actions (View Patients, Create Report, Manage Availability).
 - **Unified Mobile Pages**: New mobile-optimized pages for streamlined navigation.
-  - **MediciPage** (`/medici`): Tabbed interface combining connected doctors list and medical documents.
+  - **MediciPage** (`/medici`): Separate sections for connected doctors list (`/api/patient/doctors`) and medical documents (`/api/patient/notes`) with individual queries, loading states, and empty states.
   - **NotifichePage** (`/notifiche`): Notification center with filters (All/Unread) and mark-as-read functionality.
   - **DoctorAlertsPage** (`/doctor/alerts`): Medical alerts dashboard with urgency filters and patient navigation.
+- **Patient UX Simplification (Nov 2025)**: Streamlined patient experience removing non-essential UI elements:
+  - **Prevention/CIRY Page**: Removed "Parla con CIRY" voice trigger button, hidden archive toggle (unused), eliminated prevention index card and query, patient alerts hidden (doctors-only feature). Medical documents remain in dedicated "Cronologia Medica" section with filters and pagination.
+  - **Navigation Menu**: Removed all role-specific navigation links from avatar dropdown, retaining only user header and logout for cleaner UX.
 - **Color-Coded Medical Alerts**: Four urgency levels (EMERGENCY, HIGH, MEDIUM, LOW) using healthcare-appropriate colors.
 - **Real-Time Badge System**: Notification and alert counts with TanStack Query auto-refetch every 60 seconds.
 - **Responsive Design**: Adaptive layouts with mobile-first approach (<768px bottom tabs, ≥768px desktop sidebar/navigation).

@@ -152,7 +152,6 @@ export default function PreventionPage() {
   const [selectedBookingSlot, setSelectedBookingSlot] = useState<any>(null);
   // Auto-detect role based on user type: doctor for diagnosis, patient for prevention
   const userRole = (user as any)?.isDoctor ? 'doctor' : 'patient';
-  const [showArchive, setShowArchive] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [autoPlaySpeech, setAutoPlaySpeech] = useState<boolean>(false); // Auto-read AI responses
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -180,6 +179,7 @@ export default function PreventionPage() {
 
   const { data: userAlerts = [], refetch: refetchAlerts } = useQuery<TriageAlert[]>({
     queryKey: ["/api/user/alerts"],
+    enabled: !!(user as any)?.isDoctor,
     retry: false,
   });
 
@@ -300,23 +300,6 @@ export default function PreventionPage() {
     }
   }, [filteredReports.length, reportPage, totalReportPages]);
 
-  interface PreventionIndexData {
-    score: number;
-    tier: 'low' | 'medium' | 'high';
-    breakdown: {
-      frequencyScore: number;
-      depthScore: number;
-      documentScore: number;
-      alertScore: number;
-      insightScore: number;
-    };
-  }
-
-  const { data: preventionIndex } = useQuery<PreventionIndexData>({
-    queryKey: ["/api/prevention/index"],
-    enabled: !!user,
-  });
-
   interface TokenUsageData {
     tokensUsed: number;
     tokenLimit: number;
@@ -333,10 +316,10 @@ export default function PreventionPage() {
     enabled: !!user && !!user.aiOnlyAccess,
   });
 
-  // Query per alert pendente
+  // Query per alert pendente (SOLO per medici)
   const { data: pendingAlert } = useQuery<TriageAlert | null>({
     queryKey: ["/api/triage/pending-alert"],
-    enabled: !!user,
+    enabled: !!(user as any)?.isDoctor,
   });
 
   // Assessment is optional - user can access directly without completing it
@@ -1592,7 +1575,7 @@ export default function PreventionPage() {
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-3 overflow-x-hidden px-2 sm:px-0">
           <div className="lg:col-span-1 space-y-4 sm:space-y-6 order-2 lg:order-1 max-w-full">
             {/* Alert Pazienti Collegati (SOLO per Medici) */}
-            {(user as any)?.isDoctor ? (
+            {(user as any)?.isDoctor && (
               <Card className="shadow-xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden">
                 <CardHeader className="bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white pb-6">
                   <CardTitle className="flex items-center gap-3 text-2xl">
@@ -1647,115 +1630,6 @@ export default function PreventionPage() {
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            ) : (
-              /* Indice di Prevenzione (SOLO per Pazienti) */
-              <Card className="shadow-xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
-                <CardHeader className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white pb-6">
-                  <CardTitle className="flex items-center gap-3 text-2xl">
-                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                      <Shield className="w-6 h-6" />
-                    </div>
-                    Indice di Prevenzione
-                  </CardTitle>
-                  <CardDescription className="text-white/90 text-base mt-2">
-                    Il tuo livello di prevenzione basato sull'utilizzo
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4 pb-4">
-                  {/* Mostra SOLO alert URGENTI (emergency), altrimenti mostra indice prevenzione */}
-                  {(() => {
-                    const criticalAlerts = userAlerts.filter(
-                      alert => alert.urgencyLevel === 'emergency'
-                    );
-                    
-                    if (criticalAlerts.length === 0) {
-                      // Nessun alert critico -> mostra indice prevenzione
-                      return (
-                        <div className="text-center py-6">
-                          <div className="relative w-24 h-24 mx-auto mb-4">
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className={`text-4xl font-bold ${
-                                (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
-                                (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
-                                'text-orange-600'
-                              }`}>
-                                {preventionIndex?.score ?? 0}
-                              </div>
-                            </div>
-                            <svg className="w-24 h-24 transform -rotate-90">
-                              <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200 dark:text-gray-700" />
-                              <circle 
-                                cx="48" 
-                                cy="48" 
-                                r="40" 
-                                stroke="currentColor" 
-                                strokeWidth="8" 
-                                fill="none" 
-                                strokeDasharray="251.2" 
-                                strokeDashoffset={251.2 - (251.2 * (preventionIndex?.score ?? 0) / 100)} 
-                                className={
-                                  (preventionIndex?.tier === 'high') ? 'text-emerald-500' :
-                                  (preventionIndex?.tier === 'medium') ? 'text-yellow-500' :
-                                  'text-orange-500'
-                                } 
-                              />
-                            </svg>
-                          </div>
-                          <p className={`text-sm font-medium ${
-                            (preventionIndex?.tier === 'high') ? 'text-emerald-600' :
-                            (preventionIndex?.tier === 'medium') ? 'text-yellow-600' :
-                            'text-orange-600'
-                          }`}>
-                            {preventionIndex?.tier === 'high' ? 'Ottimo livello di prevenzione!' :
-                             preventionIndex?.tier === 'medium' ? 'Buon livello di prevenzione' :
-                             'Inizia il tuo percorso di prevenzione'}
-                          </p>
-                          <p className="text-xs mt-2 text-muted-foreground">
-                            {preventionIndex?.tier === 'high' ? 'Continua così!' :
-                             preventionIndex?.tier === 'medium' ? 'Continua ad usare l\'AI regolarmente' :
-                             'Inizia a chattare con l\'AI e carica i tuoi documenti'}
-                          </p>
-                        </div>
-                      );
-                    }
-                    
-                    // Mostra SOLO alert critici
-                    return (
-                      <div className="space-y-3">
-                        {criticalAlerts.map((alert) => (
-                        <div 
-                          key={alert.id} 
-                          className="p-3 rounded-lg border-2 bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800"
-                          data-testid={`alert-${alert.id}`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                <Badge variant="destructive" className="text-xs">
-                                  URGENTE
-                                </Badge>
-                              </div>
-                              <p className="text-sm font-medium">{alert.reason}</p>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => markAlertResolvedMutation.mutate(alert.id)}
-                              disabled={markAlertResolvedMutation.isPending}
-                              className="shrink-0"
-                              data-testid={`button-resolve-${alert.id}`}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    );
-                  })()}
                 </CardContent>
               </Card>
             )}
@@ -2118,35 +1992,6 @@ export default function PreventionPage() {
                   </Alert>
                   );
                 })()}
-                
-                {/* Voice Conversation - ALWAYS VISIBLE */}
-                <div className="space-y-3">
-                  <p className="text-sm font-semibold text-purple-700 dark:text-purple-400">Conversazione Vocale:</p>
-                  <Button
-                    onClick={toggleVoiceInput}
-                    className={`${
-                      isConversationMode 
-                        ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                        : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                    } text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full h-auto py-6 rounded-xl group`}
-                    data-testid="button-voice-conversation"
-                    title={isConversationMode ? "Ferma conversazione vocale" : "Avvia conversazione vocale con CIRY"}
-                  >
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="p-3 bg-white/20 rounded-full group-hover:scale-110 transition-transform">
-                        {isConversationMode ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
-                      </div>
-                      <div className="flex flex-col items-start">
-                        <span className="text-lg font-bold">
-                          {isConversationMode ? (isListening ? "Sto Ascoltando..." : "CIRY Risponde...") : "Parla con CIRY"}
-                        </span>
-                        <span className="text-xs font-normal opacity-90">
-                          {isConversationMode ? "Clicca per fermare" : "Conversazione continua automatica"}
-                        </span>
-                      </div>
-                    </div>
-                  </Button>
-                </div>
 
                 {!sessionId ? (
                   <div className="space-y-4">

@@ -13,7 +13,6 @@ import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { IOSInstallPrompt } from "@/components/IOSInstallPrompt";
 import Landing from "@/pages/landing";
 import Quiz from "@/pages/quiz";
-import Dashboard from "@/pages/dashboard";
 import Subscribe from "@/pages/subscribe";
 import PaymentSuccess from "@/pages/payment-success";
 import Report from "@/pages/report";
@@ -93,7 +92,7 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/logout" component={Logout} />
       <Route path="/dashboard">
-        {() => <ProtectedRoute requireNonAiOnly><Dashboard /></ProtectedRoute>}
+        {() => <ProtectedRoute requireNonAiOnly><RoleDashboard /></ProtectedRoute>}
       </Route>
       <Route path="/subscribe">
         {() => <ProtectedRoute><Subscribe /></ProtectedRoute>}

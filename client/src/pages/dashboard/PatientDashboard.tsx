@@ -158,10 +158,10 @@ export default function PatientDashboard() {
             return (
               <Link key={service.id} href={service.route}>
                 <Card 
-                  className="relative hover:shadow-md transition-shadow cursor-pointer border-gray-200"
+                  className="relative hover:shadow-md transition-shadow cursor-pointer border-gray-200 h-[120px]"
                   data-testid={`service-${service.id}`}
                 >
-                  <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                  <CardContent className="p-4 h-full flex flex-col items-center justify-center text-center space-y-2">
                     {service.badgeCount > 0 && (
                       <Badge 
                         variant="destructive" 
@@ -171,10 +171,10 @@ export default function PatientDashboard() {
                         {service.badgeCount}
                       </Badge>
                     )}
-                    <div className={`${service.bgColor} rounded-full p-3`}>
+                    <div className={`${service.bgColor} rounded-full p-3 flex-shrink-0`}>
                       <Icon className={`h-6 w-6 ${service.color}`} />
                     </div>
-                    <span className="text-xs font-medium text-gray-700 leading-tight">
+                    <span className="text-xs font-medium text-gray-700 leading-tight line-clamp-2">
                       {service.label}
                     </span>
                   </CardContent>

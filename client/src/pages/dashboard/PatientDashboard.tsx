@@ -1,21 +1,22 @@
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
+  MessageSquare,
+  Stethoscope, 
   FileText, 
-  Activity, 
-  Building2, 
-  Shield, 
-  ClipboardList, 
-  Phone,
-  Stethoscope,
-  Calendar,
-  HeartPulse
+  Calendar, 
+  Video,
+  Bell,
+  TrendingUp,
+  Target
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadNotifications } from "@/hooks/useNotificationBadge";
+import { usePreventionIndex, getPreventionTierMeta } from "@/hooks/useDashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function getUserDisplayName(user: any): string {
   if (user?.firstName || user?.lastName) {
@@ -32,64 +33,65 @@ function getUserInitials(user: any): string {
 export default function PatientDashboard() {
   const { user } = useAuth();
   const { count: unreadNotifications } = useUnreadNotifications();
+  const { data: preventionIndex, isLoading: isLoadingIndex } = usePreventionIndex();
   
   const displayName = getUserDisplayName(user);
   const initials = getUserInitials(user);
 
   const services = [
     {
-      id: 'notifiche',
-      label: 'Notifiche',
-      icon: FileText,
-      route: '/notifiche',
-      badgeCount: unreadNotifications,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      id: 'analisi',
-      label: 'Analisi',
-      icon: Activity,
+      id: 'ciry',
+      label: 'Parla con CIRY',
+      icon: MessageSquare,
       route: '/chat',
       badgeCount: 0,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
     },
     {
       id: 'medici',
-      label: 'Medici',
-      icon: Building2,
+      label: 'I miei medici',
+      icon: Stethoscope,
       route: '/medici',
       badgeCount: 0,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
     },
     {
-      id: 'wearable',
-      label: 'Dispositivi',
-      icon: HeartPulse,
-      route: '/wearable',
-      badgeCount: 0,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      id: 'storico',
-      label: 'Storico',
-      icon: ClipboardList,
+      id: 'documenti',
+      label: 'Documenti',
+      icon: FileText,
       route: '/documenti',
       badgeCount: 0,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
     },
     {
-      id: 'assistenza',
-      label: 'Assistenza',
-      icon: Phone,
-      route: '/guida',
+      id: 'prenotazioni',
+      label: 'Prenotazioni',
+      icon: Calendar,
+      route: '/prenotazioni',
       badgeCount: 0,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+    },
+    {
+      id: 'webinar',
+      label: 'Prevenzione in diretta',
+      icon: Video,
+      route: '/webinar',
+      badgeCount: 0,
+      color: 'text-pink-600',
+      bgColor: 'bg-pink-50',
+    },
+    {
+      id: 'notifiche',
+      label: 'Notifiche',
+      icon: Bell,
+      route: '/notifiche',
+      badgeCount: unreadNotifications,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
     },
   ];
 
@@ -107,31 +109,48 @@ export default function PatientDashboard() {
             <h1 className="text-2xl font-bold text-gray-900" data-testid="greeting-title">
               Ciao, {displayName}
             </h1>
-            <p className="text-gray-600" data-testid="greeting-subtitle">
-              Come ti senti oggi?
+            <p className="text-gray-600 text-sm" data-testid="greeting-subtitle">
+              Come stai? Facciamo prevenzione insieme 💙
             </p>
           </div>
         </div>
 
-        <Link href="/chat">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer" data-testid="cta-autovalutazione">
+        {isLoadingIndex ? (
+          <Card className="border-gray-200 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h2 className="text-white text-lg font-semibold mb-1">
-                    Inizia con la tua autovalutazione
-                  </h2>
-                  <p className="text-blue-100 text-sm">
-                    Parla con CIRY AI per analizzare i tuoi referti
-                  </p>
+              <Skeleton className="h-20 w-full" />
+            </CardContent>
+          </Card>
+        ) : preventionIndex ? (
+          <Card className="border-gray-200 shadow-md" data-testid="prevention-score-card">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-lg">Indice di Prevenzione</h3>
                 </div>
-                <div className="ml-4 bg-white/20 rounded-full p-3">
-                  <Stethoscope className="h-8 w-8 text-white" />
+                <Badge className={`${getPreventionTierMeta(preventionIndex.tier).bgClass} text-white`}>
+                  {getPreventionTierMeta(preventionIndex.tier).label}
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-primary">{preventionIndex.score}</span>
+                  <span className="text-xl text-muted-foreground">/100</span>
+                </div>
+                <Progress value={preventionIndex.score} className="h-3" />
+                
+                <div className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg mt-4">
+                  <TrendingUp className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-gray-700">
+                    {getPreventionTierMeta(preventionIndex.tier).suggestion}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </Link>
+        ) : null}
 
         <div className="grid grid-cols-3 gap-4">
           {services.map((service) => {
@@ -155,7 +174,7 @@ export default function PatientDashboard() {
                     <div className={`${service.bgColor} rounded-full p-3`}>
                       <Icon className={`h-6 w-6 ${service.color}`} />
                     </div>
-                    <span className="text-xs font-medium text-gray-700">
+                    <span className="text-xs font-medium text-gray-700 leading-tight">
                       {service.label}
                     </span>
                   </CardContent>
@@ -164,37 +183,6 @@ export default function PatientDashboard() {
             );
           })}
         </div>
-
-        <Link href="/prenotazioni">
-          <Button 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl shadow-md"
-            data-testid="prenota-btn"
-          >
-            <Calendar className="mr-2 h-5 w-5" />
-            Prenota Teleconsulto
-          </Button>
-        </Link>
-
-        <Card className="border-gray-200 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-1 w-12 bg-blue-600 rounded"></div>
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-                Novità per te
-              </h3>
-            </div>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p className="flex items-start gap-2">
-                <span className="text-blue-600 mt-0.5">•</span>
-                <span>Hai ricevuto nuovi consigli personalizzati di prevenzione</span>
-              </p>
-              <p className="flex items-start gap-2">
-                <span className="text-blue-600 mt-0.5">•</span>
-                <span>Controlla i tuoi dispositivi wearable per dati aggiornati</span>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </section>
   );

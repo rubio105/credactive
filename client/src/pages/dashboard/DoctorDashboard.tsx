@@ -1,16 +1,17 @@
 import { Link } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Users, AlertTriangle, Calendar, TrendingUp } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  MessageSquare,
+  AlertTriangle,
+  Users,
+  Calendar,
+  ClipboardList,
+  Share2
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  useDoctorStats,
-  useUrgentAlertsList,
-  formatRelativeTime,
-  type Alert,
-} from "@/hooks/useDashboardData";
+import { useUrgentAlerts } from "@/hooks/useNotificationBadge";
 
 function getUserDisplayName(user: any): string {
   if (user?.firstName || user?.lastName) {
@@ -19,161 +20,127 @@ function getUserDisplayName(user: any): string {
   return user?.email?.split('@')[0] || 'Dottore';
 }
 
-function getUrgencyBadgeVariant(urgency: string): "default" | "destructive" | "secondary" {
-  if (urgency === 'EMERGENCY') return 'destructive';
-  if (urgency === 'HIGH') return 'destructive';
-  return 'secondary';
+function getUserInitials(user: any): string {
+  const name = getUserDisplayName(user);
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
-  const stats = useDoctorStats();
-  const { data: urgentAlerts, isLoading: isLoadingAlerts } = useUrgentAlertsList();
-
+  const { count: urgentAlertsCount } = useUrgentAlerts();
+  
   const displayName = getUserDisplayName(user);
+  const initials = getUserInitials(user);
 
-  const quickActions = [
-    { label: "Genera Report Pre-Visita", icon: FileText, route: "/doctor/reports", testId: "quick-report", variant: "outline" as const },
-    { label: "Vedi Pazienti", icon: Users, route: "/doctor/patients", testId: "quick-patients", variant: "default" as const },
+  const services = [
+    {
+      id: 'ciry',
+      label: 'Parla con CIRY',
+      icon: MessageSquare,
+      route: '/chat',
+      badgeCount: 0,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      id: 'alerts',
+      label: 'Alert',
+      icon: AlertTriangle,
+      route: '/doctor/alerts',
+      badgeCount: urgentAlertsCount,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+    },
+    {
+      id: 'pazienti',
+      label: 'I miei pazienti',
+      icon: Users,
+      route: '/doctor/patients',
+      badgeCount: 0,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+    },
+    {
+      id: 'prenotazioni',
+      label: 'Prenotazioni',
+      icon: Calendar,
+      route: '/doctor/appointments',
+      badgeCount: 0,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+    },
+    {
+      id: 'agenda',
+      label: 'Agenda',
+      icon: ClipboardList,
+      route: '/doctor/availability',
+      badgeCount: 0,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+    },
+    {
+      id: 'condividi',
+      label: 'Condividi codice',
+      icon: Share2,
+      route: '/doctor/share-code',
+      badgeCount: 0,
+      color: 'text-pink-600',
+      bgColor: 'bg-pink-50',
+    },
   ];
 
   return (
-    <section data-testid="doctor-dashboard" className="space-y-4 p-4 pb-20 md:pb-4 md:grid md:grid-cols-2 md:gap-4">
-      <Card className="shadow-sm border md:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-2xl">Ciao dott. {displayName},</CardTitle>
-          <CardDescription className="text-base">
-            sono a tua disposizione per supportarti nella prevenzione 🩺
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      <Card className="shadow-sm border" data-testid="stats-card">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <CardTitle>Statistiche Rapide</CardTitle>
+    <section data-testid="doctor-dashboard" className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4 pb-24 md:pb-8">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
+            <AvatarImage src={(user as any)?.profileImageUrl} alt={displayName} />
+            <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900" data-testid="greeting-title">
+              Ciao dott. {displayName}
+            </h1>
+            <p className="text-gray-600 text-sm" data-testid="greeting-subtitle">
+              Sono a tua disposizione per supportarti nella prevenzione 🩺
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium">Pazienti Totali</span>
-              </div>
-              <span className="text-2xl font-bold">{stats.totalPatients}</span>
-            </div>
+        </div>
 
-            <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-destructive" />
-                <span className="text-sm font-medium">Alert Urgenti</span>
-              </div>
-              <span className="text-2xl font-bold text-destructive">{stats.urgentAlerts}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium">Appuntamenti Oggi</span>
-              </div>
-              <span className="text-2xl font-bold">{stats.todayAppointments}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {isLoadingAlerts ? (
-        <Card className="shadow-sm border">
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-            </div>
-          </CardContent>
-        </Card>
-      ) : urgentAlerts && urgentAlerts.length > 0 ? (
-        <Card className="shadow-sm border" data-testid="urgent-alerts-card">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-              <CardTitle>Alert Urgenti</CardTitle>
-            </div>
-            <CardDescription>Richiede attenzione immediata</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {urgentAlerts.map((alert: Alert) => (
-                <Link key={alert.id} href={`/doctor/alerts/${alert.id}`}>
-                  <div
-                    className="p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
-                    data-testid={`alert-${alert.id}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={getUrgencyBadgeVariant(alert.urgency)} className="text-xs">
-                            {alert.urgency}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {formatRelativeTime(alert.createdAt)}
-                          </span>
-                        </div>
-                        <p className="font-medium text-sm line-clamp-1">{alert.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{alert.description}</p>
-                      </div>
+        <div className="grid grid-cols-3 gap-4">
+          {services.map((service) => {
+            const Icon = service.icon;
+            return (
+              <Link key={service.id} href={service.route}>
+                <Card 
+                  className="relative hover:shadow-md transition-shadow cursor-pointer border-gray-200"
+                  data-testid={`service-${service.id}`}
+                >
+                  <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                    {service.badgeCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs"
+                        data-testid={`badge-${service.id}`}
+                      >
+                        {service.badgeCount}
+                      </Badge>
+                    )}
+                    <div className={`${service.bgColor} rounded-full p-3`}>
+                      <Icon className={`h-6 w-6 ${service.color}`} />
                     </div>
-                  </div>
-                </Link>
-              ))}
-              
-              <Link href="/doctor/alerts">
-                <Button variant="outline" className="w-full mt-2" data-testid="view-all-alerts">
-                  Vedi Tutti gli Alert
-                </Button>
+                    <span className="text-xs font-medium text-gray-700 leading-tight">
+                      {service.label}
+                    </span>
+                  </CardContent>
+                </Card>
               </Link>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="shadow-sm border">
-          <CardContent className="pt-6">
-            <div className="text-center text-muted-foreground py-4">
-              <AlertTriangle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Nessun alert urgente</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="shadow-sm border md:col-span-2">
-        <CardHeader>
-          <CardTitle>Azioni Rapide</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Link key={action.testId} href={action.route}>
-                  <Button
-                    variant={action.variant}
-                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
-                    data-testid={action.testId}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-xs">{action.label}</span>
-                  </Button>
-                </Link>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }

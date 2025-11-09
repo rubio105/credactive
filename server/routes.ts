@@ -12045,7 +12045,7 @@ Format as JSON: {
 
       const updated = await storage.updateAppointmentStatus(id, status, user.id);
 
-      // Send email notification to patient
+      // Send email and WhatsApp notification to patient
       try {
         if (appointment.patientId) {
           const patient = await storage.getUserById(appointment.patientId);
@@ -12062,6 +12062,7 @@ Format as JSON: {
               minute: '2-digit' 
             });
 
+            // Send email notification
             if (status === 'confirmed') {
               await sendAppointmentConfirmedToPatientEmail(patient.email, {
                 doctorName,
@@ -12077,6 +12078,52 @@ Format as JSON: {
                 appointmentTime,
                 cancellationReason: reason,
               });
+            }
+
+            // Send WhatsApp notification if enabled
+            if ((patient as any).whatsappNumber && (patient as any).whatsappNotificationsEnabled) {
+              try {
+                let whatsappMessage = '';
+                const appLink = process.env.REPLIT_DEPLOYMENT_URL 
+                  ? `https://${process.env.REPLIT_DEPLOYMENT_URL}` 
+                  : 'https://app.ciry.it';
+                
+                if (status === 'confirmed') {
+                  whatsappMessage = `✅ *Appuntamento Confermato*\n\n` +
+                    `Il tuo appuntamento con ${doctorName} è stato confermato!\n\n` +
+                    `📅 *Data:* ${appointmentDate}\n` +
+                    `🕐 *Ora:* ${appointmentTime}\n`;
+                  
+                  if (updated.meetingUrl) {
+                    whatsappMessage += `\n🎥 *Teleconsulto:*\n${updated.meetingUrl}\n`;
+                  }
+                  if (updated.studioAddress) {
+                    whatsappMessage += `\n🏥 *Indirizzo Studio:*\n${updated.studioAddress}\n`;
+                  }
+                  
+                  whatsappMessage += `\n📱 Apri l'app CIRY: ${appLink}`;
+                } else if (status === 'cancelled') {
+                  whatsappMessage = `❌ *Appuntamento Annullato*\n\n` +
+                    `Il tuo appuntamento del ${appointmentDate} alle ${appointmentTime} con ${doctorName} è stato annullato.\n\n`;
+                  
+                  if (reason) {
+                    whatsappMessage += `*Motivo:* ${reason}\n\n`;
+                  }
+                  
+                  whatsappMessage += `📱 Prenota un nuovo appuntamento su: ${appLink}`;
+                }
+
+                // Only send if message was built (avoid Twilio Body parameter missing error)
+                if (whatsappMessage) {
+                  await sendWhatsAppMessage((patient as any).whatsappNumber, whatsappMessage);
+                  console.log(`[Appointment] WhatsApp notification sent to patient ${patient.id} for ${status} status`);
+                } else {
+                  console.log(`[Appointment] No WhatsApp message for status "${status}", skipping notification`);
+                }
+              } catch (whatsappError) {
+                console.error('[Appointment] Failed to send WhatsApp notification:', whatsappError);
+                // Don't fail the update if WhatsApp fails
+              }
             }
           }
         }

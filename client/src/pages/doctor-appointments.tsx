@@ -686,9 +686,32 @@ export default function DoctorAppointmentsPage() {
                                 <Clock className="w-4 h-4 text-muted-foreground" />
                                 <div>
                                   <p className="text-sm font-medium">{slot.startTime} - {slot.endTime}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Slot: {slot.slotDuration} min • Tipo: {slot.appointmentType === 'video' ? 'Video' : slot.appointmentType === 'in_person' ? 'In presenza' : 'Entrambi'}
-                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="text-xs">
+                                      {slot.slotDuration} min
+                                    </Badge>
+                                    {slot.appointmentType === 'video' && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        🎥 Teleconsulto
+                                      </Badge>
+                                    )}
+                                    {slot.appointmentType === 'in_person' && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        🏥 In Presenza
+                                      </Badge>
+                                    )}
+                                    {slot.appointmentType === 'both' && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        🔄 Entrambi
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {slot.studioAddress && (
+                                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                      <MapPin className="w-3 h-3" />
+                                      {slot.studioAddress}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex gap-2">
@@ -860,62 +883,67 @@ export default function DoctorAppointmentsPage() {
 
       {/* Create Availability Dialog */}
       <Dialog open={isAvailabilityDialogOpen} onOpenChange={setIsAvailabilityDialogOpen}>
-        <DialogContent data-testid="dialog-add-availability">
+        <DialogContent className="max-w-2xl" data-testid="dialog-add-availability">
           <DialogHeader>
-            <DialogTitle>{editingAvailability ? "Modifica Disponibilità" : "Aggiungi Disponibilità Ricorrente"}</DialogTitle>
+            <DialogTitle>{editingAvailability ? "Modifica Disponibilità" : "Aggiungi Slot Ricorrente"}</DialogTitle>
             <DialogDescription>
-              {editingAvailability ? "Modifica lo slot ricorrente settimanale" : "Crea uno slot ricorrente settimanale per i teleconsulti"}
+              {editingAvailability 
+                ? "Modifica lo slot ricorrente settimanale" 
+                : "Configura un orario che si ripete ogni settimana. I pazienti potranno prenotare appuntamenti in questi slot."}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="dayOfWeek">Giorno della settimana</Label>
-              <Select 
-                value={String(newAvailability.dayOfWeek)} 
-                onValueChange={(value) => setNewAvailability({ ...newAvailability, dayOfWeek: parseInt(value) })}
-              >
-                <SelectTrigger data-testid="select-day">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Lunedì</SelectItem>
-                  <SelectItem value="2">Martedì</SelectItem>
-                  <SelectItem value="3">Mercoledì</SelectItem>
-                  <SelectItem value="4">Giovedì</SelectItem>
-                  <SelectItem value="5">Venerdì</SelectItem>
-                  <SelectItem value="6">Sabato</SelectItem>
-                  <SelectItem value="0">Domenica</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
+            {/* STEP 1: Giorno e Orario */}
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+              <h3 className="font-semibold text-sm">1. Quando sei disponibile?</h3>
+              
               <div className="space-y-2">
-                <Label htmlFor="availStartTime">Ora inizio</Label>
-                <Input
-                  id="availStartTime"
-                  type="time"
-                  value={newAvailability.startTime}
-                  onChange={(e) => setNewAvailability({ ...newAvailability, startTime: e.target.value })}
-                  data-testid="input-avail-start-time"
-                />
+                <Label htmlFor="dayOfWeek">Giorno della settimana</Label>
+                <Select 
+                  value={String(newAvailability.dayOfWeek)} 
+                  onValueChange={(value) => setNewAvailability({ ...newAvailability, dayOfWeek: parseInt(value) })}
+                >
+                  <SelectTrigger data-testid="select-day">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Lunedì</SelectItem>
+                    <SelectItem value="2">Martedì</SelectItem>
+                    <SelectItem value="3">Mercoledì</SelectItem>
+                    <SelectItem value="4">Giovedì</SelectItem>
+                    <SelectItem value="5">Venerdì</SelectItem>
+                    <SelectItem value="6">Sabato</SelectItem>
+                    <SelectItem value="0">Domenica</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="availEndTime">Ora fine</Label>
-                <Input
-                  id="availEndTime"
-                  type="time"
-                  value={newAvailability.endTime}
-                  onChange={(e) => setNewAvailability({ ...newAvailability, endTime: e.target.value })}
-                  data-testid="input-avail-end-time"
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="availStartTime">Ora inizio</Label>
+                  <Input
+                    id="availStartTime"
+                    type="time"
+                    value={newAvailability.startTime}
+                    onChange={(e) => setNewAvailability({ ...newAvailability, startTime: e.target.value })}
+                    data-testid="input-avail-start-time"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="availEndTime">Ora fine</Label>
+                  <Input
+                    id="availEndTime"
+                    type="time"
+                    value={newAvailability.endTime}
+                    onChange={(e) => setNewAvailability({ ...newAvailability, endTime: e.target.value })}
+                    data-testid="input-avail-end-time"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="slotDuration">Durata slot</Label>
+                <Label htmlFor="slotDuration">Durata di ogni appuntamento</Label>
                 <Select 
                   value={String(newAvailability.slotDuration)} 
                   onValueChange={(value) => setNewAvailability({ ...newAvailability, slotDuration: parseInt(value) })}
@@ -925,12 +953,21 @@ export default function DoctorAppointmentsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">30 minuti</SelectItem>
-                    <SelectItem value="60">60 minuti</SelectItem>
+                    <SelectItem value="60">60 minuti (1 ora)</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Il sistema dividerà automaticamente il tuo orario in slot di questa durata
+                </p>
               </div>
+            </div>
+
+            {/* STEP 2: Tipo Appuntamento */}
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+              <h3 className="font-semibold text-sm">2. Come vuoi ricevere i pazienti?</h3>
+              
               <div className="space-y-2">
-                <Label htmlFor="appointmentType">Tipo appuntamento</Label>
+                <Label htmlFor="appointmentType">Modalità appuntamento</Label>
                 <Select 
                   value={newAvailability.appointmentType} 
                   onValueChange={(value) => setNewAvailability({ ...newAvailability, appointmentType: value })}
@@ -939,30 +976,39 @@ export default function DoctorAppointmentsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="video">Solo Video</SelectItem>
-                    <SelectItem value="in_person">Solo In presenza</SelectItem>
-                    <SelectItem value="both">Entrambi</SelectItem>
+                    <SelectItem value="video">🎥 Solo Teleconsulto (Videocall)</SelectItem>
+                    <SelectItem value="in_person">🏥 Solo In Presenza (Studio medico)</SelectItem>
+                    <SelectItem value="both">🔄 Entrambi (Paziente sceglie)</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            {(newAvailability.appointmentType === 'in_person' || newAvailability.appointmentType === 'both') && (
-              <div className="space-y-2">
-                <Label htmlFor="studioAddress">Indirizzo Studio *</Label>
-                <Textarea
-                  id="studioAddress"
-                  placeholder="Via Roma 123, 20121 Milano (MI)"
-                  value={newAvailability.studioAddress}
-                  onChange={(e) => setNewAvailability({ ...newAvailability, studioAddress: e.target.value })}
-                  className="min-h-[80px]"
-                  data-testid="textarea-studio-address"
-                />
                 <p className="text-xs text-muted-foreground">
-                  Questo indirizzo sarà comunicato ai pazienti via email quando prenotano un appuntamento in presenza.
+                  {newAvailability.appointmentType === 'video' && "I pazienti riceveranno un link per la videocall"}
+                  {newAvailability.appointmentType === 'in_person' && "I pazienti verranno nel tuo studio medico"}
+                  {newAvailability.appointmentType === 'both' && "Il paziente potrà scegliere se teleconsulto o visita in presenza"}
                 </p>
               </div>
-            )}
+
+              {(newAvailability.appointmentType === 'in_person' || newAvailability.appointmentType === 'both') && (
+                <div className="space-y-2 mt-4 p-3 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                  <Label htmlFor="studioAddress" className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Indirizzo Studio Medico *
+                  </Label>
+                  <Textarea
+                    id="studioAddress"
+                    placeholder="Es: Via Roma 123, 20121 Milano (MI)"
+                    value={newAvailability.studioAddress}
+                    onChange={(e) => setNewAvailability({ ...newAvailability, studioAddress: e.target.value })}
+                    className="min-h-[80px]"
+                    data-testid="textarea-studio-address"
+                  />
+                  <p className="text-xs text-muted-foreground flex items-start gap-1">
+                    <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    Questo indirizzo verrà inviato ai pazienti via email e WhatsApp quando confermano l'appuntamento.
+                  </p>
+                </div>
+              )}
+            </div>
 
             <div className="flex gap-3">
               <Button 

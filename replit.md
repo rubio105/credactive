@@ -6,12 +6,15 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 ## Critical Bugs Fixed (November 9, 2025)
 - **Teleconsult Booking Error**: Fixed PostgreSQL "malformed array literal" error in /api/appointments/book-teleconsult endpoint. Changed `${notes || ''}` to `${notes ?? null}` and `${voiceNotes || ''}` to `${voiceNotes ?? null}` to properly handle optional fields. Aligned database schema by converting `voice_notes` column from `text[]` to `text` to match Drizzle schema definition. Teleconsult bookings now work correctly with or without notes/voiceNotes.
+- **Profile Image Upload**: Fixed filename pattern mismatch between upload and retrieval. Upload now generates `profile-${userId}-${timestamp}.ext` matching the authenticated GET endpoint pattern, resolving 404 errors when displaying user profile images.
+- **Appointment Email Notifications**: Enhanced booking confirmation to send emails to BOTH doctor and patient. Doctor receives notification via `sendAppointmentBookedToDoctorEmail` with patient details and appointment info, while patient receives confirmation via existing `sendAppointmentConfirmedToPatientEmail`.
 
 ## UI/UX Improvements
 - **Wearable Devices Page**: Added anomaly pagination - displays first 5 anomalies by default with expandable "Show all/Show less" toggle for better mobile experience
-- **Patient Appointments**: Simplified booking interface with mobile-first layout (lg:grid-cols-2), skeleton loading states, enhanced empty states, removed redundant "Book Teleconsult" button, and fixed cache invalidation after successful booking
+- **Patient Appointments**: Simplified booking interface with mobile-first layout (lg:grid-cols-2), skeleton loading states, enhanced empty states, removed redundant "Book Teleconsult" button, and fixed cache invalidation after successful booking. Jitsi video links display correctly for confirmed appointments with meetingUrl.
 - **WhatsApp OTP Verification**: Configured Twilio integration with fallback pattern (TWILIO_* env vars → Replit Connectors) for reliable OTP delivery across all environments
 - **AI Prevention Chat**: Fixed critical UX issue where old conversations auto-loaded and blocked input field. Now users see input field immediately, with optional banner to continue previous conversation or start fresh. Input field is always visible and accessible regardless of session state.
+- **Navigation Labels**: Changed navigation label from "AI Prevenzione" to "Paziente" for patient-facing users (aiOnlyAccess and regular patients) for clearer role identification, while maintaining "AI Prevenzione" for doctors.
 
 ## Documentation Updates (November 9, 2025)
 - **User Guide (GUIDA_UTENTE.md v1.1.0)**: Completely overhauled wearable devices section with 3 configuration methods (Bluetooth Web, Manual Registration, Cloud Sync), step-by-step manual measurement logging workflow, alert threshold tables, and comprehensive FAQ

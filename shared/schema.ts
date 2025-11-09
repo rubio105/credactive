@@ -2106,6 +2106,8 @@ export const appointments = pgTable("appointments", {
   endTime: timestamp("end_time").notNull(),
   title: varchar("title", { length: 200 }),
   description: text("description"),
+  notes: text("notes"), // Patient notes when booking
+  voiceNotes: text("voice_notes"), // Voice notes from patient
   type: varchar("type", { length: 50 }).default("consultation"), // consultation, follow_up, screening, emergency
   appointmentType: varchar("appointment_type", { length: 20 }).default("video"), // video, in_person, both
   status: varchar("status", { length: 20 }).default("available"), // available, booked, confirmed, completed, cancelled, no_show

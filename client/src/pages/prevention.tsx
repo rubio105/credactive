@@ -1301,7 +1301,7 @@ export default function PreventionPage() {
         }
 
         // Step 2: Send to Gemini AI
-        await apiRequest(`/api/triage/${currentSessionId}/message`, 'POST', { message: userText });
+        await apiRequest(`/api/triage/${currentSessionId}/message`, 'POST', { content: userText });
 
         // CRITICAL: Check ref after async operation
         if (!conversationModeRef.current) return;

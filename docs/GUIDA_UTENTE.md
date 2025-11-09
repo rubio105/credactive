@@ -146,33 +146,201 @@ Il tuo medico può:
 
 ## ⌚ Dispositivi Wearable
 
-### Collegare un Dispositivo
+### 📱 Collegare un Dispositivo
+
+#### Metodo 1: Connessione Bluetooth Web (Browser)
+
+**Dispositivi supportati:**
+- Misuratori di pressione Omron (HEM-7155T, HEM-9200T)
+- Withings BPM Connect
+- Altri monitor Bluetooth con supporto BLE
+
+**Procedura:**
+
+1. **Prepara il dispositivo**
+   - Accendi il misuratore di pressione
+   - Assicurati che il Bluetooth sia attivo
+   - Tieni il dispositivo vicino al computer (max 5 metri)
+
+2. **Connetti dal browser**
+   - Vai a **Impostazioni** → **Dispositivi Wearable**
+   - Clicca **"Collega Dispositivo Bluetooth"** 🔵
+   - Il browser ti chiederà il permesso Bluetooth → clicca **"Consenti"**
+   - Seleziona il tuo dispositivo dalla lista scansionata
+   - Attendi la connessione (5-10 secondi)
+
+3. **Prima misurazione**
+   - Effettua una misurazione di prova con il dispositivo
+   - I dati appariranno automaticamente nell'app CIRY
+   - Riceverai conferma di connessione riuscita ✅
+
+> **Nota:** La connessione Bluetooth funziona solo su browser Chrome, Edge, Opera (versioni recenti). Richiede HTTPS.
+
+#### Metodo 2: Registrazione Manuale
+
+**Per dispositivi senza Bluetooth o app cloud:**
+
+**Passo 1: Registra il dispositivo**
 
 1. Vai a **Impostazioni** → **Dispositivi Wearable**
-2. Clicca **"Collega Nuovo Dispositivo"**
-3. Inserisci:
-   - Nome identificativo (es. "Apple Watch")
-   - Tipo (Blood Pressure Monitor, Fitness Tracker, ecc.)
-   - Numero seriale (opzionale)
+2. Clicca **"Aggiungi Dispositivo Manuale"**
+3. Compila il form:
+   - **Nome**: es. "Misuratore Pressione Casa"
+   - **Tipo**: Blood Pressure Monitor, Fitness Tracker, Smart Scale, ecc.
+   - **Marca**: Omron, Beurer, Medisana, ecc.
+   - **Modello**: (opzionale)
+   - **Numero Seriale**: (opzionale, utile per garanzia)
 4. Clicca **"Salva"**
 
-> **Nota:** Alcuni dispositivi supportano connessione Bluetooth diretta dal browser.
+**Passo 2: Inserire le misurazioni**
 
-### Visualizzare i Dati
+Dopo aver registrato il dispositivo, puoi inserire le misurazioni manualmente:
+
+1. Vai alla sezione **"Wearable"** dalla homepage
+2. Clicca **"Aggiungi Misurazione Manuale"** ➕
+3. Compila il form con i dati del tuo dispositivo:
+   - **Pressione Sistolica**: es. 120 mmHg
+   - **Pressione Diastolica**: es. 80 mmHg
+   - **Frequenza Cardiaca**: es. 72 bpm
+   - **Data e Ora**: quando hai fatto la misurazione (default: adesso)
+   - **Note**: (opzionale) es. "Dopo camminata", "A riposo"
+4. Clicca **"Salva Misurazione"**
+
+**I dati inseriti:**
+- ✅ Appaiono immediatamente nei grafici
+- ✅ Vengono inclusi nelle statistiche
+- ✅ Generano alert se fuori norma
+- ✅ Sono visibili al tuo medico
+- ✅ Vengono integrati nell'analisi AI
+
+> **Consiglio:** Inserisci le misurazioni subito dopo averle fatte per non dimenticare. Puoi anche impostare un promemoria giornaliero!
+
+#### Metodo 3: Sincronizzazione Cloud (Fitbit, Garmin, Apple Health)
+
+**Setup automatico:**
+
+1. Vai a **Impostazioni** → **Dispositivi Wearable**
+2. Clicca su **"Collega Servizio Cloud"**
+3. Seleziona il tuo servizio:
+   - 📱 Fitbit
+   - ⌚ Garmin Connect
+   - 🍎 Apple Health (via app mobile)
+4. Accedi con le credenziali del servizio
+5. **IMPORTANTE:** Nella schermata di autorizzazione:
+   - ✅ **Abilita** accesso a "Pressione Sanguigna"
+   - ✅ **Abilita** accesso a "Frequenza Cardiaca"
+   - ❌ Puoi **disabilitare** tutto il resto (GPS, passi, sonno, ecc.)
+6. Clicca **"Autorizza"** per confermare
+7. Attendi conferma sincronizzazione automatica
+
+**Dopo la connessione:**
+- I dati vengono sincronizzati automaticamente ogni 15 minuti
+- Non serve inserire nulla manualmente
+- Riceverai notifica di prima sincronizzazione completata
+
+> **Privacy:** CIRY sincronizza SOLO pressione sanguigna e frequenza cardiaca. Nessun dato GPS, passi, sonno o sociale viene raccolto.
+
+---
+
+### 📊 Visualizzare i Dati
 
 1. Vai alla sezione **"Wearable"** dalla homepage
 2. Visualizza:
-   - Grafico pressione sanguigna (ultimi 7/30/90 giorni)
-   - Grafico frequenza cardiaca
-   - Tabella anomalie rilevate
-   - Statistiche aggregate
+   - **Grafico Pressione Sanguigna**: trend ultimi 7/30/90 giorni
+   - **Grafico Frequenza Cardiaca**: con soglie normalità evidenziate
+   - **Tabella Anomalie**: tutte le letture fuori norma
+   - **Statistiche**: media, minimo, massimo settimanale
 
-### Alert Automatici
+**Filtri Disponibili:**
+- Ultimi 7 giorni
+- Ultimi 30 giorni
+- Ultimi 90 giorni
+- Intervallo personalizzato
 
-Se il sistema rileva valori anomali (es. pressione >140/90):
-- Ricevi notifica **WhatsApp** (se abilitato)
-- Ricevi notifica **push** nel browser
-- L'AI può suggerire di contattare un medico
+**Export Dati:**
+- Clicca **"Export CSV"** per scaricare tutti i tuoi dati
+- Utile per condividere con il medico esterno
+
+---
+
+### 🔔 Alert Automatici
+
+Il sistema monitora continuamente i tuoi parametri e ti avvisa se rileva anomalie.
+
+**Soglie Alert Pressione:**
+| Valore | Sistolica | Diastolica | Alert |
+|--------|-----------|------------|-------|
+| Normale | 90-120 | 60-80 | Nessuno |
+| Pre-Ipertensione | 121-139 | 81-89 | 🟡 Monitoraggio |
+| **Ipertensione** | ≥140 | ≥90 | 🔴 **Alert ALTA** |
+| **Ipotensione** | <90 | <60 | 🟠 **Alert MEDIA** |
+
+**Soglie Alert Frequenza Cardiaca:**
+| Valore | BPM (a riposo) | Alert |
+|--------|----------------|-------|
+| Normale | 50-100 | Nessuno |
+| **Tachicardia** | >100 | 🟠 **Alert MEDIA** |
+| **Bradicardia** | <50 | 🟠 **Alert MEDIA** |
+
+**Notifiche Ricevute:**
+- 📱 **WhatsApp**: "⚠️ Pressione elevata rilevata (145/95). Consulta il medico."
+- 🔔 **Push Browser**: Notifica in tempo reale
+- 📧 **Email**: Riepilogo anomalie settimanale
+- 💬 **In-App**: Alert visibile nella campanella
+
+**Azione Consigliata:**
+- Alert ROSSO/ARANCIONE → Contatta il tuo medico entro 24-48 ore
+- Alert GIALLO → Monitora nei prossimi giorni
+- L'AI può suggerirti di prenotare un consulto medico
+
+---
+
+### 🔧 Gestire i Dispositivi
+
+**Modificare un Dispositivo:**
+1. Vai a **Impostazioni** → **Dispositivi Wearable**
+2. Trova il dispositivo nell'elenco
+3. Clicca **"Modifica"** ✏️
+4. Aggiorna nome, tipo o note
+5. Salva
+
+**Rimuovere un Dispositivo:**
+1. Trova il dispositivo nell'elenco
+2. Clicca **"Elimina"** 🗑️
+3. Conferma eliminazione
+
+> **Nota:** Eliminare un dispositivo NON cancella i dati storici già raccolti. Solo impedisce nuove sincronizzazioni.
+
+**Ricalibrare un Dispositivo:**
+- Se noti letture imprecise, consulta il manuale del tuo dispositivo
+- I misuratori di pressione vanno calibrati ogni 1-2 anni
+- Controlla la batteria regolarmente
+
+---
+
+### ❓ Domande Frequenti (FAQ)
+
+**Q: Il mio dispositivo non si connette via Bluetooth**  
+A: Verifica che:
+- Il Bluetooth del computer sia attivo
+- Il dispositivo sia acceso e vicino (<5 metri)
+- Stai usando Chrome, Edge o Opera (non Safari o Firefox)
+- La batteria del dispositivo non sia scarica
+
+**Q: Posso collegare più dispositivi?**  
+A: Sì, fino a 5 dispositivi per account Professional/AI Premium.
+
+**Q: I dati vengono sincronizzati automaticamente?**  
+A: 
+- Bluetooth Web: manuale (ogni volta che misuri e sei connesso)
+- Cloud (Fitbit/Garmin): automatico ogni 15 minuti
+- App mobile: automatico in background
+
+**Q: I miei dati wearable sono sicuri?**  
+A: Sì. Crittografia AES-256 a riposo, TLS 1.3 in transito. Conformità GDPR completa.
+
+**Q: Posso condividere i dati con il mio medico?**  
+A: Sì! Il tuo medico collegato su CIRY vede automaticamente i tuoi dati wearable e riceve alert se necessario.
 
 ---
 
@@ -282,6 +450,12 @@ Scarica da:
 
 ---
 
-**Versione Guida:** 1.0.0  
-**Ultimo Aggiornamento:** Novembre 2025  
+**Versione Guida:** 1.1.0  
+**Ultimo Aggiornamento:** 9 Novembre 2025  
+**Modifiche v1.1.0:**
+- Sezione Dispositivi Wearable completamente rinnovata
+- Aggiunti 3 metodi di configurazione (Bluetooth, Manuale, Cloud)
+- Guida inserimento misurazioni manuali
+- Tabelle soglie alert e FAQ
+
 **Copyright © 2025 CIRY Healthcare**

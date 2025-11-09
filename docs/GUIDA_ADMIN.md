@@ -250,16 +250,62 @@ CIRY offre un'integrazione completa con dispositivi wearable per il monitoraggio
 
 #### Collegare Manualmente un Dispositivo
 
-**Per pazienti che hanno difficoltà:**
+**Per pazienti che hanno difficoltà con la configurazione autonoma:**
+
+**Passo 1: Registrare il Dispositivo**
 
 1. **Admin** → **Wearable Devices** → **Aggiungi Dispositivo**
 2. Compila:
    - **Paziente**: seleziona utente
    - **Tipo**: Blood Pressure Monitor, Fitness Tracker, ecc.
    - **Nome**: es. "Fitbit Versa di Mario"
+   - **Marca**: Omron, Fitbit, Withings, ecc.
+   - **Modello**: (opzionale)
    - **Serial Number**: (se disponibile)
    - **Cloud ID**: (se sincronizzato con servizio cloud)
 3. Salva
+
+**Passo 2: Istruire il Paziente sull'Inserimento Dati**
+
+**Se dispositivo NON ha sincronizzazione automatica:**
+
+Comunica al paziente:
+1. "Vai alla sezione Wearable nella tua homepage"
+2. "Clicca 'Aggiungi Misurazione Manuale' dopo ogni misurazione"
+3. "Inserisci Sistolica, Diastolica, Frequenza Cardiaca"
+4. "I dati appariranno nei grafici e genereranno alert automaticamente"
+
+**Template Email/WhatsApp:**
+```
+Ciao [Nome],
+
+Ho configurato il tuo dispositivo wearable "[Nome Dispositivo]" su CIRY.
+
+Per inserire le tue misurazioni:
+1. Accedi a CIRY → Sezione "Wearable"
+2. Clicca "Aggiungi Misurazione Manuale" ➕
+3. Inserisci i valori dal tuo dispositivo
+4. Salva
+
+Ricordati di inserire le misurazioni regolarmente!
+
+Team CIRY
+```
+
+**Se dispositivo ha sincronizzazione cloud (Fitbit/Garmin):**
+
+Fornisci queste istruzioni al paziente:
+1. "Vai a Impostazioni → Dispositivi Wearable"
+2. "Clicca 'Collega Servizio Cloud' → Seleziona Fitbit/Garmin"
+3. "Accedi con le tue credenziali del servizio"
+4. "IMPORTANTE: Nella schermata autorizzazioni:"
+   - ✅ Abilita "Pressione Sanguigna"
+   - ✅ Abilita "Frequenza Cardiaca"
+   - ❌ Disabilita tutto il resto (GPS, passi, sonno)
+5. "Conferma autorizzazione"
+6. "I dati si sincronizzeranno automaticamente ogni 15 minuti"
+
+> **Nota Admin:** Dopo 48 ore dalla registrazione, verifica che il paziente abbia inserito almeno una misurazione. Se no, invia promemoria.
 
 #### Rimuovere Dispositivo
 
@@ -852,6 +898,21 @@ REINDEX TABLE blood_pressure_readings;
 - Database >10GB: considera upgrade piano Neon
 - Query lente >50/giorno: ottimizza indici
 - Errori API >1%: investiga logs
+
+---
+
+---
+
+**Versione Guida:** 1.1.0  
+**Ultimo Aggiornamento:** 9 Novembre 2025  
+**Modifiche v1.1.0:**
+- Sezione Wearable Devices ampliata con workflow completi
+- Template comunicazione paziente (email/WhatsApp)
+- Istruzioni registrazione manuale dispositivi
+- Guida configurazione consensi servizi cloud
+- Follow-up 48 ore post-registrazione
+
+**Copyright © 2025 CIRY Healthcare**
 
 ---
 

@@ -342,10 +342,13 @@ export default function PreventionPage() {
   // Assessment is optional - user can access directly without completing it
   // Educational focus: learn about prevention, not mandatory diagnostic assessment
 
-  const { data: activeSession } = useQuery<TriageSession>({
+  const { data: activeSessionRaw } = useQuery<TriageSession>({
     queryKey: ["/api/triage/session/active"],
     enabled: !sessionId && !!user, // Only check for active sessions if user is authenticated
   });
+
+  // Derived variable: treat closed sessions as null BEFORE render to prevent blocking UI
+  const activeSession = activeSessionRaw?.status === 'active' ? activeSessionRaw : null;
 
   const { data: session } = useQuery<TriageSession>({
     queryKey: ["/api/triage/session", sessionId],
@@ -361,14 +364,7 @@ export default function PreventionPage() {
   useEffect(() => {
     // If there's an active session and no current session, automatically restore it
     if (activeSession?.id && !sessionId) {
-      // Only restore if session is actually active
-      if (activeSession.status === 'active') {
-        setSessionId(activeSession.id);
-      } else {
-        // Ignore closed/inactive sessions - just clear cache and show fresh UI
-        console.log('Ignoring inactive session, clearing cache...');
-        queryClient.setQueryData(["/api/triage/session/active"], null);
-      }
+      setSessionId(activeSession.id);
     }
   }, [activeSession, sessionId]);
 
@@ -1948,8 +1944,8 @@ export default function PreventionPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Banner conversazione in sospeso - Mostra SOLO per sessioni veramente ATTIVE */}
-                {activeSession && activeSession.status === 'active' && !sessionId && !pendingAlert && (
+                {/* Banner conversazione in sospeso - activeSession is already filtered to active only */}
+                {activeSession && !sessionId && !pendingAlert && (
                   <Alert className="border-2 bg-blue-50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-700" data-testid="alert-resume-session">
                     <AlertDescription className="space-y-3">
                       <p className="font-semibold text-base">

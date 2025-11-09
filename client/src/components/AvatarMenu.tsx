@@ -81,6 +81,18 @@ export default function AvatarMenu({ className }: AvatarMenuProps) {
       id: "main",
       items: [
         {
+          route: "/settings/privacy",
+          icon: FileText,
+          label: "Consensi",
+          testId: "menu-item-privacy",
+        },
+        {
+          route: "/wearable",
+          icon: Watch,
+          label: "Dispositivi Wearable",
+          testId: "menu-item-wearable",
+        },
+        {
           route: "/settings/whatsapp",
           icon: MessageCircle,
           label: "WhatsApp Integration",

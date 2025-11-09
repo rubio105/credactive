@@ -11,7 +11,8 @@ import {
   Video,
   Bell,
   TrendingUp,
-  Target
+  Target,
+  Crown
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadNotifications } from "@/hooks/useNotificationBadge";
@@ -115,42 +116,58 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        {isLoadingIndex ? (
-          <Card className="border-gray-200 shadow-sm">
-            <CardContent className="p-6">
-              <Skeleton className="h-20 w-full" />
-            </CardContent>
-          </Card>
-        ) : preventionIndex ? (
-          <Card className="border-gray-200 shadow-md" data-testid="prevention-score-card">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-lg">Indice di Prevenzione</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {isLoadingIndex ? (
+            <Card className="border-gray-200 shadow-sm md:col-span-2">
+              <CardContent className="p-6">
+                <Skeleton className="h-20 w-full" />
+              </CardContent>
+            </Card>
+          ) : preventionIndex ? (
+            <Card className="border-gray-200 shadow-md md:col-span-2" data-testid="prevention-score-card">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-lg">Indice di Prevenzione</h3>
+                  </div>
+                  <Badge className={`${getPreventionTierMeta(preventionIndex.tier).bgClass} text-white`}>
+                    {getPreventionTierMeta(preventionIndex.tier).label}
+                  </Badge>
                 </div>
-                <Badge className={`${getPreventionTierMeta(preventionIndex.tier).bgClass} text-white`}>
-                  {getPreventionTierMeta(preventionIndex.tier).label}
-                </Badge>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-primary">{preventionIndex.score}</span>
-                  <span className="text-xl text-muted-foreground">/100</span>
-                </div>
-                <Progress value={preventionIndex.score} className="h-3" />
                 
-                <div className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg mt-4">
-                  <TrendingUp className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-gray-700">
-                    {getPreventionTierMeta(preventionIndex.tier).suggestion}
-                  </p>
+                <div className="space-y-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold text-primary">{preventionIndex.score}</span>
+                    <span className="text-xl text-muted-foreground">/100</span>
+                  </div>
+                  <Progress value={preventionIndex.score} className="h-3" />
+                  
+                  <div className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg mt-4">
+                    <TrendingUp className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-gray-700">
+                      {getPreventionTierMeta(preventionIndex.tier).suggestion}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Link href="/subscribe">
+            <Card className="border-amber-200 shadow-md hover:shadow-lg transition-shadow cursor-pointer bg-gradient-to-br from-amber-50 to-orange-50" data-testid="premium-card">
+              <CardContent className="p-6 h-full flex flex-col items-center justify-center text-center">
+                <div className="bg-amber-100 rounded-full p-3 mb-3">
+                  <Crown className="w-8 h-8 text-amber-600" />
+                </div>
+                <h3 className="font-bold text-lg mb-2 text-amber-900">Passa a Premium</h3>
+                <p className="text-sm text-amber-700">
+                  Sblocca tutte le funzionalità avanzate
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
 
         <div className="grid grid-cols-3 gap-4">
           {services.map((service) => {

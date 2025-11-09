@@ -185,6 +185,7 @@ function Router() {
         {(params) => <ProtectedRoute requireNonAiOnly><CorporateJoin params={params} /></ProtectedRoute>}
       </Route>
       <Route path="/prevention" component={Prevention} />
+      <Route path="/chat" component={Prevention} />
       <Route path="/webinar-health">
         {() => <ProtectedRoute><WebinarHealth /></ProtectedRoute>}
       </Route>
@@ -207,7 +208,6 @@ function Router() {
           <Route path="/">
             {() => <ProtectedRoute><RoleDashboard /></ProtectedRoute>}
           </Route>
-          <Route path="/chat" component={Prevention} />
           <Route path="/medici">
             {() => <ProtectedRoute><MediciPage /></ProtectedRoute>}
           </Route>

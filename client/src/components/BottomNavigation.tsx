@@ -49,11 +49,11 @@ const patientTabs: BottomNavTab[] = [
     testId: "bottom-nav-security",
   },
   {
-    route: "/wearable",
-    icon: Watch,
-    label: "Dispositivi",
-    badgeType: null,
-    testId: "bottom-nav-wearable",
+    route: "/notifiche",
+    icon: Bell,
+    label: "Notifiche",
+    badgeType: "notifications",
+    testId: "bottom-nav-notifiche",
   },
 ];
 

@@ -42,7 +42,7 @@ export default function PatientDashboard() {
       label: 'Notifiche',
       icon: FileText,
       route: '/notifiche',
-      badge: unreadNotifications,
+      badgeCount: unreadNotifications,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
@@ -51,7 +51,7 @@ export default function PatientDashboard() {
       label: 'Analisi',
       icon: Activity,
       route: '/chat',
-      badge: null,
+      badgeCount: 0,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
     },
@@ -60,7 +60,7 @@ export default function PatientDashboard() {
       label: 'Medici',
       icon: Building2,
       route: '/medici',
-      badge: null,
+      badgeCount: 0,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
@@ -69,7 +69,7 @@ export default function PatientDashboard() {
       label: 'Dispositivi',
       icon: HeartPulse,
       route: '/wearable',
-      badge: null,
+      badgeCount: 0,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
@@ -78,7 +78,7 @@ export default function PatientDashboard() {
       label: 'Storico',
       icon: ClipboardList,
       route: '/documenti',
-      badge: null,
+      badgeCount: 0,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
@@ -87,7 +87,7 @@ export default function PatientDashboard() {
       label: 'Assistenza',
       icon: Phone,
       route: '/guida',
-      badge: null,
+      badgeCount: 0,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
@@ -143,13 +143,13 @@ export default function PatientDashboard() {
                   data-testid={`service-${service.id}`}
                 >
                   <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                    {service.badge && service.badge > 0 && (
+                    {service.badgeCount > 0 && (
                       <Badge 
                         variant="destructive" 
                         className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs"
                         data-testid={`badge-${service.id}`}
                       >
-                        {service.badge}
+                        {service.badgeCount}
                       </Badge>
                     )}
                     <div className={`${service.bgColor} rounded-full p-3`}>

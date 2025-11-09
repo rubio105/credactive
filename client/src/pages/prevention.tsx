@@ -1561,6 +1561,19 @@ export default function PreventionPage() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
       <Navigation />
       <div className="container py-8 max-w-7xl">
+        {/* Back Button */}
+        <div className="mb-4 px-2">
+          <Button 
+            variant="ghost" 
+            onClick={() => setLocation('/dashboard')}
+            className="text-muted-foreground hover:text-foreground"
+            data-testid="button-back"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Torna Indietro
+          </Button>
+        </div>
+        
         {/* Compact Header */}
         <div className="mb-6 text-center px-2">
           <h1 className="text-xl sm:text-2xl font-bold">Fai prevenzione grazie a Ciry, modello AI di Prohmed</h1>

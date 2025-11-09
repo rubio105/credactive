@@ -4,11 +4,18 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 # Recent Changes (November 2025)
 
+## Critical Bugs Fixed (November 9, 2025)
+- **Teleconsult Booking Error**: Fixed PostgreSQL "malformed array literal" error in /api/appointments/book-teleconsult endpoint. Changed `${notes || ''}` to `${notes ?? null}` and `${voiceNotes || ''}` to `${voiceNotes ?? null}` to properly handle optional fields. Aligned database schema by converting `voice_notes` column from `text[]` to `text` to match Drizzle schema definition. Teleconsult bookings now work correctly with or without notes/voiceNotes.
+
 ## UI/UX Improvements
 - **Wearable Devices Page**: Added anomaly pagination - displays first 5 anomalies by default with expandable "Show all/Show less" toggle for better mobile experience
 - **Patient Appointments**: Simplified booking interface with mobile-first layout (lg:grid-cols-2), skeleton loading states, enhanced empty states, removed redundant "Book Teleconsult" button, and fixed cache invalidation after successful booking
 - **WhatsApp OTP Verification**: Configured Twilio integration with fallback pattern (TWILIO_* env vars → Replit Connectors) for reliable OTP delivery across all environments
 - **AI Prevention Chat**: Fixed critical UX issue where old conversations auto-loaded and blocked input field. Now users see input field immediately, with optional banner to continue previous conversation or start fresh. Input field is always visible and accessible regardless of session state.
+
+## Documentation Updates (November 9, 2025)
+- **User Guide (GUIDA_UTENTE.md v1.1.0)**: Completely overhauled wearable devices section with 3 configuration methods (Bluetooth Web, Manual Registration, Cloud Sync), step-by-step manual measurement logging workflow, alert threshold tables, and comprehensive FAQ
+- **Admin Guide (GUIDA_ADMIN.md v1.1.0)**: Expanded wearable devices management with patient communication templates, manual device registration workflow, cloud service consent instructions, and 48-hour follow-up protocol
 
 # User Preferences
 

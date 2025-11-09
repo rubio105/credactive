@@ -13471,7 +13471,7 @@ Fornisci:
           appointment_type, studio_address, meeting_url, meeting_platform
         ) VALUES (
           ${doctorId}, ${user.id}, ${startTime}, ${endTime},
-          'Teleconsulto', 'teleconsult', 'pending', ${notes || ''}, ${voiceNotes || ''},
+          'Teleconsulto', 'teleconsult', 'pending', ${notes ?? null}, ${voiceNotes ?? null},
           ${appointmentType || 'video'}, ${studioAddress || null}, ${videoRoomUrl}, ${videoRoomUrl ? 'jitsi' : null}
         ) RETURNING *
       `);

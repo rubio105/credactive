@@ -108,46 +108,65 @@ export default function PatientDashboard() {
               {initials}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900" data-testid="greeting-title">
-              Ciao, {displayName}
-            </h1>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl font-bold text-gray-900" data-testid="greeting-title">
+                Ciao, {displayName}
+              </h1>
+              {(user as any)?.isPremium ? (
+                <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0" data-testid="badge-premium">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Premium
+                </Badge>
+              ) : (
+                <Link href="/subscribe">
+                  <Badge 
+                    variant="outline" 
+                    className="border-amber-400 text-amber-700 hover:bg-amber-50 cursor-pointer transition-colors"
+                    data-testid="button-upgrade-premium"
+                  >
+                    <Crown className="w-3 h-3 mr-1" />
+                    Passa a Premium
+                  </Badge>
+                </Link>
+              )}
+            </div>
             <p className="text-gray-600 text-sm" data-testid="greeting-subtitle">
               Come stai? Facciamo prevenzione insieme 💙
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {isLoadingIndex ? (
-            <Card className="border-gray-200 shadow-sm md:col-span-2">
+            <Card className="border-gray-200 shadow-sm">
               <CardContent className="p-6">
                 <Skeleton className="h-20 w-full" />
               </CardContent>
             </Card>
           ) : preventionIndex ? (
-            <Card className="border-gray-200 shadow-md md:col-span-2" data-testid="prevention-score-card">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+            <Card className="border-gray-200 shadow-md" data-testid="prevention-score-card">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold text-lg">Indice di Prevenzione</h3>
+                    <Target className="w-4 h-4 text-primary" />
+                    <h3 className="font-semibold text-base">Indice di Prevenzione</h3>
                   </div>
-                  <Badge className={`${getPreventionTierMeta(preventionIndex.tier).bgClass} text-white`}>
+                  <Badge className={`${getPreventionTierMeta(preventionIndex.tier).bgClass} text-white text-xs`}>
                     {getPreventionTierMeta(preventionIndex.tier).label}
                   </Badge>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-primary">{preventionIndex.score}</span>
-                    <span className="text-xl text-muted-foreground">/100</span>
+                    <span className="text-3xl font-bold text-primary">{preventionIndex.score}</span>
+                    <span className="text-lg text-muted-foreground">/100</span>
                   </div>
-                  <Progress value={preventionIndex.score} className="h-3" />
+                  <Progress value={preventionIndex.score} className="h-2" />
                   
-                  <div className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg mt-4">
-                    <TrendingUp className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-gray-700">
+                  <div className="flex items-start gap-2 bg-blue-50 p-2.5 rounded-lg mt-3">
+                    <TrendingUp className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-gray-700">
                       {getPreventionTierMeta(preventionIndex.tier).suggestion}
                     </p>
                   </div>
@@ -155,20 +174,6 @@ export default function PatientDashboard() {
               </CardContent>
             </Card>
           ) : null}
-
-          <Link href="/subscribe">
-            <Card className="border-amber-200 shadow-md hover:shadow-lg transition-shadow cursor-pointer bg-gradient-to-br from-amber-50 to-orange-50" data-testid="premium-card">
-              <CardContent className="p-6 h-full flex flex-col items-center justify-center text-center">
-                <div className="bg-amber-100 rounded-full p-3 mb-3">
-                  <Crown className="w-8 h-8 text-amber-600" />
-                </div>
-                <h3 className="font-bold text-lg mb-2 text-amber-900">Passa a Premium</h3>
-                <p className="text-sm text-amber-700">
-                  Sblocca tutte le funzionalità avanzate
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
         </div>
 
         <div className="grid grid-cols-3 gap-4">

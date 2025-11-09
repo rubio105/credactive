@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, MessageSquare, Stethoscope, Calendar, Bell, AlertTriangle, Users, Settings, Shield, FileText, Watch } from "lucide-react";
+import { Home, MessageSquare, Stethoscope, Calendar, Bell, AlertTriangle, Users, Settings, Shield, FileText, Watch, Activity } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadNotifications, useUrgentAlerts } from "@/hooks/useNotificationBadge";
 import { cn } from "@/lib/utils";
@@ -49,11 +49,11 @@ const patientTabs: BottomNavTab[] = [
     testId: "bottom-nav-security",
   },
   {
-    route: "/notifiche",
-    icon: Bell,
-    label: "Notifiche",
-    badgeType: "notifications",
-    testId: "bottom-nav-notifiche",
+    route: "/wearable",
+    icon: Activity,
+    label: "Dispositivi",
+    badgeType: null,
+    testId: "bottom-nav-dispositivi",
   },
 ];
 

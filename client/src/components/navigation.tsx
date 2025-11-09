@@ -131,7 +131,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <Link href={
             typedUser?.isAdmin ? "/admin" : 
             typedUser?.isDoctor ? "/doctor/patients" : 
-            "/prevention"
+            "/dashboard"
           }>
             <div className="flex items-center cursor-pointer" data-testid="logo">
               <img 
@@ -232,7 +232,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
               <div className="flex items-center space-x-4">
                 {/* Documents Badge - For AI-only patients (show medical notes from doctor) */}
                 {typedUser?.aiOnlyAccess && !typedUser?.isDoctor && patientNotes && patientNotes.length > 0 && (
-                  <Link href="/prevention">
+                  <Link href="/documenti">
                     <Badge className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" data-testid="badge-documents">
                       <FileText className="w-3 h-3 mr-1" />
                       Documenti ({patientNotes.length})

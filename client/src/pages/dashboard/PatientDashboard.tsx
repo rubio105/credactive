@@ -1,19 +1,21 @@
 import { Link } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, MessageSquare, Calendar, Target, TrendingUp, FileText, AlertCircle, Activity, Video } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  FileText, 
+  Activity, 
+  Building2, 
+  Shield, 
+  ClipboardList, 
+  Phone,
+  Stethoscope,
+  Calendar,
+  HeartPulse
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  usePreventionIndex,
-  useUpcomingAppointment,
-  getPreventionTierMeta,
-  formatRelativeTime,
-} from "@/hooks/useDashboardData";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { useUnreadNotifications } from "@/hooks/useNotificationBadge";
 
 function getUserDisplayName(user: any): string {
   if (user?.firstName || user?.lastName) {
@@ -22,220 +24,178 @@ function getUserDisplayName(user: any): string {
   return user?.email?.split('@')[0] || 'Utente';
 }
 
+function getUserInitials(user: any): string {
+  const name = getUserDisplayName(user);
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
 export default function PatientDashboard() {
   const { user } = useAuth();
-  const { data: preventionIndex, isLoading: isLoadingIndex, error: indexError, refetch: refetchIndex } = usePreventionIndex();
-  const { data: upcomingAppointments, isLoading: isLoadingAppointments, error: appointmentsError } = useUpcomingAppointment();
-
+  const { count: unreadNotifications } = useUnreadNotifications();
+  
   const displayName = getUserDisplayName(user);
-  const nextAppointment = upcomingAppointments?.[0];
+  const initials = getUserInitials(user);
 
-  const quickActions = [
-    { label: "Carica Referto", icon: Upload, route: "/chat?action=upload", testId: "quick-carica", variant: "outline" as const },
-    { label: "Parla con CIRY", icon: MessageSquare, route: "/chat", testId: "quick-chat", variant: "default" as const },
+  const services = [
+    {
+      id: 'notifiche',
+      label: 'Notifiche',
+      icon: FileText,
+      route: '/notifiche',
+      badge: unreadNotifications,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      id: 'analisi',
+      label: 'Analisi',
+      icon: Activity,
+      route: '/chat',
+      badge: null,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+    },
+    {
+      id: 'medici',
+      label: 'Medici',
+      icon: Building2,
+      route: '/medici',
+      badge: null,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      id: 'wearable',
+      label: 'Dispositivi',
+      icon: HeartPulse,
+      route: '/wearable',
+      badge: null,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      id: 'storico',
+      label: 'Storico',
+      icon: ClipboardList,
+      route: '/documenti',
+      badge: null,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      id: 'assistenza',
+      label: 'Assistenza',
+      icon: Phone,
+      route: '/guida',
+      badge: null,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
   ];
 
   return (
-    <section data-testid="patient-dashboard" className="space-y-4 p-4 pb-20 md:pb-4">
-      <Card className="shadow-sm border">
-        <CardHeader>
-          <CardTitle className="text-2xl">Ciao {displayName},</CardTitle>
-          <CardDescription className="text-base">
-            come stai? Facciamo prevenzione insieme 💙
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      {isLoadingIndex ? (
-        <Card className="shadow-sm border" data-testid="prevention-score-skeleton">
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-full mt-2" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-16 w-full" />
-          </CardContent>
-        </Card>
-      ) : indexError ? (
-        <Card className="shadow-sm border">
-          <CardContent className="pt-6">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Errore nel caricamento del punteggio prevenzione.
-                <Button variant="link" onClick={() => refetchIndex()} className="ml-2 p-0 h-auto">
-                  Riprova
-                </Button>
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      ) : preventionIndex ? (
-        <Card className="shadow-sm border" data-testid="prevention-score-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                <CardTitle>Indice di Prevenzione</CardTitle>
-              </div>
-              <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${getPreventionTierMeta(preventionIndex.tier).bgClass} text-white`}>
-                {getPreventionTierMeta(preventionIndex.tier).label}
-              </div>
-            </div>
-            <CardDescription>
-              Il tuo punteggio di prevenzione basato sulle ultime 4 settimane
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between items-baseline">
-                <span className="text-3xl font-bold">{preventionIndex.score}</span>
-                <span className="text-sm text-muted-foreground">/100</span>
-              </div>
-              <Progress value={preventionIndex.score} className="h-3" />
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Dettagli punteggio:</p>
-              <div className="grid grid-cols-1 gap-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Activity className="w-3 h-3" />
-                    Frequenza
-                  </span>
-                  <span className="font-medium">{preventionIndex.breakdown.frequencyScore}/30</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    Profondità
-                  </span>
-                  <span className="font-medium">{preventionIndex.breakdown.depthScore}/20</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    Documenti
-                  </span>
-                  <span className="font-medium">{preventionIndex.breakdown.documentScore}/20</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    Alert
-                  </span>
-                  <span className="font-medium">{preventionIndex.breakdown.alertScore}/15</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Target className="w-3 h-3" />
-                    Insight
-                  </span>
-                  <span className="font-medium">{preventionIndex.breakdown.insightScore}/15</span>
-                </div>
-              </div>
-            </div>
-
-            <Alert className="bg-muted">
-              <Target className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                {getPreventionTierMeta(preventionIndex.tier).suggestion}
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {isLoadingAppointments ? (
-        <Card className="shadow-sm border">
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-16 w-full" />
-          </CardContent>
-        </Card>
-      ) : nextAppointment ? (
-        <Card className="shadow-sm border" data-testid="next-appointment-card">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              <CardTitle>Prossimo Appuntamento</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="font-medium">
-                  {format(new Date(nextAppointment.appointmentDate), "EEEE d MMMM yyyy", { locale: it })}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Ore {nextAppointment.startTime} • {nextAppointment.duration} min
-                </p>
-                {nextAppointment.doctorName && (
-                  <p className="text-sm text-muted-foreground">
-                    con {nextAppointment.doctorName}
-                  </p>
-                )}
-                {nextAppointment.studioAddress && (
-                  <p className="text-sm text-muted-foreground">
-                    📍 {nextAppointment.studioAddress}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {nextAppointment.appointmentDate === format(new Date(), 'yyyy-MM-dd') && nextAppointment.type === 'video' && (
-              <Link href={`/teleconsulto/${nextAppointment.id}`}>
-                <Button className="w-full" data-testid="join-video-btn">
-                  <Video className="w-4 h-4 mr-2" />
-                  Entra in VideoCall
-                </Button>
-              </Link>
-            )}
-          </CardContent>
-        </Card>
-      ) : !appointmentsError && (
-        <Card className="shadow-sm border">
-          <CardContent className="pt-6">
-            <div className="text-center text-muted-foreground py-4">
-              <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Nessun appuntamento programmato</p>
-              <Link href="/prenotazioni">
-                <Button variant="link" className="mt-2" data-testid="book-appointment-link">
-                  Prenota ora
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="shadow-sm border">
-        <CardHeader>
-          <CardTitle>Azioni Rapide</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Link key={action.testId} href={action.route}>
-                  <Button
-                    variant={action.variant}
-                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
-                    data-testid={action.testId}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-xs">{action.label}</span>
-                  </Button>
-                </Link>
-              );
-            })}
+    <section data-testid="patient-dashboard" className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4 pb-24 md:pb-8">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
+            <AvatarImage src={(user as any)?.profileImageUrl} alt={displayName} />
+            <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900" data-testid="greeting-title">
+              Ciao, {displayName}
+            </h1>
+            <p className="text-gray-600" data-testid="greeting-subtitle">
+              Come ti senti oggi?
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <Link href="/chat">
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer" data-testid="cta-autovalutazione">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h2 className="text-white text-lg font-semibold mb-1">
+                    Inizia con la tua autovalutazione
+                  </h2>
+                  <p className="text-blue-100 text-sm">
+                    Parla con CIRY AI per analizzare i tuoi referti
+                  </p>
+                </div>
+                <div className="ml-4 bg-white/20 rounded-full p-3">
+                  <Stethoscope className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <div className="grid grid-cols-3 gap-4">
+          {services.map((service) => {
+            const Icon = service.icon;
+            return (
+              <Link key={service.id} href={service.route}>
+                <Card 
+                  className="relative hover:shadow-md transition-shadow cursor-pointer border-gray-200"
+                  data-testid={`service-${service.id}`}
+                >
+                  <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                    {service.badge && service.badge > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs"
+                        data-testid={`badge-${service.id}`}
+                      >
+                        {service.badge}
+                      </Badge>
+                    )}
+                    <div className={`${service.bgColor} rounded-full p-3`}>
+                      <Icon className={`h-6 w-6 ${service.color}`} />
+                    </div>
+                    <span className="text-xs font-medium text-gray-700">
+                      {service.label}
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+
+        <Link href="/prenotazioni">
+          <Button 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl shadow-md"
+            data-testid="prenota-btn"
+          >
+            <Calendar className="mr-2 h-5 w-5" />
+            Prenota Teleconsulto
+          </Button>
+        </Link>
+
+        <Card className="border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-1 w-12 bg-blue-600 rounded"></div>
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                Novità per te
+              </h3>
+            </div>
+            <div className="space-y-2 text-sm text-gray-600">
+              <p className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Hai ricevuto nuovi consigli personalizzati di prevenzione</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Controlla i tuoi dispositivi wearable per dati aggiornati</span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </section>
   );
 }

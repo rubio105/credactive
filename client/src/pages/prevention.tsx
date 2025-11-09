@@ -1277,13 +1277,14 @@ export default function PreventionPage() {
 
         const transcribeData = await transcribeResponse.json();
         const userText = transcribeData?.text?.trim();
+        console.log('[Voice] Transcription result:', userText);
 
         // CRITICAL: Check ref after async operation
         if (!conversationModeRef.current) return;
 
         if (!userText || userText === '') {
           // No speech detected, restart listening
-          console.log('No speech detected, restarting listening...');
+          console.log('[Voice] No speech detected, restarting listening...');
           setTimeout(() => startConversationCycle(), 500);
           return;
         }
@@ -1291,13 +1292,15 @@ export default function PreventionPage() {
         // Get current session ID from ref (more reliable than state)
         const currentSessionId = sessionIdRef.current;
         if (!currentSessionId) {
-          console.error('No session ID available for voice conversation');
+          console.error('[Voice] No session ID available for voice conversation');
           cleanupConversation();
           return;
         }
 
         // Step 2: Send to Gemini AI
+        console.log('[Voice] Sending message to AI:', userText);
         await apiRequest(`/api/triage/${currentSessionId}/message`, 'POST', { content: userText });
+        console.log('[Voice] Message sent to AI successfully');
 
         // CRITICAL: Check ref after async operation
         if (!conversationModeRef.current) return;
@@ -1314,11 +1317,13 @@ export default function PreventionPage() {
         if (!conversationModeRef.current) return;
 
         const lastAiMessage = messages?.filter(m => m.role === 'assistant').pop();
+        console.log('[Voice] AI response received:', lastAiMessage?.content?.substring(0, 100));
 
         if (lastAiMessage?.content) {
           setIsListening(false); // Show "CIRY Risponde..."
 
           // Step 4: Speak AI response
+          console.log('[Voice] Requesting TTS for AI response...');
           const ttsResponse = await fetch('/api/voice/speak', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

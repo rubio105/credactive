@@ -164,6 +164,7 @@ export default function PreventionPage() {
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const conversationModeRef = useRef<boolean>(false);
+  const sessionIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const doctorAutoStartedRef = useRef<boolean>(false);
@@ -432,6 +433,11 @@ export default function PreventionPage() {
     }
   }, [user, onboardingPromptShown]);
 
+  // Keep sessionIdRef in sync with sessionId state
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
+
   const startTriageMutation = useMutation({
     mutationFn: async (data: { symptom: string; role: 'patient' | 'doctor' }) => {
       const response = await apiRequest("/api/triage/start", "POST", { 
@@ -452,6 +458,7 @@ export default function PreventionPage() {
       }
       
       setSessionId(data.session.id);
+      sessionIdRef.current = data.session.id; // Keep ref in sync
       // Set data directly in cache instead of invalidating to avoid race conditions
       queryClient.setQueryData(["/api/triage/session", data.session.id], data.session);
       queryClient.setQueryData(["/api/triage/messages", data.session.id], data.messages);
@@ -1262,18 +1269,26 @@ export default function PreventionPage() {
           return;
         }
 
+        // Get current session ID from ref (more reliable than state)
+        const currentSessionId = sessionIdRef.current;
+        if (!currentSessionId) {
+          console.error('No session ID available for voice conversation');
+          cleanupConversation();
+          return;
+        }
+
         // Step 2: Send to Gemini AI
-        await apiRequest(`/api/triage/${sessionId}/message`, 'POST', { message: userText });
+        await apiRequest(`/api/triage/${currentSessionId}/message`, 'POST', { message: userText });
 
         // CRITICAL: Check ref after async operation
         if (!conversationModeRef.current) return;
 
         // Refresh messages
-        await queryClient.invalidateQueries({ queryKey: [`/api/triage/${sessionId}/messages`] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/triage/${currentSessionId}/messages`] });
 
         // Step 3: Get AI response text
         const messages = await queryClient.fetchQuery({
-          queryKey: [`/api/triage/${sessionId}/messages`],
+          queryKey: [`/api/triage/${currentSessionId}/messages`],
         }) as TriageMessage[];
 
         // CRITICAL: Check ref after async operation
@@ -1367,12 +1382,17 @@ export default function PreventionPage() {
     // Auto-create session if not exists (allows immediate voice conversation)
     if (!sessionId) {
       try {
-        await startTriageMutation.mutateAsync({
+        const result = await startTriageMutation.mutateAsync({
           symptom: "Ciao, sono pronto per parlare con te.",
           role: userRole,
         });
-        // Session created, wait a moment for state to update
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Set sessionId ref immediately to avoid race conditions
+        if (result?.session?.id) {
+          sessionIdRef.current = result.session.id;
+          setSessionId(result.session.id);
+        } else {
+          throw new Error('Invalid session response');
+        }
       } catch (error) {
         console.error('Failed to create session:', error);
         toast({
@@ -1382,6 +1402,9 @@ export default function PreventionPage() {
         });
         return;
       }
+    } else {
+      // Ensure ref is in sync with state
+      sessionIdRef.current = sessionId;
     }
 
     // Start conversation mode

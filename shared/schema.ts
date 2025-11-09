@@ -58,6 +58,9 @@ export const users = pgTable("users", {
   phone: varchar("phone", { length: 50 }),
   whatsappNumber: varchar("whatsapp_number", { length: 50 }), // WhatsApp number for notifications (format: +39xxxxxxxxxx)
   whatsappNotificationsEnabled: boolean("whatsapp_notifications_enabled").default(false), // User consent for WhatsApp notifications
+  whatsappVerified: boolean("whatsapp_verified").default(false), // Whether WhatsApp number has been verified via OTP
+  whatsappVerificationCode: varchar("whatsapp_verification_code", { length: 10 }), // 6-digit OTP code for WhatsApp verification
+  whatsappVerificationExpiry: timestamp("whatsapp_verification_expiry"), // Expiration timestamp for OTP code (5 minutes)
   // Patient health profile
   heightCm: integer("height_cm"), // Height in centimeters
   weightKg: integer("weight_kg"), // Weight in kilograms

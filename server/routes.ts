@@ -12430,6 +12430,117 @@ Format as JSON: {
     }
   });
 
+  // Request WhatsApp number verification (send OTP code)
+  app.post('/api/user/whatsapp/request-verification', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { whatsappNumber } = req.body;
+
+      // Validate phone number format (should start with +)
+      if (!whatsappNumber || !whatsappNumber.startsWith('+')) {
+        return res.status(400).json({ 
+          message: 'Numero WhatsApp non valido. Deve iniziare con + seguito dal prefisso internazionale (es: +39...)' 
+        });
+      }
+
+      // Generate 6-digit OTP code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Set expiry to 5 minutes from now
+      const expiryDate = new Date();
+      expiryDate.setMinutes(expiryDate.getMinutes() + 5);
+
+      // Save code to database
+      await storage.updateUser(userId, {
+        whatsappNumber,
+        whatsappVerificationCode: verificationCode,
+        whatsappVerificationExpiry: expiryDate,
+        whatsappVerified: false,
+        whatsappNotificationsEnabled: false,
+      });
+
+      // Send OTP via WhatsApp
+      const message = `🔐 *Verifica WhatsApp CIRY*\n\n` +
+        `Il tuo codice di verifica è: *${verificationCode}*\n\n` +
+        `Il codice scade tra 5 minuti.\n\n` +
+        `Se non hai richiesto questa verifica, ignora questo messaggio.`;
+
+      const result = await sendWhatsAppMessage(whatsappNumber, message);
+      
+      if (!result.success) {
+        console.error('[WhatsApp Verification] Failed to send OTP:', result.error);
+        return res.status(500).json({ 
+          message: 'Errore nell\'invio del codice WhatsApp. Verifica che il numero sia corretto.' 
+        });
+      }
+
+      console.log(`[WhatsApp Verification] OTP sent to ${whatsappNumber} for user ${userId}`);
+      res.json({ 
+        success: true, 
+        message: 'Codice di verifica inviato via WhatsApp',
+        expiresAt: expiryDate.toISOString()
+      });
+    } catch (error: any) {
+      console.error('WhatsApp verification request error:', error);
+      res.status(500).json({ message: error.message || 'Errore durante l\'invio del codice di verifica' });
+    }
+  });
+
+  // Verify WhatsApp OTP code
+  app.post('/api/user/whatsapp/verify-code', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { code } = req.body;
+
+      if (!code || code.length !== 6) {
+        return res.status(400).json({ message: 'Codice non valido. Deve essere di 6 cifre.' });
+      }
+
+      // Get user with verification code
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Utente non trovato' });
+      }
+
+      // Check if verification code exists
+      if (!(user as any).whatsappVerificationCode) {
+        return res.status(400).json({ 
+          message: 'Nessun codice di verifica trovato. Richiedi prima un nuovo codice.' 
+        });
+      }
+
+      // Check if code has expired
+      const expiryDate = new Date((user as any).whatsappVerificationExpiry);
+      if (expiryDate < new Date()) {
+        return res.status(400).json({ 
+          message: 'Codice scaduto. Richiedi un nuovo codice di verifica.' 
+        });
+      }
+
+      // Verify code matches
+      if ((user as any).whatsappVerificationCode !== code) {
+        return res.status(400).json({ message: 'Codice non corretto. Riprova.' });
+      }
+
+      // Code is valid - mark number as verified and enable notifications
+      await storage.updateUser(userId, {
+        whatsappVerified: true,
+        whatsappNotificationsEnabled: true,
+        whatsappVerificationCode: null,
+        whatsappVerificationExpiry: null,
+      });
+
+      console.log(`[WhatsApp Verification] Number verified successfully for user ${userId}`);
+      res.json({ 
+        success: true, 
+        message: 'Numero WhatsApp verificato con successo! Le notifiche sono state abilitate.' 
+      });
+    } catch (error: any) {
+      console.error('WhatsApp code verification error:', error);
+      res.status(500).json({ message: error.message || 'Errore durante la verifica del codice' });
+    }
+  });
+
   // ========== ML TRAINING DATA ENDPOINTS ==========
   
   // Get ML training statistics (admin only)

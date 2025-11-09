@@ -365,19 +365,9 @@ export default function PreventionPage() {
       if (activeSession.status === 'active') {
         setSessionId(activeSession.id);
       } else {
-        // Auto-close inactive sessions on server + clear cache
-        const closeInactiveSession = async () => {
-          try {
-            await apiRequest(`/api/triage/${activeSession.id}/close`, "POST", {});
-          } catch (error) {
-            console.error('Failed to close inactive session:', error);
-          } finally {
-            // Clear cache and invalidate to prevent refetch
-            queryClient.setQueryData(["/api/triage/session/active"], null);
-            queryClient.invalidateQueries({ queryKey: ["/api/triage/session/active"] });
-          }
-        };
-        closeInactiveSession();
+        // Ignore closed/inactive sessions - just clear cache and show fresh UI
+        console.log('Ignoring inactive session, clearing cache...');
+        queryClient.setQueryData(["/api/triage/session/active"], null);
       }
     }
   }, [activeSession, sessionId]);
@@ -1958,8 +1948,8 @@ export default function PreventionPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Banner conversazione in sospeso - Mostra solo se c'è activeSession ma nessuna session aperta E non c'è alert pendente */}
-                {activeSession && !sessionId && !pendingAlert && (
+                {/* Banner conversazione in sospeso - Mostra SOLO per sessioni veramente ATTIVE */}
+                {activeSession && activeSession.status === 'active' && !sessionId && !pendingAlert && (
                   <Alert className="border-2 bg-blue-50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-700" data-testid="alert-resume-session">
                     <AlertDescription className="space-y-3">
                       <p className="font-semibold text-base">

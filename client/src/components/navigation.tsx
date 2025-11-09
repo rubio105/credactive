@@ -56,7 +56,7 @@ interface NavigationProps {
 
 export default function Navigation({ useLandingLogo = false }: NavigationProps = {}) {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const typedUser = user as User;
+  const typedUser = user as unknown as User;
   const logoImage = logoImageFull;
   const [location, setLocation] = useLocation();
   const authenticatedProfileImage = useAuthenticatedImage(typedUser?.profileImageUrl);

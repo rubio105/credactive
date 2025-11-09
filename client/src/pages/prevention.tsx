@@ -1314,10 +1314,25 @@ export default function PreventionPage() {
 
         // Step 3: Get AI response text
         console.log('[Voice] Fetching AI response...');
-        const messages = await queryClient.fetchQuery({
-          queryKey: [`/api/triage/${currentSessionId}/messages`],
-        }) as TriageMessage[];
-        console.log('[Voice] Messages fetched:', messages?.length);
+        let messages: TriageMessage[] = [];
+        try {
+          messages = await queryClient.fetchQuery({
+            queryKey: [`/api/triage/messages`, currentSessionId],
+            queryFn: async () => {
+              const response = await fetch(`/api/triage/messages/${currentSessionId}`, {
+                credentials: 'include'
+              });
+              if (!response.ok) {
+                throw new Error(`Failed to fetch messages: ${response.status}`);
+              }
+              return response.json();
+            }
+          }) as TriageMessage[];
+          console.log('[Voice] Messages fetched:', messages?.length);
+        } catch (fetchError) {
+          console.error('[Voice] Error fetching messages:', fetchError);
+          throw fetchError;
+        }
 
         // CRITICAL: Check ref after async operation
         if (!conversationModeRef.current) {
@@ -1411,11 +1426,15 @@ export default function PreventionPage() {
           }
         }
       } catch (error) {
-        console.error('Conversation cycle error:', error);
+        console.error('[Voice] Conversation cycle error:', error);
+        console.error('[Voice] Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
         
         // CRITICAL: Keep conversation alive even on errors - just restart the cycle
         if (conversationModeRef.current) {
-          console.log('Error in cycle, restarting in 1 second...');
+          console.log('[Voice] Error in cycle, restarting in 1 second...');
           setTimeout(() => startConversationCycle(), 1000);
         }
       }

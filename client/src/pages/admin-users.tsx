@@ -398,7 +398,6 @@ export default function AdminUsers() {
               <TableHead className="w-12">
                 <Checkbox 
                   checked={allPageSelected}
-                  indeterminate={somePageSelected}
                   onCheckedChange={handleSelectAll}
                   data-testid="checkbox-select-all"
                 />

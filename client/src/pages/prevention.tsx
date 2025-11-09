@@ -1265,6 +1265,13 @@ export default function PreventionPage() {
 
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
       
+      // Check if audio blob has content (minimum 1KB)
+      if (audioBlob.size < 1000) {
+        console.log('Audio blob too small, restarting listening...');
+        setTimeout(() => startConversationCycle(), 500);
+        return;
+      }
+      
       try {
         // Step 1: Transcribe audio
         const formData = new FormData();
@@ -1277,17 +1284,20 @@ export default function PreventionPage() {
         });
 
         if (!transcribeResponse.ok) {
+          const errorText = await transcribeResponse.text();
+          console.error('Transcription failed:', errorText);
           throw new Error('Transcription failed');
         }
 
         const transcribeData = await transcribeResponse.json();
-        const userText = transcribeData.text;
+        const userText = transcribeData?.text?.trim();
 
         // CRITICAL: Check ref after async operation
         if (!conversationModeRef.current) return;
 
-        if (!userText || userText.trim() === '') {
+        if (!userText || userText === '') {
           // No speech detected, restart listening
+          console.log('No speech detected, restarting listening...');
           setTimeout(() => startConversationCycle(), 500);
           return;
         }

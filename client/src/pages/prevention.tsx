@@ -2069,6 +2069,35 @@ export default function PreventionPage() {
                   );
                 })()}
                 
+                {/* Voice Conversation - ALWAYS VISIBLE */}
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-purple-700 dark:text-purple-400">Conversazione Vocale:</p>
+                  <Button
+                    onClick={toggleVoiceInput}
+                    className={`${
+                      isConversationMode 
+                        ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                        : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                    } text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full h-auto py-6 rounded-xl group`}
+                    data-testid="button-voice-conversation"
+                    title={isConversationMode ? "Ferma conversazione vocale" : "Avvia conversazione vocale con CIRY"}
+                  >
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="p-3 bg-white/20 rounded-full group-hover:scale-110 transition-transform">
+                        {isConversationMode ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="text-lg font-bold">
+                          {isConversationMode ? (isListening ? "Sto Ascoltando..." : "CIRY Risponde...") : "Parla con CIRY"}
+                        </span>
+                        <span className="text-xs font-normal opacity-90">
+                          {isConversationMode ? "Clicca per fermare" : "Conversazione continua automatica"}
+                        </span>
+                      </div>
+                    </div>
+                  </Button>
+                </div>
+
                 {!sessionId ? (
                   <div className="space-y-4">
                     <div className="space-y-3">
@@ -2193,60 +2222,6 @@ export default function PreventionPage() {
                           </>
                         )}
                       </div>
-                    </div>
-
-                    {/* Voice Conversation - Large Button */}
-                    <div className="space-y-3">
-                      <p className="text-sm font-semibold text-purple-700 dark:text-purple-400">Conversazione Vocale:</p>
-                      <Button
-                        onClick={toggleVoiceInput}
-                        className={`${
-                          isConversationMode 
-                            ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                            : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                        } text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full h-auto py-6 rounded-xl group`}
-                        data-testid="button-voice-conversation"
-                        title={isConversationMode ? "Ferma conversazione vocale" : "Avvia conversazione vocale con CIRY"}
-                      >
-                        <div className="flex items-center justify-center gap-3">
-                          <div className="p-3 bg-white/20 rounded-full group-hover:scale-110 transition-transform">
-                            {isConversationMode ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <span className="text-lg font-bold">
-                              {isConversationMode ? (isListening ? "Sto Ascoltando..." : "CIRY Risponde...") : "Parla con CIRY"}
-                            </span>
-                            <span className="text-xs font-normal opacity-90">
-                              {isConversationMode ? "Clicca per fermare" : "Conversazione continua automatica"}
-                            </span>
-                          </div>
-                        </div>
-                      </Button>
-
-                      {/* Quick Booking Button - Shows only during voice conversation for patients */}
-                      {isConversationMode && userRole === 'patient' && (
-                        <Button
-                          onClick={() => {
-                            cleanupConversation(); // Pause voice conversation
-                            setIsBookingDialogOpen(true); // Open booking dialog
-                            toast({
-                              title: "Prenotazione",
-                              description: "Seleziona data e ora per il tuo appuntamento",
-                            });
-                          }}
-                          variant="outline"
-                          className="w-full h-auto py-4 border-2 border-blue-500 dark:border-blue-600 hover:border-blue-600 dark:hover:border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 hover:shadow-lg transition-all duration-200"
-                          data-testid="button-quick-booking"
-                        >
-                          <div className="flex items-center justify-center gap-3">
-                            <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                            <div className="flex flex-col items-start">
-                              <span className="text-base font-bold">Prenota Visita</span>
-                              <span className="text-xs opacity-80">Click per prenotare ora</span>
-                            </div>
-                          </div>
-                        </Button>
-                      )}
                     </div>
 
                     {/* Action Buttons */}
@@ -2425,18 +2400,6 @@ export default function PreventionPage() {
                           className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1"
                           data-testid="input-triage-message"
                         />
-                        <Button
-                          onClick={toggleVoiceInput}
-                          className={`${
-                            isListening 
-                              ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                              : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
-                          } text-white shadow-lg h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0`}
-                          data-testid="button-voice-input-message"
-                          title={isListening ? "Ferma registrazione" : "Parla con l'AI (conversazione vocale)"}
-                        >
-                          {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                        </Button>
                         <Button
                           onClick={handleSend}
                           disabled={sendMessageMutation.isPending || !userInput.trim()}
@@ -3057,18 +3020,21 @@ export default function PreventionPage() {
                   <p className="text-sm text-muted-foreground">Nessuno slot disponibile nei prossimi 14 giorni</p>
                 ) : (
                   <div className="max-h-48 overflow-y-auto space-y-2 border rounded-lg p-3">
-                    {availableSlots.map((slot: any, index: number) => (
-                      <Button
-                        key={index}
-                        variant={selectedBookingSlot?.date === slot.date && selectedBookingSlot?.startTime === slot.startTime ? "default" : "outline"}
-                        className="w-full justify-start"
-                        onClick={() => setSelectedBookingSlot(slot)}
-                        data-testid={`button-booking-slot-${index}`}
-                      >
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {format(new Date(slot.date), "EEEE dd MMMM", { locale: it })} - {slot.startTime} / {slot.endTime}
-                      </Button>
-                    ))}
+                    {availableSlots.map((slot: any) => {
+                      const uniqueKey = `${slot.date}-${slot.startTime}-${slot.endTime}`;
+                      return (
+                        <Button
+                          key={uniqueKey}
+                          variant={selectedBookingSlot?.date === slot.date && selectedBookingSlot?.startTime === slot.startTime ? "default" : "outline"}
+                          className="w-full justify-start"
+                          onClick={() => setSelectedBookingSlot(slot)}
+                          data-testid={`button-booking-slot-${uniqueKey}`}
+                        >
+                          <Calendar className="w-4 h-4 mr-2" />
+                          {format(new Date(slot.date), "EEEE dd MMMM", { locale: it })} - {slot.startTime} / {slot.endTime}
+                        </Button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

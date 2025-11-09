@@ -203,7 +203,7 @@ function Router() {
         {() => <ProtectedRoute requireNonAiOnly><Documenti /></ProtectedRoute>}
       </Route>
       {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Login} />
+        <Route path="/" component={Landing} />
       ) : (
         <>
           <Route path="/">

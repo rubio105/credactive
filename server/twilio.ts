@@ -3,7 +3,14 @@ import twilio from 'twilio';
 let connectionSettings: any;
 
 async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  
+  console.log('[Twilio] Environment check:', {
+    hasHostname: !!hostname,
+    hasReplIdentity: !!process.env.REPL_IDENTITY,
+    hasWebReplRenewal: !!process.env.WEB_REPL_RENEWAL
+  });
+  
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
     : process.env.WEB_REPL_RENEWAL 
@@ -11,28 +18,61 @@ async function getCredentials() {
     : null;
 
   if (!xReplitToken) {
+    console.error('[Twilio] Missing required environment variables');
     throw new Error('X_REPLIT_TOKEN not found for repl/depl');
   }
 
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=twilio',
-    {
+  if (!hostname) {
+    console.error('[Twilio] REPLIT_CONNECTORS_HOSTNAME not found');
+    throw new Error('REPLIT_CONNECTORS_HOSTNAME not configured');
+  }
+
+  const url = `https://${hostname}/api/v2/connection?include_secrets=true&connector_names=twilio`;
+  console.log('[Twilio] Fetching credentials from:', hostname);
+
+  try {
+    const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
         'X_REPLIT_TOKEN': xReplitToken
       }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
+    });
 
-  if (!connectionSettings || (!connectionSettings.settings.account_sid || !connectionSettings.settings.api_key || !connectionSettings.settings.api_key_secret)) {
-    throw new Error('Twilio not connected');
+    if (!response.ok) {
+      console.error('[Twilio] Connector API error:', response.status, response.statusText);
+      throw new Error(`Connector API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('[Twilio] Connector response received:', {
+      hasItems: !!data.items,
+      itemsCount: data.items?.length || 0
+    });
+
+    connectionSettings = data.items?.[0];
+
+    if (!connectionSettings || (!connectionSettings.settings.account_sid || !connectionSettings.settings.api_key || !connectionSettings.settings.api_key_secret)) {
+      console.error('[Twilio] Invalid connection settings:', {
+        hasSettings: !!connectionSettings,
+        hasAccountSid: !!connectionSettings?.settings?.account_sid,
+        hasApiKey: !!connectionSettings?.settings?.api_key,
+        hasApiKeySecret: !!connectionSettings?.settings?.api_key_secret
+      });
+      throw new Error('Twilio not connected or missing credentials');
+    }
+
+    console.log('[Twilio] Credentials loaded successfully');
+    
+    return {
+      accountSid: connectionSettings.settings.account_sid,
+      apiKey: connectionSettings.settings.api_key,
+      apiKeySecret: connectionSettings.settings.api_key_secret,
+      phoneNumber: connectionSettings.settings.phone_number
+    };
+  } catch (error: any) {
+    console.error('[Twilio] Error fetching credentials:', error.message);
+    throw error;
   }
-  return {
-    accountSid: connectionSettings.settings.account_sid,
-    apiKey: connectionSettings.settings.api_key,
-    apiKeySecret: connectionSettings.settings.api_key_secret,
-    phoneNumber: connectionSettings.settings.phone_number
-  };
 }
 
 export async function getTwilioClient() {

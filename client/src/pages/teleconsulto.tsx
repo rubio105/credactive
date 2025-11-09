@@ -69,7 +69,7 @@ export default function TeleconsultoPage() {
 
   // ProhMed default doctor option
   const prohmedDoctor: Doctor = {
-    id: '7903dae2-2de6-48c0-8a9a-b7e9fca071ca',
+    id: '747509dc-dd2a-40e6-91d9-23c7b4f85972',
     firstName: 'Team',
     lastName: 'Prohmed',
     specialization: 'Medicina Generale',

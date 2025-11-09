@@ -184,7 +184,23 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     </Link>
                   </>
                 )}
-                {/* Patients - All links moved to dropdown menu */}
+                {/* Regular Patients - Prevention + Prenotazioni */}
+                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
+                  <>
+                    <Link href="/prevention">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
+                        <Stethoscope className="w-4 h-4 mr-2" />
+                        AI Prevenzione
+                      </Button>
+                    </Link>
+                    <Link href="/teleconsulto">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-teleconsulto">
+                        <Video className="w-4 h-4 mr-2" />
+                        Prenotazioni
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </>
             ) : (
               <>

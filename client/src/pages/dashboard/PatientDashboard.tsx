@@ -80,7 +80,7 @@ export default function PatientDashboard() {
     },
     {
       id: 'webinar',
-      label: 'Prevenzione in diretta',
+      label: 'Prevenzione live',
       icon: Video,
       route: '/webinar',
       badgeCount: 0,

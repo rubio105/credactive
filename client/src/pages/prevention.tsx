@@ -361,7 +361,24 @@ export default function PreventionPage() {
   useEffect(() => {
     // If there's an active session and no current session, automatically restore it
     if (activeSession?.id && !sessionId) {
-      setSessionId(activeSession.id);
+      // Only restore if session is actually active
+      if (activeSession.status === 'active') {
+        setSessionId(activeSession.id);
+      } else {
+        // Auto-close inactive sessions on server + clear cache
+        const closeInactiveSession = async () => {
+          try {
+            await apiRequest(`/api/triage/${activeSession.id}/close`, "POST", {});
+          } catch (error) {
+            console.error('Failed to close inactive session:', error);
+          } finally {
+            // Clear cache and invalidate to prevent refetch
+            queryClient.setQueryData(["/api/triage/session/active"], null);
+            queryClient.invalidateQueries({ queryKey: ["/api/triage/session/active"] });
+          }
+        };
+        closeInactiveSession();
+      }
     }
   }, [activeSession, sessionId]);
 
@@ -2386,39 +2403,48 @@ export default function PreventionPage() {
                       </div>
                     </ScrollArea>
 
-                    {session?.status === 'active' && (
-                      <div className="space-y-3 mt-4 px-1">
-                        <div className="flex gap-3 items-end">
-                          <Input
-                            placeholder="Scrivi un messaggio..."
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                            className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1"
-                            data-testid="input-triage-message"
-                          />
-                          <Button
-                            onClick={toggleVoiceInput}
-                            className={`${
-                              isListening 
-                                ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                                : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
-                            } text-white shadow-lg h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0`}
-                            data-testid="button-voice-input-message"
-                            title={isListening ? "Ferma registrazione" : "Parla con l'AI (conversazione vocale)"}
-                          >
-                            {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                          </Button>
-                          <Button
-                            onClick={handleSend}
-                            disabled={sendMessageMutation.isPending || !userInput.trim()}
-                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all flex-shrink-0"
-                            data-testid="button-send-message"
-                          >
-                            <Send className="w-5 h-5" />
-                          </Button>
-                        </div>
-                        
+                    <div className="space-y-3 mt-4 px-1">
+                      {session?.status !== 'active' && (
+                        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+                          <AlertDescription className="text-amber-800 dark:text-amber-200">
+                            Questa conversazione non è più attiva. Clicca su "Nuova Conversazione" per continuare.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      <div className="flex gap-3 items-end">
+                        <Input
+                          placeholder="Scrivi un messaggio..."
+                          value={userInput}
+                          onChange={(e) => setUserInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                          disabled={session?.status !== 'active'}
+                          className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          data-testid="input-triage-message"
+                        />
+                        <Button
+                          onClick={toggleVoiceInput}
+                          disabled={session?.status !== 'active'}
+                          className={`${
+                            isListening 
+                              ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                              : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
+                          } text-white shadow-lg h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          data-testid="button-voice-input-message"
+                          title={isListening ? "Ferma registrazione" : "Parla con l'AI (conversazione vocale)"}
+                        >
+                          {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                        </Button>
+                        <Button
+                          onClick={handleSend}
+                          disabled={sendMessageMutation.isPending || !userInput.trim() || session?.status !== 'active'}
+                          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all flex-shrink-0"
+                          data-testid="button-send-message"
+                        >
+                          <Send className="w-5 h-5" />
+                        </Button>
+                      </div>
+                      
+                      {session?.status === 'active' && (
                         <div className="flex gap-2">
                           <Button
                             onClick={() => setShowUploadDialog(true)}
@@ -2431,8 +2457,8 @@ export default function PreventionPage() {
                             Carica Referto
                           </Button>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </>
                 )}
               </CardContent>

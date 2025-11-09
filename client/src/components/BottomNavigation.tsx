@@ -42,7 +42,7 @@ const patientTabs: BottomNavTab[] = [
     testId: "bottom-nav-guida",
   },
   {
-    route: "/settings/security",
+    route: "/security",
     icon: Shield,
     label: "Sicurezza",
     badgeType: null,

@@ -671,32 +671,34 @@ export default function AdminUsers() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="isAdmin">Amministratore</Label>
-                <Switch
-                  id="isAdmin"
-                  checked={editingUser.isAdmin}
-                  onCheckedChange={(checked) => setEditingUser({ ...editingUser, isAdmin: checked })}
-                  data-testid="switch-isAdmin"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="isDoctor">Dottore</Label>
-                <Switch
-                  id="isDoctor"
-                  checked={editingUser.isDoctor}
-                  onCheckedChange={(checked) => setEditingUser({ ...editingUser, isDoctor: checked })}
-                  data-testid="switch-isDoctor"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="aiOnlyAccess">Accesso Solo AI</Label>
-                <Switch
-                  id="aiOnlyAccess"
-                  checked={editingUser.aiOnlyAccess}
-                  onCheckedChange={(checked) => setEditingUser({ ...editingUser, aiOnlyAccess: checked })}
-                  data-testid="switch-aiOnlyAccess"
-                />
+              <div>
+                <Label htmlFor="userRole">Ruolo Utente</Label>
+                <Select
+                  value={
+                    editingUser.isAdmin ? 'admin' : 
+                    editingUser.isDoctor ? 'doctor' : 
+                    editingUser.aiOnlyAccess ? 'ai_only' : 
+                    'patient'
+                  }
+                  onValueChange={(value) => {
+                    setEditingUser({
+                      ...editingUser,
+                      isAdmin: value === 'admin',
+                      isDoctor: value === 'doctor',
+                      aiOnlyAccess: value === 'ai_only',
+                    });
+                  }}
+                >
+                  <SelectTrigger id="userRole" data-testid="select-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="patient">👤 Paziente</SelectItem>
+                    <SelectItem value="doctor">👨‍⚕️ Dottore</SelectItem>
+                    <SelectItem value="admin">🔧 Amministratore</SelectItem>
+                    <SelectItem value="ai_only">🤖 Accesso Solo AI</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
@@ -778,32 +780,34 @@ export default function AdminUsers() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="newIsAdmin">Amministratore</Label>
-              <Switch
-                id="newIsAdmin"
-                checked={newUser.isAdmin}
-                onCheckedChange={(checked) => setNewUser({ ...newUser, isAdmin: checked })}
-                data-testid="switch-new-isAdmin"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="newIsDoctor">Dottore</Label>
-              <Switch
-                id="newIsDoctor"
-                checked={newUser.isDoctor}
-                onCheckedChange={(checked) => setNewUser({ ...newUser, isDoctor: checked })}
-                data-testid="switch-new-isDoctor"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="newAiOnlyAccess">Accesso Solo AI</Label>
-              <Switch
-                id="newAiOnlyAccess"
-                checked={newUser.aiOnlyAccess}
-                onCheckedChange={(checked) => setNewUser({ ...newUser, aiOnlyAccess: checked })}
-                data-testid="switch-new-aiOnlyAccess"
-              />
+            <div>
+              <Label htmlFor="newUserRole">Ruolo Utente *</Label>
+              <Select
+                value={
+                  newUser.isAdmin ? 'admin' : 
+                  newUser.isDoctor ? 'doctor' : 
+                  newUser.aiOnlyAccess ? 'ai_only' : 
+                  'patient'
+                }
+                onValueChange={(value) => {
+                  setNewUser({
+                    ...newUser,
+                    isAdmin: value === 'admin',
+                    isDoctor: value === 'doctor',
+                    aiOnlyAccess: value === 'ai_only',
+                  });
+                }}
+              >
+                <SelectTrigger id="newUserRole" data-testid="select-new-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="patient">👤 Paziente</SelectItem>
+                  <SelectItem value="doctor">👨‍⚕️ Dottore</SelectItem>
+                  <SelectItem value="admin">🔧 Amministratore</SelectItem>
+                  <SelectItem value="ai_only">🤖 Accesso Solo AI</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

@@ -48,24 +48,17 @@ export default function Login() {
         return;
       }
 
-      toast({
-        title: "Accesso effettuato",
-        description: "Benvenuto su CIRY!",
-      });
-      
+      // Direct redirect to dashboard without toast/dialog
       // Role-based redirect logic
       if (data?.isAdmin) {
         // Admin → Dashboard amministratore
         window.location.href = "/admin";
-      } else if (data?.isDoctor) {
-        // Dottore → Lista pazienti
-        window.location.href = "/doctor/patients";
       } else if (data?.aiOnlyAccess) {
-        // Utenti AI-only → Prevenzione
+        // Utenti AI-only → Prevenzione (unica area accessibile)
         window.location.href = "/prevention";
       } else {
-        // Pazienti normali → AI Prevenzione (pagina completa)
-        window.location.href = "/prevention";
+        // Dottore e Pazienti → Dashboard principale (role-aware routing)
+        window.location.href = "/";
       }
     },
     onError: (error: any) => {

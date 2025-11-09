@@ -6,8 +6,9 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 ## UI/UX Improvements
 - **Wearable Devices Page**: Added anomaly pagination - displays first 5 anomalies by default with expandable "Show all/Show less" toggle for better mobile experience
-- **Patient Appointments**: Simplified booking interface with mobile-first layout (lg:grid-cols-2), skeleton loading states, enhanced empty states, and removed redundant "Book Teleconsult" button
-- **WhatsApp OTP Verification**: Configured Twilio integration using direct Replit Secrets (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER) for reliable OTP delivery
+- **Patient Appointments**: Simplified booking interface with mobile-first layout (lg:grid-cols-2), skeleton loading states, enhanced empty states, removed redundant "Book Teleconsult" button, and fixed cache invalidation after successful booking
+- **WhatsApp OTP Verification**: Configured Twilio integration with fallback pattern (TWILIO_* env vars → Replit Connectors) for reliable OTP delivery across all environments
+- **AI Prevention Chat**: Fixed critical UX issue where old conversations auto-loaded and blocked input field. Now users see input field immediately, with optional banner to continue previous conversation or start fresh. Input field is always visible and accessible regardless of session state.
 
 # User Preferences
 

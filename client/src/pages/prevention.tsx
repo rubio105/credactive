@@ -343,13 +343,8 @@ export default function PreventionPage() {
     enabled: !!sessionId,
   });
 
-  // Auto-restore active session on page load for conversation continuity
-  useEffect(() => {
-    // If there's an active session and no current session, automatically restore it
-    if (activeSession?.id && !sessionId) {
-      setSessionId(activeSession.id);
-    }
-  }, [activeSession, sessionId]);
+  // Don't auto-restore sessions - let user choose to continue or start new
+  // This prevents old conversation history from blocking the input field
 
   // Auto-open AI dialog for doctors when they access prevention page
   useEffect(() => {
@@ -1992,6 +1987,49 @@ export default function PreventionPage() {
                   </Alert>
                   );
                 })()}
+
+                {/* Banner to continue previous conversation */}
+                {activeSession && !sessionId && (
+                  <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800" data-testid="alert-continue-conversation">
+                    <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <AlertDescription className="flex items-center justify-between gap-4">
+                      <span className="text-blue-900 dark:text-blue-200">
+                        Hai una conversazione in corso
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSessionId(activeSession.id)}
+                          className="border-blue-300 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900"
+                          data-testid="button-continue-conversation"
+                        >
+                          <MessageSquarePlus className="w-4 h-4 mr-2" />
+                          Continua Conversazione
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            if (activeSession?.id) {
+                              try {
+                                await apiRequest(`/api/triage/${activeSession.id}/close`, "POST");
+                              } catch (error) {
+                                console.error("Error closing session:", error);
+                              }
+                            }
+                            queryClient.setQueryData(["/api/triage/session/active"], null);
+                            toast({ title: "Pronto per una nuova conversazione" });
+                          }}
+                          className="text-gray-600 dark:text-gray-400"
+                          data-testid="button-new-conversation"
+                        >
+                          Nuova Conversazione
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {!sessionId ? (
                   <div className="space-y-4">

@@ -1334,6 +1334,8 @@ export default function PreventionPage() {
             
             // Validate audio blob before creating URL
             const contentType = ttsResponse.headers.get('content-type');
+            console.log('[Voice] TTS response:', { size: audioBlob.size, contentType });
+            
             if (audioBlob.size > 0 && contentType && contentType.startsWith('audio')) {
               const audioUrl = URL.createObjectURL(audioBlob);
               
@@ -1341,6 +1343,7 @@ export default function PreventionPage() {
               currentAudioRef.current = audio;
 
               audio.onended = () => {
+                console.log('[Voice] Audio playback ended, restarting cycle');
                 URL.revokeObjectURL(audioUrl);
                 currentAudioRef.current = null;
                 // Step 5: Restart listening automatically
@@ -1349,8 +1352,8 @@ export default function PreventionPage() {
                 }
               };
 
-              audio.onerror = () => {
-                console.error('Audio playback error');
+              audio.onerror = (e) => {
+                console.error('[Voice] Audio playback error:', e);
                 URL.revokeObjectURL(audioUrl);
                 currentAudioRef.current = null;
                 // Continue conversation even on playback error
@@ -1359,10 +1362,20 @@ export default function PreventionPage() {
                 }
               };
 
-              await audio.play();
+              console.log('[Voice] Starting audio playback...');
+              try {
+                await audio.play();
+                console.log('[Voice] Audio playing successfully');
+              } catch (playError) {
+                console.error('[Voice] Audio play() failed:', playError);
+                // Continue cycle even if play fails
+                if (conversationModeRef.current) {
+                  setTimeout(() => startConversationCycle(), 500);
+                }
+              }
             } else {
               // Invalid audio response, restart cycle
-              console.log('Invalid audio response, restarting cycle...');
+              console.log('[Voice] Invalid audio response, restarting cycle...', { size: audioBlob.size, contentType });
               if (conversationModeRef.current) {
                 setTimeout(() => startConversationCycle(), 500);
               }

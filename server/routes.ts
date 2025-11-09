@@ -12430,14 +12430,44 @@ Format as JSON: {
     }
   });
 
+  // Test Twilio connection (authenticated users)
+  app.get('/api/user/whatsapp/test-connection', isAuthenticated, async (req, res) => {
+    try {
+      const { getTwilioClient, getTwilioFromPhoneNumber } = await import('./twilio');
+      
+      console.log('[Twilio Test] Testing connection...');
+      const client = await getTwilioClient();
+      const phoneNumber = await getTwilioFromPhoneNumber();
+      
+      console.log('[Twilio Test] Connection successful');
+      console.log('[Twilio Test] Phone number configured:', phoneNumber);
+      
+      res.json({ 
+        success: true, 
+        message: 'Connessione Twilio configurata correttamente',
+        phoneNumber: phoneNumber || 'Not configured'
+      });
+    } catch (error: any) {
+      console.error('[Twilio Test] Connection failed:', error.message);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Errore di connessione Twilio',
+        error: error.message 
+      });
+    }
+  });
+
   // Request WhatsApp number verification (send OTP code)
   app.post('/api/user/whatsapp/request-verification', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
       const { whatsappNumber } = req.body;
 
+      console.log(`[WhatsApp Verification] Request received for user ${userId}, number: ${whatsappNumber}`);
+
       // Validate phone number format (should start with +)
       if (!whatsappNumber || !whatsappNumber.startsWith('+')) {
+        console.log('[WhatsApp Verification] Invalid phone number format');
         return res.status(400).json({ 
           message: 'Numero WhatsApp non valido. Deve iniziare con + seguito dal prefisso internazionale (es: +39...)' 
         });
@@ -12450,6 +12480,8 @@ Format as JSON: {
       const expiryDate = new Date();
       expiryDate.setMinutes(expiryDate.getMinutes() + 5);
 
+      console.log(`[WhatsApp Verification] Generated OTP code for user ${userId}`);
+
       // Save code to database
       await storage.updateUser(userId, {
         whatsappNumber,
@@ -12459,29 +12491,32 @@ Format as JSON: {
         whatsappNotificationsEnabled: false,
       });
 
+      console.log(`[WhatsApp Verification] Saved OTP to database for user ${userId}`);
+
       // Send OTP via WhatsApp
       const message = `🔐 *Verifica WhatsApp CIRY*\n\n` +
         `Il tuo codice di verifica è: *${verificationCode}*\n\n` +
         `Il codice scade tra 5 minuti.\n\n` +
         `Se non hai richiesto questa verifica, ignora questo messaggio.`;
 
+      console.log(`[WhatsApp Verification] Attempting to send WhatsApp message to ${whatsappNumber}`);
       const result = await sendWhatsAppMessage(whatsappNumber, message);
       
       if (!result.success) {
         console.error('[WhatsApp Verification] Failed to send OTP:', result.error);
         return res.status(500).json({ 
-          message: 'Errore nell\'invio del codice WhatsApp. Verifica che il numero sia corretto.' 
+          message: `Errore nell'invio del codice WhatsApp: ${result.error || 'Verifica che il numero sia corretto e che Twilio sia configurato.'}`
         });
       }
 
-      console.log(`[WhatsApp Verification] OTP sent to ${whatsappNumber} for user ${userId}`);
+      console.log(`[WhatsApp Verification] OTP sent successfully to ${whatsappNumber} for user ${userId}, SID: ${result.sid}`);
       res.json({ 
         success: true, 
         message: 'Codice di verifica inviato via WhatsApp',
         expiresAt: expiryDate.toISOString()
       });
     } catch (error: any) {
-      console.error('WhatsApp verification request error:', error);
+      console.error('[WhatsApp Verification] Request error:', error);
       res.status(500).json({ message: error.message || 'Errore durante l\'invio del codice di verifica' });
     }
   });

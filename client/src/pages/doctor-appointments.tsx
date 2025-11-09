@@ -384,16 +384,9 @@ export default function DoctorAppointmentsPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <BackButton
-            label="Indietro"
-            variant="outline"
-            testId="button-back"
-          />
-          <div>
-            <h1 className="text-3xl font-bold">Gestione Appuntamenti</h1>
-            <p className="text-muted-foreground">Crea slot singoli o definisci disponibilità ricorrenti</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold">Gestione Appuntamenti</h1>
+          <p className="text-muted-foreground">Crea slot singoli o definisci disponibilità ricorrenti</p>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-slot">
           <Plus className="w-4 h-4 mr-2" />
@@ -522,7 +515,7 @@ export default function DoctorAppointmentsPage() {
                             </a>
                           </Button>
                         )}
-                        {apt.status === 'booked' && (
+                        {(apt.status === 'pending' || apt.status === 'booked') && (
                           <>
                             <Button 
                               size="sm" 

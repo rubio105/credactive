@@ -65,7 +65,12 @@ import DoctorPatientsPage from "@/pages/doctor-patients";
 import DoctorReportsPage from "@/pages/doctor-reports";
 import WearablePage from "@/pages/wearable";
 import Home from "@/pages/home";
+import RoleDashboard from "@/pages/role-dashboard";
+import MediciPage from "@/pages/medici";
+import NotifichePage from "@/pages/notifiche";
+import DoctorAlertsPage from "@/pages/doctor-alerts";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import BottomNavigation from "@/components/BottomNavigation";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -201,7 +206,27 @@ function Router() {
         <Route path="/" component={Login} />
       ) : (
         <>
-          <Route path="/" component={Home} />
+          <Route path="/">
+            {() => <ProtectedRoute><RoleDashboard /></ProtectedRoute>}
+          </Route>
+          <Route path="/chat">
+            {() => <ProtectedRoute><Prevention /></ProtectedRoute>}
+          </Route>
+          <Route path="/medici">
+            {() => <ProtectedRoute><MediciPage /></ProtectedRoute>}
+          </Route>
+          <Route path="/prenotazioni">
+            {() => <ProtectedRoute><TeleconsultoPage /></ProtectedRoute>}
+          </Route>
+          <Route path="/notifiche">
+            {() => <ProtectedRoute><NotifichePage /></ProtectedRoute>}
+          </Route>
+          <Route path="/webinar">
+            {() => <ProtectedRoute><WebinarHealth /></ProtectedRoute>}
+          </Route>
+          <Route path="/doctor/alerts">
+            {() => <ProtectedRoute><DoctorAlertsPage /></ProtectedRoute>}
+          </Route>
           <Route path="/quiz/:quizId">
             {() => <ProtectedRoute requireNonAiOnly><Quiz /></ProtectedRoute>}
           </Route>
@@ -239,6 +264,7 @@ function App() {
           <CookieBanner />
           <FeedbackDialog />
           <Router />
+          <BottomNavigation />
         </TooltipProvider>
       </QueryClientProvider>
     </HelmetProvider>

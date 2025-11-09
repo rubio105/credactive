@@ -255,10 +255,12 @@ export default function TeleconsultoPage() {
     });
   };
 
-  const upcomingAppointments = appointments.filter(a => 
-    ['booked', 'confirmed', 'pending'].includes(a.status) && 
-    new Date(a.startTime) > new Date()
-  );
+  const upcomingAppointments = appointments.filter(a => {
+    if (!['booked', 'confirmed', 'pending'].includes(a.status)) return false;
+    if (!a.startTime) return false;
+    const startDate = new Date(a.startTime);
+    return !isNaN(startDate.getTime()) && startDate > new Date();
+  });
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -298,23 +300,33 @@ export default function TeleconsultoPage() {
             <p className="text-muted-foreground">Nessun appuntamento programmato</p>
           ) : (
             <div className="space-y-4">
-              {upcomingAppointments.map((apt) => (
+              {upcomingAppointments.map((apt) => {
+                const startDate = apt.startTime ? new Date(apt.startTime) : null;
+                const endDate = apt.endTime ? new Date(apt.endTime) : null;
+                const isValidStart = startDate && !isNaN(startDate.getTime());
+                const isValidEnd = endDate && !isNaN(endDate.getTime());
+                
+                return (
                 <Card key={apt.id} data-testid={`appointment-${apt.id}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <p className="font-medium">
-                            {format(new Date(apt.startTime), "EEEE dd MMMM yyyy", { locale: it })}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(apt.startTime), "HH:mm")} - {format(new Date(apt.endTime), "HH:mm")}
-                          </p>
-                        </div>
+                        {isValidStart && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <p className="font-medium">
+                              {format(startDate, "EEEE dd MMMM yyyy", { locale: it })}
+                            </p>
+                          </div>
+                        )}
+                        {isValidStart && isValidEnd && (
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              {format(startDate, "HH:mm")} - {format(endDate, "HH:mm")}
+                            </p>
+                          </div>
+                        )}
                         {apt.doctor && (
                           <p className="text-sm">
                             Dr. {apt.doctor.firstName} {apt.doctor.lastName}
@@ -345,7 +357,8 @@ export default function TeleconsultoPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -401,7 +414,11 @@ export default function TeleconsultoPage() {
                   <p className="text-sm text-muted-foreground">Nessuno slot disponibile per questo medico nei prossimi giorni.</p>
                 ) : (
                   <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3">
-                    {availableSlots.map((slot, index) => (
+                    {availableSlots.map((slot, index) => {
+                      const slotDate = slot.date ? new Date(slot.date) : null;
+                      const isValidDate = slotDate && !isNaN(slotDate.getTime());
+                      
+                      return (
                       <Button
                         key={index}
                         variant={selectedSlot?.date === slot.date && selectedSlot?.startTime === slot.startTime ? "default" : "outline"}
@@ -410,9 +427,10 @@ export default function TeleconsultoPage() {
                         data-testid={`button-slot-${index}`}
                       >
                         <Calendar className="w-4 h-4 mr-2" />
-                        {format(new Date(slot.date), "EEEE dd MMMM", { locale: it })} - {slot.startTime} / {slot.endTime}
+                        {isValidDate ? format(slotDate, "EEEE dd MMMM", { locale: it }) : 'Data non disponibile'} - {slot.startTime} / {slot.endTime}
                       </Button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

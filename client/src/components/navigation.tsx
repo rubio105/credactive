@@ -175,26 +175,9 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     </Link>
                   </>
                 )}
-                {/* AI-Only Prevention Patients - ONLY Prevention (SEPARATE from quiz) */}
-                {typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
+                {/* Regular Patients - Only Prenotazioni */}
+                {!typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
-                    <Link href="/prevention">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
-                        <Stethoscope className="w-4 h-4 mr-2" />
-                        Paziente
-                      </Button>
-                    </Link>
-                  </>
-                )}
-                {/* Regular Patients - Prevention + Prenotazioni */}
-                {!typedUser?.aiOnlyAccess && !typedUser?.isDoctor && !typedUser?.isAdmin && (
-                  <>
-                    <Link href="/prevention">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
-                        <Stethoscope className="w-4 h-4 mr-2" />
-                        Paziente
-                      </Button>
-                    </Link>
                     <Link href="/teleconsulto">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-teleconsulto">
                         <Video className="w-4 h-4 mr-2" />

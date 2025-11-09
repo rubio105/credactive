@@ -11,6 +11,11 @@ Preferred communication style: Simple, everyday language.
 ## UI/UX Decisions
 
 The frontend is built with React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tailwind CSS), TanStack Query, Wouter, and React Hook Form with Zod. The design prioritizes medical professionalism through:
+- **Consistent Internal Navigation**: Uses wouter's `setLocation` for all internal routing (login, navigation, AdminLayout, dashboard, quiz, BackButton), avoiding `window.location.href` and `window.history.back()` to maintain SPA performance. Only `useLogout` retains `window.location.assign()` for full session reset.
+- **Role-Based Color Theming**: Automatic theme switching based on user role via `useRoleTheme` hook and CSS `data-role` attribute on body element:
+  - **Patient Theme**: Blue primary color (HSL 217, 91%, 60%), blue gradient backgrounds
+  - **Doctor Theme**: Orange primary color (HSL 34, 88%, 55%), orange gradient backgrounds
+  - Implementation uses CSS variable overrides with `[data-role="doctor"]` selector for dynamic theming without React context overhead.
 - **Mobile-First Architecture**: Complete redesign with mobile-optimized navigation and role-aware dashboards.
   - **BottomNavigation Component**: Fixed bottom tab bar (mobile only <768px) with 5 role-specific tabs and real-time badge counts for notifications/alerts (60s refetch interval).
   - **Patient Tabs**: Home (Dashboard), CIRY (AI Chat), Medici (Doctors/Documents), Prenotazioni (Appointments), Notifiche (Notifications).
@@ -18,7 +23,7 @@ The frontend is built with React, TypeScript, Vite, `shadcn/ui` (Radix UI + Tail
   - **AvatarMenu Component**: Role-based dropdown menu with quick access to settings (Sicurezza, Guida, Wearable, WhatsApp for patients; Condividi codice, Consensi, WhatsApp alerts for doctors).
 - **Role-Based Dashboards**: Smart routing at `/` based on user role (isDoctor/isAdmin).
   - **PatientDashboard**: Personalized greeting, prevention score card with progress bar, next appointment countdown, quick action buttons (Start AI Chat, View Reports, Book Appointment).
-  - **DoctorDashboard**: Professional greeting, stats cards (Total Patients, Active Alerts, Today Appointments), urgent alerts table, quick actions (View Patients, Create Report, Manage Availability).
+  - **DoctorDashboard**: Mobile-first optimized layout with orange gradient background (`from-orange-50`), responsive grid (1 column mobile, 2 columns desktop), horizontal service cards with leading icons, professional greeting, stats cards (Total Patients, Active Alerts, Today Appointments), urgent alerts table, quick actions (View Patients, Create Report, Manage Availability).
 - **Unified Mobile Pages**: New mobile-optimized pages for streamlined navigation.
   - **MediciPage** (`/medici`): Tabbed interface combining connected doctors list and medical documents.
   - **NotifichePage** (`/notifiche`): Notification center with filters (All/Unread) and mark-as-read functionality.
@@ -96,6 +101,16 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 - **User Feedback System**: Management of user feedback.
 
 ## System Design Choices
+
+### Security Audit (Nov 2025)
+Comprehensive security review completed:
+- **Authentication**: 159 middleware `isAuthenticated` checks across all protected routes
+- **Input Validation**: 131 Zod schema validations (`safeParse`/schema usage) for request body/params
+- **SQL Injection Prevention**: Drizzle ORM with parameterized queries (24 `sql` tag uses, all safe)
+- **Authorization**: 186 `req.user` role/ownership checks
+- **XSS Protection**: 4 `dangerouslySetInnerHTML` uses (admin-only pages: AdminEmailTemplates, AdminMarketing, DynamicContentPage, chart.tsx)
+- **Secrets Management**: No hardcoded secrets, correct usage of environment variables
+- **Future Enhancement**: Consider DOMPurify sanitization for admin HTML content rendering
 
 ### Deployment Architecture
 - **Production Environment**: Hosted on Hetzner VPS with PM2, Neon PostgreSQL, Nginx, and Cloudflare SSL.

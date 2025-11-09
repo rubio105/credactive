@@ -54,7 +54,20 @@ function sanitizeUserInput(input: string | undefined): string {
 
 // Helper function to get base URL for emails
 function getBaseUrl(): string {
-  return process.env.BASE_URL || 'http://localhost:5000';
+  // Priority: BASE_URL env var > Replit domain > localhost fallback
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL;
+  }
+  
+  // Auto-detect Replit domain in production
+  if (process.env.REPLIT_DOMAINS) {
+    const domains = process.env.REPLIT_DOMAINS.split(',').filter(Boolean);
+    if (domains.length > 0) {
+      return `https://${domains[0].trim()}`;
+    }
+  }
+  
+  return 'http://localhost:5000';
 }
 
 // Process template with variables

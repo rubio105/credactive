@@ -367,6 +367,7 @@ export default function DoctorAppointmentsPage() {
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       available: { label: "Disponibile", variant: "secondary" },
+      pending: { label: "In attesa", variant: "outline" },
       booked: { label: "Prenotata", variant: "default" },
       confirmed: { label: "Confermata", variant: "default" },
       completed: { label: "Completata", variant: "outline" },
@@ -377,7 +378,7 @@ export default function DoctorAppointmentsPage() {
   };
 
   const availableSlots = appointments.filter(a => a.status === 'available');
-  const bookedAppointments = appointments.filter(a => a.status === 'booked' || a.status === 'confirmed');
+  const bookedAppointments = appointments.filter(a => a.status === 'pending' || a.status === 'booked' || a.status === 'confirmed');
   const completedAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
 
   return (

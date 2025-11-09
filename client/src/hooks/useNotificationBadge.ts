@@ -14,7 +14,8 @@ interface Alert {
 export function useUnreadNotifications() {
   const { data: notifications = [], isFetching, error } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
-    refetchInterval: 60000,
+    refetchInterval: 10000, // 10 sec instead of 60 for faster updates
+    refetchOnWindowFocus: true, // Refetch when user returns to app
   });
 
   const count = notifications.filter(n => !n.isRead).length;

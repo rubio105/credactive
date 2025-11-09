@@ -13192,8 +13192,8 @@ Fornisci:
               continue;
             }
 
-            // Create unique key to prevent duplicates (handles duplicate patterns in database)
-            const slotKey = `${slotStart.toISOString()}-${pattern.start_time}-${pattern.end_time}-${pattern.appointment_type || 'video'}`;
+            // Create unique key based ONLY on concrete timespan (dedupes identical slots from duplicate patterns)
+            const slotKey = `${slotStart.toISOString()}-${slotEnd.toISOString()}-${pattern.appointment_type || 'video'}`;
             
             // Skip if already added (dedupe)
             if (addedSlots.has(slotKey)) {

@@ -375,15 +375,15 @@ export default function TeleconsultoPage() {
 
       {/* Booking Dialog */}
       <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
-        <DialogContent className="max-w-lg" data-testid="dialog-book-teleconsult">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0" data-testid="dialog-book-teleconsult">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Prenota Teleconsulto</DialogTitle>
             <DialogDescription>
               Scegli medico, data e orario per la tua videochiamata
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 px-6 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label htmlFor="doctor">Medico</Label>
               <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
@@ -539,25 +539,26 @@ export default function TeleconsultoPage() {
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="flex gap-3">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsBookingDialogOpen(false)}
-                className="flex-1"
-                data-testid="button-cancel-booking"
-              >
-                Annulla
-              </Button>
-              <Button 
-                onClick={handleBookTeleconsult}
-                disabled={bookTeleconsultMutation.isPending}
-                className="flex-1"
-                data-testid="button-confirm-booking"
-              >
-                {bookTeleconsultMutation.isPending ? "Prenotazione..." : "Prenota"}
-              </Button>
-            </div>
+          {/* Sticky buttons at bottom */}
+          <div className="border-t bg-background px-6 py-4 flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsBookingDialogOpen(false)}
+              className="flex-1"
+              data-testid="button-cancel-booking"
+            >
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleBookTeleconsult}
+              disabled={bookTeleconsultMutation.isPending}
+              className="flex-1"
+              data-testid="button-confirm-booking"
+            >
+              {bookTeleconsultMutation.isPending ? "Prenotazione..." : "Prenota"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

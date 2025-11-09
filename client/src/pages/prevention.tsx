@@ -1303,21 +1303,34 @@ export default function PreventionPage() {
         console.log('[Voice] Message sent to AI successfully');
 
         // CRITICAL: Check ref after async operation
-        if (!conversationModeRef.current) return;
+        if (!conversationModeRef.current) {
+          console.log('[Voice] Conversation mode stopped after sending message');
+          return;
+        }
 
         // Refresh messages
+        console.log('[Voice] Refreshing messages...');
         await queryClient.invalidateQueries({ queryKey: [`/api/triage/${currentSessionId}/messages`] });
 
         // Step 3: Get AI response text
+        console.log('[Voice] Fetching AI response...');
         const messages = await queryClient.fetchQuery({
           queryKey: [`/api/triage/${currentSessionId}/messages`],
         }) as TriageMessage[];
+        console.log('[Voice] Messages fetched:', messages?.length);
 
         // CRITICAL: Check ref after async operation
-        if (!conversationModeRef.current) return;
+        if (!conversationModeRef.current) {
+          console.log('[Voice] Conversation mode stopped after fetching messages');
+          return;
+        }
 
         const lastAiMessage = messages?.filter(m => m.role === 'assistant').pop();
-        console.log('[Voice] AI response received:', lastAiMessage?.content?.substring(0, 100));
+        console.log('[Voice] Last AI message:', { 
+          exists: !!lastAiMessage, 
+          hasContent: !!lastAiMessage?.content,
+          preview: lastAiMessage?.content?.substring(0, 100) 
+        });
 
         if (lastAiMessage?.content) {
           setIsListening(false); // Show "CIRY Risponde..."

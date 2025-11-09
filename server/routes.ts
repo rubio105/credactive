@@ -10835,18 +10835,22 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
   app.post('/api/voice/speak', async (req, res) => {
     try {
       const { text, voice } = req.body;
+      console.log('[TTS] Request received:', { textLength: text?.length, voice });
       
       if (!text) {
+        console.log('[TTS] ERROR: No text provided');
         return res.status(400).json({ message: 'Text is required' });
       }
 
+      console.log('[TTS] Generating audio with OpenAI...');
       const audioBuffer = await textToSpeech(text, voice || 'alloy');
+      console.log('[TTS] Audio generated:', audioBuffer.length, 'bytes');
       
       res.set('Content-Type', 'audio/mpeg');
       res.set('Content-Length', audioBuffer.length.toString());
       res.send(audioBuffer);
     } catch (error: any) {
-      console.error('Text-to-speech error:', error);
+      console.error('[TTS] Text-to-speech error:', error);
       res.status(500).json({ message: error.message || 'Failed to generate speech' });
     }
   });

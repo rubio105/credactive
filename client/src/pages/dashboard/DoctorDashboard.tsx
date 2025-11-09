@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUrgentAlerts } from "@/hooks/useNotificationBadge";
+import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
 
 function getUserDisplayName(user: any): string {
   if (user?.firstName || user?.lastName) {
@@ -28,6 +29,7 @@ function getUserInitials(user: any): string {
 export default function DoctorDashboard() {
   const { user } = useAuth();
   const { count: urgentAlertsCount } = useUrgentAlerts();
+  const authenticatedProfileImage = useAuthenticatedImage((user as any)?.profileImageUrl);
   
   const displayName = getUserDisplayName(user);
   const initials = getUserInitials(user);
@@ -94,7 +96,7 @@ export default function DoctorDashboard() {
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4 mb-6">
           <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
-            <AvatarImage src={(user as any)?.profileImageUrl} alt={displayName} />
+            <AvatarImage src={authenticatedProfileImage || undefined} alt={displayName} />
             <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
               {initials}
             </AvatarFallback>

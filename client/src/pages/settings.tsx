@@ -15,18 +15,18 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
 
 export default function Settings() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
   const [isUploading, setIsUploading] = useState(false);
-  const [isEditingNickname, setIsEditingNickname] = useState(false);
-  const [nickname, setNickname] = useState(user?.nickname || '');
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [whatsappEnabled, setWhatsappEnabled] = useState(user?.whatsappNotificationsEnabled || false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const authenticatedProfileImage = useAuthenticatedImage(user?.profileImageUrl);
 
   // Security tab state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -76,28 +76,6 @@ export default function Settings() {
         variant: "destructive",
       });
       setIsUploading(false);
-    },
-  });
-
-  const updateNicknameMutation = useMutation({
-    mutationFn: async (newNickname: string) => {
-      const response = await apiRequest('/api/user/nickname', 'PATCH', { nickname: newNickname });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      toast({
-        title: "Nickname aggiornato",
-        description: "Il tuo nickname è stato salvato con successo",
-      });
-      setIsEditingNickname(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Errore",
-        description: error.message || "Errore durante l'aggiornamento del nickname",
-        variant: "destructive",
-      });
     },
   });
 
@@ -202,28 +180,6 @@ export default function Settings() {
       });
     },
   });
-
-  const handleSaveNickname = () => {
-    if (!nickname || nickname.trim().length === 0) {
-      toast({
-        title: "Errore",
-        description: "Il nickname non può essere vuoto",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (nickname.length > 50) {
-      toast({
-        title: "Errore",
-        description: "Il nickname deve essere massimo 50 caratteri",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    updateNicknameMutation.mutate(nickname.trim());
-  };
 
   const handleSaveWhatsApp = () => {
     // Validate phone number format if enabled
@@ -344,12 +300,6 @@ export default function Settings() {
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
-
-  useEffect(() => {
-    if (user?.nickname) {
-      setNickname(user.nickname);
-    }
-  }, [user?.nickname]);
 
   useEffect(() => {
     if (user?.whatsappNumber) {
@@ -589,7 +539,7 @@ export default function Settings() {
                   <div className="relative">
                     <Avatar className="w-32 h-32 border-4 border-primary/20">
                       <AvatarImage 
-                        src={user?.profileImageUrl || undefined} 
+                        src={authenticatedProfileImage || undefined} 
                         alt="Profile"
                       />
                       <AvatarFallback className="bg-primary/10 text-primary text-3xl font-semibold">
@@ -625,72 +575,6 @@ export default function Settings() {
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Nickname</CardTitle>
-                <CardDescription>Il nome che appare nelle classifiche. Scegli un nickname unico e memorabile!</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isEditingNickname ? (
-                  <div className="space-y-4">
-                    <div>
-                      <Input
-                        value={nickname}
-                        onChange={(e) => setNickname(e.target.value)}
-                        placeholder="Inserisci il tuo nickname"
-                        maxLength={50}
-                        data-testid="input-nickname"
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {nickname.length}/50 caratteri
-                      </p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        onClick={handleSaveNickname}
-                        disabled={updateNicknameMutation.isPending}
-                        data-testid="button-save-nickname"
-                      >
-                        {updateNicknameMutation.isPending ? 'Salvataggio...' : 'Salva'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setNickname(user?.nickname || '');
-                          setIsEditingNickname(false);
-                        }}
-                        disabled={updateNicknameMutation.isPending}
-                        data-testid="button-cancel-nickname"
-                      >
-                        Annulla
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-semibold" data-testid="text-current-nickname">
-                        {user?.nickname || 'Nessun nickname impostato'}
-                      </p>
-                      {!user?.nickname && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Imposta un nickname per apparire nelle classifiche
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsEditingNickname(true)}
-                      data-testid="button-edit-nickname"
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      {user?.nickname ? 'Modifica' : 'Imposta'}
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
 

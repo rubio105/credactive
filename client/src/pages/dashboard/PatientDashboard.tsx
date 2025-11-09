@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUnreadNotifications } from "@/hooks/useNotificationBadge";
 import { usePreventionIndex, getPreventionTierMeta } from "@/hooks/useDashboardData";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
 
 function getUserDisplayName(user: any): string {
   if (user?.firstName || user?.lastName) {
@@ -35,6 +36,7 @@ export default function PatientDashboard() {
   const { user } = useAuth();
   const { count: unreadNotifications } = useUnreadNotifications();
   const { data: preventionIndex, isLoading: isLoadingIndex } = usePreventionIndex();
+  const authenticatedProfileImage = useAuthenticatedImage((user as any)?.profileImageUrl);
   
   const displayName = getUserDisplayName(user);
   const initials = getUserInitials(user);
@@ -101,7 +103,7 @@ export default function PatientDashboard() {
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4 mb-6">
           <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
-            <AvatarImage src={(user as any)?.profileImageUrl} alt={displayName} />
+            <AvatarImage src={authenticatedProfileImage || undefined} alt={displayName} />
             <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
               {initials}
             </AvatarFallback>

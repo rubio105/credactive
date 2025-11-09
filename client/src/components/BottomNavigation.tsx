@@ -35,7 +35,7 @@ const patientTabs: BottomNavTab[] = [
     testId: "bottom-nav-settings",
   },
   {
-    route: "/settings/privacy",
+    route: "/guida",
     icon: FileText,
     label: "Guida",
     badgeType: null,

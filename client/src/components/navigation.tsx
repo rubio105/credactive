@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { ChartLine, BookOpen, User, Crown, Menu, LogOut, Settings, Trophy, Award, Coins, BarChart3, Building2, CreditCard, Mail, Stethoscope, Shield, Users, Database, Send, AlertTriangle, MessageSquare, FileText, HelpCircle, Video, Phone, FileCheck, HeartPulse, Activity } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
 const logoImageSmall = "/images/ciry-main-logo.png";
 const logoImageFull = "/images/ciry-main-logo.png";
 
@@ -58,6 +59,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const typedUser = user as User;
   const logoImage = logoImageFull;
   const [location, setLocation] = useLocation();
+  const authenticatedProfileImage = useAuthenticatedImage(typedUser?.profileImageUrl);
 
   const { data: headerPages = [] } = useQuery<ContentPage[]>({
     queryKey: ["/api/content-pages"],
@@ -264,7 +266,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                     <Button variant="ghost" className="flex items-center space-x-3 h-auto p-2" data-testid="user-menu-trigger">
                       <Avatar className="w-10 h-10 border-2 border-primary">
                         <AvatarImage 
-                          src={typedUser?.profileImageUrl} 
+                          src={authenticatedProfileImage || undefined} 
                           alt="User Avatar"
                         />
                         <AvatarFallback className="bg-primary text-primary-foreground font-semibold">

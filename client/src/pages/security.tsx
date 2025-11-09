@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Lock, Key, Check, X, Smartphone, ArrowLeft } from "lucide-react";
+import { Shield, Lock, Key, Check, X, Smartphone, ArrowLeft, FileText } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
@@ -377,6 +377,48 @@ export default function Security() {
                 {disableMfaMutation.isPending ? "Disattivazione..." : "Disattiva MFA"}
               </Button>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Consensi Section */}
+        <Card data-testid="card-consensi">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Consensi e Privacy
+            </CardTitle>
+            <CardDescription>
+              Consulta i consensi e le informazioni sulla privacy
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => window.open('/page/privacy-policy', '_blank')}
+              data-testid="button-privacy-policy"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Privacy Policy
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => window.open('/page/terms-of-service', '_blank')}
+              data-testid="button-terms-of-service"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Termini di Servizio
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => window.open('/page/cookie-policy', '_blank')}
+              data-testid="button-cookie-policy"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Cookie Policy
+            </Button>
           </CardContent>
         </Card>
       </div>

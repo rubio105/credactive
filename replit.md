@@ -2,6 +2,13 @@
 
 CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform leveraging AI for medical document analysis, patient-doctor communication, and preventive health monitoring. Its core purpose is to enhance patient outcomes through early detection and personalized health management. The platform offers a REST API for integration with external applications, providing comprehensive medical history, data storage, and doctor recommendations. CIRY is actively transitioning from Google Gemini AI to proprietary ML models using Active Learning.
 
+# Recent Changes (November 2025)
+
+## UI/UX Improvements
+- **Wearable Devices Page**: Added anomaly pagination - displays first 5 anomalies by default with expandable "Show all/Show less" toggle for better mobile experience
+- **Patient Appointments**: Simplified booking interface with mobile-first layout (lg:grid-cols-2), skeleton loading states, enhanced empty states, and removed redundant "Book Teleconsult" button
+- **WhatsApp OTP Verification**: Configured Twilio integration using direct Replit Secrets (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER) for reliable OTP delivery
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

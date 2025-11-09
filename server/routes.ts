@@ -13198,6 +13198,7 @@ Fornisci:
 
       // Generate concrete dates for next 60 days
       const availableSlots: any[] = [];
+      const addedSlots = new Set<string>(); // Dedupe tracker
       today.setHours(0, 0, 0, 0);
       
       for (let dayOffset = 0; dayOffset < 60; dayOffset++) {
@@ -13222,6 +13223,14 @@ Fornisci:
               continue;
             }
 
+            // Create unique key to prevent duplicates (handles duplicate patterns in database)
+            const slotKey = `${slotStart.toISOString()}-${pattern.start_time}-${pattern.end_time}-${pattern.appointment_type || 'video'}`;
+            
+            // Skip if already added (dedupe)
+            if (addedSlots.has(slotKey)) {
+              continue;
+            }
+
             // Check if this slot overlaps with any booked appointment (in-memory check)
             const isBooked = bookedSlots.some(booked => {
               return (
@@ -13241,6 +13250,7 @@ Fornisci:
                 studioAddress: pattern.studio_address,
                 slotDuration: pattern.slot_duration,
               });
+              addedSlots.add(slotKey); // Mark as added
             }
           }
         }

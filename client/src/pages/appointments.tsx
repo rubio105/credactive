@@ -79,8 +79,12 @@ export default function AppointmentsPage() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate both patient appointments and available slots queries
-      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === '/api/appointments';
+        }
+      });
       toast({
         title: "Prenotazione confermata",
         description: "La tua visita è stata prenotata con successo",

@@ -92,7 +92,7 @@ export default function DoctorDashboard() {
   ];
 
   return (
-    <section data-testid="doctor-dashboard" className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4 pb-24 md:pb-8">
+    <section data-testid="doctor-dashboard" className="min-h-screen bg-gradient-to-b from-orange-50 to-white p-4 pb-24 md:pb-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4 mb-6">
           <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
@@ -101,7 +101,7 @@ export default function DoctorDashboard() {
               {initials}
             </AvatarFallback>
           </Avatar>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900" data-testid="greeting-title">
               Ciao dott. {displayName}
             </h1>
@@ -111,16 +111,22 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {services.map((service) => {
             const Icon = service.icon;
             return (
               <Link key={service.id} href={service.route}>
                 <Card 
-                  className="relative hover:shadow-md transition-shadow cursor-pointer border-gray-200"
+                  className="relative hover:shadow-md transition-shadow cursor-pointer border-gray-200 h-full"
                   data-testid={`service-${service.id}`}
                 >
-                  <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className={`p-3 rounded-xl ${service.bgColor}`}>
+                      <Icon className={`w-6 h-6 ${service.color}`} />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-semibold text-base text-gray-900">{service.label}</p>
+                    </div>
                     {service.badgeCount > 0 && (
                       <Badge 
                         variant="destructive" 
@@ -130,12 +136,6 @@ export default function DoctorDashboard() {
                         {service.badgeCount}
                       </Badge>
                     )}
-                    <div className={`${service.bgColor} rounded-full p-3`}>
-                      <Icon className={`h-6 w-6 ${service.color}`} />
-                    </div>
-                    <span className="text-xs font-medium text-gray-700 leading-tight">
-                      {service.label}
-                    </span>
                   </CardContent>
                 </Card>
               </Link>

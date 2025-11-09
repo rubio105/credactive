@@ -80,14 +80,14 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
       // Clear any cached data
       localStorage.clear();
       sessionStorage.clear();
-      // Redirect to login page
-      window.location.href = '/login';
+      // Redirect to login page - internal navigation
+      setLocation('/login');
     } catch (error) {
       console.error('Logout error:', error);
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = '/login';
+      setLocation('/login');
     }
   };
 

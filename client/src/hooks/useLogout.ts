@@ -7,13 +7,14 @@ export function useLogout() {
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = '/login';
+      // Logout uses full page reload for complete session cleanup
+      window.location.assign('/login');
     } catch (error) {
       console.error('Logout error:', error);
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = '/login';
+      window.location.assign('/login');
     }
   };
 

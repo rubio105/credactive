@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 const logoImage = "/images/ciry-main-logo.png";
 import { Link } from "wouter";
 
@@ -49,16 +49,18 @@ export default function Login() {
       }
 
       // Direct redirect to dashboard without toast/dialog
-      // Role-based redirect logic
+      // Role-based redirect logic - use wouter for internal navigation
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       if (data?.isAdmin) {
         // Admin → Dashboard amministratore
-        window.location.href = "/admin";
+        setLocation("/admin");
       } else if (data?.aiOnlyAccess) {
         // Utenti AI-only → Prevenzione (unica area accessibile)
-        window.location.href = "/prevention";
+        setLocation("/prevention");
       } else {
         // Dottore e Pazienti → Dashboard principale (role-aware routing)
-        window.location.href = "/";
+        setLocation("/");
       }
     },
     onError: (error: any) => {

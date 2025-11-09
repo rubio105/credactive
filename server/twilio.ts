@@ -4,11 +4,16 @@ let connectionSettings: any;
 
 async function getCredentials() {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const replIdentity = process.env.REPL_IDENTITY;
+  const webReplRenewal = process.env.WEB_REPL_RENEWAL;
   
   console.log('[Twilio] Environment check:', {
     hasHostname: !!hostname,
-    hasReplIdentity: !!process.env.REPL_IDENTITY,
-    hasWebReplRenewal: !!process.env.WEB_REPL_RENEWAL
+    hasReplIdentity: !!replIdentity,
+    hasWebReplRenewal: !!webReplRenewal,
+    hostnameValue: hostname,
+    replIdentityLength: replIdentity?.length || 0,
+    webReplRenewalLength: webReplRenewal?.length || 0
   });
   
   const xReplitToken = process.env.REPL_IDENTITY 

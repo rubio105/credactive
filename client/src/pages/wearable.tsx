@@ -114,6 +114,7 @@ export default function WearablePage() {
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
   const [generateReportOpen, setGenerateReportOpen] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<WearableDailyReport | null>(null);
+  const [showAllAnomalies, setShowAllAnomalies] = useState(false);
   const { toast } = useToast();
   console.log('[WearablePage] Hooks initialized');
   
@@ -541,13 +542,13 @@ export default function WearablePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              Anomalie Rilevate
+              Anomalie Rilevate ({safeAnomalies.length})
             </CardTitle>
             <CardDescription>Misurazioni con valori fuori norma</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {safeAnomalies.slice(0, 5).map((reading) => (
+              {(showAllAnomalies ? safeAnomalies : safeAnomalies.slice(0, 5)).map((reading) => (
                 <div 
                   key={reading.id} 
                   className="flex items-start justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -571,6 +572,18 @@ export default function WearablePage() {
                 </div>
               ))}
             </div>
+            {safeAnomalies.length > 5 && (
+              <div className="mt-4 text-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAllAnomalies(!showAllAnomalies)}
+                  data-testid="button-toggle-anomalies"
+                >
+                  {showAllAnomalies ? "Mostra meno" : `Mostra tutte (${safeAnomalies.length})`}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

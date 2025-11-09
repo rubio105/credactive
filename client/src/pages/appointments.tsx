@@ -7,12 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Clock, User, Video, CheckCircle, XCircle, AlertCircle, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Video, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
 
 type Appointment = {
   id: string;
@@ -142,67 +141,82 @@ export default function AppointmentsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Prenota Visita</h1>
-          <p className="text-muted-foreground">Gestisci i tuoi appuntamenti medici</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Prenota Visita</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Scegli data e orario disponibile</p>
         </div>
-        <Button asChild data-testid="button-new-teleconsult">
-          <Link href="/teleconsulto">
-            <Plus className="w-4 h-4 mr-2" />
-            Prenota Teleconsulto
-          </Link>
-        </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
         {/* Calendar and Available Slots */}
-        <Card>
+        <Card className="lg:order-1">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
               <CalendarIcon className="w-5 h-5" />
               Scegli Data e Orario
             </CardTitle>
-            <CardDescription>Seleziona una data per vedere le visite disponibili</CardDescription>
+            <CardDescription className="text-sm">Seleziona una data per vedere le visite disponibili</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              locale={it}
-              className="rounded-md border"
-              data-testid="calendar-appointments"
-            />
+            <div className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                locale={it}
+                className="rounded-md border w-full"
+                data-testid="calendar-appointments"
+              />
+            </div>
 
             {selectedDate && (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm">
-                  Visite disponibili per {format(selectedDate, "dd MMMM yyyy", { locale: it })}
+              <div className="space-y-3 pt-4 border-t">
+                <h3 className="font-semibold text-sm md:text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-primary" />
+                  {format(selectedDate, "dd MMMM yyyy", { locale: it })}
                 </h3>
                 {isLoadingAvailable ? (
-                  <p className="text-sm text-muted-foreground">Caricamento...</p>
+                  <div className="space-y-2">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />
+                    ))}
+                  </div>
                 ) : availableAppointments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nessuna visita disponibile in questa data</p>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm font-medium">Nessuna visita disponibile</p>
+                    <p className="text-xs mt-1">Prova a selezionare un'altra data</p>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {availableAppointments.map((apt) => (
-                      <Card key={apt.id} className="p-3" data-testid={`available-appointment-${apt.id}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Clock className="w-4 h-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium text-sm">
-                                {format(new Date(apt.startTime), "HH:mm")} - {format(new Date(apt.endTime), "HH:mm")}
+                      <Card key={apt.id} className="p-3 hover:bg-accent/50 transition-colors" data-testid={`available-appointment-${apt.id}`}>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="flex flex-col items-center justify-center bg-primary/10 rounded-lg px-3 py-2 min-w-[80px]">
+                              <p className="font-bold text-primary text-base">
+                                {format(new Date(apt.startTime), "HH:mm")}
                               </p>
-                              <p className="text-xs text-muted-foreground">{apt.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {Math.round((new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000)} min
+                              </p>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{apt.title}</p>
+                              {apt.doctor && (
+                                <p className="text-xs text-muted-foreground">
+                                  Dr. {apt.doctor.firstName} {apt.doctor.lastName}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <Button 
                             size="sm" 
                             onClick={() => handleBookAppointment(apt)}
                             data-testid={`button-book-${apt.id}`}
+                            className="shrink-0"
                           >
                             Prenota
                           </Button>
@@ -217,19 +231,27 @@ export default function AppointmentsPage() {
         </Card>
 
         {/* My Appointments */}
-        <Card>
+        <Card className="lg:order-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
               <User className="w-5 h-5" />
               I Miei Appuntamenti
             </CardTitle>
-            <CardDescription>Visite prenotate e confermate</CardDescription>
+            <CardDescription className="text-sm">Visite prenotate e confermate</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingMy ? (
-              <p className="text-sm text-muted-foreground">Caricamento...</p>
+              <div className="space-y-3">
+                {[1,2].map(i => (
+                  <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
+                ))}
+              </div>
             ) : myAppointments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nessun appuntamento prenotato</p>
+              <div className="text-center py-12 text-muted-foreground">
+                <User className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-medium">Nessun appuntamento prenotato</p>
+                <p className="text-xs mt-1">Seleziona una data per prenotare una visita</p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {myAppointments.map((apt) => (

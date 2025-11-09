@@ -12436,8 +12436,8 @@ Format as JSON: {
       const { getTwilioClient, getTwilioFromPhoneNumber } = await import('./twilio');
       
       console.log('[Twilio Test] Testing connection...');
-      const client = getTwilioClient();
-      const phoneNumber = getTwilioFromPhoneNumber();
+      const client = await getTwilioClient();
+      const phoneNumber = await getTwilioFromPhoneNumber();
       
       console.log('[Twilio Test] Connection successful');
       console.log('[Twilio Test] Phone number configured:', phoneNumber);

@@ -7853,41 +7853,6 @@ Explicación de audio:`
     }
   });
 
-  // Update user nickname
-  app.patch('/api/user/nickname', isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const { nickname } = req.body;
-      
-      // Validate nickname
-      if (!nickname || nickname.trim().length === 0) {
-        return res.status(400).json({ message: 'Nickname cannot be empty' });
-      }
-      
-      if (nickname.length > 50) {
-        return res.status(400).json({ message: 'Nickname must be 50 characters or less' });
-      }
-      
-      // Check if nickname is already taken
-      const existingUser = await storage.getUserByNickname(nickname.trim());
-      if (existingUser && existingUser.id !== userId) {
-        return res.status(400).json({ message: 'This nickname is already taken' });
-      }
-      
-      const updatedUser = await storage.updateUser(userId, { 
-        nickname: nickname.trim() 
-      });
-      
-      res.json({ 
-        message: 'Nickname updated successfully',
-        nickname: updatedUser.nickname 
-      });
-    } catch (error: any) {
-      console.error('Update nickname error:', error);
-      res.status(500).json({ message: 'Failed to update nickname' });
-    }
-  });
-  
   // Get general leaderboard
   app.get('/api/leaderboard', async (req, res) => {
     try {
@@ -7897,7 +7862,7 @@ Explicación de audio:`
       res.json(leaderboard.map((user, index) => ({
         rank: index + 1,
         id: user.id,
-        displayName: user.nickname || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utente',
+        displayName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Utente',
         totalPoints: user.totalPoints || 0,
         level: user.level || 1,
         credits: user.credits || 0,
@@ -7925,7 +7890,7 @@ Explicación de audio:`
       res.json(teamLeaderboard.map((member, index) => ({
         rank: index + 1,
         id: member.id,
-        displayName: member.nickname || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Utente',
+        displayName: `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Utente',
         totalPoints: member.totalPoints || 0,
         level: member.level || 1,
         credits: member.credits || 0,

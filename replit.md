@@ -74,10 +74,10 @@ PostgreSQL, managed by Drizzle ORM, stores data for users, subscriptions, medica
 - **WhatsApp Notifications**: Automated messaging for critical alerts and appointment reminders via Twilio, with user consent and admin control.
 - **Voice-Enabled AI Chat**: Integrates OpenAI Whisper (STT) and TTS for speech-to-text and text-to-speech, replacing Web Speech API.
 - **Teleconsulto System**: A complete video consultation platform with automated booking and reminders:
-    - **Doctor Availability Management**: CRUD operations for recurring weekly slots and appointment types.
+    - **Doctor Availability Management (Simplified Nov 2025)**: Redesigned UX with visual badges (🎥 Teleconsulto, 🏥 In Presenza, 🔄 Entrambi), two-section guided dialog (Quando/Come), dynamic help text, and studio address preview.
     - **Smart Slot Picker**: Real-time availability display to prevent double-booking.
     - **Patient Booking Flow**: Comprehensive form for doctor selection, slot booking, and voice input for notes.
-    - **Automated Notifications**: WhatsApp and email reminders.
+    - **Automated Notifications (Enhanced Nov 2025)**: Email + WhatsApp dual-channel notifications for appointment confirmation/cancellation with formatted messages, meeting links, studio addresses, and deep-links to app (https://app.ciry.it).
     - **Video Meeting Integration**: Jitsi video room auto-generation.
 
 ### ML Training Data Collection System (Active Learning)

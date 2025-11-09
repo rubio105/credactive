@@ -13153,11 +13153,10 @@ Fornisci:
     }
   });
 
-  // TELECONSULTO - Patient views available slots
+  // TELECONSULTO - Patient views available slots (ONLY AVAILABLE DATES)
   app.get('/api/appointments/available-slots/:doctorId', isAuthenticated, async (req, res) => {
     try {
       const { doctorId } = req.params;
-      const { date } = req.query; // Optional: filter by specific date
 
       // Validate UUID param first
       const uuidSchema = z.string();
@@ -13166,7 +13165,8 @@ Fornisci:
         return res.status(400).json({ message: 'Invalid doctor ID' });
       }
 
-      const result = await db.execute(sql`
+      // Get doctor's recurring availability patterns
+      const patternsResult = await db.execute(sql`
         SELECT id, doctor_id, day_of_week, start_time, end_time, 
                slot_duration, appointment_type, studio_address, is_active, created_at
         FROM doctor_availability 
@@ -13174,21 +13174,79 @@ Fornisci:
         ORDER BY day_of_week, start_time
       `);
 
-      // Transform snake_case to camelCase for frontend
-      const slots = result.rows.map((row: any) => ({
-        id: row.id,
-        doctorId: row.doctor_id,
-        dayOfWeek: row.day_of_week,
-        startTime: row.start_time,
-        endTime: row.end_time,
-        slotDuration: row.slot_duration,
-        appointmentType: row.appointment_type,
-        studioAddress: row.studio_address,
-        isActive: row.is_active,
-        createdAt: row.created_at,
+      if (patternsResult.rows.length === 0) {
+        return res.json([]);
+      }
+
+      // Fetch ALL booked appointments for next 60 days in ONE query (performance optimization)
+      const today = new Date();
+      const futureDate = new Date(today);
+      futureDate.setDate(today.getDate() + 60);
+      
+      const bookedAppointments = await db.execute(sql`
+        SELECT start_time, end_time FROM appointments
+        WHERE doctor_id = ${validated.data}
+          AND status IN ('booked', 'confirmed', 'pending')
+          AND start_time >= ${today.toISOString()}
+          AND start_time < ${futureDate.toISOString()}
+      `);
+
+      const bookedSlots = bookedAppointments.rows.map((row: any) => ({
+        start: new Date(row.start_time),
+        end: new Date(row.end_time),
       }));
 
-      res.json(slots);
+      // Generate concrete dates for next 60 days
+      const availableSlots: any[] = [];
+      today.setHours(0, 0, 0, 0);
+      
+      for (let dayOffset = 0; dayOffset < 60; dayOffset++) {
+        const currentDate = new Date(today);
+        currentDate.setDate(today.getDate() + dayOffset);
+        const dayOfWeek = currentDate.getDay(); // 0=Sunday, 1=Monday, etc.
+
+        // Find availability patterns for this day
+        for (const pattern of patternsResult.rows) {
+          if (pattern.day_of_week === dayOfWeek) {
+            const [hours, minutes] = pattern.start_time.split(':');
+            const [endHours, endMinutes] = pattern.end_time.split(':');
+            
+            const slotStart = new Date(currentDate);
+            slotStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            
+            const slotEnd = new Date(currentDate);
+            slotEnd.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
+
+            // Skip if slot is in the past
+            if (slotStart < new Date()) {
+              continue;
+            }
+
+            // Check if this slot overlaps with any booked appointment (in-memory check)
+            const isBooked = bookedSlots.some(booked => {
+              return (
+                (slotStart >= booked.start && slotStart < booked.end) ||
+                (slotEnd > booked.start && slotEnd <= booked.end) ||
+                (slotStart <= booked.start && slotEnd >= booked.end)
+              );
+            });
+
+            // Only add if NOT booked
+            if (!isBooked) {
+              availableSlots.push({
+                date: slotStart.toISOString(), // Full ISO datetime to avoid timezone issues
+                startTime: pattern.start_time,
+                endTime: pattern.end_time,
+                appointmentType: pattern.appointment_type,
+                studioAddress: pattern.studio_address,
+                slotDuration: pattern.slot_duration,
+              });
+            }
+          }
+        }
+      }
+
+      res.json(availableSlots);
     } catch (error: any) {
       console.error('Get available slots error:', error);
       res.status(500).json({ message: 'Internal server error' });

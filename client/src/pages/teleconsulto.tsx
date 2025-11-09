@@ -241,8 +241,17 @@ export default function TeleconsultoPage() {
       return;
     }
 
-    const startTime = new Date(`${selectedSlot.date}T${selectedSlot.startTime}:00`);
-    const endTime = new Date(`${selectedSlot.date}T${selectedSlot.endTime}:00`);
+    // selectedSlot.date is now a full ISO datetime (e.g., "2025-11-15T09:00:00.000Z")
+    const startTime = new Date(selectedSlot.date);
+    
+    // Calculate slot duration in minutes and add to startTime (timezone-safe)
+    const [startHours, startMinutes] = selectedSlot.startTime.split(':');
+    const [endHours, endMinutes] = selectedSlot.endTime.split(':');
+    const startMinutesTotal = parseInt(startHours) * 60 + parseInt(startMinutes);
+    const endMinutesTotal = parseInt(endHours) * 60 + parseInt(endMinutes);
+    const durationMinutes = endMinutesTotal - startMinutesTotal;
+    
+    const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
 
     bookTeleconsultMutation.mutate({
       doctorId: selectedDoctor,

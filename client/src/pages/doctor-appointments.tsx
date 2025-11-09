@@ -354,10 +354,11 @@ export default function DoctorAppointmentsPage() {
     setIsStatusDialogOpen(true);
   };
 
-  const confirmStatusUpdate = (newStatus: string) => {
-    if (selectedAppointment) {
+  const confirmStatusUpdate = (newStatus: string, appointment?: Appointment) => {
+    const apt = appointment || selectedAppointment;
+    if (apt) {
       updateStatusMutation.mutate({
-        id: selectedAppointment.id,
+        id: apt.id,
         status: newStatus,
         reason: newStatus === 'cancelled' ? cancellationReason : undefined,
       });
@@ -519,11 +520,12 @@ export default function DoctorAppointmentsPage() {
                           <>
                             <Button 
                               size="sm" 
-                              onClick={() => confirmStatusUpdate('confirmed')}
+                              onClick={() => confirmStatusUpdate('confirmed', apt)}
+                              disabled={updateStatusMutation.isPending}
                               data-testid={`button-confirm-${apt.id}`}
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              Conferma
+                              {updateStatusMutation.isPending ? 'Confermando...' : 'Conferma'}
                             </Button>
                             <Button 
                               size="sm" 
@@ -554,10 +556,11 @@ export default function DoctorAppointmentsPage() {
                         {apt.status === 'confirmed' && (
                           <Button 
                             size="sm" 
-                            onClick={() => confirmStatusUpdate('completed')}
+                            onClick={() => confirmStatusUpdate('completed', apt)}
+                            disabled={updateStatusMutation.isPending}
                             data-testid={`button-complete-${apt.id}`}
                           >
-                            Segna Completata
+                            {updateStatusMutation.isPending ? 'Completando...' : 'Segna Completata'}
                           </Button>
                         )}
                       </div>

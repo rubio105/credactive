@@ -1331,29 +1331,42 @@ export default function PreventionPage() {
 
           if (ttsResponse.ok) {
             const audioBlob = await ttsResponse.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
             
-            const audio = new Audio(audioUrl);
-            currentAudioRef.current = audio;
+            // Validate audio blob before creating URL
+            const contentType = ttsResponse.headers.get('content-type');
+            if (audioBlob.size > 0 && contentType && contentType.startsWith('audio')) {
+              const audioUrl = URL.createObjectURL(audioBlob);
+              
+              const audio = new Audio(audioUrl);
+              currentAudioRef.current = audio;
 
-            audio.onended = () => {
-              URL.revokeObjectURL(audioUrl);
-              currentAudioRef.current = null;
-              // Step 5: Restart listening automatically
+              audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                currentAudioRef.current = null;
+                // Step 5: Restart listening automatically
+                if (conversationModeRef.current) {
+                  setTimeout(() => startConversationCycle(), 500);
+                }
+              };
+
+              audio.onerror = () => {
+                console.error('Audio playback error');
+                URL.revokeObjectURL(audioUrl);
+                currentAudioRef.current = null;
+                // Continue conversation even on playback error
+                if (conversationModeRef.current) {
+                  setTimeout(() => startConversationCycle(), 500);
+                }
+              };
+
+              await audio.play();
+            } else {
+              // Invalid audio response, restart cycle
+              console.log('Invalid audio response, restarting cycle...');
               if (conversationModeRef.current) {
                 setTimeout(() => startConversationCycle(), 500);
               }
-            };
-
-            audio.onerror = () => {
-              URL.revokeObjectURL(audioUrl);
-              currentAudioRef.current = null;
-              if (conversationModeRef.current) {
-                setTimeout(() => startConversationCycle(), 500);
-              }
-            };
-
-            await audio.play();
+            }
           } else {
             // TTS failed, but continue conversation
             if (conversationModeRef.current) {
@@ -1369,14 +1382,11 @@ export default function PreventionPage() {
       } catch (error) {
         console.error('Conversation cycle error:', error);
         
-        // CRITICAL ERROR HANDLING: Stop conversation on failure
-        cleanupConversation();
-        
-        toast({
-          title: "Errore conversazione",
-          description: "Si è verificato un errore. Riprova.",
-          variant: "destructive"
-        });
+        // CRITICAL: Keep conversation alive even on errors - just restart the cycle
+        if (conversationModeRef.current) {
+          console.log('Error in cycle, restarting in 1 second...');
+          setTimeout(() => startConversationCycle(), 1000);
+        }
       }
     };
 

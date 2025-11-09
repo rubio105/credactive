@@ -191,6 +191,26 @@ export default function Login() {
             </Button>
           </form>
 
+          {!requiresMfa && (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground mb-2">
+                Non hai un account? Prova CIRY gratuitamente
+              </p>
+              <Link href="/prevention">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  data-testid="button-try-ciry"
+                >
+                  Prova CIRY senza account
+                </Button>
+              </Link>
+              <p className="text-xs text-muted-foreground mt-2">
+                Modalità guest: funzionalità limitate, nessuna cronologia salvata
+              </p>
+            </div>
+          )}
+
           {/* Registrazione disabilitata - solo admin può censire utenti */}
         </CardContent>
       </Card>

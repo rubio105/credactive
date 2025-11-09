@@ -3228,7 +3228,7 @@ export class DatabaseStorage implements IStorage {
     if (newAlert.urgencyLevel === 'EMERGENCY') {
       try {
         const user = await this.getUser(newAlert.userId);
-        if (user?.whatsappNumber && user?.whatsappNotificationsEnabled) {
+        if (user?.whatsappNumber && user?.whatsappNotificationsEnabled && (user as any)?.whatsappVerified) {
           const { sendWhatsAppMessage } = await import('./twilio');
           const message = `🚨 CIRY - ALERT EMERGENZA\n\nÈ stato rilevato un segnale che richiede attenzione medica urgente.\n\nAccedi subito all'app per visualizzare i dettagli e contattare il tuo medico.\n\nhttps://ciry.app`;
           

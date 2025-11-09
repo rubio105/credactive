@@ -334,8 +334,8 @@ Il referto è ora disponibile nel contesto della conversazione e verrà incluso 
     if (consecutiveHigh || consecutiveLow || highSeverityCount >= 3 || lowSeverityCount >= 3) {
       const notificationService = new WearableNotificationService(storage);
       
-      // Send WhatsApp if enabled
-      if (user.whatsappNotificationsEnabled && user.whatsappNumber) {
+      // Send WhatsApp if enabled AND verified
+      if (user.whatsappNotificationsEnabled && user.whatsappNumber && (user as any).whatsappVerified) {
         const { sendWhatsAppMessage } = await import('./twilio');
         await sendWhatsAppMessage(user.whatsappNumber, summary);
       }

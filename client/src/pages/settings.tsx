@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Shield, Lock, Key, CheckCircle, User, Globe, Upload, Edit2, MessageCircle, Bell, Smartphone, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -24,6 +25,9 @@ export default function Settings() {
   const [isUploading, setIsUploading] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [whatsappEnabled, setWhatsappEnabled] = useState(user?.whatsappNotificationsEnabled || false);
+  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [expiryTime, setExpiryTime] = useState<Date | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const authenticatedProfileImage = useAuthenticatedImage(user?.profileImageUrl);
@@ -95,6 +99,52 @@ export default function Settings() {
       toast({
         title: "Errore",
         description: error.message || "Errore durante il salvataggio delle impostazioni WhatsApp",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const requestWhatsAppVerificationMutation = useMutation({
+    mutationFn: async (whatsappNumber: string) => {
+      const response = await apiRequest('/api/user/whatsapp/request-verification', 'POST', { whatsappNumber });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setExpiryTime(new Date(data.expiresAt));
+      setVerificationDialogOpen(true);
+      toast({
+        title: "Codice inviato!",
+        description: "Controlla WhatsApp per il codice di verifica",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante l'invio del codice di verifica",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verifyWhatsAppCodeMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const response = await apiRequest('/api/user/whatsapp/verify-code', 'POST', { code });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      setVerificationDialogOpen(false);
+      setVerificationCode('');
+      setWhatsappEnabled(true);
+      toast({
+        title: "Numero verificato!",
+        description: "Il tuo numero WhatsApp è stato verificato con successo. Le notifiche sono state abilitate.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante la verifica del codice",
         variant: "destructive",
       });
     },
@@ -202,10 +252,41 @@ export default function Settings() {
       return;
     }
 
-    updateWhatsAppMutation.mutate({
-      whatsappNumber: whatsappNumber.trim(),
-      whatsappNotificationsEnabled: whatsappEnabled,
-    });
+    // If disabling, just save without verification
+    if (!whatsappEnabled) {
+      updateWhatsAppMutation.mutate({
+        whatsappNumber: whatsappNumber.trim(),
+        whatsappNotificationsEnabled: false,
+      });
+      return;
+    }
+
+    // If number changed or not verified yet, request verification
+    const numberChanged = user?.whatsappNumber !== whatsappNumber.trim();
+    const isVerified = (user as any)?.whatsappVerified;
+    
+    if (numberChanged || !isVerified) {
+      requestWhatsAppVerificationMutation.mutate(whatsappNumber.trim());
+    } else {
+      // Number already verified, just update settings
+      updateWhatsAppMutation.mutate({
+        whatsappNumber: whatsappNumber.trim(),
+        whatsappNotificationsEnabled: whatsappEnabled,
+      });
+    }
+  };
+
+  const handleVerifyCode = () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast({
+        title: "Codice non valido",
+        description: "Inserisci il codice a 6 cifre ricevuto su WhatsApp",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    verifyWhatsAppCodeMutation.mutate(verificationCode);
   };
 
   const handleChangePassword = () => {
@@ -623,9 +704,20 @@ export default function Settings() {
                 <CardTitle className="flex items-center gap-2">
                   <MessageCircle className="w-5 h-5 text-green-600" />
                   Notifiche WhatsApp
+                  {(user as any)?.whatsappVerified && (
+                    <Badge className="bg-green-600 hover:bg-green-700 ml-auto" data-testid="badge-whatsapp-verified">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Verificato
+                    </Badge>
+                  )}
+                  {user?.whatsappNumber && !(user as any)?.whatsappVerified && (
+                    <Badge variant="secondary" className="ml-auto" data-testid="badge-whatsapp-not-verified">
+                      Non verificato
+                    </Badge>
+                  )}
                 </CardTitle>
                 <CardDescription>
-                  Ricevi notifiche importanti via WhatsApp per alert medici urgenti
+                  Ricevi notifiche importanti via WhatsApp per alert medici urgenti e appuntamenti
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -635,7 +727,7 @@ export default function Settings() {
                     <div>
                       <p className="font-semibold text-sm">Abilita notifiche WhatsApp</p>
                       <p className="text-xs text-muted-foreground">
-                        Riceverai messaggi solo per alert EMERGENCY
+                        Riceverai messaggi per alert EMERGENCY e conferme appuntamenti
                       </p>
                     </div>
                   </div>
@@ -658,25 +750,30 @@ export default function Settings() {
                       data-testid="input-whatsapp-number"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Formato internazionale (es. +39 per Italia, +1 per USA)
+                      Formato internazionale (es. +39 per Italia, +1 per USA). Riceverai un codice di verifica via WhatsApp.
                     </p>
                   </div>
                 )}
 
                 <Button
                   onClick={handleSaveWhatsApp}
-                  disabled={updateWhatsAppMutation.isPending}
+                  disabled={updateWhatsAppMutation.isPending || requestWhatsAppVerificationMutation.isPending}
                   className="w-full"
                   data-testid="button-save-whatsapp"
                 >
-                  {updateWhatsAppMutation.isPending ? 'Salvataggio...' : 'Salva impostazioni WhatsApp'}
+                  {requestWhatsAppVerificationMutation.isPending && 'Invio codice...'}
+                  {updateWhatsAppMutation.isPending && 'Salvataggio...'}
+                  {!updateWhatsAppMutation.isPending && !requestWhatsAppVerificationMutation.isPending && 
+                    (whatsappEnabled && (user?.whatsappNumber !== whatsappNumber || !(user as any)?.whatsappVerified) 
+                      ? 'Verifica numero WhatsApp' 
+                      : 'Salva impostazioni WhatsApp')}
                 </Button>
 
-                {user?.whatsappNotificationsEnabled && user?.whatsappNumber && (
+                {(user as any)?.whatsappVerified && user?.whatsappNumber && (
                   <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
                     <CheckCircle className="w-4 h-4 text-green-600" />
                     <p className="text-sm text-green-700 dark:text-green-400">
-                      WhatsApp configurato: {user.whatsappNumber}
+                      Numero verificato: {user.whatsappNumber}
                     </p>
                   </div>
                 )}
@@ -685,6 +782,69 @@ export default function Settings() {
           </div>
         )}
       </div>
+
+      {/* WhatsApp Verification Dialog */}
+      <Dialog open={verificationDialogOpen} onOpenChange={setVerificationDialogOpen}>
+        <DialogContent data-testid="dialog-whatsapp-verification">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-green-600" />
+              Verifica numero WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              Abbiamo inviato un codice a 6 cifre al numero {whatsappNumber}. 
+              Inserisci il codice ricevuto per completare la verifica.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="verification-code">Codice di verifica</Label>
+              <Input
+                id="verification-code"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="123456"
+                className="text-center text-2xl font-mono tracking-widest"
+                data-testid="input-verification-code"
+              />
+            </div>
+
+            {expiryTime && (
+              <Alert>
+                <AlertDescription className="text-xs">
+                  Il codice scade tra {Math.max(0, Math.floor((expiryTime.getTime() - Date.now()) / 60000))} minuti.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setVerificationDialogOpen(false);
+                setVerificationCode('');
+              }}
+              data-testid="button-cancel-verification"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleVerifyCode}
+              disabled={verifyWhatsAppCodeMutation.isPending || verificationCode.length !== 6}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="button-verify-code"
+            >
+              {verifyWhatsAppCodeMutation.isPending ? 'Verifica in corso...' : 'Verifica'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -48,8 +48,8 @@ export class WearableNotificationService {
         return;
       }
 
-      // Send WhatsApp notification if enabled
-      if (user.whatsappNotificationsEnabled && user.whatsappNumber) {
+      // Send WhatsApp notification if enabled AND verified
+      if (user.whatsappNotificationsEnabled && user.whatsappNumber && (user as any).whatsappVerified) {
         await this.sendWhatsAppNotification(user.whatsappNumber, event);
       }
 

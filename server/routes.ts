@@ -12080,8 +12080,8 @@ Format as JSON: {
               });
             }
 
-            // Send WhatsApp notification if enabled
-            if ((patient as any).whatsappNumber && (patient as any).whatsappNotificationsEnabled) {
+            // Send WhatsApp notification if enabled AND verified
+            if ((patient as any).whatsappNumber && (patient as any).whatsappNotificationsEnabled && (patient as any).whatsappVerified) {
               try {
                 let whatsappMessage = '';
                 const appLink = process.env.REPLIT_DEPLOYMENT_URL 

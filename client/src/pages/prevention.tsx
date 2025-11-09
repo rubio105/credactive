@@ -595,16 +595,22 @@ export default function PreventionPage() {
     startTriageMutation.mutate({ symptom: userInput, role: userRole });
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!userInput.trim()) return;
     
-    if (!sessionId) {
-      toast({ 
-        title: "Nessuna sessione attiva", 
-        description: "Inizia una conversazione prima di inviare messaggi.",
-        variant: "destructive" 
-      });
-      return;
+    // Auto-create session if not exists (like voice input does)
+    if (!sessionId || session?.status !== 'active') {
+      try {
+        const result = await startTriageMutation.mutateAsync({
+          symptom: userInput,
+          role: userRole,
+        });
+        setUserInput(""); // Clear after starting new session
+        return; // Message already sent by startTriage
+      } catch (error) {
+        console.error('Failed to create session:', error);
+        return; // Error already handled by startTriageMutation
+      }
     }
     
     sendMessageMutation.mutate(userInput);
@@ -2404,31 +2410,22 @@ export default function PreventionPage() {
                     </ScrollArea>
 
                     <div className="space-y-3 mt-4 px-1">
-                      {session?.status !== 'active' && (
-                        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
-                          <AlertDescription className="text-amber-800 dark:text-amber-200">
-                            Questa conversazione non è più attiva. Clicca su "Nuova Conversazione" per continuare.
-                          </AlertDescription>
-                        </Alert>
-                      )}
                       <div className="flex gap-3 items-end">
                         <Input
-                          placeholder="Scrivi un messaggio..."
+                          placeholder="Scrivi un messaggio o inizia nuova conversazione..."
                           value={userInput}
                           onChange={(e) => setUserInput(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                          disabled={session?.status !== 'active'}
-                          className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1"
                           data-testid="input-triage-message"
                         />
                         <Button
                           onClick={toggleVoiceInput}
-                          disabled={session?.status !== 'active'}
                           className={`${
                             isListening 
                               ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
                               : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
-                          } text-white shadow-lg h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          } text-white shadow-lg h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0`}
                           data-testid="button-voice-input-message"
                           title={isListening ? "Ferma registrazione" : "Parla con l'AI (conversazione vocale)"}
                         >
@@ -2436,7 +2433,7 @@ export default function PreventionPage() {
                         </Button>
                         <Button
                           onClick={handleSend}
-                          disabled={sendMessageMutation.isPending || !userInput.trim() || session?.status !== 'active'}
+                          disabled={sendMessageMutation.isPending || !userInput.trim()}
                           className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all flex-shrink-0"
                           data-testid="button-send-message"
                         >

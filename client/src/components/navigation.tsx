@@ -147,41 +147,51 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           </Link>
           
           {/* Center Navigation Menu - Always Visible */}
-          <div className="hidden md:flex items-center space-x-4 flex-1 justify-center">
+          <div className="hidden md:flex items-center gap-3 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {/* Doctor Navigation - 5 voci orizzontali con icone */}
+                {/* Doctor Navigation - 5 voci orizzontali con icone quadrate */}
                 {typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
                     <Link href="/doctor/alerts">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-alerts">
-                        <AlertTriangle className="w-4 h-4 mr-2" />
-                        Alert Pazienti
-                      </Button>
+                      <div className="flex flex-col items-center gap-1 cursor-pointer group" data-testid="nav-alerts">
+                        <div className="p-2.5 bg-orange-100 dark:bg-orange-900/20 rounded-lg group-hover:bg-orange-200 dark:group-hover:bg-orange-900/40 transition-colors">
+                          <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Alert</span>
+                      </div>
                     </Link>
                     <Link href="/doctor/reports">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reports">
-                        <FileCheck className="w-4 h-4 mr-2" />
-                        Note e Referti
-                      </Button>
+                      <div className="flex flex-col items-center gap-1 cursor-pointer group" data-testid="nav-reports">
+                        <div className="p-2.5 bg-blue-100 dark:bg-blue-900/20 rounded-lg group-hover:bg-blue-200 dark:group-hover:bg-blue-900/40 transition-colors">
+                          <FileCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Referti</span>
+                      </div>
                     </Link>
                     <Link href="/prevention">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
-                        <Stethoscope className="w-4 h-4 mr-2" />
-                        AI Prevenzione
-                      </Button>
+                      <div className="flex flex-col items-center gap-1 cursor-pointer group" data-testid="nav-prevention">
+                        <div className="p-2.5 bg-green-100 dark:bg-green-900/20 rounded-lg group-hover:bg-green-200 dark:group-hover:bg-green-900/40 transition-colors">
+                          <Stethoscope className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">AI</span>
+                      </div>
                     </Link>
                     <Link href="/settings">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-settings">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Impostazioni
-                      </Button>
+                      <div className="flex flex-col items-center gap-1 cursor-pointer group" data-testid="nav-settings">
+                        <div className="p-2.5 bg-purple-100 dark:bg-purple-900/20 rounded-lg group-hover:bg-purple-200 dark:group-hover:bg-purple-900/40 transition-colors">
+                          <Settings className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Impostazioni</span>
+                      </div>
                     </Link>
                     <Link href="/security">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-security">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Sicurezza
-                      </Button>
+                      <div className="flex flex-col items-center gap-1 cursor-pointer group" data-testid="nav-security">
+                        <div className="p-2.5 bg-red-100 dark:bg-red-900/20 rounded-lg group-hover:bg-red-200 dark:group-hover:bg-red-900/40 transition-colors">
+                          <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Sicurezza</span>
+                      </div>
                     </Link>
                   </>
                 )}

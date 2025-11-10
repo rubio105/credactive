@@ -63,6 +63,7 @@ import AppointmentsPage from "@/pages/appointments";
 import DoctorAppointmentsPage from "@/pages/doctor-appointments";
 import DoctorPatientsPage from "@/pages/doctor-patients";
 import DoctorReportsPage from "@/pages/doctor-reports";
+import DoctorShareCode from "@/pages/doctor-share-code";
 import WearablePage from "@/pages/wearable";
 import Home from "@/pages/home";
 import RoleDashboard from "@/pages/role-dashboard";
@@ -117,6 +118,9 @@ function Router() {
       </Route>
       <Route path="/doctor/patients">
         {() => <ProtectedRoute requireNonAiOnly><DoctorPatientsPage /></ProtectedRoute>}
+      </Route>
+      <Route path="/doctor/share-code">
+        {() => <ProtectedRoute requireNonAiOnly><DoctorShareCode /></ProtectedRoute>}
       </Route>
       <Route path="/doctor/reports">
         {() => <ProtectedRoute requireNonAiOnly><DoctorReportsPage /></ProtectedRoute>}

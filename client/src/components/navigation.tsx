@@ -150,66 +150,45 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center flex-col gap-3 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {/* Doctor Navigation - Griglia 2x3 + icone piccole */}
+                {/* Doctor Navigation - Buttons like Patient mode */}
                 {typedUser?.isDoctor && !typedUser?.isAdmin && (
-                  <div className="flex flex-col gap-2">
-                    {/* Griglia principale 2x3 */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <Link href="/prevention">
-                        <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/40 transition-colors cursor-pointer" data-testid="nav-prevention" title="Chiedi a CIRY">
-                          <MessageSquare className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        </div>
-                      </Link>
-                      <Link href="/doctor/patients">
-                        <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors cursor-pointer" data-testid="nav-patients" title="I miei pazienti">
-                          <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                      </Link>
-                      <Link href="/doctor/appointments">
-                        <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/40 transition-colors cursor-pointer" data-testid="nav-appointments" title="Prenotazioni">
-                          <Video className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                        </div>
-                      </Link>
-                      <Link href="/doctor/reports">
-                        <div className="p-3 bg-teal-100 dark:bg-teal-900/20 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/40 transition-colors cursor-pointer" data-testid="nav-reports" title="Referti e note">
-                          <FileCheck className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                        </div>
-                      </Link>
-                      <Link href="/doctor/alerts">
-                        <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/40 transition-colors cursor-pointer" data-testid="nav-alerts" title="Alert pazienti">
-                          <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                        </div>
-                      </Link>
-                      <Link href="/doctor/share-code">
-                        <div className="p-3 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/40 transition-colors cursor-pointer" data-testid="nav-share-code" title="Condividi codice">
-                          <Send className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                      </Link>
-                    </div>
-                    
-                    {/* Icone piccole in basso */}
-                    <div className="flex items-center justify-center gap-2 mt-1">
-                      <Link href="/">
-                        <div className="p-2 bg-gray-100 dark:bg-gray-800/40 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/60 transition-colors cursor-pointer" data-testid="nav-home" title="Home">
-                          <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        </div>
-                      </Link>
-                      <Link href="/security">
-                        <div className="p-2 bg-gray-100 dark:bg-gray-800/40 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/60 transition-colors cursor-pointer" data-testid="nav-security" title="Sicurezza">
-                          <Shield className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        </div>
-                      </Link>
-                      <Link href="/settings">
-                        <div className="p-2 bg-gray-100 dark:bg-gray-800/40 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/60 transition-colors cursor-pointer" data-testid="nav-settings" title="Impostazioni">
-                          <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        </div>
-                      </Link>
-                      <Link href="/guida">
-                        <div className="p-2 bg-gray-100 dark:bg-gray-800/40 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/60 transition-colors cursor-pointer" data-testid="nav-guide" title="Guida">
-                          <HelpCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        </div>
-                      </Link>
-                    </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Link href="/prevention">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Chiedi a CIRY
+                      </Button>
+                    </Link>
+                    <Link href="/doctor/patients">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
+                        <Users className="w-4 h-4 mr-2" />
+                        I miei pazienti
+                      </Button>
+                    </Link>
+                    <Link href="/doctor/appointments">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-appointments">
+                        <Video className="w-4 h-4 mr-2" />
+                        Prenotazioni
+                      </Button>
+                    </Link>
+                    <Link href="/doctor/reports">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reports">
+                        <FileCheck className="w-4 h-4 mr-2" />
+                        Referti e note
+                      </Button>
+                    </Link>
+                    <Link href="/doctor/alerts">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-alerts">
+                        <AlertTriangle className="w-4 h-4 mr-2" />
+                        Alert pazienti
+                      </Button>
+                    </Link>
+                    <Link href="/doctor/share-code">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-share-code">
+                        <Send className="w-4 h-4 mr-2" />
+                        Condividi codice
+                      </Button>
+                    </Link>
                   </div>
                 )}
                 {/* Regular Patients - Only Prenotazioni */}

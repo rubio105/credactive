@@ -2134,12 +2134,20 @@ export const appointments = pgTable("appointments", {
   meetingUrl: text("meeting_url"), // Video call link (Google Meet, Zoom, etc)
   meetingPlatform: varchar("meeting_platform", { length: 50 }), // google_meet, zoom, teams
   
+  // Legacy Jitsi video room fields (keep for backwards compatibility)
+  videoRoomUrl: text("video_room_url"), // Legacy Jitsi room URL
+  videoRoomId: varchar("video_room_id", { length: 255 }), // Legacy Jitsi room ID
+  
   // In-person appointment details
   studioAddress: text("studio_address"), // Physical address for in-person appointments
+  
+  // Patient contact
+  patientPhone: varchar("patient_phone", { length: 50 }), // Patient phone for appointment
   
   // Notifications
   reminderSentAt: timestamp("reminder_sent_at"),
   confirmationSentAt: timestamp("confirmation_sent_at"),
+  whatsappConfirmationSent: boolean("whatsapp_confirmation_sent").default(false), // WhatsApp confirmation sent
   
   // Cancellation tracking
   cancelledBy: varchar("cancelled_by"), // doctor_id or patient_id

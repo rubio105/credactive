@@ -204,6 +204,11 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                           <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                         </div>
                       </Link>
+                      <Link href="/guida">
+                        <div className="p-2 bg-gray-100 dark:bg-gray-800/40 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/60 transition-colors cursor-pointer" data-testid="nav-guide" title="Guida">
+                          <HelpCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        </div>
+                      </Link>
                     </div>
                   </div>
                 )}

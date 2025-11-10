@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, MessageSquare, Stethoscope, Calendar, Bell, AlertTriangle, Users, Settings, Shield, FileText, Watch, Activity } from "lucide-react";
+import { Home, MessageSquare, Stethoscope, CalendarCheck, Bell, AlertTriangle, Users, Settings, Shield, FileText, Watch, Activity } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadNotifications, useUrgentAlerts } from "@/hooks/useNotificationBadge";
 import { cn } from "@/lib/utils";
@@ -88,10 +88,10 @@ const doctorTabs: BottomNavTab[] = [
   },
   {
     route: "/doctor/appointments",
-    icon: Calendar,
-    label: "Agenda",
+    icon: CalendarCheck,
+    label: "Prenotazioni",
     badgeType: null,
-    testId: "bottom-nav-agenda",
+    testId: "bottom-nav-appointments",
   },
 ];
 

@@ -1,5 +1,6 @@
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { queryClient } from "@/lib/queryClient";
 import { BackButton } from "@/components/BackButton";
 import { 
   LayoutDashboard,
@@ -45,8 +46,20 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    setLocation('/login');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      queryClient.clear();
+      localStorage.clear();
+      sessionStorage.clear();
+      // Full page reload to ensure complete session cleanup
+      window.location.assign('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      queryClient.clear();
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.assign('/login');
+    }
   };
 
   const isHomePage = location === "/admin";

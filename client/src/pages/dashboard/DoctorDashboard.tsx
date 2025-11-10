@@ -6,8 +6,8 @@ import {
   MessageSquare,
   AlertTriangle,
   Users,
-  Calendar,
-  ClipboardList,
+  CalendarCheck,
+  Clock,
   Share2
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -65,16 +65,16 @@ export default function DoctorDashboard() {
     {
       id: 'prenotazioni',
       label: 'Prenotazioni',
-      icon: Calendar,
+      icon: CalendarCheck,
       route: '/doctor/appointments',
       badgeCount: 0,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
     {
-      id: 'agenda',
-      label: 'Agenda',
-      icon: ClipboardList,
+      id: 'disponibilita',
+      label: 'Disponibilità',
+      icon: Clock,
       route: '/doctor/availability',
       badgeCount: 0,
       color: 'text-orange-600',

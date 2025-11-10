@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,16 +7,35 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 const logoImage = "/images/ciry-main-logo.png";
 import { Link } from "wouter";
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [requiresMfa, setRequiresMfa] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      const typedUser = user as any;
+      console.log('[Login Guard] User already authenticated, redirecting...');
+      
+      if (typedUser.isAdmin) {
+        setLocation("/admin");
+      } else if (typedUser.aiOnlyAccess) {
+        setLocation("/prevention");
+      } else if (typedUser.isDoctor) {
+        setLocation("/doctor/patients");
+      } else {
+        setLocation("/dashboard");
+      }
+    }
+  }, [isLoading, isAuthenticated, user, setLocation]);
 
   const loginMutation = useMutation({
     mutationFn: async (data: { email: string; password: string; mfaCode?: string }) => {

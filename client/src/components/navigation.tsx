@@ -75,19 +75,17 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-      // Clear TanStack Query cache
       queryClient.clear();
-      // Clear any cached data
       localStorage.clear();
       sessionStorage.clear();
-      // Redirect to login page - internal navigation
-      setLocation('/login');
+      // Full page reload to ensure complete session cleanup
+      window.location.assign('/login');
     } catch (error) {
       console.error('Logout error:', error);
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
-      setLocation('/login');
+      window.location.assign('/login');
     }
   };
 

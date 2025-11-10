@@ -119,6 +119,13 @@ export const users = pgTable("users", {
   marketingConsent: boolean("marketing_consent").default(false), // Optional: Receive product updates
   commercialConsent: boolean("commercial_consent").default(false), // Optional: Receive commercial info
   scientificConsent: boolean("scientific_consent").default(false), // Optional: Scientific/educational purposes
+  // Privacy consent timestamps (track when each consent was accepted)
+  privacyAcceptedAt: timestamp("privacy_accepted_at"),
+  healthDataConsentAt: timestamp("health_data_consent_at"),
+  termsAcceptedAt: timestamp("terms_accepted_at"),
+  marketingConsentAt: timestamp("marketing_consent_at"),
+  commercialConsentAt: timestamp("commercial_consent_at"),
+  scientificConsentAt: timestamp("scientific_consent_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

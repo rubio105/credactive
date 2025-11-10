@@ -574,6 +574,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           marketingConsent: marketingConsent === true,
           commercialConsent: commercialConsent === true,
           scientificConsent: scientificConsent === true,
+          // Privacy consent timestamps (set to current time when accepted)
+          privacyAcceptedAt: privacyAccepted === true ? new Date() : null,
+          healthDataConsentAt: healthDataConsent === true ? new Date() : null,
+          termsAcceptedAt: termsAccepted === true ? new Date() : null,
+          marketingConsentAt: marketingConsent === true ? new Date() : null,
+          commercialConsentAt: commercialConsent === true ? new Date() : null,
+          scientificConsentAt: scientificConsent === true ? new Date() : null,
           emailVerified: false,
           verificationCode,
           verificationCodeExpires,

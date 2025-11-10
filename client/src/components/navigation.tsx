@@ -150,31 +150,31 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {/* Doctor Navigation - ONLY Prevention/Clinical tools (SEPARATE from quiz) */}
+                {/* Doctor Navigation - Unique tools not in dashboard */}
                 {typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
-                    <Link href="/doctor/patients">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
-                        <User className="w-4 h-4 mr-2" />
-                        I Miei Pazienti
-                      </Button>
-                    </Link>
                     <Link href="/doctor/reports">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reporting">
                         <FileCheck className="w-4 h-4 mr-2" />
                         Refertazione
                       </Button>
                     </Link>
-                    <Link href="/doctor/appointments">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-appointments">
-                        <Video className="w-4 h-4 mr-2" />
-                        Appuntamenti
-                      </Button>
-                    </Link>
                     <Link href="/prevention">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
                         <Stethoscope className="w-4 h-4 mr-2" />
                         AI Prevenzione
+                      </Button>
+                    </Link>
+                    <Link href="/settings">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-settings">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Impostazioni
+                      </Button>
+                    </Link>
+                    <Link href="/security">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-security">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Sicurezza
                       </Button>
                     </Link>
                   </>

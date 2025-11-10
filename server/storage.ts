@@ -699,6 +699,12 @@ export interface IStorage {
   getDoctorPatients(doctorId: string): Promise<Array<User & { linkedAt: Date }>>;
   getPatientDoctors(patientId: string): Promise<Array<User & { linkedAt: Date }>>;
   unlinkPatientFromDoctor(doctorId: string, patientId: string): Promise<void>;
+  getDoctorStatsSummary(doctorId: string): Promise<{
+    totalPatients: number;
+    criticalAlerts: number;
+    todayAppointments: number;
+    weekAppointments: number;
+  }>;
   
   // Doctor Notes operations
   createDoctorNote(note: InsertDoctorNote): Promise<DoctorNote>;
@@ -4240,6 +4246,85 @@ export class DatabaseStorage implements IStorage {
         eq(doctorPatientLinks.doctorId, doctorId),
         eq(doctorPatientLinks.patientId, patientId)
       ));
+  }
+
+  async getDoctorStatsSummary(doctorId: string): Promise<{
+    totalPatients: number;
+    criticalAlerts: number;
+    todayAppointments: number;
+    weekAppointments: number;
+  }> {
+    // Get total patients linked to doctor
+    const patientLinks = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(doctorPatientLinks)
+      .where(eq(doctorPatientLinks.doctorId, doctorId));
+    const totalPatients = patientLinks[0]?.count || 0;
+
+    // Get patient IDs for alert filtering
+    const linkedPatients = await db
+      .select({ patientId: doctorPatientLinks.patientId })
+      .from(doctorPatientLinks)
+      .where(eq(doctorPatientLinks.doctorId, doctorId));
+    const patientIds = linkedPatients.map(p => p.patientId);
+
+    // Get critical alerts count (EMERGENCY + HIGH, pending status)
+    let criticalAlerts = 0;
+    if (patientIds.length > 0) {
+      const { triageAlerts } = await import('@shared/schema');
+      const alertsCount = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(triageAlerts)
+        .where(and(
+          inArray(triageAlerts.userId, patientIds),
+          eq(triageAlerts.status, 'pending'),
+          or(
+            eq(triageAlerts.urgencyLevel, 'EMERGENCY'),
+            eq(triageAlerts.urgencyLevel, 'HIGH')
+          )
+        ));
+      criticalAlerts = alertsCount[0]?.count || 0;
+    }
+
+    // Get today's appointments
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const { appointments } = await import('@shared/schema');
+    const todayCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(appointments)
+      .where(and(
+        eq(appointments.doctorId, doctorId),
+        gte(appointments.startTime, today),
+        lt(appointments.startTime, tomorrow),
+        sql`${appointments.status} != 'cancelled'`
+      ));
+    const todayAppointments = todayCount[0]?.count || 0;
+
+    // Get week appointments (next 7 days)
+    const weekFromNow = new Date(today);
+    weekFromNow.setDate(weekFromNow.getDate() + 7);
+    
+    const weekCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(appointments)
+      .where(and(
+        eq(appointments.doctorId, doctorId),
+        gte(appointments.startTime, today),
+        lt(appointments.startTime, weekFromNow),
+        sql`${appointments.status} != 'cancelled'`
+      ));
+    const weekAppointments = weekCount[0]?.count || 0;
+
+    return {
+      totalPatients,
+      criticalAlerts,
+      todayAppointments,
+      weekAppointments,
+    };
   }
 
   // ========== DOCTOR NOTES OPERATIONS ==========

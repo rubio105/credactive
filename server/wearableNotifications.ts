@@ -15,6 +15,14 @@ export interface WearableAnomalyEvent {
   };
 }
 
+export interface TriageAlertEvent {
+  patientId: string;
+  patientName: string;
+  urgencyLevel: 'EMERGENCY' | 'HIGH' | 'MEDIUM' | 'LOW';
+  reason: string;
+  alertId: string;
+}
+
 export class WearableNotificationService {
   private storage: IStorage;
   private lastNotificationTime: Map<string, number> = new Map();
@@ -151,6 +159,75 @@ export class WearableNotificationService {
     });
 
     return `${header}\n\n${values}\n\n${analysis}\n\nRilevato: ${timestamp}\n\nSe i sintomi persistono, contatta il tuo medico tramite l'app CIRY.`;
+  }
+
+  async sendTriageAlertNotification(event: TriageAlertEvent): Promise<void> {
+    try {
+      // Only send notifications for critical alerts (EMERGENCY or HIGH)
+      if (event.urgencyLevel !== 'EMERGENCY' && event.urgencyLevel !== 'HIGH') {
+        return;
+      }
+
+      // Get all doctors linked to this patient
+      const patientDoctors = await this.storage.getPatientDoctors(event.patientId);
+      
+      if (patientDoctors.length === 0) {
+        console.log(`[TriageAlertNotifications] No doctors linked to patient ${event.patientId}`);
+        return;
+      }
+
+      // Send push notification to each doctor
+      for (const doctor of patientDoctors) {
+        await this.sendDoctorPushNotification(doctor.id, event);
+      }
+
+      console.log(`[TriageAlertNotifications] Sent ${event.urgencyLevel} alert notifications to ${patientDoctors.length} doctor(s) for patient ${event.patientName}`);
+    } catch (error: any) {
+      console.error('[TriageAlertNotifications] Error sending notification:', error);
+    }
+  }
+
+  private async sendDoctorPushNotification(doctorId: string, event: TriageAlertEvent): Promise<void> {
+    try {
+      const subscriptions = await this.storage.getPushSubscriptionsByUser(doctorId);
+      
+      const urgencyEmoji = event.urgencyLevel === 'EMERGENCY' ? '🚨' : '⚠️';
+      const title = `${urgencyEmoji} Alert ${event.urgencyLevel} - ${event.patientName}`;
+      
+      const payload = JSON.stringify({
+        title,
+        body: event.reason,
+        icon: '/icon-192.png',
+        badge: '/badge-72.png',
+        data: {
+          url: `/doctor/alert/${event.alertId}`,
+          type: 'triage_alert',
+          urgency: event.urgencyLevel,
+          patientId: event.patientId
+        }
+      });
+
+      for (const subscription of subscriptions) {
+        try {
+          await webPush.sendNotification(
+            {
+              endpoint: subscription.endpoint,
+              keys: {
+                p256dh: subscription.p256dh,
+                auth: subscription.auth
+              }
+            },
+            payload
+          );
+        } catch (error: any) {
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            await this.storage.deletePushSubscription(subscription.id);
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('[TriageAlertNotifications] Push notification error:', error.message);
+    }
   }
 }
 

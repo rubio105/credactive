@@ -441,7 +441,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         language,
         promoCode,
         doctorCode, // Referral code from doctor's invitation link
-        newsletterConsent
+        privacyAccepted,
+        healthDataConsent,
+        termsAccepted,
+        marketingConsent,
+        commercialConsent,
+        scientificConsent,
       } = req.body;
 
       // Validate required fields (profession/education no longer required)
@@ -449,6 +454,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           !gender || !addressStreet || 
           !addressCity || !addressPostalCode || !addressProvince || !addressCountry) {
         return res.status(400).json({ message: "Tutti i campi obbligatori devono essere compilati" });
+      }
+
+      // Validate mandatory privacy consents (must be explicitly true)
+      if (privacyAccepted !== true || healthDataConsent !== true || termsAccepted !== true) {
+        return res.status(400).json({ 
+          message: "Devi accettare l'informativa sulla privacy, il trattamento dati sanitari e i termini e condizioni per registrarti." 
+        });
       }
 
       // HEALTHCARE REGISTRATION LOGIC
@@ -556,7 +568,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           addressProvince,
           addressCountry,
           language: language || 'it',
-          newsletterConsent: newsletterConsent || false,
+          privacyAccepted: privacyAccepted === true,
+          healthDataConsent: healthDataConsent === true,
+          termsAccepted: termsAccepted === true,
+          marketingConsent: marketingConsent === true,
+          commercialConsent: commercialConsent === true,
+          scientificConsent: scientificConsent === true,
           emailVerified: false,
           verificationCode,
           verificationCodeExpires,
@@ -1125,59 +1142,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
       }
 
-      // Get total patients count
-      const patients = await storage.getDoctorPatients(req.user.id);
-      const totalPatients = patients.length;
-
-      // Get critical alerts (EMERGENCY and HIGH, pending only)
-      const allAlerts = await storage.getPatientAlertsByDoctor(req.user.id);
-      const criticalAlerts = allAlerts.filter((alert: any) => 
-        (alert.urgency === 'EMERGENCY' || alert.urgency === 'HIGH') && 
-        alert.status === 'pending'
-      ).length;
-
-      // Get today's appointments (booked or confirmed)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const todayAppointments = await db
-        .select()
-        .from(appointments)
-        .where(
-          and(
-            eq(appointments.doctorId, req.user.id),
-            sql`${appointments.startTime} >= ${today}`,
-            sql`${appointments.startTime} < ${tomorrow}`,
-            sql`${appointments.status} IN ('booked', 'confirmed')`
-          )
-        );
-
-      // Get this week's appointments
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 7);
-
-      const weekAppointments = await db
-        .select()
-        .from(appointments)
-        .where(
-          and(
-            eq(appointments.doctorId, req.user.id),
-            sql`${appointments.startTime} >= ${weekStart}`,
-            sql`${appointments.startTime} < ${weekEnd}`,
-            sql`${appointments.status} IN ('booked', 'confirmed')`
-          )
-        );
-
-      res.json({
-        totalPatients,
-        criticalAlerts,
-        todayAppointments: todayAppointments.length,
-        weekAppointments: weekAppointments.length,
-      });
+      const stats = await storage.getDoctorStatsSummary(req.user.id);
+      res.json(stats);
     } catch (error) {
       console.error("Error getting doctor stats:", error);
       res.status(500).json({ message: "Errore durante il recupero delle statistiche" });
@@ -9957,7 +9923,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
 
       // Check for sensitive flags and create alerts (only for authenticated users)
       if ((aiResponse.isSensitive || aiResponse.suggestDoctor) && user?.id) {
-        await storage.createTriageAlert({
+        const createdAlert = await storage.createTriageAlert({
           userId: user.id,
           sessionId: session.id,
           urgencyLevel: aiResponse.urgencyLevel,
@@ -9965,6 +9931,21 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
           reason: `Urgency: ${aiResponse.urgencyLevel}. Related topics: ${aiResponse.relatedTopics.join(', ')}`,
           isReviewed: false,
         });
+
+        // Send push notifications to doctors for critical alerts (EMERGENCY/HIGH only)
+        if (createdAlert.urgencyLevel === 'EMERGENCY' || createdAlert.urgencyLevel === 'HIGH') {
+          const { getWearableNotificationService } = await import('./wearableNotifications');
+          const notificationService = getWearableNotificationService(storage);
+          
+          await notificationService.sendTriageAlertNotification({
+            patientId: user.id,
+            patientName: `${user.firstName} ${user.lastName}`,
+            urgencyLevel: createdAlert.urgencyLevel,
+            reason: createdAlert.reason,
+            alertId: createdAlert.id,
+          });
+        }
+
         // ❌ REMOVED: Don't auto-close session when alert is created
         // Let user continue conversation freely - they can close manually if needed
         // await storage.closeTriageSession(session.id);
@@ -10209,7 +10190,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
           ? `Sintomi: ${symptomExtract}${symptomExtract.length >= 80 ? '...' : ''}`
           : `Urgenza: ${aiResponse.urgencyLevel}`;
         
-        await storage.createTriageAlert({
+        const createdAlert = await storage.createTriageAlert({
           userId: user.id,
           sessionId,
           urgencyLevel: aiResponse.urgencyLevel,
@@ -10217,6 +10198,21 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
           reason: alertReason,
           isReviewed: false,
         });
+
+        // Send push notifications to doctors for critical alerts (EMERGENCY/HIGH only)
+        if (createdAlert.urgencyLevel === 'EMERGENCY' || createdAlert.urgencyLevel === 'HIGH') {
+          const { getWearableNotificationService } = await import('./wearableNotifications');
+          const notificationService = getWearableNotificationService(storage);
+          
+          await notificationService.sendTriageAlertNotification({
+            patientId: user.id,
+            patientName: `${user.firstName} ${user.lastName}`,
+            urgencyLevel: createdAlert.urgencyLevel,
+            reason: createdAlert.reason,
+            alertId: createdAlert.id,
+          });
+        }
+
         // ❌ REMOVED: Don't auto-close session when alert is created
         // Let user continue conversation freely - they can close manually if needed
         // await storage.closeTriageSession(sessionId);

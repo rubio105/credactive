@@ -10,7 +10,7 @@ import fs from "fs";
 import { createRequire } from "module";
 import { storage } from "./storage";
 import { db } from "./db";
-import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData, proactiveHealthTriggers, appointmentAttachments } from "@shared/schema";
+import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData, proactiveHealthTriggers, appointmentAttachments, appointments } from "@shared/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { getApiKey, clearApiKeyCache } from "./config";
 import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
@@ -1115,6 +1115,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting triage conversation:", error);
       res.status(500).json({ message: "Errore durante il recupero della conversazione" });
+    }
+  });
+
+  // Get doctor dashboard statistics
+  app.get('/api/doctor/stats', isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.isDoctor) {
+        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
+      }
+
+      // Get total patients count
+      const patients = await storage.getDoctorPatients(req.user.id);
+      const totalPatients = patients.length;
+
+      // Get critical alerts (EMERGENCY and HIGH, pending only)
+      const allAlerts = await storage.getPatientAlertsByDoctor(req.user.id);
+      const criticalAlerts = allAlerts.filter((alert: any) => 
+        (alert.urgency === 'EMERGENCY' || alert.urgency === 'HIGH') && 
+        alert.status === 'pending'
+      ).length;
+
+      // Get today's appointments (booked or confirmed)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const todayAppointments = await db
+        .select()
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.doctorId, req.user.id),
+            sql`${appointments.startTime} >= ${today}`,
+            sql`${appointments.startTime} < ${tomorrow}`,
+            sql`${appointments.status} IN ('booked', 'confirmed')`
+          )
+        );
+
+      // Get this week's appointments
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 7);
+
+      const weekAppointments = await db
+        .select()
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.doctorId, req.user.id),
+            sql`${appointments.startTime} >= ${weekStart}`,
+            sql`${appointments.startTime} < ${weekEnd}`,
+            sql`${appointments.status} IN ('booked', 'confirmed')`
+          )
+        );
+
+      res.json({
+        totalPatients,
+        criticalAlerts,
+        todayAppointments: todayAppointments.length,
+        weekAppointments: weekAppointments.length,
+      });
+    } catch (error) {
+      console.error("Error getting doctor stats:", error);
+      res.status(500).json({ message: "Errore durante il recupero delle statistiche" });
     }
   });
 

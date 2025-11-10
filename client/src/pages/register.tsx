@@ -11,6 +11,9 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { VisualSecurityPolicy } from "@/components/VisualSecurityPolicy";
+import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
+import { TermsOfServiceDialog } from "@/components/TermsOfServiceDialog";
 
 const logoImage = "/images/ciry-main-logo.png";
 
@@ -50,6 +53,10 @@ export default function Register() {
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [commercialConsent, setCommercialConsent] = useState(false);
   const [scientificConsent, setScientificConsent] = useState(false);
+
+  // Dialog states
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
 
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -472,6 +479,9 @@ export default function Register() {
               </div>
             </div>
 
+            {/* Visual Security Policy - PRIMA dei consensi */}
+            <VisualSecurityPolicy />
+
             {/* Privacy Consents */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold border-b pb-2">Consensi Privacy</h3>
@@ -491,7 +501,15 @@ export default function Register() {
                     htmlFor="privacyAccepted"
                     className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Confermo di aver ricevuto, letto e accettato l'<a href="https://app.prohmed.com/page/3/privacy/lang:it" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">informativa sulla privacy</a> *
+                    Confermo di aver ricevuto, letto e accettato l'{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyDialog(true)}
+                      className="text-primary hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                      data-testid="link-privacy-policy"
+                    >
+                      informativa sulla privacy
+                    </button> *
                   </label>
                 </div>
 
@@ -506,7 +524,15 @@ export default function Register() {
                     htmlFor="healthDataConsent"
                     className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Presto il consenso al trattamento delle informazioni sanitarie ai sensi dell'<a href="https://app.prohmed.com/page/3/privacy/lang:it" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">informativa sulla privacy</a> *
+                    Presto il consenso al trattamento delle informazioni sanitarie ai sensi dell'{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyDialog(true)}
+                      className="text-primary hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                      data-testid="link-health-data-policy"
+                    >
+                      informativa sulla privacy
+                    </button> *
                   </label>
                 </div>
 
@@ -521,7 +547,15 @@ export default function Register() {
                     htmlFor="termsAccepted"
                     className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Accetto i <a href="https://app.prohmed.com/page/2/terms/lang:it" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">termini e condizioni generali e EULA</a> *
+                    Accetto i{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsDialog(true)}
+                      className="text-primary hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                      data-testid="link-terms-conditions"
+                    >
+                      termini e condizioni generali e EULA
+                    </button> *
                   </label>
                 </div>
               </div>
@@ -599,6 +633,16 @@ export default function Register() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Privacy & Terms Dialogs */}
+      <PrivacyPolicyDialog 
+        open={showPrivacyDialog} 
+        onOpenChange={setShowPrivacyDialog} 
+      />
+      <TermsOfServiceDialog 
+        open={showTermsDialog} 
+        onOpenChange={setShowTermsDialog} 
+      />
     </div>
   );
 }

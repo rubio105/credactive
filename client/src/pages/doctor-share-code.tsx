@@ -16,7 +16,7 @@ export default function DoctorShareCode() {
   const [isLoading, setIsLoading] = useState(false);
 
   const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
-  const inviteLink = doctorCode ? `${baseUrl}/register?ref=${doctorCode}` : '';
+  const inviteLink = doctorCode ? `${baseUrl}/register?referral=${doctorCode}` : '';
 
   // Sync doctorCode state with user data when it loads
   useEffect(() => {

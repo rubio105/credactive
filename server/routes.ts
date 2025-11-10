@@ -1920,6 +1920,195 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user consents (only optional consents: marketing, commercial, scientific)
+  const updateConsentsSchema = z.object({
+    marketingConsent: z.boolean().optional(),
+    commercialConsent: z.boolean().optional(),
+    scientificConsent: z.boolean().optional(),
+  });
+
+  app.patch('/api/user/consents', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Validate request body
+      const validatedData = updateConsentsSchema.parse(req.body);
+
+      // Build update object with timestamps
+      const updates: any = {};
+      const now = new Date();
+
+      if (validatedData.marketingConsent !== undefined) {
+        updates.marketingConsent = validatedData.marketingConsent;
+        updates.marketingConsentAt = validatedData.marketingConsent ? now : null;
+      }
+      if (validatedData.commercialConsent !== undefined) {
+        updates.commercialConsent = validatedData.commercialConsent;
+        updates.commercialConsentAt = validatedData.commercialConsent ? now : null;
+      }
+      if (validatedData.scientificConsent !== undefined) {
+        updates.scientificConsent = validatedData.scientificConsent;
+        updates.scientificConsentAt = validatedData.scientificConsent ? now : null;
+      }
+
+      // Update user consents
+      await db.update(users)
+        .set(updates)
+        .where(eq(users.id, parseInt(userId)));
+
+      // Fetch and return updated user
+      const updatedUser = await storage.getUser(userId);
+      res.json(updatedUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid consent data", errors: error.errors });
+      }
+      console.error("Error updating consents:", error);
+      res.status(500).json({ message: "Failed to update consents" });
+    }
+  });
+
+  // Get all user consents (admin only)
+  app.get('/api/admin/consents', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { search, page = '1', limit = '50' } = req.query;
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const offset = (pageNum - 1) * limitNum;
+
+      // Build query
+      let query = db.select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        isDoctor: users.isDoctor,
+        privacyAccepted: users.privacyAccepted,
+        privacyAcceptedAt: users.privacyAcceptedAt,
+        healthDataConsent: users.healthDataConsent,
+        healthDataConsentAt: users.healthDataConsentAt,
+        termsAccepted: users.termsAccepted,
+        termsAcceptedAt: users.termsAcceptedAt,
+        marketingConsent: users.marketingConsent,
+        marketingConsentAt: users.marketingConsentAt,
+        commercialConsent: users.commercialConsent,
+        commercialConsentAt: users.commercialConsentAt,
+        scientificConsent: users.scientificConsent,
+        scientificConsentAt: users.scientificConsentAt,
+        createdAt: users.createdAt,
+      }).from(users);
+
+      // Apply search filter
+      if (search && typeof search === 'string') {
+        query = query.where(
+          sql`${users.email} ILIKE ${'%' + search + '%'} OR 
+              ${users.firstName} ILIKE ${'%' + search + '%'} OR 
+              ${users.lastName} ILIKE ${'%' + search + '%'}`
+        ) as any;
+      }
+
+      // Get total count
+      const totalResult = await db.select({ count: count() })
+        .from(users)
+        .where(search && typeof search === 'string' ? 
+          sql`${users.email} ILIKE ${'%' + search + '%'} OR 
+              ${users.firstName} ILIKE ${'%' + search + '%'} OR 
+              ${users.lastName} ILIKE ${'%' + search + '%'}` : 
+          sql`1=1`
+        );
+      const total = totalResult[0]?.count || 0;
+
+      // Get paginated results
+      const results = await query
+        .orderBy(desc(users.createdAt))
+        .limit(limitNum)
+        .offset(offset);
+
+      res.json({
+        data: results,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: Number(total),
+          totalPages: Math.ceil(Number(total) / limitNum),
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching user consents:", error);
+      res.status(500).json({ message: "Failed to fetch user consents" });
+    }
+  });
+
+  // Export user consents as CSV (admin only)
+  app.get('/api/admin/consents/export', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const results = await db.select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        isDoctor: users.isDoctor,
+        privacyAccepted: users.privacyAccepted,
+        privacyAcceptedAt: users.privacyAcceptedAt,
+        healthDataConsent: users.healthDataConsent,
+        healthDataConsentAt: users.healthDataConsentAt,
+        termsAccepted: users.termsAccepted,
+        termsAcceptedAt: users.termsAcceptedAt,
+        marketingConsent: users.marketingConsent,
+        marketingConsentAt: users.marketingConsentAt,
+        commercialConsent: users.commercialConsent,
+        commercialConsentAt: users.commercialConsentAt,
+        scientificConsent: users.scientificConsent,
+        scientificConsentAt: users.scientificConsentAt,
+        createdAt: users.createdAt,
+      }).from(users).orderBy(desc(users.createdAt));
+
+      // Build CSV
+      const headers = [
+        'ID', 'Email', 'Nome', 'Cognome', 'Ruolo',
+        'Privacy', 'Privacy Data', 'Dati Sanitari', 'Dati Sanitari Data',
+        'Termini', 'Termini Data', 'Marketing', 'Marketing Data',
+        'Commerciale', 'Commerciale Data', 'Scientifico', 'Scientifico Data',
+        'Registrato Il'
+      ];
+
+      const rows = results.map(user => [
+        user.id,
+        user.email,
+        user.firstName || '',
+        user.lastName || '',
+        user.isDoctor ? 'Medico' : 'Paziente',
+        user.privacyAccepted ? 'Sì' : 'No',
+        user.privacyAcceptedAt ? new Date(user.privacyAcceptedAt).toISOString() : '',
+        user.healthDataConsent ? 'Sì' : 'No',
+        user.healthDataConsentAt ? new Date(user.healthDataConsentAt).toISOString() : '',
+        user.termsAccepted ? 'Sì' : 'No',
+        user.termsAcceptedAt ? new Date(user.termsAcceptedAt).toISOString() : '',
+        user.marketingConsent ? 'Sì' : 'No',
+        user.marketingConsentAt ? new Date(user.marketingConsentAt).toISOString() : '',
+        user.commercialConsent ? 'Sì' : 'No',
+        user.commercialConsentAt ? new Date(user.commercialConsentAt).toISOString() : '',
+        user.scientificConsent ? 'Sì' : 'No',
+        user.scientificConsentAt ? new Date(user.scientificConsentAt).toISOString() : '',
+        user.createdAt ? new Date(user.createdAt).toISOString() : '',
+      ]);
+
+      const csv = [headers, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="consensi-utenti-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send('\uFEFF' + csv); // BOM for Excel UTF-8 support
+    } catch (error) {
+      console.error("Error exporting consents:", error);
+      res.status(500).json({ message: "Failed to export consents" });
+    }
+  });
+
   // Contact form endpoint
   app.post('/api/contact', authLimiter, async (req, res) => {
     try {

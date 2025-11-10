@@ -150,9 +150,9 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center flex-row gap-2 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {/* Doctor Navigation - 5 icone quadrate orizzontali */}
+                {/* Doctor Navigation - 5 icone in griglia 2 per riga */}
                 {typedUser?.isDoctor && !typedUser?.isAdmin && (
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <Link href="/doctor/alerts">
                       <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/40 transition-colors cursor-pointer" data-testid="nav-alerts" title="Alert Pazienti">
                         <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />

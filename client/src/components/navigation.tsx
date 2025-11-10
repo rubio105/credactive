@@ -150,37 +150,13 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {/* Doctor Navigation - Unique tools not in dashboard */}
+                {/* Doctor Navigation - Clean minimal menu */}
                 {typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
-                    <Link href="/doctor/alerts">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-alerts">
-                        <AlertTriangle className="w-4 h-4 mr-2" />
-                        Alert Pazienti
-                      </Button>
-                    </Link>
-                    <Link href="/doctor/reports">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reporting">
-                        <FileCheck className="w-4 h-4 mr-2" />
-                        Note e Referti
-                      </Button>
-                    </Link>
                     <Link href="/prevention">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
                         <Stethoscope className="w-4 h-4 mr-2" />
                         AI Prevenzione
-                      </Button>
-                    </Link>
-                    <Link href="/settings">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-settings">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Impostazioni
-                      </Button>
-                    </Link>
-                    <Link href="/security">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-security">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Sicurezza
                       </Button>
                     </Link>
                   </>

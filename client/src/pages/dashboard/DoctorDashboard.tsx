@@ -7,8 +7,8 @@ import {
   AlertTriangle,
   Users,
   CalendarCheck,
-  Clock,
-  Share2
+  Share2,
+  FileCheck
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUrgentAlerts } from "@/hooks/useNotificationBadge";
@@ -46,7 +46,7 @@ export default function DoctorDashboard() {
     },
     {
       id: 'alerts',
-      label: 'Alert',
+      label: 'Alert Pazienti',
       icon: AlertTriangle,
       route: '/doctor/alerts',
       badgeCount: urgentAlertsCount,
@@ -72,13 +72,13 @@ export default function DoctorDashboard() {
       bgColor: 'bg-purple-50',
     },
     {
-      id: 'disponibilita',
-      label: 'Disponibilità',
-      icon: Clock,
-      route: '/doctor/availability',
+      id: 'referti',
+      label: 'Note e Referti',
+      icon: FileCheck,
+      route: '/doctor/reports',
       badgeCount: 0,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
     },
     {
       id: 'condividi',

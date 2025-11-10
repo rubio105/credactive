@@ -439,6 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         addressCountry,
         language,
         promoCode,
+        doctorCode, // Referral code from doctor's invitation link
         newsletterConsent
       } = req.body;
 
@@ -476,11 +477,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // If patient: registration is temporarily disabled
+      // If patient: require valid doctor referral code
       if (isDoctor === false) {
-        return res.status(403).json({ 
-          message: "La registrazione per pazienti è temporaneamente disabilitata. Per maggiori informazioni, contatta support@ciry.app" 
-        });
+        if (!doctorCode) {
+          return res.status(403).json({ 
+            message: "La registrazione per pazienti è disponibile solo tramite invito medico. Per maggiori informazioni, contatta support@ciry.app" 
+          });
+        }
+
+        // Validate doctor code exists and belongs to an actual doctor
+        const doctor = await storage.getUserByDoctorCode(doctorCode.trim().toUpperCase());
+        if (!doctor || !doctor.isDoctor) {
+          return res.status(400).json({ 
+            message: "Codice medico non valido. Verifica il link di invito ricevuto dal tuo medico." 
+          });
+        }
       }
 
       const existingUser = await storage.getUserByEmail(email.toLowerCase());
@@ -552,6 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isPremium,
           companyName,
           corporateAgreementId,
+          pendingDoctorCode: isDoctor === false && doctorCode ? doctorCode.trim().toUpperCase() : null, // Store referral code until email verification
           aiOnlyAccess: true, // All new users are AI-only by default
         });
       } catch (error) {
@@ -624,6 +636,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         verificationCode: null,
         verificationCodeExpires: null,
       });
+
+      // Auto-link patient to doctor if registered via referral code
+      if (user.pendingDoctorCode) {
+        try {
+          await storage.linkPatientToDoctor(user.id, user.pendingDoctorCode);
+          await storage.updateUser(user.id, {
+            pendingDoctorCode: null, // Clear after successful linking
+          });
+          console.log(`Auto-linked patient ${user.id} to doctor via code ${user.pendingDoctorCode}`);
+        } catch (error) {
+          console.error(`Failed to auto-link patient ${user.id} to doctor:`, error);
+          // Don't block verification - user can manually link later
+        }
+      }
 
       // Send welcome email after successful verification
       sendWelcomeEmail(user.email, user.firstName || undefined).catch(err => 

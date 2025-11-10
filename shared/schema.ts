@@ -87,6 +87,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   isDoctor: boolean("is_doctor").default(false), // Medical professional flag
   doctorCode: varchar("doctor_code", { length: 20 }).unique(), // Unique code for doctors to share with patients
+  pendingDoctorCode: varchar("pending_doctor_code", { length: 20 }), // Temporary referral code until email verification
   aiOnlyAccess: boolean("ai_only_access").default(false), // User can access ONLY AI prevention, not quiz/courses
   language: varchar("language", { length: 2 }), // it, en, es, fr
   // MFA (Multi-Factor Authentication) fields

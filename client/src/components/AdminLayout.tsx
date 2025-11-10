@@ -46,19 +46,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   const handleLogout = async () => {
+    console.log('[LOGOUT] Starting logout process...');
     try {
+      console.log('[LOGOUT] Calling /api/auth/logout...');
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      console.log('[LOGOUT] Server logout successful, clearing client state...');
+      
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
-      // Full page reload to ensure complete session cleanup
-      window.location.assign('/login');
+      
+      console.log('[LOGOUT] Redirecting to /login with window.location.href...');
+      window.location.href = '/login';
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('[LOGOUT] Logout error:', error);
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.assign('/login');
+      window.location.href = '/login';
     }
   };
 

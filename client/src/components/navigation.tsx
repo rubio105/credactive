@@ -153,10 +153,16 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                 {/* Doctor Navigation - Unique tools not in dashboard */}
                 {typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
+                    <Link href="/doctor/alerts">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-alerts">
+                        <AlertTriangle className="w-4 h-4 mr-2" />
+                        Alert Pazienti
+                      </Button>
+                    </Link>
                     <Link href="/doctor/reports">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reporting">
                         <FileCheck className="w-4 h-4 mr-2" />
-                        Refertazione
+                        Note e Referti
                       </Button>
                     </Link>
                     <Link href="/prevention">

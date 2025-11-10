@@ -32,6 +32,7 @@ import AdminInAppNotifications from "@/pages/admin-in-app-notifications";
 import AdminPushNotifications from "@/pages/admin-push-notifications";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import AdminDocumentazione from "@/pages/admin-documentazione";
+import AdminConsents from "@/pages/admin-consents";
 import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
 import Login from "@/pages/login";
@@ -44,6 +45,7 @@ import NotFound from "@/pages/not-found";
 import CorsiOnDemand from "@/pages/corsi-on-demand";
 import CorsoOnDemand from "@/pages/corso-on-demand";
 import Settings from "@/pages/settings";
+import ConsentsSettings from "@/pages/settings/consents";
 import Leaderboard from "@/pages/leaderboard";
 import Certificates from "@/pages/certificates";
 import Analytics from "@/pages/analytics";
@@ -103,6 +105,9 @@ function Router() {
       </Route>
       <Route path="/settings">
         {() => <ProtectedRoute requireNonAiOnly><Settings /></ProtectedRoute>}
+      </Route>
+      <Route path="/settings/consents">
+        {() => <ProtectedRoute requireNonAiOnly><ConsentsSettings /></ProtectedRoute>}
       </Route>
       <Route path="/appointments">
         {() => <ProtectedRoute requireNonAiOnly><AppointmentsPage /></ProtectedRoute>}
@@ -181,6 +186,9 @@ function Router() {
       </Route>
       <Route path="/admin/subscriptions">
         {() => <ProtectedRoute requireNonAiOnly><AdminSubscriptions /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/consents">
+        {() => <ProtectedRoute requireNonAiOnly><AdminConsents /></ProtectedRoute>}
       </Route>
       <Route path="/admin/documentazione">
         {() => <ProtectedRoute requireNonAiOnly><AdminDocumentazione /></ProtectedRoute>}

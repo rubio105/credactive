@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Shield, Download, Search, CheckCircle2, XCircle, User, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import AdminLayout from "@/components/AdminLayout";
+import { AdminLayout } from "@/components/AdminLayout";
 
 export default function AdminConsents() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -135,7 +135,7 @@ export default function AdminConsents() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data?.data?.map((user: any) => (
+                      {(data as any)?.data?.map((user: any) => (
                         <TableRow key={user.id}>
                           <TableCell>
                             <div className="flex items-start gap-2">
@@ -194,10 +194,10 @@ export default function AdminConsents() {
                 </div>
 
                 {/* Pagination */}
-                {data?.pagination && (
+                {(data as any)?.pagination && (
                   <div className="flex items-center justify-between mt-6">
                     <div className="text-sm text-muted-foreground">
-                      Pagina {data.pagination.page} di {data.pagination.totalPages} (Totale: {data.pagination.total} utenti)
+                      Pagina {(data as any).pagination.page} di {(data as any).pagination.totalPages} (Totale: {(data as any).pagination.total} utenti)
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -213,7 +213,7 @@ export default function AdminConsents() {
                         variant="outline"
                         size="sm"
                         onClick={() => setPage(p => p + 1)}
-                        disabled={page >= data.pagination.totalPages}
+                        disabled={page >= (data as any).pagination.totalPages}
                         data-testid="button-next-page"
                       >
                         Successiva
@@ -227,12 +227,12 @@ export default function AdminConsents() {
         </Card>
 
         {/* Statistics Summary */}
-        {data?.data && (
+        {(data as any)?.data && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-6">
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-green-600">
-                  {data.data.filter((u: any) => u.privacyAccepted).length}
+                  {(data as any).data.filter((u: any) => u.privacyAccepted).length}
                 </div>
                 <div className="text-xs text-muted-foreground">Privacy OK</div>
               </CardContent>
@@ -240,7 +240,7 @@ export default function AdminConsents() {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-green-600">
-                  {data.data.filter((u: any) => u.healthDataConsent).length}
+                  {(data as any).data.filter((u: any) => u.healthDataConsent).length}
                 </div>
                 <div className="text-xs text-muted-foreground">Dati Sanitari OK</div>
               </CardContent>
@@ -248,7 +248,7 @@ export default function AdminConsents() {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-green-600">
-                  {data.data.filter((u: any) => u.termsAccepted).length}
+                  {(data as any).data.filter((u: any) => u.termsAccepted).length}
                 </div>
                 <div className="text-xs text-muted-foreground">Termini OK</div>
               </CardContent>
@@ -256,7 +256,7 @@ export default function AdminConsents() {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-blue-600">
-                  {data.data.filter((u: any) => u.marketingConsent).length}
+                  {(data as any).data.filter((u: any) => u.marketingConsent).length}
                 </div>
                 <div className="text-xs text-muted-foreground">Marketing</div>
               </CardContent>
@@ -264,7 +264,7 @@ export default function AdminConsents() {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-blue-600">
-                  {data.data.filter((u: any) => u.commercialConsent).length}
+                  {(data as any).data.filter((u: any) => u.commercialConsent).length}
                 </div>
                 <div className="text-xs text-muted-foreground">Commerciale</div>
               </CardContent>
@@ -272,7 +272,7 @@ export default function AdminConsents() {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-blue-600">
-                  {data.data.filter((u: any) => u.scientificConsent).length}
+                  {(data as any).data.filter((u: any) => u.scientificConsent).length}
                 </div>
                 <div className="text-xs text-muted-foreground">Scientifico</div>
               </CardContent>

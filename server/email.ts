@@ -753,6 +753,11 @@ export async function sendMarketingEmail(
   });
 }
 
+/**
+ * Send bulk marketing emails with automatic consent filtering.
+ * Only sends to users with marketingConsent=true and non-null timestamp.
+ * Logs excluded users for GDPR compliance audit trail.
+ */
 export async function sendBulkMarketingEmail(
   recipients: Array<{ 
     email: string; 
@@ -763,12 +768,44 @@ export async function sendBulkMarketingEmail(
   subject: string,
   htmlTemplate?: string,
   textTemplate?: string
-): Promise<{ sent: number; failed: number; errors: string[] }> {
+): Promise<{ sent: number; failed: number; errors: string[]; excluded: number }> {
+  const { db } = await import("./db");
+  const { users } = await import("@shared/schema");
+  const { eq, and, isNotNull, inArray } = await import("drizzle-orm");
+
+  // Fetch marketing consents for all recipients
+  const recipientEmails = recipients.map(r => r.email);
+  const consents = await db.select({
+    email: users.email,
+    marketingConsent: users.marketingConsent,
+    marketingConsentAt: users.marketingConsentAt,
+  })
+  .from(users)
+  .where(inArray(users.email, recipientEmails));
+
+  // Filter recipients by consent
+  const consentMap = new Map(consents.map(c => [c.email, c]));
+  const allowedRecipients = recipients.filter(r => {
+    const consent = consentMap.get(r.email);
+    return consent?.marketingConsent && consent?.marketingConsentAt;
+  });
+
+  const excludedRecipients = recipients.filter(r => {
+    const consent = consentMap.get(r.email);
+    return !consent?.marketingConsent || !consent?.marketingConsentAt;
+  });
+
+  // Log excluded users for compliance audit
+  if (excludedRecipients.length > 0) {
+    console.log(`[Marketing Email] Excluding ${excludedRecipients.length} users without marketing consent`);
+    console.log(`[Marketing Email] Excluded emails:`, excludedRecipients.map(r => r.email).join(', '));
+  }
+
   let sent = 0;
   let failed = 0;
   const errors: string[] = [];
 
-  for (const recipient of recipients) {
+  for (const recipient of allowedRecipients) {
     try {
       // Use personalized content if provided, otherwise use template
       let htmlContent = recipient.htmlContent;
@@ -815,7 +852,9 @@ export async function sendBulkMarketingEmail(
     }
   }
 
-  return { sent, failed, errors };
+  console.log(`[Marketing Email] Campaign completed: ${sent} sent, ${excludedRecipients.length} excluded, ${failed} failed`);
+
+  return { sent, failed, errors, excluded: excludedRecipients.length };
 }
 
 // Gamification Email Notifications

@@ -114,11 +114,14 @@ app.use((req, res, next) => {
   // Start wearable scheduler for daily trend analysis
   const { WearableScheduler } = await import("./wearableScheduler");
   const { LoginLogsScheduler } = await import("./loginLogsScheduler");
+  const { AppointmentReminderScheduler } = await import("./appointmentReminderScheduler");
   const { storage } = await import("./storage");
   const wearableScheduler = new WearableScheduler(storage);
   wearableScheduler.start();
   const loginLogsScheduler = new LoginLogsScheduler(storage);
   loginLogsScheduler.start();
+  const appointmentReminderScheduler = new AppointmentReminderScheduler(storage);
+  appointmentReminderScheduler.start();
   console.log('[Job Worker] Background processing started');
 
   // Webinar reminder system - Check every hour for sessions starting in 24 hours

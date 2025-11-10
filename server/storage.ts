@@ -239,6 +239,33 @@ import {
 import { db } from "./db";
 import { eq, desc, asc, sql, and, or, gte, lte, gt, lt, inArray } from "drizzle-orm";
 
+// Type for pending appointment reminders with joined data
+export type PendingReminderData = {
+  // From appointment_reminders
+  id: string;
+  appointmentId: string;
+  reminderType: string;
+  scheduledFor: Date;
+  sentAt: Date | null;
+  status: string;
+  channel: string;
+  errorMessage: string | null;
+  twilioSid: string | null;
+  createdAt: Date;
+  
+  // From appointments
+  startTime: Date;
+  endTime: Date;
+  videoRoomUrl: string | null;
+  
+  // From patient user
+  patientEmail: string;
+  firstName: string;
+  lastName: string;
+  patientWhatsapp: string | null;
+  whatsappNotificationsEnabled: boolean;
+};
+
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
@@ -804,6 +831,12 @@ export interface IStorage {
     byChannel: Record<string, number>;
     byType: Record<string, number>;
   }>;
+
+  // Appointment Reminder operations
+  fetchPendingReminders(): Promise<PendingReminderData[]>;
+  markReminderSent(reminderId: string, sid?: string): Promise<void>;
+  markReminderSkipped(reminderId: string, reason: string): Promise<void>;
+  markReminderFailed(reminderId: string, errorMessage: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5077,6 +5110,68 @@ export class DatabaseStorage implements IStorage {
     });
 
     return stats;
+  }
+
+  // ========== APPOINTMENT REMINDER OPERATIONS ==========
+
+  async fetchPendingReminders(): Promise<PendingReminderData[]> {
+    const result = await db.execute(sql`
+      SELECT 
+        r.id, r.appointment_id, r.reminder_type, r.scheduled_for, r.sent_at,
+        r.status, r.channel, r.error_message, r.twilio_sid, r.created_at,
+        a.start_time, a.end_time, a.meeting_url as video_room_url,
+        u.email as patient_email, u.first_name, u.last_name,
+        u.whatsapp_number as patient_whatsapp, u.whatsapp_notifications_enabled
+      FROM appointment_reminders r
+      JOIN appointments a ON r.appointment_id = a.id
+      JOIN users u ON a.patient_id = u.id
+      WHERE r.status = 'pending' AND r.scheduled_for <= NOW()
+    `);
+
+    return result.rows.map((row: any) => ({
+      id: row.id,
+      appointmentId: row.appointment_id,
+      reminderType: row.reminder_type,
+      scheduledFor: new Date(row.scheduled_for),
+      sentAt: row.sent_at ? new Date(row.sent_at) : null,
+      status: row.status,
+      channel: row.channel,
+      errorMessage: row.error_message,
+      twilioSid: row.twilio_sid,
+      createdAt: new Date(row.created_at),
+      startTime: new Date(row.start_time),
+      endTime: new Date(row.end_time),
+      videoRoomUrl: row.video_room_url,
+      patientEmail: row.patient_email,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      patientWhatsapp: row.patient_whatsapp,
+      whatsappNotificationsEnabled: row.whatsapp_notifications_enabled === true || row.whatsapp_notifications_enabled === 't',
+    }));
+  }
+
+  async markReminderSent(reminderId: string, sid?: string): Promise<void> {
+    await db.execute(sql`
+      UPDATE appointment_reminders 
+      SET status = 'sent', sent_at = NOW(), twilio_sid = ${sid || null}
+      WHERE id = ${reminderId}
+    `);
+  }
+
+  async markReminderSkipped(reminderId: string, reason: string): Promise<void> {
+    await db.execute(sql`
+      UPDATE appointment_reminders 
+      SET status = 'skipped', error_message = ${reason}
+      WHERE id = ${reminderId}
+    `);
+  }
+
+  async markReminderFailed(reminderId: string, errorMessage: string): Promise<void> {
+    await db.execute(sql`
+      UPDATE appointment_reminders 
+      SET status = 'failed', error_message = ${errorMessage} 
+      WHERE id = ${reminderId}
+    `);
   }
 }
 

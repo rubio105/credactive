@@ -2478,9 +2478,10 @@ export const appointmentReminders = pgTable("appointment_reminders", {
   reminderType: varchar("reminder_type", { length: 20 }).notNull(), // confirmation, reminder_24h, reminder_2h
   scheduledFor: timestamp("scheduled_for").notNull(),
   sentAt: timestamp("sent_at"),
-  status: varchar("status", { length: 20 }).default('pending').notNull(), // pending, sent, failed
+  status: varchar("status", { length: 20 }).default('pending').notNull(), // pending, sent, failed, skipped
   channel: varchar("channel", { length: 20 }).notNull(), // email, whatsapp, both
   errorMessage: text("error_message"),
+  twilioSid: text("twilio_sid"), // WhatsApp/SMS message SID from Twilio for traceability
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_appointment_reminders_appointment").on(table.appointmentId),

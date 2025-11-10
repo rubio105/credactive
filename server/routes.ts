@@ -49,6 +49,7 @@ import speakeasy from "speakeasy";
 import QRCode from "qrcode";
 import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail, sendAppointmentBookedToDoctorEmail, sendAppointmentConfirmedToPatientEmail, sendAppointmentCancelledToPatientEmail } from "./email";
 import { sendWhatsAppMessage } from "./twilio";
+import { sendPendingReminders } from "./appointmentReminderService";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
 import { generateAssessmentPDFBuffer } from "./assessmentPDFGenerator";
@@ -13992,55 +13993,15 @@ Il report deve essere professionale, dettagliato e orientato alla prevenzione.
   // TELECONSULTO - Send pending reminders (cron job endpoint)
   app.post('/api/appointments/send-reminders', async (req, res) => {
     try {
-      // Get pending reminders scheduled for now or earlier
-      const result = await db.execute(sql`
-        SELECT r.*, a.*, u.email as patient_email, u.first_name, u.last_name,
-               d.whatsapp_number as patient_whatsapp, d.whatsapp_notifications_enabled
-        FROM appointment_reminders r
-        JOIN appointments a ON r.appointment_id = a.id
-        JOIN users u ON a.patient_id = u.id
-        LEFT JOIN users d ON a.patient_id = d.id
-        WHERE r.status = 'pending' AND r.scheduled_for <= NOW()
-      `);
-
-      let sentCount = 0;
-      for (const reminder of result.rows) {
-        try {
-          const appointmentDate = new Date(reminder.start_time);
-          const message = `🔔 Promemoria Teleconsulto\n\nAppuntamento tra ${reminder.reminder_type === 'reminder_24h' ? '24 ore' : '2 ore'}\nData: ${appointmentDate.toLocaleDateString('it-IT')}\nOra: ${appointmentDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n\n${reminder.video_room_url ? `Link: ${reminder.video_room_url}` : ''}`;
-
-          // Send via requested channel
-          if (reminder.channel === 'email' || reminder.channel === 'both') {
-            // Send email reminder
-          }
-
-          if ((reminder.channel === 'whatsapp' || reminder.channel === 'both') && 
-              reminder.patient_whatsapp && reminder.whatsapp_notifications_enabled) {
-            await sendWhatsAppMessage(reminder.patient_whatsapp, message);
-          }
-
-          // Mark as sent
-          await db.execute(sql`
-            UPDATE appointment_reminders 
-            SET status = 'sent', sent_at = NOW() 
-            WHERE id = ${reminder.id}
-          `);
-
-          sentCount++;
-        } catch (reminderError) {
-          console.error('Reminder send failed:', reminderError);
-          await db.execute(sql`
-            UPDATE appointment_reminders 
-            SET status = 'failed', error_message = ${reminderError.message} 
-            WHERE id = ${reminder.id}
-          `);
-        }
-      }
-
-      res.json({ success: true, remindersSent: sentCount });
+      const result = await sendPendingReminders(storage);
+      res.json(result);
     } catch (error: any) {
-      console.error('Send reminders error:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      console.error('[API] Send reminders error:', error);
+      res.status(500).json({ 
+        success: false, 
+        remindersSent: 0,
+        message: 'Internal server error' 
+      });
     }
   });
 

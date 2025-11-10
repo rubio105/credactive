@@ -112,6 +112,13 @@ export const users = pgTable("users", {
   // Login tracking for feedback popup
   loginCount: integer("login_count").default(0),
   feedbackSubmitted: boolean("feedback_submitted").default(false),
+  // Privacy consent flags (GDPR compliance)
+  privacyAccepted: boolean("privacy_accepted").default(false), // Mandatory: Privacy policy accepted
+  healthDataConsent: boolean("health_data_consent").default(false), // Mandatory: Health data processing consent
+  termsAccepted: boolean("terms_accepted").default(false), // Mandatory: Terms and conditions accepted
+  marketingConsent: boolean("marketing_consent").default(false), // Optional: Receive product updates
+  commercialConsent: boolean("commercial_consent").default(false), // Optional: Receive commercial info
+  scientificConsent: boolean("scientific_consent").default(false), // Optional: Scientific/educational purposes
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

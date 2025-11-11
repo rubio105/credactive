@@ -150,47 +150,6 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           <div className="hidden md:flex items-center flex-col gap-3 flex-1 justify-center">
             {isAuthenticated ? (
               <>
-                {/* Doctor Navigation - Buttons like Patient mode */}
-                {typedUser?.isDoctor && !typedUser?.isAdmin && (
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <Link href="/prevention">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-prevention">
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        Chiedi a CIRY
-                      </Button>
-                    </Link>
-                    <Link href="/doctor/patients">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
-                        <Users className="w-4 h-4 mr-2" />
-                        I miei pazienti
-                      </Button>
-                    </Link>
-                    <Link href="/doctor/appointments">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-appointments">
-                        <Video className="w-4 h-4 mr-2" />
-                        Prenotazioni
-                      </Button>
-                    </Link>
-                    <Link href="/doctor/reports">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reports">
-                        <FileCheck className="w-4 h-4 mr-2" />
-                        Referti e note
-                      </Button>
-                    </Link>
-                    <Link href="/doctor/alerts">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-alerts">
-                        <AlertTriangle className="w-4 h-4 mr-2" />
-                        Alert pazienti
-                      </Button>
-                    </Link>
-                    <Link href="/doctor/share-code">
-                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-share-code">
-                        <Send className="w-4 h-4 mr-2" />
-                        Condividi codice
-                      </Button>
-                    </Link>
-                  </div>
-                )}
                 {/* Regular Patients - Only Prenotazioni */}
                 {!typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>

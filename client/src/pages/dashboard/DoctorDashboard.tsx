@@ -53,13 +53,13 @@ export default function DoctorDashboard() {
   const services = [
     {
       id: 'ciry',
-      label: 'Parla con CIRY',
+      label: 'Chiedi a CIRY',
       icon: MessageSquare,
       route: '/chat',
       badgeCount: 0,
       badgeText: null,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      bgColor: 'bg-gradient-to-br from-blue-50 to-blue-100',
     },
     {
       id: 'alerts',
@@ -69,7 +69,7 @@ export default function DoctorDashboard() {
       badgeCount: urgentAlertsCount,
       badgeText: null,
       color: 'text-red-600',
-      bgColor: 'bg-red-50',
+      bgColor: 'bg-gradient-to-br from-red-50 to-red-100',
     },
     {
       id: 'pazienti',
@@ -79,7 +79,7 @@ export default function DoctorDashboard() {
       badgeCount: 0,
       badgeText: stats?.totalPatients ? `${stats.totalPatients}` : null,
       color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
+      bgColor: 'bg-gradient-to-br from-emerald-50 to-emerald-100',
     },
     {
       id: 'prenotazioni',
@@ -89,7 +89,7 @@ export default function DoctorDashboard() {
       badgeCount: 0,
       badgeText: stats?.todayAppointments ? `${stats.todayAppointments} oggi` : null,
       color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      bgColor: 'bg-gradient-to-br from-purple-50 to-purple-100',
     },
     {
       id: 'referti',
@@ -99,7 +99,7 @@ export default function DoctorDashboard() {
       badgeCount: 0,
       badgeText: null,
       color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      bgColor: 'bg-gradient-to-br from-indigo-50 to-indigo-100',
     },
     {
       id: 'condividi',
@@ -109,7 +109,7 @@ export default function DoctorDashboard() {
       badgeCount: 0,
       badgeText: null,
       color: 'text-pink-600',
-      bgColor: 'bg-pink-50',
+      bgColor: 'bg-gradient-to-br from-pink-50 to-pink-100',
     },
   ];
 
@@ -167,17 +167,17 @@ export default function DoctorDashboard() {
             return (
               <Link key={service.id} href={service.route}>
                 <Card 
-                  className="relative hover:shadow-md transition-shadow cursor-pointer border-gray-200 h-full"
+                  className="relative hover:shadow-lg hover:scale-105 transition-all cursor-pointer border-0 shadow-md"
                   data-testid={`service-${service.id}`}
                 >
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${service.bgColor}`}>
-                      <Icon className={`w-6 h-6 ${service.color}`} />
+                  <CardContent className={`p-6 flex flex-col items-center justify-center text-center min-h-[140px] ${service.bgColor}`}>
+                    <div className={`p-4 rounded-2xl bg-white/80 backdrop-blur-sm shadow-sm mb-3`}>
+                      <Icon className={`w-8 h-8 ${service.color}`} />
                     </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-base text-gray-900">{service.label}</p>
+                    <div className="w-full">
+                      <p className="font-bold text-sm text-gray-900 leading-tight">{service.label}</p>
                       {service.badgeText && !statsLoading && (
-                        <p className="text-xs text-gray-500 mt-0.5" data-testid={`text-${service.id}`}>
+                        <p className="text-xs text-gray-600 mt-1" data-testid={`text-${service.id}`}>
                           {service.badgeText}
                         </p>
                       )}
@@ -185,7 +185,7 @@ export default function DoctorDashboard() {
                     {service.badgeCount > 0 && (
                       <Badge 
                         variant="destructive" 
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs shadow-md"
                         data-testid={`badge-${service.id}`}
                       >
                         {service.badgeCount}

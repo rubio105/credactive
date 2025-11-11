@@ -396,7 +396,7 @@ export default function DoctorAppointmentsPage() {
       </div>
 
       <Tabs defaultValue="booked" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="booked" data-testid="tab-booked">
             Prenotate ({bookedAppointments.length})
           </TabsTrigger>

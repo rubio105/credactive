@@ -389,7 +389,7 @@ export default function DoctorReportsPage() {
 
           {/* Create Note Dialog */}
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
               <DialogHeader>
                 <DialogTitle>Nuovo Referto / Nota Clinica</DialogTitle>
                 <DialogDescription>
@@ -397,7 +397,7 @@ export default function DoctorReportsPage() {
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 py-4">
+              <div className="space-y-4 py-4 overflow-y-auto flex-1">
                 <div className="space-y-2">
                   <Label htmlFor="patient-select">Paziente *</Label>
                   <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>

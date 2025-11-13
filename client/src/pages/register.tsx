@@ -203,6 +203,24 @@ export default function Register() {
     });
   };
 
+  // State for manual code entry
+  const [manualCode, setManualCode] = useState("");
+  const [showManualEntry, setShowManualEntry] = useState(false);
+
+  const handleManualCodeSubmit = () => {
+    const trimmedCode = manualCode.trim().toUpperCase();
+    if (trimmedCode.length > 0) {
+      setReferralCode(trimmedCode);
+      setShowManualEntry(false);
+    } else {
+      toast({
+        title: "Codice mancante",
+        description: "Inserisci un codice referral valido",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Show blocked message if no referral code
   if (!referralCode) {
     return (
@@ -235,13 +253,60 @@ export default function Register() {
               </p>
             </div>
 
-            <div className="space-y-3">
-              <Link href="/login">
-                <Button className="w-full" size="lg" data-testid="button-go-to-login">
-                  Vai al Login
+            {!showManualEntry ? (
+              <div className="space-y-3">
+                <Button 
+                  className="w-full" 
+                  size="lg" 
+                  onClick={() => setShowManualEntry(true)}
+                  data-testid="button-enter-code-manually"
+                >
+                  Inserisci Codice Manualmente
                 </Button>
-              </Link>
-            </div>
+                <Link href="/login">
+                  <Button variant="outline" className="w-full" size="lg" data-testid="button-go-to-login">
+                    Vai al Login
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="manualCode">Codice Invito Medico</Label>
+                  <Input
+                    id="manualCode"
+                    value={manualCode}
+                    onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                    placeholder="ABC123"
+                    className="text-center font-mono text-lg"
+                    data-testid="input-manual-code"
+                  />
+                  <p className="text-xs text-muted-foreground text-center">
+                    Inserisci il codice che hai ricevuto dal tuo medico
+                  </p>
+                </div>
+                <Button 
+                  className="w-full" 
+                  size="lg" 
+                  onClick={handleManualCodeSubmit}
+                  data-testid="button-submit-manual-code"
+                >
+                  Continua con il Codice
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full" 
+                  size="sm" 
+                  onClick={() => {
+                    setShowManualEntry(false);
+                    setManualCode("");
+                  }}
+                  data-testid="button-cancel-manual-entry"
+                >
+                  Annulla
+                </Button>
+              </div>
+            )}
 
             <div className="pt-4 border-t">
               <p className="text-sm text-center text-muted-foreground">

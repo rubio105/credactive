@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Lock, Key, Check, X, Smartphone, ArrowLeft, FileText } from "lucide-react";
+import { Shield, Lock, Key, Check, X, Smartphone, ArrowLeft, FileText, Trash2, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function Security() {
   const { user } = useAuth();
@@ -27,6 +30,13 @@ export default function Security() {
   const [showMfaSetup, setShowMfaSetup] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<string>("");
   const [manualKey, setManualKey] = useState<string>("");
+
+  // Account deletion state
+  const [showDeletionDialog, setShowDeletionDialog] = useState(false);
+  const [deletionReason, setDeletionReason] = useState("");
+  const [otherReason, setOtherReason] = useState("");
+  const [deletionOtp, setDeletionOtp] = useState("");
+  const [otpRequested, setOtpRequested] = useState(false);
 
   // Query MFA status for all users
   const { data: mfaStatus } = useQuery<{ enabled: boolean }>({

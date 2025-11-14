@@ -13109,6 +13109,153 @@ Format as JSON: {
     }
   });
 
+  // ========== ACCOUNT DELETION ENDPOINTS ==========
+  
+  // Request account deletion with OTP
+  app.post('/api/user/request-account-deletion', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { reason, otherReason } = req.body;
+
+      if (!reason) {
+        return res.status(400).json({ message: 'Motivazione richiesta' });
+      }
+
+      // Get user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Utente non trovato' });
+      }
+
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Hash OTP with bcrypt
+      const otpHash = await bcrypt.hash(otp, 10);
+      
+      // Set expiry to 10 minutes
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      // Create or update deletion request
+      await storage.createAccountDeletionRequest({
+        userId,
+        reason,
+        otherReason: reason === 'altro' ? otherReason : null,
+        otpHash,
+        expiresAt,
+        channel: 'email',
+      });
+
+      // Send OTP via email
+      await sendEmail({
+        to: user.email,
+        subject: 'CIRY - Codice di verifica per cancellazione account',
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Cancellazione Account CIRY</h2>
+            <p>Hai richiesto la cancellazione del tuo account. Per confermare, inserisci il seguente codice:</p>
+            <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
+              ${otp}
+            </div>
+            <p><strong>Importante:</strong> Questo codice scadrà tra 10 minuti.</p>
+            <p><strong>Attenzione:</strong> La cancellazione dell'account è permanente. Tutti i tuoi dati saranno eliminati e non potranno essere recuperati.</p>
+            <p>Se non hai richiesto questa operazione, ignora questa email.</p>
+          </div>
+        `,
+        textContent: `Codice di verifica per cancellazione account CIRY: ${otp}\n\nQuesto codice scadrà tra 10 minuti.\n\nATTENZIONE: La cancellazione è permanente e i dati non potranno essere recuperati.`,
+      });
+
+      console.log(`[Account Deletion] OTP sent to ${user.email} for user ${userId}`);
+      res.json({ 
+        success: true, 
+        message: 'Codice di verifica inviato alla tua email',
+        expiresAt 
+      });
+    } catch (error: any) {
+      console.error('Request account deletion error:', error);
+      res.status(500).json({ message: error.message || 'Errore durante la richiesta di cancellazione' });
+    }
+  });
+
+  // Confirm account deletion with OTP verification
+  app.post('/api/user/confirm-account-deletion', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { code } = req.body;
+
+      if (!code || code.length !== 6) {
+        return res.status(400).json({ message: 'Codice non valido. Deve essere di 6 cifre.' });
+      }
+
+      // Get deletion request
+      const deletionRequest = await storage.getAccountDeletionRequestByUserId(userId);
+      if (!deletionRequest) {
+        return res.status(404).json({ 
+          message: 'Nessuna richiesta di cancellazione trovata. Richiedi prima un codice di verifica.' 
+        });
+      }
+
+      // Check if expired
+      if (new Date(deletionRequest.expiresAt) < new Date()) {
+        await storage.deleteAccountDeletionRequest(userId);
+        return res.status(400).json({ 
+          message: 'Codice scaduto. Richiedi un nuovo codice di verifica.' 
+        });
+      }
+
+      // Check attempts (max 5)
+      if (deletionRequest.attemptCount >= 5) {
+        await storage.deleteAccountDeletionRequest(userId);
+        return res.status(429).json({ 
+          message: 'Troppi tentativi falliti. Richiedi un nuovo codice di verifica.' 
+        });
+      }
+
+      // Verify OTP
+      const isValid = await bcrypt.compare(code, deletionRequest.otpHash);
+      if (!isValid) {
+        await storage.incrementDeletionAttempts(userId);
+        return res.status(400).json({ 
+          message: `Codice non corretto. ${4 - deletionRequest.attemptCount} tentativi rimasti.` 
+        });
+      }
+
+      // OTP is valid - delete account and all data
+      console.log(`[Account Deletion] Deleting account for user ${userId}, reason: ${deletionRequest.reason}`);
+      
+      // Delete user and all related data (cascade will handle it)
+      await storage.deleteUserAndAllData(userId);
+      
+      // Delete deletion request (if not already cascade-deleted)
+      try {
+        await storage.deleteAccountDeletionRequest(userId);
+      } catch (e) {
+        // Ignore error if already deleted by cascade
+      }
+
+      // Destroy session
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) console.error('Session destruction error:', err);
+        });
+      }
+
+      // Clear passport session
+      if (req.logout) {
+        req.logout(() => {});
+      }
+
+      console.log(`[Account Deletion] Account deleted successfully for user ${userId}`);
+      res.json({ 
+        success: true, 
+        message: 'Account eliminato con successo'
+      });
+    } catch (error: any) {
+      console.error('Confirm account deletion error:', error);
+      res.status(500).json({ message: error.message || 'Errore durante la cancellazione dell\'account' });
+    }
+  });
+
   // ========== ML TRAINING DATA ENDPOINTS ==========
   
   // Get ML training statistics (admin only)

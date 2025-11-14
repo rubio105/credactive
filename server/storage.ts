@@ -271,29 +271,29 @@ export type PendingReminderData = {
 
 export interface IStorage {
   // User operations
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByDoctorCode(doctorCode: string): Promise<User | undefined>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   createUser(user: Partial<User>): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
-  updateUserStripeInfo(userId: number, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User>;
-  updateUserStripeCustomer(userId: number, stripeCustomerId: string): Promise<User>;
-  updateUserLanguage(userId: number, language: string): Promise<User>;
-  setPasswordResetToken(userId: number, token: string, expires: Date): Promise<void>;
-  updateUserPassword(userId: number, password: string): Promise<void>;
-  clearPasswordResetToken(userId: number): Promise<void>;
+  updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User>;
+  updateUserStripeCustomer(userId: string, stripeCustomerId: string): Promise<User>;
+  updateUserLanguage(userId: string, language: string): Promise<User>;
+  setPasswordResetToken(userId: string, token: string, expires: Date): Promise<void>;
+  updateUserPassword(userId: string, password: string): Promise<void>;
+  clearPasswordResetToken(userId: string): Promise<void>;
   
   // Admin User operations
   getAllUsers(): Promise<User[]>;
-  updateUser(id: number, updates: Partial<User>): Promise<User>;
-  deleteUser(id: number): Promise<void>;
+  updateUser(id: string, updates: Partial<User>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
   
   // Quiz operations
   getCategories(): Promise<Category[]>;
-  getCategoriesWithQuizzes(userId?: number, isAdminOverride?: boolean): Promise<Array<Category & { quizzes: QuizWithCount[] }>>;
-  getAllQuizzes(userId?: number, isAdminOverride?: boolean): Promise<Quiz[]>;
-  getQuizzesByCategory(categoryId: string, userId?: number, isAdminOverride?: boolean): Promise<Quiz[]>;
+  getCategoriesWithQuizzes(userId?: string, isAdminOverride?: boolean): Promise<Array<Category & { quizzes: QuizWithCount[] }>>;
+  getAllQuizzes(userId?: string, isAdminOverride?: boolean): Promise<Quiz[]>;
+  getQuizzesByCategory(categoryId: string, userId?: string, isAdminOverride?: boolean): Promise<Quiz[]>;
   getQuizById(id: string): Promise<Quiz | undefined>;
   getQuestionsByQuizId(quizId: string): Promise<Question[]>;
   getQuestionById(id: string): Promise<Question | undefined>;
@@ -323,14 +323,14 @@ export interface IStorage {
   // User progress operations
   createQuizAttempt(attempt: InsertUserQuizAttempt): Promise<UserQuizAttempt>;
   getQuizAttemptById(attemptId: string): Promise<UserQuizAttempt | undefined>;
-  getUserQuizAttempts(userId: number, limit?: number): Promise<UserQuizAttempt[]>;
-  getUserProgress(userId: number): Promise<UserProgress[]>;
-  updateUserProgress(userId: number, categoryId: string, attempt: UserQuizAttempt): Promise<void>;
+  getUserQuizAttempts(userId: string, limit?: number): Promise<UserQuizAttempt[]>;
+  getUserProgress(userId: string): Promise<UserProgress[]>;
+  updateUserProgress(userId: string, categoryId: string, attempt: UserQuizAttempt): Promise<void>;
   
   // Report operations
   createQuizReport(report: InsertQuizReport): Promise<QuizReport>;
   getQuizReport(attemptId: string): Promise<QuizReport | undefined>;
-  getUserReports(userId: number, limit?: number): Promise<QuizReport[]>;
+  getUserReports(userId: string, limit?: number): Promise<QuizReport[]>;
   
   // Live course operations
   createLiveCourse(course: InsertLiveCourse): Promise<LiveCourse>;
@@ -338,7 +338,7 @@ export interface IStorage {
   deleteLiveCourse(id: string): Promise<void>;
   getLiveCourseById(id: string): Promise<LiveCourse | undefined>;
   getLiveCourseByQuizId(quizId: string): Promise<LiveCourse | undefined>;
-  getAllLiveCourses(userId?: number, isAdminOverride?: boolean): Promise<LiveCourse[]>;
+  getAllLiveCourses(userId?: string, isAdminOverride?: boolean): Promise<LiveCourse[]>;
   
   // Live course session operations
   createLiveCourseSession(session: InsertLiveCourseSession): Promise<LiveCourseSession>;
@@ -350,9 +350,9 @@ export interface IStorage {
   // Live course enrollment operations
   createLiveCourseEnrollment(enrollment: InsertLiveCourseEnrollment): Promise<LiveCourseEnrollment>;
   updateLiveCourseEnrollment(id: string, updates: Partial<LiveCourseEnrollment>): Promise<LiveCourseEnrollment>;
-  getUserEnrollments(userId: number): Promise<LiveCourseEnrollment[]>;
-  getLiveCourseEnrollment(liveCourseId: string, userId: number): Promise<LiveCourseEnrollment | undefined>;
-  getUserEnrollmentForSession(userId: number, sessionId: string): Promise<LiveCourseEnrollment | undefined>;
+  getUserEnrollments(userId: string): Promise<LiveCourseEnrollment[]>;
+  getLiveCourseEnrollment(liveCourseId: string, userId: string): Promise<LiveCourseEnrollment | undefined>;
+  getUserEnrollmentForSession(userId: string, sessionId: string): Promise<LiveCourseEnrollment | undefined>;
   
   // Live streaming session operations
   createLiveStreamingSession(session: InsertLiveStreamingSession): Promise<LiveStreamingSession>;
@@ -374,7 +374,7 @@ export interface IStorage {
   // Live streaming poll response operations
   createPollResponse(response: InsertLiveStreamingPollResponse): Promise<LiveStreamingPollResponse>;
   getPollResponses(pollId: string): Promise<LiveStreamingPollResponse[]>;
-  getUserPollResponse(pollId: string, userId: number): Promise<LiveStreamingPollResponse | undefined>;
+  getUserPollResponse(pollId: string, userId: string): Promise<LiveStreamingPollResponse | undefined>;
   getPollStats(pollId: string): Promise<{option: string; count: number}[]>;
   
   // On-demand course operations
@@ -382,7 +382,7 @@ export interface IStorage {
   updateOnDemandCourse(id: string, updates: Partial<OnDemandCourse>): Promise<OnDemandCourse>;
   deleteOnDemandCourse(id: string): Promise<void>;
   getOnDemandCourseById(id: string): Promise<OnDemandCourse | undefined>;
-  getAllOnDemandCourses(includeInactive?: boolean, userId?: number, isAdminOverride?: boolean): Promise<OnDemandCourse[]>;
+  getAllOnDemandCourses(includeInactive?: boolean, userId?: string, isAdminOverride?: boolean): Promise<OnDemandCourse[]>;
   
   // Course video operations
   createCourseVideo(video: InsertCourseVideo): Promise<CourseVideo>;
@@ -405,8 +405,8 @@ export interface IStorage {
   
   // User video progress operations
   upsertUserVideoProgress(progress: InsertUserVideoProgress): Promise<UserVideoProgress>;
-  getUserVideoProgress(userId: number, courseId: string): Promise<UserVideoProgress[]>;
-  getUserCourseProgress(userId: number, courseId: string): Promise<{completed: number; total: number}>;
+  getUserVideoProgress(userId: string, courseId: string): Promise<UserVideoProgress[]>;
+  getUserCourseProgress(userId: string, courseId: string): Promise<{completed: number; total: number}>;
   
   // Content page operations
   getAllContentPages(): Promise<ContentPage[]>;
@@ -422,8 +422,8 @@ export interface IStorage {
   createBadge(badge: InsertBadge): Promise<Badge>;
   updateBadge(id: string, updates: Partial<Badge>): Promise<Badge>;
   deleteBadge(id: string): Promise<void>;
-  getUserBadges(userId: number): Promise<(UserBadge & { badge: Badge })[]>;
-  awardBadge(userId: number, badgeId: string): Promise<UserBadge>;
+  getUserBadges(userId: string): Promise<(UserBadge & { badge: Badge })[]>;
+  awardBadge(userId: string, badgeId: string): Promise<UserBadge>;
   
   // Gamification - Achievement operations
   getAllAchievements(): Promise<Achievement[]>;
@@ -431,16 +431,16 @@ export interface IStorage {
   createAchievement(achievement: InsertAchievement): Promise<Achievement>;
   updateAchievement(id: string, updates: Partial<Achievement>): Promise<Achievement>;
   deleteAchievement(id: string): Promise<void>;
-  getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]>;
+  getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]>;
   
   // Gamification - Daily challenge operations
   getTodayDailyChallenge(): Promise<DailyChallenge | undefined>;
   createDailyChallenge(challenge: InsertDailyChallenge): Promise<DailyChallenge>;
-  getUserDailyChallengeStatus(userId: number, challengeId: string): Promise<UserDailyChallenge | undefined>;
+  getUserDailyChallengeStatus(userId: string, challengeId: string): Promise<UserDailyChallenge | undefined>;
   completeDailyChallenge(userChallenge: InsertUserDailyChallenge): Promise<UserDailyChallenge>;
   
   // Gamification - Certificate operations
-  getUserCertificates(userId: number): Promise<UserCertificate[]>;
+  getUserCertificates(userId: string): Promise<UserCertificate[]>;
   getCertificateById(id: string): Promise<UserCertificate | undefined>;
   getCertificateByVerificationCode(code: string): Promise<UserCertificate | undefined>;
   createCertificate(certificate: InsertUserCertificate): Promise<UserCertificate>;
@@ -449,10 +449,10 @@ export interface IStorage {
   // Gamification - Leaderboard operations
   getGlobalLeaderboard(limit?: number, period?: string): Promise<(Leaderboard & { user: User })[]>;
   getCategoryLeaderboard(categoryId: string, limit?: number, period?: string): Promise<(Leaderboard & { user: User })[]>;
-  getUserLeaderboardPosition(userId: number, categoryId?: string, period?: string): Promise<Leaderboard | undefined>;
+  getUserLeaderboardPosition(userId: string, categoryId?: string, period?: string): Promise<Leaderboard | undefined>;
   
   // Gamification - Activity log operations
-  getUserActivityLog(userId: number, limit?: number): Promise<ActivityLog[]>;
+  getUserActivityLog(userId: string, limit?: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   
   // Corporate agreement operations
@@ -466,7 +466,7 @@ export interface IStorage {
   incrementCorporateAgreementUsers(id: string): Promise<boolean>;
   decrementCorporateAgreementUsers(id: string): Promise<void>;
   getUsersByCorporateAgreement(agreementId: string): Promise<User[]>;
-  getCorporateAgreementByAdminUserId(userId: number): Promise<CorporateAgreement | undefined>;
+  getCorporateAgreementByAdminUserId(userId: string): Promise<CorporateAgreement | undefined>;
   
   // Corporate invite operations
   createCorporateInvite(invite: InsertCorporateInvite): Promise<CorporateInvite>;
@@ -526,11 +526,11 @@ export interface IStorage {
   // User feedback operations
   createUserFeedback(feedback: InsertUserFeedback): Promise<UserFeedback>;
   getAllUserFeedback(): Promise<(UserFeedback & { user?: User })[]>;
-  getUserFeedbackByUserId(userId: number): Promise<UserFeedback[]>;
-  checkUserHasRecentFeedback(userId: number, days?: number): Promise<boolean>;
+  getUserFeedbackByUserId(userId: string): Promise<UserFeedback[]>;
+  checkUserHasRecentFeedback(userId: string, days?: number): Promise<boolean>;
   updateFeedbackResolution(id: number, isResolved: boolean, adminNotes?: string): Promise<void>;
-  incrementUserLoginCount(userId: number): Promise<void>;
-  markUserFeedbackSubmitted(userId: number): Promise<void>;
+  incrementUserLoginCount(userId: string): Promise<void>;
+  markUserFeedbackSubmitted(userId: string): Promise<void>;
 
   // ========== PREVENTION SYSTEM ==========
   
@@ -538,7 +538,7 @@ export interface IStorage {
   createPreventionDocument(doc: InsertPreventionDocument): Promise<PreventionDocument>;
   getPreventionDocumentById(id: string): Promise<PreventionDocument | undefined>;
   getAllPreventionDocuments(activeOnly?: boolean): Promise<PreventionDocument[]>;
-  getPreventionDocumentsByUser(userId: number): Promise<PreventionDocument[]>;
+  getPreventionDocumentsByUser(userId: string): Promise<PreventionDocument[]>;
   updatePreventionDocument(id: string, updates: Partial<PreventionDocument>): Promise<PreventionDocument>;
   deletePreventionDocument(id: string): Promise<void>;
   
@@ -552,7 +552,7 @@ export interface IStorage {
   // Triage session operations
   createTriageSession(session: InsertTriageSession): Promise<TriageSession>;
   getTriageSessionById(id: string): Promise<TriageSession | undefined>;
-  getTriageSessionsByUser(userId: number): Promise<TriageSession[]>;
+  getTriageSessionsByUser(userId: string): Promise<TriageSession[]>;
   updateTriageSession(id: string, updates: Partial<TriageSession>): Promise<TriageSession>;
   closeTriageSession(id: string): Promise<TriageSession>;
   
@@ -564,12 +564,12 @@ export interface IStorage {
   createTriageAlert(alert: InsertTriageAlert): Promise<TriageAlert>;
   getTriageAlertById(id: string): Promise<TriageAlert | undefined>; // Get alert by ID
   getTriageAlertsBySession(sessionId: string): Promise<TriageAlert[]>;
-  getUserTriageAlerts(userId: number): Promise<TriageAlert[]>; // Get all alerts for a user
+  getUserTriageAlerts(userId: string): Promise<TriageAlert[]>; // Get all alerts for a user
   getUnreviewedTriageAlerts(): Promise<TriageAlert[]>;
   getAllTriageAlerts(): Promise<TriageAlert[]>; // Admin: fetch all alerts
   getAllTriageAlertsWithDetails(): Promise<Array<TriageAlert & { session?: TriageSession; user?: User }>>; // Optimized with JOIN
   updateTriageAlert(id: string, updates: Partial<TriageAlert>): Promise<TriageAlert>;
-  getPendingAlertForUser(userId: number): Promise<TriageAlert | undefined>; // Get most recent pending medium/high alert
+  getPendingAlertForUser(userId: string): Promise<TriageAlert | undefined>; // Get most recent pending medium/high alert
   resolveUserAlert(alertId: string, response: string): Promise<TriageAlert>; // Mark alert as resolved by user
   updateAlertToMonitoring(alertId: string, response: string): Promise<TriageAlert>; // Update alert to monitoring (not resolved)
   
@@ -578,7 +578,7 @@ export interface IStorage {
   createProhmedCodesBulk(count: number, accessType: string, source?: string, expiresAt?: Date): Promise<ProhmedCode[]>;
   getAllProhmedCodes(): Promise<ProhmedCode[]>;
   getProhmedCodeByCode(code: string): Promise<ProhmedCode | undefined>;
-  getProhmedCodesByUser(userId: number): Promise<ProhmedCode[]>;
+  getProhmedCodesByUser(userId: string): Promise<ProhmedCode[]>;
   updateProhmedCode(id: string, updates: Partial<ProhmedCode>): Promise<ProhmedCode>;
   redeemProhmedCode(code: string): Promise<ProhmedCode>;
 
@@ -587,8 +587,8 @@ export interface IStorage {
   // Prevention assessment operations
   createPreventionAssessment(assessment: InsertPreventionAssessment): Promise<PreventionAssessment>;
   getPreventionAssessmentById(id: string): Promise<PreventionAssessment | undefined>;
-  getPreventionAssessmentsByUser(userId: number): Promise<PreventionAssessment[]>;
-  getLatestPreventionAssessment(userId: number): Promise<PreventionAssessment | undefined>;
+  getPreventionAssessmentsByUser(userId: string): Promise<PreventionAssessment[]>;
+  getLatestPreventionAssessment(userId: string): Promise<PreventionAssessment | undefined>;
   updatePreventionAssessment(id: string, updates: Partial<PreventionAssessment>): Promise<PreventionAssessment>;
   completePreventionAssessment(id: string, score: number, riskLevel: string, recommendations: string[], reportPdfUrl?: string): Promise<PreventionAssessment>;
   
@@ -603,7 +603,7 @@ export interface IStorage {
 
   // Health risk prediction operations
   createHealthRiskPrediction(prediction: InsertHealthRiskPrediction): Promise<HealthRiskPrediction>;
-  getActiveHealthRiskPredictionsForUser(userId: number): Promise<HealthRiskPrediction[]>;
+  getActiveHealthRiskPredictionsForUser(userId: string): Promise<HealthRiskPrediction[]>;
   deactivateExpiredPredictions(): Promise<void>;
 
   // ========== CROSSWORD GAME ==========
@@ -614,19 +614,19 @@ export interface IStorage {
   getAllCrosswordPuzzles(activeOnly?: boolean): Promise<CrosswordPuzzle[]>;
   getWeeklyCrosswordChallenge(weekNumber: number, weekYear: number): Promise<CrosswordPuzzle | undefined>;
   updateCrosswordPuzzle(id: string, updates: Partial<CrosswordPuzzle>): Promise<CrosswordPuzzle>;
-  countUserCrosswordsForQuizToday(userId: number, quizId: string): Promise<number>;
+  countUserCrosswordsForQuizToday(userId: string, quizId: string): Promise<number>;
   
   // Crossword attempt operations
   createCrosswordAttempt(attempt: InsertCrosswordAttempt): Promise<CrosswordAttempt>;
   getCrosswordAttemptById(id: string): Promise<CrosswordAttempt | undefined>;
-  getCrosswordAttemptByUserAndPuzzle(userId: number, puzzleId: string): Promise<CrosswordAttempt | undefined>;
-  getCrosswordAttemptsByUser(userId: number): Promise<CrosswordAttempt[]>;
+  getCrosswordAttemptByUserAndPuzzle(userId: string, puzzleId: string): Promise<CrosswordAttempt | undefined>;
+  getCrosswordAttemptsByUser(userId: string): Promise<CrosswordAttempt[]>;
   updateCrosswordAttempt(id: string, updates: Partial<CrosswordAttempt>): Promise<CrosswordAttempt>;
   
   // Crossword leaderboard operations
   upsertCrosswordLeaderboard(entry: InsertCrosswordLeaderboard): Promise<CrosswordLeaderboard>;
   getCrosswordLeaderboardByWeek(weekNumber: number, weekYear: number): Promise<CrosswordLeaderboard[]>;
-  getCrosswordLeaderboardByUser(userId: number): Promise<CrosswordLeaderboard[]>;
+  getCrosswordLeaderboardByUser(userId: string): Promise<CrosswordLeaderboard[]>;
   updateCrosswordLeaderboard(id: string, updates: Partial<CrosswordLeaderboard>): Promise<CrosswordLeaderboard>;
 
   // ========== HEALTH SCORE SYSTEM ==========
@@ -634,19 +634,19 @@ export interface IStorage {
   // Health report operations
   createHealthReport(report: InsertUserHealthReport): Promise<UserHealthReport>;
   getHealthReportById(id: string): Promise<UserHealthReport | undefined>;
-  getHealthReportsByUser(userId: number): Promise<UserHealthReport[]>;
+  getHealthReportsByUser(userId: string): Promise<UserHealthReport[]>;
   getHealthReportsByTriageSession(sessionId: string): Promise<UserHealthReport[]>;
   updateHealthReport(id: string, updates: Partial<UserHealthReport>): Promise<UserHealthReport>;
   deleteHealthReport(id: string): Promise<void>;
   
   // Health score history operations
   createHealthScoreHistory(score: InsertHealthScoreHistory): Promise<HealthScoreHistory>;
-  getLatestHealthScore(userId: number): Promise<HealthScoreHistory | undefined>;
-  getHealthScoreHistory(userId: number, limit?: number): Promise<HealthScoreHistory[]>;
+  getLatestHealthScore(userId: string): Promise<HealthScoreHistory | undefined>;
+  getHealthScoreHistory(userId: string, limit?: number): Promise<HealthScoreHistory[]>;
   
   // Health insight operations
   createHealthInsight(insight: InsertHealthInsight): Promise<HealthInsight>;
-  getHealthInsightsByUser(userId: number, statusFilter?: string): Promise<HealthInsight[]>;
+  getHealthInsightsByUser(userId: string, statusFilter?: string): Promise<HealthInsight[]>;
   updateHealthInsight(id: string, updates: Partial<HealthInsight>): Promise<HealthInsight>;
   acknowledgeHealthInsight(id: string): Promise<HealthInsight>;
   resolveHealthInsight(id: string): Promise<HealthInsight>;
@@ -655,16 +655,16 @@ export interface IStorage {
   // ========== USER TOKEN USAGE SYSTEM ==========
   
   // Token usage operations
-  getUserTokenUsage(userId: number, monthYear: string): Promise<UserTokenUsage | undefined>;
-  upsertUserTokenUsage(userId: number, monthYear: string, tokensToAdd: number): Promise<UserTokenUsage>;
-  getOrCreateTokenUsage(userId: number): Promise<UserTokenUsage>;
+  getUserTokenUsage(userId: string, monthYear: string): Promise<UserTokenUsage | undefined>;
+  upsertUserTokenUsage(userId: string, monthYear: string, tokensToAdd: number): Promise<UserTokenUsage>;
+  getOrCreateTokenUsage(userId: string): Promise<UserTokenUsage>;
 
   // ========== JOB QUEUE SYSTEM ==========
   
   // Job queue operations
   createJob(job: InsertJobQueue): Promise<JobQueue>;
   getJobById(id: string): Promise<JobQueue | undefined>;
-  getJobsByUser(userId: number, limit?: number): Promise<JobQueue[]>;
+  getJobsByUser(userId: string, limit?: number): Promise<JobQueue[]>;
   getPendingJobs(limit?: number): Promise<JobQueue[]>;
   updateJob(id: string, updates: Partial<JobQueue>): Promise<JobQueue>;
   updateJobProgress(id: string, progress: number, currentStep: string): Promise<JobQueue>;
@@ -722,7 +722,7 @@ export interface IStorage {
   // Audit Log operations (GDPR compliance)
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
   getAuditLogs(filters?: {
-    userId?: number;
+    userId?: string;
     resourceType?: string;
     resourceOwnerId?: number;
     startDate?: Date;
@@ -731,7 +731,7 @@ export interface IStorage {
     offset?: number;
   }): Promise<Array<AuditLog & { user?: { fullName: string; email: string }; resourceOwner?: { fullName: string; email: string } }>>;
   getAuditLogsCount(filters?: {
-    userId?: number;
+    userId?: string;
     resourceType?: string;
     resourceOwnerId?: number;
     startDate?: Date;
@@ -741,7 +741,7 @@ export interface IStorage {
   // Login Log operations (Track authentication events)
   createLoginLog(log: InsertLoginLog): Promise<LoginLog>;
   getLoginLogs(filters?: {
-    userId?: number;
+    userId?: string;
     userEmail?: string;
     success?: boolean;
     startDate?: Date;
@@ -750,7 +750,7 @@ export interface IStorage {
     offset?: number;
   }): Promise<LoginLog[]>;
   getLoginLogsCount(filters?: {
-    userId?: number;
+    userId?: string;
     userEmail?: string;
     success?: boolean;
     startDate?: Date;
@@ -776,16 +776,16 @@ export interface IStorage {
 
   // Push Notification operations
   createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription>;
-  getPushSubscriptionsByUser(userId: number): Promise<PushSubscription[]>;
+  getPushSubscriptionsByUser(userId: string): Promise<PushSubscription[]>;
   getAllPushSubscriptions(): Promise<PushSubscription[]>;
   deletePushSubscription(endpoint: string): Promise<void>;
 
   // In-App Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;
-  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  getNotificationsByUser(userId: string): Promise<Notification[]>;
   markNotificationAsRead(notificationId: string): Promise<void>;
-  markAllNotificationsAsRead(userId: number): Promise<void>;
-  getUnreadNotificationCount(userId: number): Promise<number>;
+  markAllNotificationsAsRead(userId: string): Promise<void>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
 
   // ========== EXTERNAL API KEYS ==========
 
@@ -800,7 +800,7 @@ export interface IStorage {
 
   // Wearable Device operations
   createWearableDevice(device: InsertWearableDevice): Promise<WearableDevice>;
-  getWearableDevicesByUser(userId: number): Promise<WearableDevice[]>;
+  getWearableDevicesByUser(userId: string): Promise<WearableDevice[]>;
   getAllWearableDevices(): Promise<WearableDevice[]>;
   getWearableDeviceById(id: string): Promise<WearableDevice | undefined>;
   updateWearableDevice(id: string, updates: Partial<WearableDevice>): Promise<WearableDevice>;
@@ -808,9 +808,9 @@ export interface IStorage {
 
   // Blood Pressure Reading operations
   createBloodPressureReading(reading: InsertBloodPressureReading): Promise<BloodPressureReading>;
-  getBloodPressureReadingsByUser(userId: number, startDate?: Date, endDate?: Date): Promise<BloodPressureReading[]>;
+  getBloodPressureReadingsByUser(userId: string, startDate?: Date, endDate?: Date): Promise<BloodPressureReading[]>;
   getBloodPressureReadingById(id: string): Promise<BloodPressureReading | undefined>;
-  getAnomalousBloodPressureReadings(userId?: number): Promise<Array<BloodPressureReading & { userName?: string; userEmail?: string }>>;
+  getAnomalousBloodPressureReadings(userId?: string): Promise<Array<BloodPressureReading & { userName?: string; userEmail?: string }>>;
   updateBloodPressureReading(id: string, updates: Partial<BloodPressureReading>): Promise<BloodPressureReading>;
 
   // Wearable Daily Reports
@@ -831,7 +831,7 @@ export interface IStorage {
 
   // Proactive Notification operations
   createProactiveNotification(notification: InsertProactiveNotification): Promise<ProactiveNotification>;
-  getProactiveNotificationsByUser(userId: number, limit?: number): Promise<ProactiveNotification[]>;
+  getProactiveNotificationsByUser(userId: string, limit?: number): Promise<ProactiveNotification[]>;
   getProactiveNotificationStats(startDate?: Date, endDate?: Date): Promise<{
     total: number;
     sent: number;
@@ -849,15 +849,15 @@ export interface IStorage {
 
   // Account deletion operations
   createAccountDeletionRequest(request: Omit<InsertAccountDeletionRequest, 'attemptCount'>): Promise<AccountDeletionRequest>;
-  getAccountDeletionRequestByUserId(userId: number): Promise<AccountDeletionRequest | undefined>;
-  incrementDeletionAttempts(userId: number): Promise<void>;
-  deleteAccountDeletionRequest(userId: number): Promise<void>;
-  deleteUserAndAllData(userId: number): Promise<void>;
+  getAccountDeletionRequestByUserId(userId: string): Promise<AccountDeletionRequest | undefined>;
+  incrementDeletionAttempts(userId: string): Promise<void>;
+  deleteAccountDeletionRequest(userId: string): Promise<void>;
+  deleteUserAndAllData(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
   // User operations
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -877,7 +877,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserStripeInfo(userId: number, stripeCustomerId: string, tierOrSubscriptionId?: string): Promise<User> {
+  async updateUserStripeInfo(userId: string, stripeCustomerId: string, tierOrSubscriptionId?: string): Promise<User> {
     // If tierOrSubscriptionId is a tier (premium or premium_plus), use it as subscriptionTier
     // If it starts with "sub_", it's a Stripe subscription ID
     const isTier = tierOrSubscriptionId && !tierOrSubscriptionId.startsWith('sub_');
@@ -896,7 +896,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserStripeCustomer(userId: number, stripeCustomerId: string): Promise<User> {
+  async updateUserStripeCustomer(userId: string, stripeCustomerId: string): Promise<User> {
     const [user] = await db
       .update(users)
       .set({ 
@@ -908,7 +908,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserLanguage(userId: number, language: string): Promise<User> {
+  async updateUserLanguage(userId: string, language: string): Promise<User> {
     const [user] = await db
       .update(users)
       .set({
@@ -925,7 +925,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
-  async updateUser(id: number, updates: Partial<User>): Promise<User> {
+  async updateUser(id: string, updates: Partial<User>): Promise<User> {
     const [user] = await db
       .update(users)
       .set({
@@ -937,7 +937,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async deleteUser(id: number): Promise<void> {
+  async deleteUser(id: string): Promise<void> {
     // Handle both numeric IDs (serial) and UUID strings (varchar)
     // Try to convert to number, but if it fails (UUID), use the string as-is
     const userIdNumber = Number(id);
@@ -1072,7 +1072,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async setPasswordResetToken(userId: number, token: string, expires: Date): Promise<void> {
+  async setPasswordResetToken(userId: string, token: string, expires: Date): Promise<void> {
     await db
       .update(users)
       .set({
@@ -1083,7 +1083,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
   }
 
-  async updateUserPassword(userId: number, password: string): Promise<void> {
+  async updateUserPassword(userId: string, password: string): Promise<void> {
     await db
       .update(users)
       .set({
@@ -1093,7 +1093,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
   }
 
-  async clearPasswordResetToken(userId: number): Promise<void> {
+  async clearPasswordResetToken(userId: string): Promise<void> {
     await db
       .update(users)
       .set({
@@ -1454,7 +1454,7 @@ export class DatabaseStorage implements IStorage {
     return attempt;
   }
 
-  async getUserQuizAttempts(userId: number, limit = 10): Promise<(UserQuizAttempt & { quizTitle: string })[]> {
+  async getUserQuizAttempts(userId: string, limit = 10): Promise<(UserQuizAttempt & { quizTitle: string })[]> {
     const results = await db
       .select({
         id: userQuizAttempts.id,
@@ -1481,14 +1481,14 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getUserProgress(userId: number): Promise<UserProgress[]> {
+  async getUserProgress(userId: string): Promise<UserProgress[]> {
     return await db
       .select()
       .from(userProgress)
       .where(eq(userProgress.userId, userId));
   }
 
-  async updateUserProgress(userId: number, categoryId: string, attempt: UserQuizAttempt): Promise<void> {
+  async updateUserProgress(userId: string, categoryId: string, attempt: UserQuizAttempt): Promise<void> {
     // Check if user progress exists for this category
     const [existing] = await db
       .select()
@@ -1545,7 +1545,7 @@ export class DatabaseStorage implements IStorage {
     return report;
   }
 
-  async getUserReports(userId: number, limit = 10): Promise<QuizReport[]> {
+  async getUserReports(userId: string, limit = 10): Promise<QuizReport[]> {
     return await db
       .select()
       .from(quizReports)
@@ -1681,7 +1681,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getUserEnrollments(userId: number): Promise<LiveCourseEnrollment[]> {
+  async getUserEnrollments(userId: string): Promise<LiveCourseEnrollment[]> {
     return await db
       .select()
       .from(liveCourseEnrollments)
@@ -1701,7 +1701,7 @@ export class DatabaseStorage implements IStorage {
     return enrollment;
   }
 
-  async getUserEnrollmentForSession(userId: number, sessionId: string): Promise<LiveCourseEnrollment | undefined> {
+  async getUserEnrollmentForSession(userId: string, sessionId: string): Promise<LiveCourseEnrollment | undefined> {
     const [enrollment] = await db
       .select()
       .from(liveCourseEnrollments)
@@ -2045,7 +2045,7 @@ export class DatabaseStorage implements IStorage {
     return upserted;
   }
 
-  async getUserVideoProgress(userId: number, courseId: string): Promise<UserVideoProgress[]> {
+  async getUserVideoProgress(userId: string, courseId: string): Promise<UserVideoProgress[]> {
     return await db
       .select()
       .from(userVideoProgress)
@@ -2057,7 +2057,7 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
-  async getUserCourseProgress(userId: number, courseId: string): Promise<{completed: number; total: number}> {
+  async getUserCourseProgress(userId: string, courseId: string): Promise<{completed: number; total: number}> {
     const [result] = await db
       .select({
         completed: sql<number>`count(*) filter (where ${userVideoProgress.completed} = true)`,
@@ -2146,7 +2146,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(badges).where(eq(badges.id, id));
   }
   
-  async getUserBadges(userId: number): Promise<(UserBadge & { badge: Badge })[]> {
+  async getUserBadges(userId: string): Promise<(UserBadge & { badge: Badge })[]> {
     const results = await db
       .select({
         id: userBadges.id,
@@ -2163,7 +2163,7 @@ export class DatabaseStorage implements IStorage {
     return results.filter(r => r.badge !== null) as (UserBadge & { badge: Badge })[];
   }
   
-  async awardBadge(userId: number, badgeId: string): Promise<UserBadge> {
+  async awardBadge(userId: string, badgeId: string): Promise<UserBadge> {
     const [created] = await db
       .insert(userBadges)
       .values({ userId, badgeId })
@@ -2199,7 +2199,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(achievements).where(eq(achievements.id, id));
   }
   
-  async getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]> {
+  async getUserAchievements(userId: string): Promise<(UserAchievement & { achievement: Achievement })[]> {
     const results = await db
       .select({
         id: userAchievements.id,
@@ -2248,7 +2248,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
   
-  async getUserDailyChallengeStatus(userId: number, challengeId: string): Promise<UserDailyChallenge | undefined> {
+  async getUserDailyChallengeStatus(userId: string, challengeId: string): Promise<UserDailyChallenge | undefined> {
     const [status] = await db
       .select()
       .from(userDailyChallenges)
@@ -2271,7 +2271,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Gamification - Certificate operations
-  async getUserCertificates(userId: number): Promise<UserCertificate[]> {
+  async getUserCertificates(userId: string): Promise<UserCertificate[]> {
     return await db
       .select()
       .from(userCertificates)
@@ -2369,7 +2369,7 @@ export class DatabaseStorage implements IStorage {
     return results.filter(r => r.user !== null) as (Leaderboard & { user: User })[];
   }
   
-  async getUserLeaderboardPosition(userId: number, categoryId?: string, period = 'all_time'): Promise<Leaderboard | undefined> {
+  async getUserLeaderboardPosition(userId: string, categoryId?: string, period = 'all_time'): Promise<Leaderboard | undefined> {
     const [position] = await db
       .select()
       .from(leaderboard)
@@ -2385,7 +2385,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Gamification - Activity log operations
-  async getUserActivityLog(userId: number, limit = 50): Promise<ActivityLog[]> {
+  async getUserActivityLog(userId: string, limit = 50): Promise<ActivityLog[]> {
     return await db
       .select()
       .from(activityLog)
@@ -2486,7 +2486,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(users.createdAt));
   }
   
-  async getCorporateAgreementByAdminUserId(userId: number): Promise<CorporateAgreement | undefined> {
+  async getCorporateAgreementByAdminUserId(userId: string): Promise<CorporateAgreement | undefined> {
     const [agreement] = await db
       .select()
       .from(corporateAgreements)
@@ -2785,7 +2785,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Analytics operations
-  async getUserAnalyticsByCategory(userId: number, categoryId: string): Promise<{
+  async getUserAnalyticsByCategory(userId: string, categoryId: string): Promise<{
     totalAttempts: number;
     averageScore: number;
     bestScore: number;
@@ -2894,7 +2894,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getUserPerformanceTrend(userId: number, days: number = 30): Promise<Array<{
+  async getUserPerformanceTrend(userId: string, days: number = 30): Promise<Array<{
     date: string;
     averageScore: number;
     attemptsCount: number;
@@ -3119,21 +3119,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userFeedback.id, id));
   }
 
-  async incrementUserLoginCount(userId: number): Promise<void> {
+  async incrementUserLoginCount(userId: string): Promise<void> {
     await db
       .update(users)
       .set({ loginCount: sql`${users.loginCount} + 1` })
       .where(eq(users.id, userId));
   }
 
-  async markUserFeedbackSubmitted(userId: number): Promise<void> {
+  async markUserFeedbackSubmitted(userId: string): Promise<void> {
     await db
       .update(users)
       .set({ feedbackSubmitted: true })
       .where(eq(users.id, userId));
   }
 
-  async getUserFeedbackByUserId(userId: number): Promise<UserFeedback[]> {
+  async getUserFeedbackByUserId(userId: string): Promise<UserFeedback[]> {
     return await db
       .select()
       .from(userFeedback)
@@ -3141,7 +3141,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(userFeedback.createdAt));
   }
 
-  async checkUserHasRecentFeedback(userId: number, days: number = 30): Promise<boolean> {
+  async checkUserHasRecentFeedback(userId: string, days: number = 30): Promise<boolean> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
     
@@ -3178,7 +3178,7 @@ export class DatabaseStorage implements IStorage {
     return await query.orderBy(desc(preventionDocuments.createdAt));
   }
 
-  async getPreventionDocumentsByUser(userId: number): Promise<PreventionDocument[]> {
+  async getPreventionDocumentsByUser(userId: string): Promise<PreventionDocument[]> {
     return await db
       .select()
       .from(preventionDocuments)
@@ -3238,7 +3238,7 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
-  async getTriageSessionsByUser(userId: number): Promise<TriageSession[]> {
+  async getTriageSessionsByUser(userId: string): Promise<TriageSession[]> {
     return await db
       .select()
       .from(triageSessions)
@@ -3318,7 +3318,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(triageAlerts.createdAt));
   }
 
-  async getUserTriageAlerts(userId: number): Promise<TriageAlert[]> {
+  async getUserTriageAlerts(userId: string): Promise<TriageAlert[]> {
     return await db
       .select()
       .from(triageAlerts)
@@ -3369,7 +3369,7 @@ export class DatabaseStorage implements IStorage {
     return alert;
   }
 
-  async getPendingAlertForUser(userId: number): Promise<TriageAlert | undefined> {
+  async getPendingAlertForUser(userId: string): Promise<TriageAlert | undefined> {
     const [alert] = await db
       .select()
       .from(triageAlerts)
@@ -3427,7 +3427,7 @@ export class DatabaseStorage implements IStorage {
     return codeRecord;
   }
 
-  async getProhmedCodesByUser(userId: number): Promise<ProhmedCode[]> {
+  async getProhmedCodesByUser(userId: string): Promise<ProhmedCode[]> {
     return await db
       .select()
       .from(prohmedCodes)
@@ -3493,7 +3493,7 @@ export class DatabaseStorage implements IStorage {
     return assessment;
   }
 
-  async getPreventionAssessmentsByUser(userId: number): Promise<PreventionAssessment[]> {
+  async getPreventionAssessmentsByUser(userId: string): Promise<PreventionAssessment[]> {
     return await db
       .select()
       .from(preventionAssessments)
@@ -3501,7 +3501,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(preventionAssessments.createdAt));
   }
 
-  async getLatestPreventionAssessment(userId: number): Promise<PreventionAssessment | undefined> {
+  async getLatestPreventionAssessment(userId: string): Promise<PreventionAssessment | undefined> {
     const [assessment] = await db
       .select()
       .from(preventionAssessments)
@@ -3585,7 +3585,7 @@ export class DatabaseStorage implements IStorage {
     return newPrediction;
   }
 
-  async getActiveHealthRiskPredictionsForUser(userId: number): Promise<HealthRiskPrediction[]> {
+  async getActiveHealthRiskPredictionsForUser(userId: string): Promise<HealthRiskPrediction[]> {
     return await db
       .select()
       .from(healthRiskPredictions)
@@ -3653,7 +3653,7 @@ export class DatabaseStorage implements IStorage {
     return puzzle;
   }
 
-  async countUserCrosswordsForQuizToday(userId: number, quizId: string): Promise<number> {
+  async countUserCrosswordsForQuizToday(userId: string, quizId: string): Promise<number> {
     // Calculate 24 hours ago
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
@@ -3683,7 +3683,7 @@ export class DatabaseStorage implements IStorage {
     return attempt;
   }
 
-  async getCrosswordAttemptByUserAndPuzzle(userId: number, puzzleId: string): Promise<CrosswordAttempt | undefined> {
+  async getCrosswordAttemptByUserAndPuzzle(userId: string, puzzleId: string): Promise<CrosswordAttempt | undefined> {
     const [attempt] = await db
       .select()
       .from(crosswordAttempts)
@@ -3694,7 +3694,7 @@ export class DatabaseStorage implements IStorage {
     return attempt;
   }
 
-  async getCrosswordAttemptsByUser(userId: number): Promise<CrosswordAttempt[]> {
+  async getCrosswordAttemptsByUser(userId: string): Promise<CrosswordAttempt[]> {
     return await db
       .select()
       .from(crosswordAttempts)
@@ -3738,7 +3738,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(crosswordLeaderboard.totalScore));
   }
 
-  async getCrosswordLeaderboardByUser(userId: number): Promise<CrosswordLeaderboard[]> {
+  async getCrosswordLeaderboardByUser(userId: string): Promise<CrosswordLeaderboard[]> {
     return await db
       .select()
       .from(crosswordLeaderboard)
@@ -3774,7 +3774,7 @@ export class DatabaseStorage implements IStorage {
     return report;
   }
 
-  async getHealthReportsByUser(userId: number): Promise<UserHealthReport[]> {
+  async getHealthReportsByUser(userId: string): Promise<UserHealthReport[]> {
     return await db
       .select()
       .from(userHealthReports)
@@ -3812,7 +3812,7 @@ export class DatabaseStorage implements IStorage {
     return scoreEntry;
   }
 
-  async getLatestHealthScore(userId: number): Promise<HealthScoreHistory | undefined> {
+  async getLatestHealthScore(userId: string): Promise<HealthScoreHistory | undefined> {
     const [score] = await db
       .select()
       .from(healthScoreHistory)
@@ -3822,7 +3822,7 @@ export class DatabaseStorage implements IStorage {
     return score;
   }
 
-  async getHealthScoreHistory(userId: number, limit: number = 10): Promise<HealthScoreHistory[]> {
+  async getHealthScoreHistory(userId: string, limit: number = 10): Promise<HealthScoreHistory[]> {
     return await db
       .select()
       .from(healthScoreHistory)
@@ -3840,7 +3840,7 @@ export class DatabaseStorage implements IStorage {
     return healthInsight;
   }
 
-  async getHealthInsightsByUser(userId: number, statusFilter?: string): Promise<HealthInsight[]> {
+  async getHealthInsightsByUser(userId: string, statusFilter?: string): Promise<HealthInsight[]> {
     if (statusFilter) {
       return await db
         .select()
@@ -3900,7 +3900,7 @@ export class DatabaseStorage implements IStorage {
 
   // ========== USER TOKEN USAGE SYSTEM ==========
   
-  async getUserTokenUsage(userId: number, monthYear: string): Promise<UserTokenUsage | undefined> {
+  async getUserTokenUsage(userId: string, monthYear: string): Promise<UserTokenUsage | undefined> {
     const [usage] = await db
       .select()
       .from(userTokenUsage)
@@ -3911,7 +3911,7 @@ export class DatabaseStorage implements IStorage {
     return usage;
   }
 
-  async upsertUserTokenUsage(userId: number, monthYear: string, tokensToAdd: number): Promise<UserTokenUsage> {
+  async upsertUserTokenUsage(userId: string, monthYear: string, tokensToAdd: number): Promise<UserTokenUsage> {
     const existing = await this.getUserTokenUsage(userId, monthYear);
     
     if (existing) {
@@ -3939,7 +3939,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getOrCreateTokenUsage(userId: number): Promise<UserTokenUsage> {
+  async getOrCreateTokenUsage(userId: string): Promise<UserTokenUsage> {
     const now = new Date();
     const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     
@@ -3972,7 +3972,7 @@ export class DatabaseStorage implements IStorage {
     return job;
   }
 
-  async getJobsByUser(userId: number, limit: number = 50): Promise<JobQueue[]> {
+  async getJobsByUser(userId: string, limit: number = 50): Promise<JobQueue[]> {
     return await db
       .select()
       .from(jobQueue)
@@ -4780,7 +4780,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getPushSubscriptionsByUser(userId: number): Promise<PushSubscription[]> {
+  async getPushSubscriptionsByUser(userId: string): Promise<PushSubscription[]> {
     return await db.select()
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.userId, userId));
@@ -4803,7 +4803,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+  async getNotificationsByUser(userId: string): Promise<Notification[]> {
     return await db.select()
       .from(notifications)
       .where(eq(notifications.userId, userId))
@@ -4821,7 +4821,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(notifications.id, notificationId));
   }
 
-  async markAllNotificationsAsRead(userId: number): Promise<void> {
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
     await db
       .update(notifications)
       .set({ 
@@ -4836,7 +4836,7 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
-  async getUnreadNotificationCount(userId: number): Promise<number> {
+  async getUnreadNotificationCount(userId: string): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` })
       .from(notifications)
       .where(
@@ -4948,7 +4948,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getWearableDevicesByUser(userId: number): Promise<WearableDevice[]> {
+  async getWearableDevicesByUser(userId: string): Promise<WearableDevice[]> {
     return await db
       .select()
       .from(wearableDevices)
@@ -4998,7 +4998,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getBloodPressureReadingsByUser(userId: number, startDate?: Date, endDate?: Date): Promise<BloodPressureReading[]> {
+  async getBloodPressureReadingsByUser(userId: string, startDate?: Date, endDate?: Date): Promise<BloodPressureReading[]> {
     let query = db
       .select()
       .from(bloodPressureReadings)
@@ -5159,7 +5159,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getProactiveNotificationsByUser(userId: number, limit: number = 50): Promise<ProactiveNotification[]> {
+  async getProactiveNotificationsByUser(userId: string, limit: number = 50): Promise<ProactiveNotification[]> {
     return await db
       .select()
       .from(proactiveNotifications)
@@ -5296,7 +5296,7 @@ export class DatabaseStorage implements IStorage {
     return deletionRequest;
   }
 
-  async getAccountDeletionRequestByUserId(userId: number): Promise<AccountDeletionRequest | undefined> {
+  async getAccountDeletionRequestByUserId(userId: string): Promise<AccountDeletionRequest | undefined> {
     const [request] = await db
       .select()
       .from(accountDeletionRequests)
@@ -5304,7 +5304,7 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
-  async incrementDeletionAttempts(userId: number): Promise<void> {
+  async incrementDeletionAttempts(userId: string): Promise<void> {
     await db
       .update(accountDeletionRequests)
       .set({
@@ -5313,13 +5313,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(accountDeletionRequests.userId, userId));
   }
 
-  async deleteAccountDeletionRequest(userId: number): Promise<void> {
+  async deleteAccountDeletionRequest(userId: string): Promise<void> {
     await db
       .delete(accountDeletionRequests)
       .where(eq(accountDeletionRequests.userId, userId));
   }
 
-  async deleteUserAndAllData(userId: number): Promise<void> {
+  async deleteUserAndAllData(userId: string): Promise<void> {
     // Delete user - Drizzle cascade will handle related data
     await db.delete(users).where(eq(users.id, userId));
   }

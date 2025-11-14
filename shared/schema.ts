@@ -42,7 +42,7 @@ export const sessions = pgTable(
 
 // User storage table
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: varchar("id", { length: 191 }).primaryKey(),
   email: varchar("email").unique().notNull(),
   password: varchar("password"), // Hashed password for email/password auth (null for social login)
   authProvider: varchar("auth_provider", { length: 20 }).default("local"), // local, google, apple
@@ -2791,7 +2791,7 @@ export type InsertWearableDailyReport = z.infer<typeof insertWearableDailyReport
 // Track account deletion requests with OTP verification
 export const accountDeletionRequests = pgTable("account_deletion_requests", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
   reason: varchar("reason", { length: 100 }).notNull(), // non_uso_app, non_credo_tecnologia, preferisco_altro, costi_alti, altro
   otherReason: text("other_reason"), // Free text if reason is "altro"
   otpHash: varchar("otp_hash", { length: 255 }).notNull(), // Bcrypt hashed OTP code

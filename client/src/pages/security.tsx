@@ -497,6 +497,173 @@ export default function Security() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Account Deletion Section */}
+        <Card data-testid="card-delete-account" className="border-destructive">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Cancella Account
+            </CardTitle>
+            <CardDescription>
+              Elimina permanentemente il tuo account e tutti i dati associati
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <AlertTriangle className="w-4 h-4" />
+              <AlertDescription>
+                <strong>Attenzione:</strong> Questa azione è irreversibile. Tutti i tuoi dati saranno eliminati permanentemente.
+              </AlertDescription>
+            </Alert>
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={() => setShowDeletionDialog(true)}
+              data-testid="button-delete-account"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Cancella il mio account
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Deletion Confirmation Dialog */}
+        <Dialog open={showDeletionDialog} onOpenChange={(open) => {
+          setShowDeletionDialog(open);
+          if (!open) {
+            // Reset state when closing
+            setDeletionReason("");
+            setOtherReason("");
+            setDeletionOtp("");
+            setOtpRequested(false);
+          }
+        }}>
+          <DialogContent data-testid="dialog-delete-account">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Conferma Cancellazione Account
+              </DialogTitle>
+              <DialogDescription>
+                Questa azione è permanente e non può essere annullata.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {!otpRequested ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="deletion-reason">Perché vuoi cancellare il tuo account?</Label>
+                    <Select value={deletionReason} onValueChange={setDeletionReason}>
+                      <SelectTrigger data-testid="select-deletion-reason">
+                        <SelectValue placeholder="Seleziona una motivazione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="non_uso_app">Non uso l'app</SelectItem>
+                        <SelectItem value="non_credo_tecnologia">Non credo nella tecnologia</SelectItem>
+                        <SelectItem value="preferisco_altro">Preferisco altro metodo</SelectItem>
+                        <SelectItem value="costi_alti">Costi troppo alti</SelectItem>
+                        <SelectItem value="altro">Altro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {deletionReason === "altro" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="other-reason">Specifica la motivazione</Label>
+                      <Input
+                        id="other-reason"
+                        value={otherReason}
+                        onChange={(e) => setOtherReason(e.target.value)}
+                        placeholder="Inserisci il motivo..."
+                        data-testid="input-other-reason"
+                      />
+                    </div>
+                  )}
+
+                  <Alert variant="destructive">
+                    <AlertTriangle className="w-4 h-4" />
+                    <AlertDescription className="text-sm">
+                      <strong>I tuoi dati saranno cancellati permanentemente:</strong>
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Profilo e informazioni personali</li>
+                        <li>Documenti e analisi mediche</li>
+                        <li>Storico appuntamenti e conversazioni</li>
+                        <li>Dati wearable e monitoraggio salute</li>
+                      </ul>
+                      <p className="mt-2">
+                        Non sarà più possibile recuperare questi dati per la prevenzione.
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                </>
+              ) : (
+                <>
+                  <Alert>
+                    <Check className="w-4 h-4" />
+                    <AlertDescription>
+                      Abbiamo inviato un codice di verifica a 6 cifre alla tua email. Inseriscilo qui sotto per confermare la cancellazione.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-2">
+                    <Label>Codice di Verifica</Label>
+                    <div className="flex justify-center">
+                      <InputOTP
+                        maxLength={6}
+                        value={deletionOtp}
+                        onChange={setDeletionOtp}
+                        data-testid="input-deletion-otp"
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Il codice scadrà tra 10 minuti
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeletionDialog(false)}
+                data-testid="button-cancel-deletion"
+              >
+                Annulla
+              </Button>
+              {!otpRequested ? (
+                <Button
+                  variant="destructive"
+                  onClick={handleRequestDeletion}
+                  disabled={requestDeletionMutation.isPending}
+                  data-testid="button-request-deletion-code"
+                >
+                  {requestDeletionMutation.isPending ? "Invio..." : "Invia codice di verifica"}
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  onClick={handleConfirmDeletion}
+                  disabled={confirmDeletionMutation.isPending || deletionOtp.length !== 6}
+                  data-testid="button-confirm-deletion"
+                >
+                  {confirmDeletionMutation.isPending ? "Eliminazione..." : "Conferma cancellazione"}
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

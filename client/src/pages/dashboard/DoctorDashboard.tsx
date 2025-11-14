@@ -128,6 +128,7 @@ export default function DoctorDashboard() {
           profileImageUrl={authenticatedProfileImage}
           subtitle="Sono a tua disposizione per supportarti nella prevenzione 🩺"
           rolePrefix="dott."
+          showAvatar={false}
         />
 
         {statsLoading ? (

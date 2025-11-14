@@ -14,6 +14,7 @@ interface DashboardHeroProps {
   showPremiumUpgrade?: boolean;
   rolePrefix?: string;
   testIdPrefix?: string;
+  showAvatar?: boolean;
 }
 
 export function DashboardHero({
@@ -25,15 +26,18 @@ export function DashboardHero({
   showPremiumUpgrade = false,
   rolePrefix = "",
   testIdPrefix = "greeting",
+  showAvatar = true,
 }: DashboardHeroProps) {
   return (
     <div className="flex items-center gap-4 mb-6">
-      <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
-        <AvatarImage src={profileImageUrl || undefined} alt={displayName} />
-        <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
+      {showAvatar && (
+        <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
+          <AvatarImage src={profileImageUrl || undefined} alt={displayName} />
+          <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+      )}
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <h1 className="text-2xl font-bold text-gray-900" data-testid={`${testIdPrefix}-title`}>

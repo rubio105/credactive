@@ -115,6 +115,7 @@ export default function PatientDashboard() {
           isPremium={(user as any)?.isPremium}
           subtitle="Come stai? Facciamo prevenzione insieme 💙"
           showPremiumUpgrade={true}
+          showAvatar={false}
         />
 
         <div className="grid grid-cols-1 gap-4">

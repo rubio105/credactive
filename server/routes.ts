@@ -13117,8 +13117,20 @@ Format as JSON: {
       const userId = req.user?.claims?.sub || req.user?.id;
       const { reason, otherReason } = req.body;
 
-      if (!reason) {
+      // Validate reason is not empty
+      if (!reason || reason.trim().length === 0) {
         return res.status(400).json({ message: 'Motivazione richiesta' });
+      }
+
+      // Validate allowed reasons
+      const validReasons = ['non_uso_app', 'non_credo_tecnologia', 'preferisco_altro', 'costi_alti', 'altro'];
+      if (!validReasons.includes(reason)) {
+        return res.status(400).json({ message: 'Motivazione non valida' });
+      }
+
+      // If reason is "altro", otherReason must be provided
+      if (reason === 'altro' && (!otherReason || otherReason.trim().length === 0)) {
+        return res.status(400).json({ message: 'Specifica la motivazione per "Altro"' });
       }
 
       // Get user

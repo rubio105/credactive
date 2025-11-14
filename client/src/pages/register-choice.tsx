@@ -4,12 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Stethoscope, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { VisualSecurityPolicy } from "@/components/VisualSecurityPolicy";
+import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
+import { TermsOfServiceDialog } from "@/components/TermsOfServiceDialog";
 
 const logoImage = "/images/ciry-main-logo.png";
 
@@ -26,6 +30,18 @@ export default function RegisterChoice() {
   const [doctorCity, setDoctorCity] = useState("");
   const [doctorProvince, setDoctorProvince] = useState("");
   const [doctorPostalCode, setDoctorPostalCode] = useState("");
+
+  // Privacy consents
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [healthDataConsent, setHealthDataConsent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [commercialConsent, setCommercialConsent] = useState(false);
+  const [scientificConsent, setScientificConsent] = useState(false);
+
+  // Dialog states
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
 
   const doctorRegisterMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -46,6 +62,12 @@ export default function RegisterChoice() {
       setDoctorCity("");
       setDoctorProvince("");
       setDoctorPostalCode("");
+      setPrivacyAccepted(false);
+      setHealthDataConsent(false);
+      setTermsAccepted(false);
+      setMarketingConsent(false);
+      setCommercialConsent(false);
+      setScientificConsent(false);
     },
     onError: (error: any) => {
       toast({
@@ -80,6 +102,16 @@ export default function RegisterChoice() {
       return;
     }
 
+    // Privacy consent validation
+    if (!privacyAccepted || !healthDataConsent || !termsAccepted) {
+      toast({
+        title: "Consensi obbligatori mancanti",
+        description: "Devi accettare l'informativa sulla privacy, il trattamento dati sanitari e i termini e condizioni per registrarti.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
@@ -106,9 +138,12 @@ export default function RegisterChoice() {
       gender: "male", // Dummy data for required field
       addressStreet: "N/A", // Dummy data for required field
       addressCountry: "Italia",
-      privacyAccepted: true,
-      healthDataConsent: true,
-      termsAccepted: true,
+      privacyAccepted,
+      healthDataConsent,
+      termsAccepted,
+      marketingConsent,
+      commercialConsent,
+      scientificConsent,
     });
   };
 
@@ -207,7 +242,7 @@ export default function RegisterChoice() {
                   </p>
                 </div>
 
-                <form onSubmit={handleDoctorSubmit} className="space-y-4">
+                <form onSubmit={handleDoctorSubmit} noValidate className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="doctorFirstName">Nome *</Label>
@@ -308,6 +343,135 @@ export default function RegisterChoice() {
                     </div>
                   </div>
 
+                  {/* Visual Security Policy */}
+                  <VisualSecurityPolicy />
+
+                  {/* Privacy Consents */}
+                  <div className="space-y-4">
+                    <h3 className="text-base font-semibold border-b pb-2">Consensi Privacy</h3>
+                    
+                    {/* Mandatory consents */}
+                    <div className="space-y-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Consensi obbligatori *</p>
+                      
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="doctor-privacyAccepted"
+                          checked={privacyAccepted}
+                          onCheckedChange={(checked) => setPrivacyAccepted(checked as boolean)}
+                          data-testid="checkbox-doctor-privacy"
+                        />
+                        <label
+                          htmlFor="doctor-privacyAccepted"
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Confermo di aver ricevuto, letto e accettato l'{" "}
+                          <button
+                            type="button"
+                            onClick={() => setShowPrivacyDialog(true)}
+                            className="text-primary hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                          >
+                            informativa sulla privacy
+                          </button> *
+                        </label>
+                      </div>
+
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="doctor-healthDataConsent"
+                          checked={healthDataConsent}
+                          onCheckedChange={(checked) => setHealthDataConsent(checked as boolean)}
+                          data-testid="checkbox-doctor-health-data"
+                        />
+                        <label
+                          htmlFor="doctor-healthDataConsent"
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Presto il consenso al trattamento delle informazioni sanitarie ai sensi dell'{" "}
+                          <button
+                            type="button"
+                            onClick={() => setShowPrivacyDialog(true)}
+                            className="text-primary hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                          >
+                            informativa sulla privacy
+                          </button> *
+                        </label>
+                      </div>
+
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="doctor-termsAccepted"
+                          checked={termsAccepted}
+                          onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
+                          data-testid="checkbox-doctor-terms"
+                        />
+                        <label
+                          htmlFor="doctor-termsAccepted"
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Accetto i{" "}
+                          <button
+                            type="button"
+                            onClick={() => setShowTermsDialog(true)}
+                            className="text-primary hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                          >
+                            termini e condizioni generali e EULA
+                          </button> *
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Optional consents */}
+                    <div className="space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground">Consensi opzionali</p>
+
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="doctor-marketingConsent"
+                          checked={marketingConsent}
+                          onCheckedChange={(checked) => setMarketingConsent(checked as boolean)}
+                          data-testid="checkbox-doctor-marketing"
+                        />
+                        <label
+                          htmlFor="doctor-marketingConsent"
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Presto il consenso a ricevere informazioni da parte di CIRY by prohmed sulle nuove funzioni o servizi
+                        </label>
+                      </div>
+
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="doctor-commercialConsent"
+                          checked={commercialConsent}
+                          onCheckedChange={(checked) => setCommercialConsent(checked as boolean)}
+                          data-testid="checkbox-doctor-commercial"
+                        />
+                        <label
+                          htmlFor="doctor-commercialConsent"
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Presto il consenso a ricevere informazioni commerciali
+                        </label>
+                      </div>
+
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="doctor-scientificConsent"
+                          checked={scientificConsent}
+                          onCheckedChange={(checked) => setScientificConsent(checked as boolean)}
+                          data-testid="checkbox-doctor-scientific"
+                        />
+                        <label
+                          htmlFor="doctor-scientificConsent"
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Presto il consenso per attività scientifiche e didattiche
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
                   <Button
                     type="submit"
                     className="w-full"
@@ -336,6 +500,16 @@ export default function RegisterChoice() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Privacy and Terms Dialogs */}
+      <PrivacyPolicyDialog 
+        open={showPrivacyDialog} 
+        onOpenChange={setShowPrivacyDialog} 
+      />
+      <TermsOfServiceDialog 
+        open={showTermsDialog} 
+        onOpenChange={setShowTermsDialog} 
+      />
     </div>
   );
 }

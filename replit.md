@@ -2,6 +2,11 @@
 
 CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform that uses AI for medical document analysis, patient-doctor communication, and proactive health monitoring. Its main goal is to improve patient outcomes through early detection and personalized health management. The platform provides a REST API for integrations, offering comprehensive medical history, data storage, and doctor recommendations. CIRY is currently transitioning from Google Gemini AI to proprietary ML models using Active Learning.
 
+# Recent Changes
+
+## November 14, 2025
+- **Doctor Registration Privacy Consents**: Added all 6 privacy consent checkboxes to doctor registration form matching patient registration flow (privacy policy, health data processing, terms & conditions as mandatory; marketing, commercial, scientific as optional). Form includes VisualSecurityPolicy component and privacy/terms dialogs. Custom validation ensures all mandatory consents are accepted before submission.
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

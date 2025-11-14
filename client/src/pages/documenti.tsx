@@ -10,9 +10,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { FileText, Link as LinkIcon, AlertTriangle, User, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { FileText, Link as LinkIcon, AlertTriangle, User, Clock, CheckCircle2, XCircle, Download, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { HealthReport, formatReportDate, getReportUrgencyLevel } from "@/types/healthReport";
 
 interface LinkedDoctor {
   id: string;
@@ -95,6 +96,12 @@ export default function DocumentiPage() {
     enabled: !!user,
   });
 
+  // Fetch health reports (referti AI)
+  const { data: healthReports = [], isLoading: loadingReports } = useQuery<HealthReport[]>({
+    queryKey: ["/api/health-score/reports/my"],
+    enabled: !!user,
+  });
+
   // Link to doctor mutation
   const linkDoctorMutation = useMutation({
     mutationFn: async (code: string) => {
@@ -147,6 +154,144 @@ export default function DocumentiPage() {
           </div>
 
           <div className="grid gap-6">
+            {/* Health Reports Section (Referti AI) */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="w-5 h-5" />
+                      Referti AI
+                    </CardTitle>
+                    <CardDescription>
+                      I tuoi referti medici analizzati dall'intelligenza artificiale
+                    </CardDescription>
+                  </div>
+                  {healthReports.length > 0 && (
+                    <Badge variant="secondary" className="text-sm">
+                      {healthReports.length} {healthReports.length === 1 ? 'referto' : 'referti'}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingReports ? (
+                  <p className="text-muted-foreground text-center py-4">Caricamento referti...</p>
+                ) : healthReports.length === 0 ? (
+                  <Alert>
+                    <FileText className="w-4 h-4" />
+                    <AlertDescription>
+                      Non hai ancora caricato referti. Vai alla sezione AI per caricare e analizzare i tuoi documenti medici.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-4">
+                    {healthReports.map((report) => {
+                      const urgency = getReportUrgencyLevel(report);
+                      const urgentFindings = report.radiologicalAnalysis?.findings.filter(f => f.category === 'urgent' || f.category === 'attention') || [];
+                      
+                      return (
+                        <div
+                          key={report.id}
+                          className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                          data-testid={`health-report-${report.id}`}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-semibold" data-testid={`text-report-filename-${report.id}`}>
+                                  {report.fileName}
+                                </h4>
+                                {urgency !== 'none' && (
+                                  <Badge
+                                    variant={urgency === 'urgent' ? 'destructive' : 'default'}
+                                    className="text-xs"
+                                    data-testid={`badge-urgency-${report.id}`}
+                                  >
+                                    {urgency === 'urgent' ? '⚠️ Attenzione' : 'Richiede controllo'}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                <Badge variant="outline" className="text-xs" data-testid={`badge-report-type-${report.id}`}>
+                                  {report.reportType}
+                                </Badge>
+                                {report.reportDate && (
+                                  <span className="text-xs text-muted-foreground" data-testid={`text-report-date-${report.id}`}>
+                                    📅 {formatReportDate(report.reportDate)}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* AI Summary Preview */}
+                              <p className="text-sm text-muted-foreground mb-2 line-clamp-2" data-testid={`text-ai-summary-${report.id}`}>
+                                {report.aiSummary}
+                              </p>
+                              
+                              {/* Radiological Urgent Findings */}
+                              {urgentFindings.length > 0 && (
+                                <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded">
+                                  <p className="text-xs font-medium text-orange-800 dark:text-orange-200 mb-1">
+                                    Risultati da valutare:
+                                  </p>
+                                  <ul className="text-xs text-orange-700 dark:text-orange-300 space-y-1">
+                                    {urgentFindings.slice(0, 3).map((finding, idx) => (
+                                      <li key={idx}>
+                                        • {finding.description} {finding.location && `(${finding.location})`}
+                                      </li>
+                                    ))}
+                                    {urgentFindings.length > 3 && (
+                                      <li className="text-orange-600 dark:text-orange-400">
+                                        ...e altri {urgentFindings.length - 3}
+                                      </li>
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                              data-testid={`button-download-report-${report.id}`}
+                            >
+                              <a
+                                href={`/api/health-score/reports/${report.id}/pdf`}
+                                download={report.fileName}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Scarica PDF
+                              </a>
+                            </Button>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span data-testid={`text-upload-date-${report.id}`}>
+                                Caricato {format(new Date(report.createdAt), 'dd MMM yyyy, HH:mm', { locale: it })}
+                              </span>
+                            </div>
+                            {report.radiologicalAnalysis && (
+                              <div className="flex items-center gap-1">
+                                <Activity className="w-3 h-3" />
+                                <span data-testid={`text-report-findings-${report.id}`}>
+                                  {report.radiologicalAnalysis.findings.length} risultati analizzati
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Doctor Linking Section */}
             <Card>
               <CardHeader>

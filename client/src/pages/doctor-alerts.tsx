@@ -41,7 +41,7 @@ export default function DoctorAlertsPage() {
   const { toast } = useToast();
 
   const { data: alerts = [], isLoading } = useQuery<Alert[]>({
-    queryKey: ["/api/alerts"],
+    queryKey: ["/api/doctor/alerts"],
   });
 
   const filteredAlerts = alerts.filter(alert => {

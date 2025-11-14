@@ -203,6 +203,9 @@ import {
   doctorPatientLinks,
   doctorNotes,
   type DoctorPatientLink,
+  accountDeletionRequests,
+  type AccountDeletionRequest,
+  type InsertAccountDeletionRequest,
   type InsertDoctorPatientLink,
   type DoctorNote,
   type InsertDoctorNote,
@@ -843,6 +846,13 @@ export interface IStorage {
   markReminderSent(reminderId: string, sid?: string): Promise<void>;
   markReminderSkipped(reminderId: string, reason: string): Promise<void>;
   markReminderFailed(reminderId: string, errorMessage: string): Promise<void>;
+
+  // Account deletion operations
+  createAccountDeletionRequest(request: Omit<InsertAccountDeletionRequest, 'attemptCount'>): Promise<AccountDeletionRequest>;
+  getAccountDeletionRequestByUserId(userId: number): Promise<AccountDeletionRequest | undefined>;
+  incrementDeletionAttempts(userId: number): Promise<void>;
+  deleteAccountDeletionRequest(userId: number): Promise<void>;
+  deleteUserAndAllData(userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5262,6 +5272,56 @@ export class DatabaseStorage implements IStorage {
       SET status = 'failed', error_message = ${errorMessage} 
       WHERE id = ${reminderId}
     `);
+  }
+
+  // ========== ACCOUNT DELETION OPERATIONS ==========
+
+  async createAccountDeletionRequest(request: Omit<InsertAccountDeletionRequest, 'attemptCount'>): Promise<AccountDeletionRequest> {
+    const [deletionRequest] = await db
+      .insert(accountDeletionRequests)
+      .values(request)
+      .onConflictDoUpdate({
+        target: accountDeletionRequests.userId,
+        set: {
+          reason: request.reason,
+          otherReason: request.otherReason,
+          otpHash: request.otpHash,
+          expiresAt: request.expiresAt,
+          channel: request.channel,
+          attemptCount: 0,
+          createdAt: new Date(),
+        },
+      })
+      .returning();
+    return deletionRequest;
+  }
+
+  async getAccountDeletionRequestByUserId(userId: number): Promise<AccountDeletionRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(accountDeletionRequests)
+      .where(eq(accountDeletionRequests.userId, userId));
+    return request;
+  }
+
+  async incrementDeletionAttempts(userId: number): Promise<void> {
+    await db
+      .update(accountDeletionRequests)
+      .set({
+        attemptCount: sql`${accountDeletionRequests.attemptCount} + 1`,
+      })
+      .where(eq(accountDeletionRequests.userId, userId));
+  }
+
+  async deleteAccountDeletionRequest(userId: number): Promise<void> {
+    await db
+      .delete(accountDeletionRequests)
+      .where(eq(accountDeletionRequests.userId, userId));
+  }
+
+  async deleteUserAndAllData(userId: number): Promise<void> {
+    // Delete user - Drizzle cascade will handle related data
+    await db.delete(users).where(eq(users.id, userId));
   }
 }
 

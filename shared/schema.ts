@@ -2786,5 +2786,33 @@ export const insertWearableDailyReportSchema = createInsertSchema(wearableDailyR
 });
 export type InsertWearableDailyReport = z.infer<typeof insertWearableDailyReportSchema>;
 
+// ========== ACCOUNT DELETION REQUESTS ==========
+
+// Track account deletion requests with OTP verification
+export const accountDeletionRequests = pgTable("account_deletion_requests", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: integer("user_id").notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
+  reason: varchar("reason", { length: 100 }).notNull(), // non_uso_app, non_credo_tecnologia, preferisco_altro, costi_alti, altro
+  otherReason: text("other_reason"), // Free text if reason is "altro"
+  otpHash: varchar("otp_hash", { length: 255 }).notNull(), // Bcrypt hashed OTP code
+  expiresAt: timestamp("expires_at").notNull(), // OTP expires after 10 minutes
+  attemptCount: integer("attempt_count").default(0).notNull(), // Track verification attempts
+  channel: varchar("channel", { length: 20 }).default('email').notNull(), // email or sms
+  completedAt: timestamp("completed_at"), // Set when deletion is completed
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_deletion_user").on(table.userId),
+  index("idx_deletion_expires").on(table.expiresAt),
+]);
+
+export type AccountDeletionRequest = typeof accountDeletionRequests.$inferSelect;
+export const insertAccountDeletionRequestSchema = createInsertSchema(accountDeletionRequests).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+  attemptCount: true,
+});
+export type InsertAccountDeletionRequest = z.infer<typeof insertAccountDeletionRequestSchema>;
+
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };

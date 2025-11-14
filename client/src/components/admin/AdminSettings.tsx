@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { DollarSign, Save, Plus, Edit, Trash2, Wand2, Check, X, Calendar } from "lucide-react";
+import { DollarSign, Save, Plus, Edit, Trash2, Wand2, Check, X, Calendar, UserPlus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface Setting {
@@ -44,6 +44,7 @@ export function AdminSettings() {
   const [price, setPrice] = useState('90');
   const [currency, setCurrency] = useState('EUR');
   const [appointmentsEnabled, setAppointmentsEnabled] = useState(false);
+  const [inviteOnlyMode, setInviteOnlyMode] = useState(true);
   
   // Subscription plan form state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -71,6 +72,10 @@ export function AdminSettings() {
     queryKey: ["/api/settings/appointments-enabled"],
   });
 
+  const { data: inviteOnlyStatus } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/settings/invite-only-mode"],
+  });
+
   // Transform array of settings into an object
   const settings: Settings | undefined = settingsArray ? {
     subscriptionPrice: parseFloat(settingsArray.find(s => s.key === 'subscriptionPrice')?.value || '90'),
@@ -89,6 +94,12 @@ export function AdminSettings() {
       setAppointmentsEnabled(appointmentsStatus.enabled);
     }
   }, [appointmentsStatus]);
+
+  useEffect(() => {
+    if (inviteOnlyStatus) {
+      setInviteOnlyMode(inviteOnlyStatus.enabled);
+    }
+  }, [inviteOnlyStatus]);
 
   const updateMutation = useMutation({
     mutationFn: (data: Settings) => apiRequest("/api/admin/settings", "POST", data),
@@ -171,6 +182,34 @@ export function AdminSettings() {
       // Rollback to previous value on error
       setAppointmentsEnabled(!failedValue);
       queryClient.invalidateQueries({ queryKey: ["/api/settings/appointments-enabled"] });
+      toast({ 
+        title: "Errore durante l'aggiornamento", 
+        description: "Impossibile aggiornare le impostazioni. Riprova.",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const toggleInviteOnlyMutation = useMutation({
+    mutationFn: (enabled: boolean) => 
+      apiRequest("/api/admin/settings/INVITE_ONLY_MODE", "PUT", { 
+        value: enabled.toString(), 
+        description: "Modalità registrazione solo su invito medico",
+        category: "features"
+      }),
+    onSuccess: (_, newValue) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/invite-only-mode"] });
+      toast({ 
+        title: newValue ? "Modalità 'Solo Su Invito' attivata" : "Registrazione aperta abilitata",
+        description: newValue 
+          ? "Solo utenti con link di invito medico possono registrarsi" 
+          : "Chiunque può registrarsi liberamente sulla piattaforma"
+      });
+    },
+    onError: (_, failedValue) => {
+      // Rollback to previous value on error
+      setInviteOnlyMode(!failedValue);
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/invite-only-mode"] });
       toast({ 
         title: "Errore durante l'aggiornamento", 
         description: "Impossibile aggiornare le impostazioni. Riprova.",
@@ -269,6 +308,11 @@ export function AdminSettings() {
     toggleAppointmentsMutation.mutate(checked);
   };
 
+  const handleToggleInviteOnly = (checked: boolean) => {
+    setInviteOnlyMode(checked);
+    toggleInviteOnlyMutation.mutate(checked);
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -351,6 +395,38 @@ export function AdminSettings() {
                     onCheckedChange={handleToggleAppointments}
                     disabled={toggleAppointmentsMutation.isPending}
                     data-testid="switch-appointments"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5" />
+                  Modalità Registrazione
+                </CardTitle>
+                <CardDescription>
+                  Controlla se la registrazione richiede un invito medico
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="invite-only-toggle">Solo Su Invito</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {inviteOnlyMode 
+                        ? "Attivo: solo utenti con link di invito medico possono registrarsi." 
+                        : "Disattivo: chiunque può registrarsi liberamente sulla piattaforma."
+                      }
+                    </p>
+                  </div>
+                  <Switch
+                    id="invite-only-toggle"
+                    checked={inviteOnlyMode}
+                    onCheckedChange={handleToggleInviteOnly}
+                    disabled={toggleInviteOnlyMutation.isPending}
+                    data-testid="switch-invite-only"
                   />
                 </div>
               </CardContent>

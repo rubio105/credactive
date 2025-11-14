@@ -25,7 +25,7 @@ export default function Register() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   
   // Check invite-only mode setting
-  const { data: inviteOnlySettings } = useQuery({
+  const { data: inviteOnlySettings } = useQuery<{ enabled: boolean }>({
     queryKey: ['/api/settings/invite-only-mode'],
   });
   const inviteOnlyMode = inviteOnlySettings?.enabled ?? true;

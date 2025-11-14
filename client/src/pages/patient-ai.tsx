@@ -112,7 +112,7 @@ export default function PatientAIPage() {
 
   // Query per i referti del paziente
   const { data: healthReports = [] } = useQuery<HealthReport[]>({
-    queryKey: ["/api/health-score/reports/my"],
+    queryKey: ["/api/health-score/reports"],
     enabled: !!user,
   });
 

@@ -48,15 +48,23 @@ export function formatReportDate(date: string | null): string {
 /**
  * Helper function to get urgency level from health report
  * Based on radiological findings only (since that's what the API provides)
+ * 
+ * IMPORTANT: Handles both legacy (findings as string[]) and canonical 
+ * (findings as object[]) formats for backward compatibility
  */
 export function getReportUrgencyLevel(report: HealthReport): 'none' | 'attention' | 'urgent' {
   // Check radiological findings
   if (report.radiologicalAnalysis?.findings) {
-    const hasUrgent = report.radiologicalAnalysis.findings.some(f => f.category === 'urgent');
-    if (hasUrgent) return 'urgent';
+    const findings = report.radiologicalAnalysis.findings;
     
-    const hasAttention = report.radiologicalAnalysis.findings.some(f => f.category === 'attention');
-    if (hasAttention) return 'attention';
+    // Defensive check: only process if findings is an array of objects (not strings)
+    if (Array.isArray(findings) && findings.length > 0 && typeof findings[0] === 'object') {
+      const hasUrgent = findings.some(f => f.category === 'urgent');
+      if (hasUrgent) return 'urgent';
+      
+      const hasAttention = findings.some(f => f.category === 'attention');
+      if (hasAttention) return 'attention';
+    }
   }
   
   return 'none';

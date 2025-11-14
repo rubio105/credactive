@@ -98,7 +98,7 @@ export default function DocumentiPage() {
 
   // Fetch health reports (referti AI)
   const { data: healthReports = [], isLoading: loadingReports } = useQuery<HealthReport[]>({
-    queryKey: ["/api/health-score/reports/my"],
+    queryKey: ["/api/health-score/reports"],
     enabled: !!user,
   });
 
@@ -188,7 +188,11 @@ export default function DocumentiPage() {
                   <div className="space-y-4">
                     {healthReports.map((report) => {
                       const urgency = getReportUrgencyLevel(report);
-                      const urgentFindings = report.radiologicalAnalysis?.findings.filter(f => f.category === 'urgent' || f.category === 'attention') || [];
+                      // Defensive check: only process if findings is an array of objects (not legacy strings)
+                      const findings = report.radiologicalAnalysis?.findings || [];
+                      const urgentFindings = Array.isArray(findings) && findings.length > 0 && typeof findings[0] === 'object'
+                        ? findings.filter(f => f.category === 'urgent' || f.category === 'attention')
+                        : [];
                       
                       return (
                         <div

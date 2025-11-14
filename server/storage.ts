@@ -4701,11 +4701,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async bookAppointment(appointmentId: string, patientId: string, notes?: string): Promise<Appointment> {
+    // Generate unique Jitsi meeting URL
+    const meetingRoomId = `ciry-${appointmentId}-${Date.now()}`;
+    const meetingUrl = `https://meet.jit.si/${meetingRoomId}`;
+    
     const [updated] = await db.update(appointments)
       .set({
         patientId,
         description: notes,
         status: 'booked',
+        meetingUrl,
         updatedAt: new Date(),
       })
       .where(eq(appointments.id, appointmentId))

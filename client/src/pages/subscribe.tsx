@@ -231,7 +231,18 @@ export default function Subscribe() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Passa a Premium</h1>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/dashboard")}
+              data-testid="button-back-to-dashboard"
+            >
+              ← Torna indietro
+            </Button>
+            <h1 className="text-4xl font-bold">Passa a Premium</h1>
+            <div className="w-32"></div>
+          </div>
           <p className="text-xl text-muted-foreground">
             Sblocca tutti i vantaggi della prevenzione salute
           </p>

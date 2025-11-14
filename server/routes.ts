@@ -2955,6 +2955,152 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
+  // Create Stripe Billing Portal session for subscription management
+  app.post('/api/create-billing-portal', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (!user.stripeCustomerId) {
+        return res.status(400).json({ message: "No Stripe customer ID found" });
+      }
+
+      const stripe = await getStripe();
+      const session = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: `${req.headers.origin || process.env.BASE_URL || 'http://localhost:5000'}/subscribe`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error("Error creating billing portal session:", error);
+      res.status(500).json({ message: "Failed to create billing portal session" });
+    }
+  });
+
+  // Stripe Webhook handler for subscription events
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET not configured');
+      return res.status(500).json({ error: 'Webhook secret not configured' });
+    }
+
+    let event;
+
+    try {
+      const stripe = await getStripe();
+      event = stripe.webhooks.constructEvent(req.body, sig as string, webhookSecret);
+    } catch (err: any) {
+      console.error(`[Stripe Webhook] Signature verification failed: ${err.message}`);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+      console.log(`[Stripe Webhook] Processing event: ${event.type}`);
+
+      switch (event.type) {
+        case 'customer.subscription.deleted': {
+          // Subscription canceled - revoke premium access
+          const subscription = event.data.object;
+          const customerId = subscription.customer as string;
+          
+          // Find user by Stripe customer ID
+          const users = await storage.getAllUsers();
+          const user = users.find(u => u.stripeCustomerId === customerId);
+          
+          if (user) {
+            console.log(`[Stripe Webhook] Revoking premium access for user ${user.email}`);
+            await storage.updateUser(user.id, {
+              isPremium: false,
+              subscriptionTier: 'free',
+              stripeSubscriptionId: null,
+            });
+          }
+          break;
+        }
+
+        case 'customer.subscription.updated': {
+          // Subscription updated (e.g., scheduled for cancellation)
+          const subscription = event.data.object;
+          const customerId = subscription.customer as string;
+          
+          const users = await storage.getAllUsers();
+          const user = users.find(u => u.stripeCustomerId === customerId);
+          
+          if (user) {
+            // Check if subscription is active or scheduled for cancellation
+            if (subscription.status === 'active' && !subscription.cancel_at_period_end) {
+              console.log(`[Stripe Webhook] Subscription still active for ${user.email}`);
+            } else if (subscription.cancel_at_period_end) {
+              console.log(`[Stripe Webhook] Subscription scheduled for cancellation for ${user.email}`);
+              // Keep premium until end of period - Stripe will send deleted event when it actually ends
+            } else if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+              console.log(`[Stripe Webhook] Payment issue for ${user.email}, status: ${subscription.status}`);
+              // You may want to notify the user but keep access until subscription.deleted
+            }
+          }
+          break;
+        }
+
+        case 'invoice.payment_failed': {
+          // Payment failed - notify user
+          const invoice = event.data.object;
+          const customerId = invoice.customer as string;
+          
+          const users = await storage.getAllUsers();
+          const user = users.find(u => u.stripeCustomerId === customerId);
+          
+          if (user && invoice.attempt_count === 1) {
+            // First payment failure - send notification
+            console.log(`[Stripe Webhook] Payment failed for ${user.email}, attempt ${invoice.attempt_count}`);
+            // TODO: Send email notification to user about payment failure
+            // sendPaymentFailedEmail(user.email, user.firstName || undefined).catch(err => 
+            //   console.error("Failed to send payment failed email:", err)
+            // );
+          }
+          break;
+        }
+
+        case 'invoice.payment_succeeded': {
+          // Successful renewal - ensure premium is active
+          const invoice = event.data.object;
+          const customerId = invoice.customer as string;
+          const subscriptionId = invoice.subscription as string;
+          
+          if (subscriptionId) {
+            const users = await storage.getAllUsers();
+            const user = users.find(u => u.stripeCustomerId === customerId);
+            
+            if (user && !user.isPremium) {
+              console.log(`[Stripe Webhook] Re-activating premium for ${user.email} after successful payment`);
+              await storage.updateUser(user.id, {
+                isPremium: true,
+                subscriptionTier: 'premium',
+                stripeSubscriptionId: subscriptionId,
+              });
+            }
+          }
+          break;
+        }
+
+        default:
+          console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error(`[Stripe Webhook] Error processing event ${event.type}:`, error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  });
+
   // ========== ADMIN ROUTES ==========
   
   // Configure multer for image uploads

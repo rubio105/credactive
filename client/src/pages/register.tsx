@@ -6,14 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, UserPlus, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { VisualSecurityPolicy } from "@/components/VisualSecurityPolicy";
 import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
 import { TermsOfServiceDialog } from "@/components/TermsOfServiceDialog";
+import { useInviteOnlyMode } from "@/hooks/useInviteOnlyMode";
 
 const logoImage = "/images/ciry-main-logo.png";
 
@@ -25,10 +27,18 @@ export default function Register() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   
   // Check invite-only mode setting
-  const { data: inviteOnlySettings } = useQuery<{ enabled: boolean }>({
-    queryKey: ['/api/settings/invite-only-mode'],
-  });
-  const inviteOnlyMode = inviteOnlySettings?.enabled ?? true;
+  const { inviteOnlyMode, isLoading: inviteModeLoading, error: inviteModeError } = useInviteOnlyMode();
+  
+  // Show toast on error
+  useEffect(() => {
+    if (inviteModeError) {
+      toast({
+        title: "Impossibile caricare impostazioni",
+        description: "Riprova più tardi. Per sicurezza, la modalità invito è attiva.",
+        variant: "destructive",
+      });
+    }
+  }, [inviteModeError, toast]);
   
   // Extract referral code from URL dynamically
   useEffect(() => {
@@ -285,6 +295,35 @@ export default function Register() {
       });
     }
   };
+
+  // Show loader while checking invite-only mode setting
+  if (inviteModeLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+        <Card className="w-full max-w-md shadow-2xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="flex justify-center mb-4">
+              <img 
+                src={logoImage} 
+                alt="CIRY Logo" 
+                className="h-16 w-auto"
+              />
+            </div>
+            <CardTitle className="text-3xl font-bold">
+              Caricamento...
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-3/4 mx-auto" />
+              <Skeleton className="h-32 w-full rounded-lg" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Show blocked message only if invite-only mode is enabled AND no referral code
   if (inviteOnlyMode && !referralCode) {

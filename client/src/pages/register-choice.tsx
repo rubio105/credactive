@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { User, Stethoscope, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -14,12 +15,27 @@ import { apiRequest } from "@/lib/queryClient";
 import { VisualSecurityPolicy } from "@/components/VisualSecurityPolicy";
 import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
 import { TermsOfServiceDialog } from "@/components/TermsOfServiceDialog";
+import { useInviteOnlyMode } from "@/hooks/useInviteOnlyMode";
 
 const logoImage = "/images/ciry-main-logo.png";
 
 export default function RegisterChoice() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Check invite-only mode setting
+  const { inviteOnlyMode, isLoading: inviteModeLoading, error: inviteModeError } = useInviteOnlyMode();
+  
+  // Show toast on error
+  useEffect(() => {
+    if (inviteModeError) {
+      toast({
+        title: "Impossibile caricare impostazioni",
+        description: "Riprova più tardi. Per sicurezza, la modalità invito è attiva.",
+        variant: "destructive",
+      });
+    }
+  }, [inviteModeError, toast]);
   
   // Doctor registration form state
   const [doctorFirstName, setDoctorFirstName] = useState("");
@@ -195,32 +211,66 @@ export default function RegisterChoice() {
                   </div>
                 </div>
                 
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">Registrazione Paziente</h3>
-                  <p className="text-muted-foreground mb-4">
-                    La registrazione paziente è disponibile solo tramite invito del tuo medico.
-                  </p>
-                </div>
+                {inviteModeLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-64 mx-auto" />
+                    <Skeleton className="h-4 w-96 mx-auto" />
+                    <Skeleton className="h-32 w-full max-w-md mx-auto rounded-lg" />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <h3 className="text-xl font-semibold mb-3">Registrazione Paziente</h3>
+                      {inviteOnlyMode ? (
+                        <p className="text-muted-foreground mb-4">
+                          La registrazione paziente è disponibile solo tramite invito del tuo medico.
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground mb-4">
+                          Registrati liberamente sulla piattaforma CIRY per iniziare il tuo percorso di prevenzione.
+                        </p>
+                      )}
+                    </div>
 
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-md mx-auto">
-                  <div className="flex items-start gap-3 mb-4">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-blue-800 dark:text-blue-200 text-left">
-                      Chiedi al tuo medico di condividere il link di invito personale per registrarti alla piattaforma CIRY.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-blue-800 dark:text-blue-200 text-left">
-                      Oppure inserisci manualmente il codice medico che hai ricevuto nella pagina di registrazione.
-                    </p>
-                  </div>
-                </div>
+                    {inviteOnlyMode ? (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-md mx-auto">
+                        <div className="flex items-start gap-3 mb-4">
+                          <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-blue-800 dark:text-blue-200 text-left">
+                            Chiedi al tuo medico di condividere il link di invito personale per registrarti alla piattaforma CIRY.
+                          </p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-blue-800 dark:text-blue-200 text-left">
+                            Oppure inserisci manualmente il codice medico che hai ricevuto nella pagina di registrazione.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-md mx-auto">
+                        <div className="flex items-start gap-3 mb-4">
+                          <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-blue-800 dark:text-blue-200 text-left">
+                            Puoi registrarti liberamente compilando il modulo di registrazione.
+                          </p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-blue-800 dark:text-blue-200 text-left">
+                            Se hai un codice medico, puoi inserirlo per collegarti automaticamente al tuo medico.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <Button 
                   size="lg"
                   onClick={() => setLocation("/register")}
                   data-testid="button-go-to-patient-register"
+                  disabled={inviteModeLoading}
                 >
                   Vai alla Registrazione Paziente
                 </Button>

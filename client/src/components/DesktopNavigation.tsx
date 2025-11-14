@@ -232,6 +232,7 @@ export default function DesktopNavigation() {
    * - Stiamo ancora caricando i dati dell'utente
    * - L'utente non è autenticato
    * - Siamo in vista mobile (< 768px)
+   * - L'utente è admin (usa AdminLayout con sidebar dedicata)
    */
   if (isLoading || !isAuthenticated || isMobileView) {
     return null;
@@ -240,6 +241,11 @@ export default function DesktopNavigation() {
   // Determina il ruolo dell'utente per scegliere le tab appropriate
   const isDoctor = (user as any)?.isDoctor;
   const isAdmin = (user as any)?.isAdmin;
+  
+  // Admin users use AdminLayout, not DesktopNavigation
+  if (isAdmin) {
+    return null;
+  }
   
   /**
    * Selezione delle tab basata sul ruolo:

@@ -167,6 +167,11 @@ export default function BottomNavigation({ className }: BottomNavigationProps) {
   const isDoctor = (user as any)?.isDoctor;
   const isAdmin = (user as any)?.isAdmin;
   
+  // Admin users use AdminLayout, not BottomNavigation
+  if (isAdmin) {
+    return null;
+  }
+  
   const tabs = isDoctor && !isAdmin ? doctorTabs : patientTabs;
 
   const getBadgeCount = (badgeType: BadgeType): number | undefined => {

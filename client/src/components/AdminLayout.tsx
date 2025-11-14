@@ -70,17 +70,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const isHomePage = location === "/admin";
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar Verticale */}
-      <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">CIRY Admin</h1>
-          <p className="text-xs text-muted-foreground mt-1">Pannello Amministrazione</p>
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-slate-950 dark:via-blue-950/20 dark:to-slate-950">
+      {/* Sidebar Verticale - Design Migliorato */}
+      <aside className="w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-700/50 flex flex-col shadow-xl">
+        {/* Logo & Header */}
+        <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50 bg-gradient-to-r from-blue-600 to-indigo-600">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">CIRY Admin</h1>
+              <p className="text-xs text-blue-100">Pannello Amministrazione</p>
+            </div>
+          </div>
         </div>
 
-        {/* Menu Items */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        {/* Menu Items - Design Migliorato */}
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
@@ -88,54 +95,61 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             return (
               <Link key={item.href} href={item.href}>
                 <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={`w-full justify-start ${
+                  variant="ghost"
+                  className={`w-full justify-start group relative transition-all duration-200 ${
                     isActive 
-                      ? "bg-primary/10 text-primary hover:bg-primary/20" 
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md" 
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                   }`}
                   data-testid={item.testId}
                 >
-                  <Icon className="w-5 h-5 mr-3" />
-                  <span className="flex-1 text-left">{item.label}</span>
+                  {isActive && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r-full" />
+                  )}
+                  <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'}`} />
+                  <span className={`flex-1 text-left text-sm font-medium ${isActive ? 'text-white' : ''}`}>
+                    {item.label}
+                  </span>
                 </Button>
               </Link>
             );
           })}
         </nav>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        {/* Logout Button - Design Migliorato */}
+        <div className="p-3 border-t border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
           <Button
             variant="ghost"
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+            className="w-full justify-start text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all group"
             onClick={handleLogout}
             data-testid="button-admin-logout"
           >
-            <LogOut className="w-5 h-5 mr-3" />
-            Esci
+            <LogOut className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform" />
+            <span className="font-medium">Esci</span>
           </Button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content Area - Design Migliorato */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar with Back Button */}
         {!isHomePage && (
-          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 px-6 py-4 shadow-sm">
             <BackButton
               fallbackRoute="/admin"
-              label="Torna alla Dashboard"
+              label="← Dashboard"
               variant="ghost"
-              className="text-muted-foreground hover:text-foreground text-sm h-9 px-3"
+              className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm font-medium h-9 px-4 transition-all"
               testId="button-back-to-dashboard"
             />
           </div>
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

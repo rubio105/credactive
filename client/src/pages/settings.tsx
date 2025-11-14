@@ -614,55 +614,6 @@ export default function Settings() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Foto Profilo</CardTitle>
-                <CardDescription>Personalizza la tua immagine profilo che apparirà nella classifica</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-6">
-                  <div className="relative">
-                    <Avatar className="w-32 h-32 border-4 border-primary/20">
-                      <AvatarImage 
-                        src={authenticatedProfileImage || undefined} 
-                        alt="Profile"
-                      />
-                      <AvatarFallback className="bg-primary/10 text-primary text-3xl font-semibold">
-                        {getUserInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {isUploading && (
-                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                        <div className="animate-spin w-8 h-8 border-4 border-white border-t-transparent rounded-full"></div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold mb-2">Cambia foto profilo</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Carica un'immagine JPG, PNG o GIF. Dimensione massima 5MB.
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      data-testid="input-profile-image"
-                    />
-                    <Button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                      data-testid="button-upload-profile-image"
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {isUploading ? 'Caricamento...' : 'Carica foto'}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle>Informazioni Profilo</CardTitle>
                 <CardDescription>I tuoi dati personali</CardDescription>
               </CardHeader>

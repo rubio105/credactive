@@ -2157,6 +2157,11 @@ export const appointments = pgTable("appointments", {
   cancellationReason: text("cancellation_reason"),
   cancelledAt: timestamp("cancelled_at"),
   
+  // Slot lineage tracking (links to doctor_schedule_rules or doctor_schedule_exceptions)
+  originType: varchar("origin_type", { length: 20 }), // rule, exception, manual, legacy
+  originId: uuid("origin_id"), // Points to doctorScheduleRules.id or doctorScheduleExceptions.id
+  originVersion: integer("origin_version"), // Tracks version of rule/exception at expansion time
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -2164,6 +2169,11 @@ export const appointments = pgTable("appointments", {
   index("idx_appointments_patient").on(table.patientId),
   index("idx_appointments_time").on(table.startTime),
   index("idx_appointments_status").on(table.status),
+  index("idx_appointments_origin").on(table.originType, table.originId),
+  // Partial index for available slots only (performance optimization)
+  index("idx_appointments_available").on(table.doctorId, table.startTime).where(sql`status = 'available'`),
+  // Composite unique to prevent duplicate slots for same doctor+time
+  unique("unique_doctor_time").on(table.doctorId, table.startTime),
 ]);
 
 export type Appointment = typeof appointments.$inferSelect;
@@ -2470,7 +2480,7 @@ export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 
 // ========== TELECONSULTO SYSTEM ==========
 
-// Doctor availability slots for teleconsultation booking
+// Doctor availability slots for teleconsultation booking (LEGACY - migrating to doctor_schedule_rules)
 export const doctorAvailability = pgTable("doctor_availability", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -2481,6 +2491,7 @@ export const doctorAvailability = pgTable("doctor_availability", {
   appointmentType: varchar("appointment_type", { length: 20 }).default('both'), // video, in_person, both
   studioAddress: text("studio_address"), // Physical address for in-person appointments
   isActive: boolean("is_active").default(true).notNull(),
+  legacyMigrated: boolean("legacy_migrated").default(false), // Track if migrated to new doctor_schedule_rules system
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -2495,6 +2506,113 @@ export const insertDoctorAvailabilitySchema = createInsertSchema(doctorAvailabil
   updatedAt: true,
 });
 export type InsertDoctorAvailability = z.infer<typeof insertDoctorAvailabilitySchema>;
+
+// Advanced doctor scheduling rules (supports weekly, biweekly, monthly, custom recurrence patterns)
+export const doctorScheduleRules = pgTable("doctor_schedule_rules", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  
+  // Recurrence pattern
+  frequency: varchar("frequency", { length: 20 }).notNull(), // weekly, biweekly, monthly, custom
+  interval: integer("interval").default(1).notNull(), // every N weeks/months (must be > 0)
+  byWeekDay: jsonb("by_week_day"), // Array[0-6] for weekly patterns: [1,3,5] = Mon,Wed,Fri
+  byMonthDay: jsonb("by_month_day"), // Array[1-31] for monthly patterns: [1,15] = 1st & 15th
+  bySetPos: integer("by_set_pos"), // 1=first, -1=last (for "first Monday of month")
+  
+  // Time slots
+  startTime: varchar("start_time", { length: 5 }).notNull(), // HH:MM format
+  endTime: varchar("end_time", { length: 5 }).notNull(), // HH:MM format (must be > startTime)
+  slotDuration: integer("slot_duration").default(30).notNull(), // minutes (15, 30, 45, 60)
+  
+  // Appointment details
+  appointmentType: varchar("appointment_type", { length: 20 }).default('both'), // video, in_person, both
+  studioAddress: text("studio_address"),
+  
+  // Rule validity
+  startDate: timestamp("start_date").notNull(), // When rule becomes active
+  endDate: timestamp("end_date"), // When rule expires (nullable = indefinite)
+  timezone: varchar("timezone", { length: 50 }).default('Europe/Rome').notNull(),
+  
+  // Expansion tracking
+  lastExpandedAt: timestamp("last_expanded_at"), // Last time slots were generated from this rule
+  lastExpandedVersion: integer("last_expanded_version").default(1), // Increment on rule update
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_schedule_rules_doctor").on(table.doctorId),
+  index("idx_schedule_rules_active").on(table.isActive),
+  index("idx_schedule_rules_frequency").on(table.frequency),
+  index("idx_schedule_rules_doctor_active").on(table.doctorId, table.isActive),
+  // Partial index for active rules only
+  index("idx_schedule_rules_doctor_active_partial").on(table.doctorId).where(sql`is_active = true`),
+]);
+
+export type DoctorScheduleRule = typeof doctorScheduleRules.$inferSelect;
+export const insertDoctorScheduleRuleSchema = createInsertSchema(doctorScheduleRules).omit({
+  id: true,
+  lastExpandedAt: true,
+  lastExpandedVersion: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  // Validate JSONB arrays contain only integers
+  byWeekDay: z.array(z.number().int().min(0).max(6)).optional(),
+  byMonthDay: z.array(z.number().int().min(1).max(31)).optional(),
+  // Validate interval is positive
+  interval: z.number().int().min(1),
+  // Validate time format HH:MM
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Must be HH:MM format"),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Must be HH:MM format"),
+});
+export type InsertDoctorScheduleRule = z.infer<typeof insertDoctorScheduleRuleSchema>;
+
+// Doctor schedule exceptions (block dates, modify hours, one-time slots)
+export const doctorScheduleExceptions = pgTable("doctor_schedule_exceptions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  
+  // Optional: link to rule being overridden (nullable for standalone exceptions)
+  recurringRuleId: uuid("recurring_rule_id").references(() => doctorScheduleRules.id, { onDelete: 'cascade' }),
+  
+  // Exception details
+  exceptionDate: timestamp("exception_date").notNull(), // Specific date affected (date only, ignore time)
+  exceptionType: varchar("exception_type", { length: 20 }).notNull(), // block, modify, one_time_slot
+  
+  // Modified time (for modify/one_time_slot types, nullable for block type)
+  startTime: varchar("start_time", { length: 5 }), // HH:MM format
+  endTime: varchar("end_time", { length: 5 }), // HH:MM format
+  slotDuration: integer("slot_duration"), // minutes
+  appointmentType: varchar("appointment_type", { length: 20 }), // video, in_person, both
+  studioAddress: text("studio_address"),
+  
+  // Reason
+  reason: text("reason"), // vacation, holiday, conference, emergency, etc.
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_schedule_exceptions_doctor").on(table.doctorId),
+  index("idx_schedule_exceptions_date").on(table.exceptionDate),
+  index("idx_schedule_exceptions_rule").on(table.recurringRuleId),
+  // Unique constraint: one exception per doctor per date
+  unique("unique_exception_per_doctor_date").on(table.doctorId, table.exceptionDate),
+]);
+
+export type DoctorScheduleException = typeof doctorScheduleExceptions.$inferSelect;
+export const insertDoctorScheduleExceptionSchema = createInsertSchema(doctorScheduleExceptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  // Validate time format HH:MM if provided
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Must be HH:MM format").optional(),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Must be HH:MM format").optional(),
+});
+export type InsertDoctorScheduleException = z.infer<typeof insertDoctorScheduleExceptionSchema>;
 
 // Appointment reminders for automated notifications
 export const appointmentReminders = pgTable("appointment_reminders", {

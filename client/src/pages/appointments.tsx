@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { VideoPermissionAlert } from "@/components/VideoPermissionAlert";
 
 type Appointment = {
   id: string;
@@ -279,12 +280,14 @@ export default function AppointmentsPage() {
                       )}
 
                       {apt.meetingUrl && (
-                        <Button size="sm" variant="outline" className="w-full" asChild>
-                          <a href={apt.meetingUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-video-${apt.id}`}>
-                            <Video className="w-4 h-4 mr-2" />
-                            Accedi alla Videocall
-                          </a>
-                        </Button>
+                        <VideoPermissionAlert
+                          meetingUrl={apt.meetingUrl}
+                          buttonText="Accedi alla Videocall"
+                          buttonVariant="outline"
+                          buttonSize="sm"
+                          buttonClassName="w-full"
+                          buttonTestId={`link-video-${apt.id}`}
+                        />
                       )}
 
                       {apt.description && (

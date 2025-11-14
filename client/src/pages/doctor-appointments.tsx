@@ -15,6 +15,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackButton } from "@/components/BackButton";
+import { VideoPermissionAlert } from "@/components/VideoPermissionAlert";
 
 type AppointmentAttachment = {
   id: string;
@@ -509,12 +510,13 @@ export default function DoctorAppointmentsPage() {
                           </Button>
                         )}
                         {apt.meetingUrl && (apt.status === 'confirmed' || apt.status === 'booked') && (
-                          <Button size="sm" variant="outline" asChild data-testid={`button-video-${apt.id}`}>
-                            <a href={apt.meetingUrl} target="_blank" rel="noopener noreferrer">
-                              <Video className="w-4 h-4 mr-2" />
-                              Entra in Chiamata
-                            </a>
-                          </Button>
+                          <VideoPermissionAlert
+                            meetingUrl={apt.meetingUrl}
+                            buttonText="Entra in Chiamata"
+                            buttonVariant="outline"
+                            buttonSize="sm"
+                            buttonTestId={`button-video-${apt.id}`}
+                          />
                         )}
                         {(apt.status === 'pending' || apt.status === 'booked') && (
                           <>

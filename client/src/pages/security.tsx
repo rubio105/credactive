@@ -171,6 +171,72 @@ export default function Security() {
     disableMfaMutation.mutate(code);
   };
 
+  // Request account deletion mutation
+  const requestDeletionMutation = useMutation({
+    mutationFn: async (data: { reason: string; otherReason?: string }) => {
+      const response = await apiRequest("/api/user/request-account-deletion", "POST", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      setOtpRequested(true);
+      toast({ 
+        title: "Codice inviato!", 
+        description: "Controlla la tua email per il codice di verifica" 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante la richiesta di cancellazione",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Confirm account deletion mutation
+  const confirmDeletionMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const response = await apiRequest("/api/user/confirm-account-deletion", "POST", { code });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Account eliminato", description: "Il tuo account è stato cancellato con successo" });
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante la cancellazione",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const handleRequestDeletion = () => {
+    if (!deletionReason) {
+      toast({ title: "Seleziona una motivazione", variant: "destructive" });
+      return;
+    }
+
+    if (deletionReason === "altro" && !otherReason) {
+      toast({ title: "Specifica la motivazione", variant: "destructive" });
+      return;
+    }
+
+    requestDeletionMutation.mutate({ reason: deletionReason, otherReason });
+  };
+
+  const handleConfirmDeletion = () => {
+    if (!deletionOtp || deletionOtp.length !== 6) {
+      toast({ title: "Inserisci il codice a 6 cifre", variant: "destructive" });
+      return;
+    }
+
+    confirmDeletionMutation.mutate(deletionOtp);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-6 space-y-6">

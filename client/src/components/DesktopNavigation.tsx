@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ViewToggle } from "@/components/ViewToggle";
 import { useViewMode } from "@/contexts/ViewModeContext";
 import { useLogout } from "@/hooks/useLogout";
 
@@ -181,7 +180,6 @@ export default function DesktopNavigation() {
       </div>
 
       <div className="flex items-center gap-3">
-        <ViewToggle />
         <Button
           variant="ghost"
           size="sm"

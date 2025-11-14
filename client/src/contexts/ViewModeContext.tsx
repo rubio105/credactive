@@ -16,19 +16,9 @@ interface ViewModeProviderProps {
 }
 
 export function ViewModeProvider({ children }: ViewModeProviderProps) {
-  const [viewMode, setViewModeState] = useState<ViewMode>('auto');
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth : 1024
   );
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ciry-view-mode');
-      if (saved && (saved === 'mobile' || saved === 'desktop' || saved === 'auto')) {
-        setViewModeState(saved as ViewMode);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -38,18 +28,11 @@ export function ViewModeProvider({ children }: ViewModeProviderProps) {
     }
   }, []);
 
-  const effectiveMode: 'mobile' | 'desktop' = 
-    viewMode === 'auto' 
-      ? windowWidth < 768 ? 'mobile' : 'desktop'
-      : viewMode;
-
+  const effectiveMode: 'mobile' | 'desktop' = windowWidth < 768 ? 'mobile' : 'desktop';
   const isMobileView = effectiveMode === 'mobile';
 
-  const setViewMode = (mode: ViewMode) => {
-    setViewModeState(mode);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ciry-view-mode', mode);
-    }
+  const setViewMode = () => {
+    // No-op: view mode is now always automatic
   };
 
   useEffect(() => {
@@ -59,7 +42,7 @@ export function ViewModeProvider({ children }: ViewModeProviderProps) {
   }, [effectiveMode]);
 
   return (
-    <ViewModeContext.Provider value={{ viewMode, setViewMode, effectiveMode, isMobileView }}>
+    <ViewModeContext.Provider value={{ viewMode: 'auto', setViewMode, effectiveMode, isMobileView }}>
       {children}
     </ViewModeContext.Provider>
   );

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, UserPlus, CheckCircle2 } from "lucide-react";
+import { AlertCircle, UserPlus, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -63,6 +63,33 @@ export default function Register() {
   // Dialog states
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
+
+  // Referral code validation state
+  const [codeValidationStatus, setCodeValidationStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
+
+  // Validate doctor code mutation
+  const validateCodeMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const res = await apiRequest("/api/auth/validate-doctor-code", "POST", { code });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      setCodeValidationStatus(data.valid ? 'valid' : 'invalid');
+    },
+    onError: () => {
+      setCodeValidationStatus('invalid');
+    },
+  });
+
+  // Validate referral code when it changes
+  useEffect(() => {
+    if (referralCode && referralCode.length > 0) {
+      setCodeValidationStatus('loading');
+      validateCodeMutation.mutate(referralCode);
+    } else {
+      setCodeValidationStatus('idle');
+    }
+  }, [referralCode]);
 
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -183,6 +210,26 @@ export default function Register() {
         title: "Codice invito mancante",
         description: "Codice di invito medico non valido. Verifica il link ricevuto.",
         variant: "destructive",
+      });
+      return;
+    }
+
+    // Block submission if referral code is invalid
+    if (referralCode && codeValidationStatus === 'invalid') {
+      toast({
+        title: "Codice non valido",
+        description: "Il codice medico inserito non è valido. Verifica il link di invito ricevuto dal tuo medico.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Block submission if code is still being validated
+    if (referralCode && codeValidationStatus === 'loading') {
+      toast({
+        title: "Validazione in corso",
+        description: "Attendere la validazione del codice medico...",
+        variant: "default",
       });
       return;
     }
@@ -368,11 +415,27 @@ export default function Register() {
               ? "Sei stato invitato dal tuo medico. Completa i dati per creare il tuo account."
               : "Completa i dati per creare il tuo account sulla piattaforma CIRY."}
           </CardDescription>
-          {referralCode && (
-            <div className="inline-flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-2">
+          {referralCode && codeValidationStatus === 'loading' && (
+            <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-2" data-testid="badge-code-validating">
+              <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                Verifica codice in corso...
+              </span>
+            </div>
+          )}
+          {referralCode && codeValidationStatus === 'valid' && (
+            <div className="inline-flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-2" data-testid="badge-code-valid">
               <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
               <span className="text-sm font-medium text-green-800 dark:text-green-200">
                 Codice medico valido: {referralCode}
+              </span>
+            </div>
+          )}
+          {referralCode && codeValidationStatus === 'invalid' && (
+            <div className="inline-flex items-center gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-2" data-testid="badge-code-invalid">
+              <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+              <span className="text-sm font-medium text-red-800 dark:text-red-200">
+                Codice non valido. Verifica il link di invito.
               </span>
             </div>
           )}

@@ -418,6 +418,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // for security reasons. They require authentication and are served via dedicated endpoints below.
 
   // Auth routes
+  // Validate doctor referral code (public endpoint with rate limiting)
+  app.post('/api/auth/validate-doctor-code', registrationLimiter, async (req, res) => {
+    try {
+      const { code } = req.body;
+
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ valid: false, message: "Codice mancante" });
+      }
+
+      const doctor = await storage.getUserByDoctorCode(code.trim().toUpperCase());
+      const valid = !!(doctor && doctor.isDoctor);
+
+      return res.json({ valid });
+    } catch (error) {
+      console.error('[VALIDATE_DOCTOR_CODE] Error:', error);
+      return res.status(500).json({ valid: false, message: "Errore durante la validazione" });
+    }
+  });
+
   app.post('/api/auth/register', registrationLimiter, async (req, res) => {
     try {
       const { 

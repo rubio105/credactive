@@ -148,10 +148,10 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           
           {/* Center Navigation Menu - Desktop Only, Horizontal Layout */}
           <div className="hidden md:flex items-center gap-1 flex-1 justify-center flex-wrap">
-            {isAuthenticated ? (
+            {isAuthenticated && typedUser ? (
               <>
                 {/* Patient Menu */}
-                {!typedUser?.isDoctor && !typedUser?.isAdmin && (
+                {!typedUser.isDoctor && !typedUser.isAdmin && (
                   <>
                     <Link href="/dashboard">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
@@ -201,9 +201,9 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                 )}
                 
                 {/* Doctor Menu */}
-                {typedUser?.isDoctor && !typedUser?.isAdmin && (
+                {typedUser?.isDoctor && (
                   <>
-                    <Link href="/dashboard">
+                    <Link href="/doctor-appointments">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
                         <ChartLine className="w-4 h-4 mr-2" />
                         Dashboard

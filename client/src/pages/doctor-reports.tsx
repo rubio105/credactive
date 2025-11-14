@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Plus, Trash2, Check, X, FileCheck, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import Navigation from "@/components/navigation";
+import { BackButton } from "@/components/BackButton";
 import { SEO } from "@/components/SEO";
 import type { User } from "@shared/schema";
 
@@ -214,6 +215,7 @@ export default function DoctorReportsPage() {
       
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <BackButton className="mb-4" />
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2" data-testid="page-title">Refertazione e Documenti</h1>

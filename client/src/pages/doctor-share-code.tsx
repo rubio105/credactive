@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, Share2, QrCode, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
+import { BackButton } from "@/components/BackButton";
 
 export default function DoctorShareCode() {
   const { user } = useAuth();
@@ -84,6 +85,7 @@ export default function DoctorShareCode() {
       <Navigation />
       <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white p-4 pb-24 md:pb-8">
         <div className="max-w-2xl mx-auto space-y-6 pt-20">
+          <BackButton className="mb-4" />
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Condividi il tuo codice</h1>
             <p className="text-muted-foreground">

@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Copy, FileText, Trash2, Check, X, AlertCircle, AlertTriangle, Info, Zap, MessageSquare, Clock } from "lucide-react";
 import Navigation from "@/components/navigation";
+import { BackButton } from "@/components/BackButton";
 import { SEO } from "@/components/SEO";
 import type { User } from "@shared/schema";
 import { format } from "date-fns";
@@ -233,6 +234,7 @@ export default function DoctorPatientsPage() {
       
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <BackButton className="mb-4" />
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2" data-testid="page-title">I Miei Pazienti</h1>
             <p className="text-muted-foreground">

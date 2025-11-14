@@ -137,15 +137,14 @@ export default function BottomNavigation({ className }: BottomNavigationProps) {
   const [location] = useLocation();
   const { count: notificationsCount } = useUnreadNotifications();
   const { count: alertsCount } = useUrgentAlerts();
-  const { isMobileView } = useViewMode();
 
   if (isLoading) {
-    return isMobileView ? (
+    return (
       <nav
         role="navigation"
         data-testid="bottom-nav-skeleton"
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+          "md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
           className
         )}
       >
@@ -158,10 +157,10 @@ export default function BottomNavigation({ className }: BottomNavigationProps) {
           ))}
         </div>
       </nav>
-    ) : null;
+    );
   }
 
-  if (!isAuthenticated || !isMobileView) {
+  if (!isAuthenticated) {
     return null;
   }
 
@@ -181,7 +180,7 @@ export default function BottomNavigation({ className }: BottomNavigationProps) {
       role="navigation"
       data-testid="bottom-nav"
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-safe",
+        "md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-safe",
         className
       )}
     >

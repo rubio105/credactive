@@ -15,6 +15,13 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
   - Backward compatibility for legacy data formats
 - **API Endpoint Standardization**: Updated health reports query endpoint from non-existent `/api/health-score/reports/my` to standard `/api/health-score/reports` in both `documenti.tsx` and `patient-ai.tsx`
 - **Type Safety**: Created shared `HealthReport` type in `client/src/types/healthReport.ts` with helper functions for date formatting and urgency level calculation, including defensive checks for legacy data formats
+- **Navigation Improvements**:
+  - **Desktop Menu Visibility**: Central navigation menu (Dashboard, Pazienti, Appuntamenti, Referti, etc.) now displays ONLY on home routes:
+    * Patients: visible only on `/dashboard`
+    * Doctors: visible only on `/doctor-patients`
+    * Other pages: menu hidden to avoid duplication with DesktopNavigation
+  - **Mobile Back Buttons**: Removed all "Torna indietro" buttons in mobile view (<768px) by updating `BackButton.tsx` to use `useViewMode` hook
+  - **Path Corrections**: Fixed all doctor routes from `/doctor/...` to `/doctor-...` format (e.g., `/doctor-patients`, `/doctor-appointments`, `/doctor-reports`, `/doctor-alerts`)
 
 # User Preferences
 

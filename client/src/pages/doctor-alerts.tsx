@@ -21,6 +21,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 interface Alert {
   id: string;
   patientId: string;
+  patientName: string;
+  patientEmail: string;
   urgency: string;
   status: string;
   title: string;
@@ -67,7 +69,7 @@ export default function DoctorAlertsPage() {
       });
       setSelectedAlert(null);
       setResponseText("");
-      queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/alerts"] });
     },
     onError: (error: Error) => {
       toast({
@@ -170,6 +172,9 @@ export default function DoctorAlertsPage() {
                           </span>
                         </div>
                         <CardTitle className="text-sm">{alert.title}</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Paziente: <span className="font-medium text-foreground">{alert.patientName}</span>
+                        </p>
                       </div>
                       {alert.status === 'pending' && (
                         <Button
@@ -207,7 +212,7 @@ export default function DoctorAlertsPage() {
           <DialogHeader>
             <DialogTitle>Rispondi all'Alert</DialogTitle>
             <DialogDescription>
-              {selectedAlert?.title}
+              Paziente: {selectedAlert?.patientName} • {selectedAlert?.title}
             </DialogDescription>
           </DialogHeader>
           

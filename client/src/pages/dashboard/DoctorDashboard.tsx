@@ -1,8 +1,4 @@
-import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { 
   MessageSquare,
   AlertTriangle,
@@ -16,6 +12,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUrgentAlerts } from "@/hooks/useNotificationBadge";
 import { useAuthenticatedImage } from "@/hooks/useAuthenticatedImage";
 import { useQuery } from "@tanstack/react-query";
+import { useViewMode } from "@/contexts/ViewModeContext";
+import { DashboardHero, StatCard, ServiceGrid } from "@/components/dashboard/DashboardPrimitives";
+import { cn } from "@/lib/utils";
 
 function getUserDisplayName(user: any): string {
   if (user?.firstName || user?.lastName) {
@@ -40,6 +39,7 @@ export default function DoctorDashboard() {
   const { user } = useAuth();
   const { count: urgentAlertsCount } = useUrgentAlerts();
   const authenticatedProfileImage = useAuthenticatedImage((user as any)?.profileImageUrl);
+  const { isMobileView } = useViewMode();
   
   const displayName = getUserDisplayName(user);
   const initials = getUserInitials(user);
@@ -114,89 +114,48 @@ export default function DoctorDashboard() {
   ];
 
   return (
-    <section data-testid="doctor-dashboard" className="min-h-screen bg-gradient-to-b from-orange-50 to-white p-4 pb-24 md:pb-8">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-4 mb-4">
-          <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
-            <AvatarImage src={authenticatedProfileImage || undefined} alt={displayName} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900" data-testid="greeting-title">
-              Ciao dott. {displayName}
-            </h1>
-            <p className="text-gray-600 text-sm" data-testid="greeting-subtitle">
-              Sono a tua disposizione per supportarti nella prevenzione 🩺
-            </p>
-          </div>
-        </div>
+    <section 
+      data-testid="doctor-dashboard" 
+      className={cn(
+        "min-h-screen bg-gradient-to-b from-orange-50 to-white p-4",
+        isMobileView ? "pb-24" : "pb-8 pl-64"
+      )}
+    >
+      <div className={cn("mx-auto space-y-6", isMobileView ? "max-w-2xl" : "max-w-4xl")}>
+        <DashboardHero
+          displayName={displayName}
+          initials={initials}
+          profileImageUrl={authenticatedProfileImage}
+          subtitle="Sono a tua disposizione per supportarti nella prevenzione 🩺"
+          rolePrefix="dott."
+        />
 
-        {/* Quick Stats Banner */}
         {statsLoading ? (
-          <Skeleton className="h-16 w-full rounded-lg" />
-        ) : stats && (
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 border-0 shadow-md mb-6" data-testid="quick-stats-banner">
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Activity className="w-4 h-4 text-white" />
-                <p className="text-white text-xs font-medium">Panoramica</p>
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-white">
-                <div className="text-center" data-testid="stat-patients">
-                  <p className="text-2xl font-bold">{stats.totalPatients}</p>
-                  <p className="text-xs opacity-90">pazienti</p>
-                </div>
-                <div className="text-center" data-testid="stat-alerts">
-                  <p className="text-2xl font-bold">{stats.criticalAlerts}</p>
-                  <p className="text-xs opacity-90">alert critici</p>
-                </div>
-                <div className="text-center" data-testid="stat-appointments">
-                  <p className="text-2xl font-bold">{stats.todayAppointments}</p>
-                  <p className="text-xs opacity-90">oggi</p>
-                </div>
-              </div>
+              <div className="h-20 animate-pulse bg-muted rounded" />
             </CardContent>
           </Card>
+        ) : stats && (
+          <StatCard 
+            title="Panoramica"
+            icon={Activity}
+            className="from-orange-500 to-orange-600 mb-6"
+            testId="quick-stats-banner"
+            stats={[
+              { value: stats.totalPatients, label: "pazienti", testId: "stat-patients" },
+              { value: stats.criticalAlerts, label: "alert critici", testId: "stat-alerts" },
+              { value: stats.todayAppointments, label: "oggi", testId: "stat-appointments" },
+            ]}
+          />
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          {services.map((service) => {
-            const Icon = service.icon;
-            return (
-              <Link key={service.id} href={service.route}>
-                <Card 
-                  className="relative hover:shadow-lg hover:scale-105 transition-all cursor-pointer border-0 shadow-md"
-                  data-testid={`service-${service.id}`}
-                >
-                  <CardContent className={`p-6 flex flex-col items-center justify-center text-center min-h-[140px] ${service.bgColor}`}>
-                    <div className={`p-4 rounded-2xl bg-white/80 backdrop-blur-sm shadow-sm mb-3`}>
-                      <Icon className={`w-8 h-8 ${service.color}`} />
-                    </div>
-                    <div className="w-full">
-                      <p className="font-bold text-sm text-gray-900 leading-tight">{service.label}</p>
-                      {service.badgeText && !statsLoading && (
-                        <p className="text-xs text-gray-600 mt-1" data-testid={`text-${service.id}`}>
-                          {service.badgeText}
-                        </p>
-                      )}
-                    </div>
-                    {service.badgeCount > 0 && (
-                      <Badge 
-                        variant="destructive" 
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs shadow-md"
-                        data-testid={`badge-${service.id}`}
-                      >
-                        {service.badgeCount}
-                      </Badge>
-                    )}
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+        <ServiceGrid 
+          services={services} 
+          columns={2}
+          cardHeight="140px"
+          showGradient={true}
+        />
       </div>
     </section>
   );

@@ -11,6 +11,8 @@ import CookieBanner from "@/components/cookie-banner";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { IOSInstallPrompt } from "@/components/IOSInstallPrompt";
+import { ViewModeProvider } from "@/contexts/ViewModeContext";
+import DesktopNavigation from "@/components/DesktopNavigation";
 import Landing from "@/pages/landing";
 import Quiz from "@/pages/quiz";
 import Subscribe from "@/pages/subscribe";
@@ -274,15 +276,18 @@ function App() {
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <PWAInstallBanner />
-          <IOSInstallPrompt />
-          <CookieBanner />
-          <FeedbackDialog />
-          <Router />
-          <BottomNavigation />
-        </TooltipProvider>
+        <ViewModeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <PWAInstallBanner />
+            <IOSInstallPrompt />
+            <CookieBanner />
+            <FeedbackDialog />
+            <DesktopNavigation />
+            <Router />
+            <BottomNavigation />
+          </TooltipProvider>
+        </ViewModeProvider>
       </QueryClientProvider>
     </HelmetProvider>
   );

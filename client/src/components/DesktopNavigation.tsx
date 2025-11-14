@@ -4,10 +4,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUnreadNotifications, useUrgentAlerts } from "@/hooks/useNotificationBadge";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ViewToggle } from "@/components/ViewToggle";
+import { useViewMode } from "@/contexts/ViewModeContext";
 
 type BadgeType = "notifications" | "alerts" | null;
 
-interface BottomNavTab {
+interface DesktopNavTab {
   route: string;
   icon: LucideIcon;
   label: string;
@@ -15,76 +18,72 @@ interface BottomNavTab {
   testId: string;
 }
 
-interface BottomNavigationProps {
-  className?: string;
-}
-
-const patientTabs: BottomNavTab[] = [
+const patientTabs: DesktopNavTab[] = [
   {
     route: "/",
     icon: Home,
     label: "Home",
     badgeType: null,
-    testId: "bottom-nav-home",
+    testId: "desktop-nav-home",
   },
   {
     route: "/settings",
     icon: Settings,
     label: "Impostazioni",
     badgeType: null,
-    testId: "bottom-nav-settings",
+    testId: "desktop-nav-settings",
   },
   {
     route: "/guida",
     icon: FileText,
     label: "Guida",
     badgeType: null,
-    testId: "bottom-nav-guida",
+    testId: "desktop-nav-guida",
   },
   {
     route: "/security",
     icon: Shield,
     label: "Sicurezza",
     badgeType: null,
-    testId: "bottom-nav-security",
+    testId: "desktop-nav-security",
   },
   {
     route: "/wearable",
     icon: Activity,
     label: "Dispositivi",
     badgeType: null,
-    testId: "bottom-nav-dispositivi",
+    testId: "desktop-nav-dispositivi",
   },
 ];
 
-const doctorTabs: BottomNavTab[] = [
+const doctorTabs: DesktopNavTab[] = [
   {
     route: "/",
     icon: Home,
     label: "Home",
     badgeType: null,
-    testId: "bottom-nav-home",
+    testId: "desktop-nav-home",
   },
   {
     route: "/settings",
     icon: Settings,
     label: "Impostazioni",
     badgeType: null,
-    testId: "bottom-nav-settings",
+    testId: "desktop-nav-settings",
   },
   {
     route: "/security",
     icon: Shield,
     label: "Sicurezza",
     badgeType: null,
-    testId: "bottom-nav-security",
+    testId: "desktop-nav-security",
   },
   {
     route: "/guida",
     icon: FileText,
     label: "Guida",
     badgeType: null,
-    testId: "bottom-nav-guida",
+    testId: "desktop-nav-guida",
   },
 ];
 
@@ -96,7 +95,7 @@ function isActive(tabRoute: string, currentLocation: string): boolean {
 }
 
 interface TabItemProps {
-  tab: BottomNavTab;
+  tab: DesktopNavTab;
   active: boolean;
   badgeCount?: number;
 }
@@ -111,57 +110,36 @@ function TabItem({ tab, active, badgeCount }: TabItemProps) {
         aria-label={tab.label}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-lg relative cursor-pointer",
-          "transition-colors duration-200 active:scale-95",
-          active ? "text-primary" : "text-muted-foreground"
+          "flex items-center gap-3 px-4 py-2.5 rounded-lg relative cursor-pointer",
+          "transition-all duration-200 hover:bg-accent/50",
+          active ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground hover:text-foreground"
         )}
       >
         <div className="relative">
           <Icon className={cn("w-5 h-5", active && "stroke-[2.5px]")} />
           {badgeCount !== undefined && badgeCount > 0 && (
-            <div className="absolute -top-1 -right-3 h-5 w-5 rounded-full bg-destructive text-[10px] text-destructive-foreground font-medium flex items-center justify-center">
+            <Badge 
+              variant="destructive"
+              className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+            >
               {badgeCount > 9 ? "9+" : badgeCount}
-            </div>
+            </Badge>
           )}
         </div>
-        <span className={cn("text-[10px] font-medium", active && "font-semibold")}>
-          {tab.label}
-        </span>
+        <span className="text-sm">{tab.label}</span>
       </a>
     </Link>
   );
 }
 
-export default function BottomNavigation({ className }: BottomNavigationProps) {
+export default function DesktopNavigation() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [location] = useLocation();
   const { count: notificationsCount } = useUnreadNotifications();
   const { count: alertsCount } = useUrgentAlerts();
   const { isMobileView } = useViewMode();
 
-  if (isLoading) {
-    return isMobileView ? (
-      <nav
-        role="navigation"
-        data-testid="bottom-nav-skeleton"
-        className={cn(
-          "fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-          className
-        )}
-      >
-        <div className="flex justify-between items-center h-16 px-2 animate-pulse">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex flex-col items-center gap-1 py-2 px-3">
-              <div className="w-5 h-5 bg-muted rounded" />
-              <div className="w-12 h-2 bg-muted rounded" />
-            </div>
-          ))}
-        </div>
-      </nav>
-    ) : null;
-  }
-
-  if (!isAuthenticated || !isMobileView) {
+  if (isLoading || !isAuthenticated || isMobileView) {
     return null;
   }
 
@@ -179,13 +157,17 @@ export default function BottomNavigation({ className }: BottomNavigationProps) {
   return (
     <nav
       role="navigation"
-      data-testid="bottom-nav"
-      className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-safe",
-        className
-      )}
+      data-testid="desktop-nav"
+      className="fixed left-0 top-0 bottom-0 w-64 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-r flex-col p-4 gap-2 flex"
     >
-      <div className="flex justify-between items-center h-16 px-2">
+      <div className="flex items-center justify-between mb-6 px-2">
+        <div className="flex items-center gap-2">
+          <img src="/images/ciry-main-logo.png" alt="CIRY" className="h-8" />
+        </div>
+        <ViewToggle />
+      </div>
+
+      <div className="flex flex-col gap-1">
         {tabs.map((tab) => (
           <TabItem
             key={tab.route}

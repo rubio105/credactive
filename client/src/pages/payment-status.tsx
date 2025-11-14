@@ -7,77 +7,163 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { XCircle, CheckCircle2, Loader2, ArrowLeft } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { loadStripe } from '@stripe/stripe-js';
+
+// Load Stripe
+const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
 
 export default function PaymentStatus() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [status, setStatus] = useState<'loading' | 'success' | 'canceled' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'canceled' | 'error' | 'processing'>('loading');
   const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
     const processPaymentStatus = async () => {
       const params = new URLSearchParams(window.location.search);
-      const paymentIntent = params.get('payment_intent');
+      const paymentIntentId = params.get('payment_intent');
       const paymentIntentClientSecret = params.get('payment_intent_client_secret');
       const redirectStatus = params.get('redirect_status');
 
-      // Handle cancellation from URL params
-      if (redirectStatus === 'canceled' || params.get('status') === 'canceled') {
-        setStatus('canceled');
+      // Check if required params are present
+      if (!paymentIntentClientSecret) {
+        console.error("Missing payment_intent_client_secret");
+        setStatus('error');
         setIsProcessing(false);
         toast({
-          title: "Pagamento annullato",
-          description: "Il pagamento è stato annullato. Puoi riprovare quando vuoi.",
+          title: "Errore",
+          description: "Parametri di pagamento mancanti",
           variant: "destructive",
         });
         return;
       }
 
-      // Handle success from Stripe redirect
-      if (redirectStatus === 'succeeded' && paymentIntent) {
-        try {
-          const response = await apiRequest("/api/payment-success", "POST", { paymentIntentId: paymentIntent });
-          const data = await response.json();
-          
-          if (data.success) {
-            setStatus('success');
-            toast({
-              title: "Pagamento completato!",
-              description: data.message,
-            });
-            
-            // Invalidate user query to refresh premium status
-            queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-            
-            // Redirect to dashboard after 2 seconds
-            setTimeout(() => {
-              setLocation('/dashboard');
-            }, 2000);
-          } else {
-            setStatus('error');
-            toast({
-              title: "Errore verifica pagamento",
-              description: data.message || "Impossibile verificare il pagamento",
-              variant: "destructive",
-            });
-          }
-        } catch (error) {
-          console.error("Error verifying payment:", error);
+      try {
+        // Load Stripe and retrieve PaymentIntent
+        const stripe = await stripePromise;
+        if (!stripe) {
+          throw new Error("Stripe not loaded");
+        }
+
+        const { paymentIntent, error } = await stripe.retrievePaymentIntent(paymentIntentClientSecret);
+        
+        if (error) {
+          console.error("Error retrieving PaymentIntent:", error);
           setStatus('error');
+          setIsProcessing(false);
           toast({
             title: "Errore",
-            description: "Si è verificato un errore durante la verifica del pagamento",
+            description: error.message || "Impossibile verificare lo stato del pagamento",
             variant: "destructive",
           });
+          return;
         }
-        setIsProcessing(false);
-        return;
-      }
 
-      // If no valid status, assume error
-      setStatus('error');
-      setIsProcessing(false);
+        if (!paymentIntent) {
+          setStatus('error');
+          setIsProcessing(false);
+          toast({
+            title: "Errore",
+            description: "PaymentIntent non trovato",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Branch on PaymentIntent status
+        switch (paymentIntent.status) {
+          case 'succeeded':
+            // Payment successful - verify with backend
+            try {
+              const response = await apiRequest("/api/payment-success", "POST", { 
+                paymentIntentId: paymentIntent.id 
+              });
+              const data = await response.json();
+              
+              if (data.success) {
+                setStatus('success');
+                toast({
+                  title: "Pagamento completato!",
+                  description: data.message,
+                });
+                
+                // Invalidate user query to refresh premium status
+                queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+                
+                // Redirect to dashboard after 2 seconds
+                setTimeout(() => {
+                  setLocation('/dashboard');
+                }, 2000);
+              } else {
+                setStatus('error');
+                toast({
+                  title: "Errore verifica pagamento",
+                  description: data.message || "Impossibile verificare il pagamento",
+                  variant: "destructive",
+                });
+              }
+            } catch (err) {
+              console.error("Error calling payment-success:", err);
+              setStatus('error');
+              toast({
+                title: "Errore",
+                description: "Si è verificato un errore durante la verifica del pagamento",
+                variant: "destructive",
+              });
+            }
+            break;
+
+          case 'processing':
+            // Payment is processing
+            setStatus('processing');
+            toast({
+              title: "Pagamento in elaborazione",
+              description: "Il tuo pagamento è in fase di elaborazione. Ricontrolla tra qualche minuto.",
+            });
+            break;
+
+          case 'requires_payment_method':
+          case 'canceled':
+            // Payment was canceled or failed
+            setStatus('canceled');
+            toast({
+              title: "Pagamento annullato",
+              description: "Il pagamento è stato annullato. Puoi riprovare quando vuoi.",
+              variant: "destructive",
+            });
+            
+            // Call backend to clear payment intent tracking
+            try {
+              await apiRequest("/api/cancel-subscription-attempt", "POST", {});
+              queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+            } catch (err) {
+              console.error("Error canceling subscription attempt:", err);
+            }
+            break;
+
+          default:
+            // Unknown status - treat as error
+            console.error(`Unknown PaymentIntent status: ${paymentIntent.status}`);
+            setStatus('error');
+            toast({
+              title: "Stato sconosciuto",
+              description: `Lo stato del pagamento è sconosciuto: ${paymentIntent.status}`,
+              variant: "destructive",
+            });
+        }
+      } catch (error) {
+        console.error("Error processing payment status:", error);
+        setStatus('error');
+        toast({
+          title: "Errore",
+          description: "Si è verificato un errore durante la verifica del pagamento",
+          variant: "destructive",
+        });
+      } finally {
+        setIsProcessing(false);
+      }
     };
 
     processPaymentStatus();
@@ -103,6 +189,12 @@ export default function PaymentStatus() {
                 </div>
               )}
               
+              {!isProcessing && status === 'processing' && (
+                <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
+                  <Loader2 className="w-10 h-10 text-yellow-600 animate-spin" data-testid="icon-processing" />
+                </div>
+              )}
+              
               {!isProcessing && status === 'canceled' && (
                 <div className="w-20 h-20 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
                   <XCircle className="w-10 h-10 text-orange-600" data-testid="icon-canceled" />
@@ -119,6 +211,7 @@ export default function PaymentStatus() {
             <CardTitle className="text-3xl mb-4">
               {isProcessing && "Elaborazione pagamento..."}
               {!isProcessing && status === 'success' && "Pagamento completato!"}
+              {!isProcessing && status === 'processing' && "Pagamento in elaborazione"}
               {!isProcessing && status === 'canceled' && "Pagamento annullato"}
               {!isProcessing && status === 'error' && "Errore pagamento"}
             </CardTitle>
@@ -141,6 +234,27 @@ export default function PaymentStatus() {
                     Riceverai una email di conferma a breve.
                   </p>
                 </div>
+              </div>
+            )}
+            
+            {!isProcessing && status === 'processing' && (
+              <div className="space-y-4">
+                <p className="text-lg text-muted-foreground">
+                  Il tuo pagamento è in fase di elaborazione. Questo può richiedere alcuni minuti.
+                </p>
+                <div className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Non chiudere questa pagina. Ti invieremo una conferma via email quando il pagamento sarà completato.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => setLocation('/dashboard')}
+                  variant="outline"
+                  data-testid="button-back-dashboard-processing"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Torna alla Dashboard
+                </Button>
               </div>
             )}
             

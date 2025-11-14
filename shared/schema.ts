@@ -82,6 +82,9 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
+  currentPaymentIntentId: varchar("current_payment_intent_id"), // Track current pending payment intent for idempotency
+  currentPaymentIntentStatus: varchar("current_payment_intent_status", { length: 50 }), // Status: requires_payment_method, processing, succeeded, canceled
+  currentPaymentIntentCreatedAt: timestamp("current_payment_intent_created_at"), // For cleanup of old intents
   isPremium: boolean("is_premium").default(false),
   subscriptionTier: varchar("subscription_tier", { length: 20 }).default("free"), // free, premium, premium_plus
   isAdmin: boolean("is_admin").default(false),

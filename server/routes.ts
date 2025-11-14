@@ -2882,7 +2882,7 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
   });
 
-  // Stripe subscription endpoint
+  // Stripe subscription endpoint with idempotency
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     const userId = req.user?.claims?.sub || req.user?.id;
     const { tier } = req.body;
@@ -2909,10 +2909,11 @@ ${JSON.stringify(questionsToTranslate)}`;
     }
 
     try {
+      const stripe = await getStripe();
       let customerId = user.stripeCustomerId;
       
       if (!customerId) {
-        const customer = await (await getStripe()).customers.create({
+        const customer = await stripe.customers.create({
           email: user.email,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         });
@@ -2923,8 +2924,34 @@ ${JSON.stringify(questionsToTranslate)}`;
       const selectedTier = tier === 'premium_plus' ? 'premium_plus' : 'premium';
       const amount = selectedTier === 'premium_plus' ? 4900 : 2900; // €49 or €29 in cents (monthly)
 
-      // Create a one-time payment intent
-      const paymentIntent = await (await getStripe()).paymentIntents.create({
+      // Check for existing pending payment intent (idempotency)
+      if (user.currentPaymentIntentId) {
+        try {
+          const existingIntent = await stripe.paymentIntents.retrieve(user.currentPaymentIntentId);
+          
+          // If intent is in reusable state, return it
+          if (existingIntent.status === 'requires_payment_method' || existingIntent.status === 'requires_confirmation') {
+            console.log(`[Stripe] Reusing existing payment intent ${existingIntent.id} for user ${userId}`);
+            return res.json({
+              clientSecret: existingIntent.client_secret,
+              paymentIntentId: existingIntent.id,
+              tier: selectedTier,
+            });
+          }
+          
+          // If intent is in terminal state, cancel it and create new one
+          if (existingIntent.status === 'requires_action' || existingIntent.status === 'processing') {
+            console.log(`[Stripe] Canceling stuck payment intent ${existingIntent.id} for user ${userId}`);
+            await stripe.paymentIntents.cancel(existingIntent.id);
+          }
+        } catch (error: any) {
+          console.log(`[Stripe] Could not retrieve existing payment intent: ${error.message}`);
+          // Continue to create new intent
+        }
+      }
+
+      // Create a new payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
         amount,
         currency: 'eur',
         customer: customerId,
@@ -2935,9 +2962,16 @@ ${JSON.stringify(questionsToTranslate)}`;
         },
       });
 
-      // Update user with Stripe customer ID
+      // Update user with Stripe customer ID and current payment intent
       await storage.updateUserStripeInfo(userId, customerId);
+      await storage.updateUser(userId, {
+        currentPaymentIntentId: paymentIntent.id,
+        currentPaymentIntentStatus: paymentIntent.status,
+        currentPaymentIntentCreatedAt: new Date(),
+      });
   
+      console.log(`[Stripe] Created new payment intent ${paymentIntent.id} for user ${userId}`);
+      
       res.json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
@@ -2963,6 +2997,13 @@ ${JSON.stringify(questionsToTranslate)}`;
         const tier = paymentIntent.metadata.tier || 'premium';
         await storage.updateUserStripeInfo(userId, paymentIntent.customer as string, tier);
         
+        // Clear payment intent tracking
+        await storage.updateUser(userId, {
+          currentPaymentIntentId: null,
+          currentPaymentIntentStatus: 'succeeded',
+          currentPaymentIntentCreatedAt: null,
+        });
+        
         // Get updated user and send premium upgrade email
         const user = await storage.getUser(userId);
         if (user && user.email) {
@@ -2971,6 +3012,7 @@ ${JSON.stringify(questionsToTranslate)}`;
           );
         }
         
+        console.log(`[Stripe] Payment succeeded for user ${userId}, intent ${paymentIntentId}`);
         res.json({ success: true, message: `${tier === 'premium_plus' ? 'Premium Plus' : 'Premium'} access activated` });
       } else {
         res.status(400).json({ message: "Payment verification failed" });
@@ -2978,6 +3020,47 @@ ${JSON.stringify(questionsToTranslate)}`;
     } catch (error) {
       console.error("Error verifying payment:", error);
       res.status(500).json({ message: "Failed to verify payment" });
+    }
+  });
+
+  // Cancel subscription attempt - allows user to manually cancel pending payment
+  app.post('/api/cancel-subscription-attempt', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.currentPaymentIntentId) {
+        try {
+          const stripe = await getStripe();
+          const paymentIntent = await stripe.paymentIntents.retrieve(user.currentPaymentIntentId);
+          
+          // Only cancel if it's in a cancelable state
+          if (paymentIntent.status === 'requires_payment_method' || 
+              paymentIntent.status === 'requires_confirmation' ||
+              paymentIntent.status === 'requires_action') {
+            await stripe.paymentIntents.cancel(user.currentPaymentIntentId);
+            console.log(`[Stripe] User ${userId} manually canceled payment intent ${user.currentPaymentIntentId}`);
+          }
+        } catch (error: any) {
+          console.log(`[Stripe] Could not cancel payment intent: ${error.message}`);
+        }
+      }
+
+      // Clear payment intent tracking
+      await storage.updateUser(userId, {
+        currentPaymentIntentId: null,
+        currentPaymentIntentStatus: 'canceled',
+        currentPaymentIntentCreatedAt: null,
+      });
+
+      res.json({ success: true, message: "Subscription attempt canceled" });
+    } catch (error) {
+      console.error("Error canceling subscription attempt:", error);
+      res.status(500).json({ message: "Failed to cancel subscription attempt" });
     }
   });
 
@@ -3110,6 +3193,26 @@ ${JSON.stringify(questionsToTranslate)}`;
                 isPremium: true,
                 subscriptionTier: 'premium',
                 stripeSubscriptionId: subscriptionId,
+              });
+            }
+          }
+          break;
+        }
+
+        case 'payment_intent.canceled': {
+          // Payment intent was canceled - clear user's current payment intent tracking
+          const paymentIntent = event.data.object;
+          const userId = paymentIntent.metadata.userId;
+          
+          if (userId) {
+            const user = await storage.getUser(userId);
+            
+            if (user && user.currentPaymentIntentId === paymentIntent.id) {
+              console.log(`[Stripe Webhook] Payment intent ${paymentIntent.id} canceled for user ${userId}`);
+              await storage.updateUser(userId, {
+                currentPaymentIntentId: null,
+                currentPaymentIntentStatus: 'canceled',
+                currentPaymentIntentCreatedAt: null,
               });
             }
           }

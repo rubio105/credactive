@@ -28,7 +28,7 @@ export function BackButton({
       if (user.isAdmin) {
         defaultRoute = '/admin';
       } else if (user.isDoctor) {
-        defaultRoute = '/doctor/appointments';
+        defaultRoute = '/doctor-appointments';
       } else {
         defaultRoute = '/dashboard';
       }

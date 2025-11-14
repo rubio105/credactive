@@ -134,7 +134,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           {/* Logo */}
           <Link href={
             typedUser?.isAdmin ? "/admin" : 
-            typedUser?.isDoctor ? "/doctor/patients" : 
+            typedUser?.isDoctor ? "/doctor-patients" : 
             "/dashboard"
           }>
             <div className="flex items-center cursor-pointer" data-testid="logo">

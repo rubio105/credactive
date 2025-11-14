@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
+import { BackButton } from "@/components/BackButton";
 import { CheckCircle, Crown, Loader2, XCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -69,6 +70,7 @@ export default function PaymentSuccess() {
       <Navigation />
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <BackButton className="mb-6" />
         <Card className="text-center">
           <CardContent className="pt-12 pb-12">
             {status === 'processing' && (

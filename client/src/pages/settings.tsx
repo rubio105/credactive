@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/navigation";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -410,7 +411,8 @@ export default function Settings() {
       <Navigation />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
+        <div className="mb-6">
+          <BackButton className="mb-4" />
           <h1 className="text-4xl font-bold mb-2">Impostazioni</h1>
           <p className="text-xl text-muted-foreground">
             Gestisci il tuo profilo e la sicurezza del tuo account

@@ -34,6 +34,17 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
     * Content area with subtle gradient background and max-width for readability
     * Improved back button styling with blue hover state
   - **Result**: Admins now have a completely isolated experience using only AdminLayout with dedicated sidebar, no patient/doctor navigation elements visible
+- **Notifications Bug Fix**: Fixed critical bug where notifications remained unread after marking them as read
+  - **Root Cause**: Frontend components used incorrect field name `isRead` instead of `read` from database schema
+  - **Files Fixed**:
+    * `client/src/pages/notifiche.tsx`: Changed all occurrences from `isRead` to `read`
+    * `client/src/hooks/useNotificationBadge.ts`: Changed interface and filter logic from `isRead` to `read`
+  - **Impact**: Notification badge and notification list now correctly update when user marks notifications as read
+  - **Technical**: All components now align with `shared/schema.ts` where notifications table defines `read: boolean` field
+- **Email Links Configuration**: Password reset emails use `BASE_URL` environment variable for link generation
+  - **Production Setup**: `BASE_URL=https://ciry.app` must be set on Hetzner VPS for correct email links
+  - **Fallback Logic**: `getBaseUrl()` in `server/email.ts` prioritizes BASE_URL > REPLIT_DOMAINS > localhost:5000
+  - **Note**: Since production is on Hetzner VPS (not Replit), REPLIT_DOMAINS doesn't apply, so BASE_URL is required
 
 # User Preferences
 

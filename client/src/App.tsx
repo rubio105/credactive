@@ -121,16 +121,16 @@ function Router() {
         {() => <ProtectedRoute requireNonAiOnly><WearablePage /></ProtectedRoute>}
       </Route>
       <Route path="/doctor/appointments">
-        {() => <ProtectedRoute requireNonAiOnly><DoctorAppointmentsPage /></ProtectedRoute>}
+        {() => <ProtectedRoute requireDoctor requireNonAiOnly><DoctorAppointmentsPage /></ProtectedRoute>}
       </Route>
       <Route path="/doctor/patients">
-        {() => <ProtectedRoute requireNonAiOnly><DoctorPatientsPage /></ProtectedRoute>}
+        {() => <ProtectedRoute requireDoctor requireNonAiOnly><DoctorPatientsPage /></ProtectedRoute>}
       </Route>
       <Route path="/doctor/share-code">
-        {() => <ProtectedRoute requireNonAiOnly><DoctorShareCode /></ProtectedRoute>}
+        {() => <ProtectedRoute requireDoctor requireNonAiOnly><DoctorShareCode /></ProtectedRoute>}
       </Route>
       <Route path="/doctor/reports">
-        {() => <ProtectedRoute requireNonAiOnly><DoctorReportsPage /></ProtectedRoute>}
+        {() => <ProtectedRoute requireDoctor requireNonAiOnly><DoctorReportsPage /></ProtectedRoute>}
       </Route>
       <Route path="/leaderboard">
         {() => <ProtectedRoute requireNonAiOnly><Leaderboard /></ProtectedRoute>}
@@ -238,7 +238,7 @@ function Router() {
             {() => <ProtectedRoute><WebinarHealth /></ProtectedRoute>}
           </Route>
           <Route path="/doctor/alerts">
-            {() => <ProtectedRoute><DoctorAlertsPage /></ProtectedRoute>}
+            {() => <ProtectedRoute requireDoctor requireNonAiOnly><DoctorAlertsPage /></ProtectedRoute>}
           </Route>
           <Route path="/quiz/:quizId">
             {() => <ProtectedRoute requireNonAiOnly><Quiz /></ProtectedRoute>}

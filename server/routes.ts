@@ -13,7 +13,7 @@ import { db } from "./db";
 import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData, proactiveHealthTriggers, appointmentAttachments, appointments } from "@shared/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { getApiKey, clearApiKeyCache } from "./config";
-import { setupAuth, isAuthenticated, isAdmin } from "./authSetup";
+import { setupAuth, isAuthenticated, isAdmin, isDoctor } from "./authSetup";
 import { clearOpenAIInstance } from "./aiQuestionGenerator";
 import { generateScenario, generateScenarioResponse } from "./aiScenarioGenerator";
 import { analyzePreventionDocument, generateTriageResponse, generateCrosswordPuzzle, generateAssessmentQuestions, extractTextFromMedicalReport, anonymizeMedicalText, generateGeminiContent, analyzeRadiologicalImage, generateEmbedding } from "./gemini";
@@ -570,6 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           addressProvince,
           addressCountry,
           language: language || 'it',
+          isDoctor: false, // Explicitly set patient role (never auto-assign doctor role)
           privacyAccepted: privacyAccepted === true,
           healthDataConsent: healthDataConsent === true,
           termsAccepted: termsAccepted === true,
@@ -748,12 +749,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== DOCTOR-PATIENT SYSTEM ==========
   
   // Get doctor linking code (only for doctors)
-  app.get('/api/doctor/linking-code', isAuthenticated, async (req, res) => {
+  app.get('/api/doctor/linking-code', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
-      }
-
       const code = await storage.generateDoctorCode(req.user.id);
       res.json({ code });
     } catch (error) {
@@ -763,12 +760,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate doctor code (only for doctors) - kept for backward compatibility
-  app.post('/api/doctor/generate-code', isAuthenticated, async (req, res) => {
+  app.post('/api/doctor/generate-code', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono generare codici" });
-      }
-
       const code = await storage.generateDoctorCode(req.user.id);
       res.json({ code });
     } catch (error) {
@@ -795,12 +788,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get doctor's patients
-  app.get('/api/doctor/patients', isAuthenticated, async (req, res) => {
+  app.get('/api/doctor/patients', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
-      }
-
       const patients = await storage.getDoctorPatients(req.user.id);
       res.json(patients);
     } catch (error) {
@@ -821,12 +810,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Unlink patient from doctor
-  app.delete('/api/doctor/patients/:patientId', isAuthenticated, async (req, res) => {
+  app.delete('/api/doctor/patients/:patientId', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono rimuovere pazienti" });
-      }
-
       await storage.unlinkPatientFromDoctor(req.user.id, req.params.patientId);
       res.json({ success: true, message: "Paziente rimosso con successo" });
     } catch (error) {
@@ -836,12 +821,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create doctor note
-  app.post('/api/doctor/notes', isAuthenticated, uploadDoctorNoteAttachment.single('attachment'), async (req, res) => {
+  app.post('/api/doctor/notes', isDoctor, uploadDoctorNoteAttachment.single('attachment'), async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono creare note" });
-      }
-
       const { patientId, preventionDocumentId, alertId, noteTitle, noteText, isReport, category } = req.body;
       
       if (!patientId || !noteText) {
@@ -1060,12 +1041,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get doctor notes for a patient (doctor view)
-  app.get('/api/doctor/notes/:patientId', isAuthenticated, async (req, res) => {
+  app.get('/api/doctor/notes/:patientId', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
-      }
-
       // Verify patient is linked to this doctor
       const patients = await storage.getDoctorPatients(req.user.id);
       if (!patients.find(p => p.id === req.params.patientId)) {
@@ -1092,12 +1069,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get alerts for doctor's patients
-  app.get('/api/doctor/alerts', isAuthenticated, async (req, res) => {
+  app.get('/api/doctor/alerts', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
-      }
-
       const alerts = await storage.getPatientAlertsByDoctor(req.user.id);
       res.json(alerts);
     } catch (error) {
@@ -1107,12 +1080,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get triage conversation for an alert (doctor access)
-  app.get('/api/doctor/alerts/:alertId/conversation', isAuthenticated, async (req, res) => {
+  app.get('/api/doctor/alerts/:alertId/conversation', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
-      }
-
       const { alertId } = req.params;
       
       // Get alert to verify access and get sessionId
@@ -1145,12 +1114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get doctor dashboard statistics
-  app.get('/api/doctor/stats', isAuthenticated, async (req, res) => {
+  app.get('/api/doctor/stats', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
-      }
-
       const stats = await storage.getDoctorStatsSummary(req.user.id);
       res.json(stats);
     } catch (error) {
@@ -1160,12 +1125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete doctor note
-  app.delete('/api/doctor/notes/:noteId', isAuthenticated, async (req, res) => {
+  app.delete('/api/doctor/notes/:noteId', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono eliminare note" });
-      }
-
       const note = await storage.getDoctorNoteById(req.params.noteId);
       if (!note || note.doctorId !== req.user.id) {
         return res.status(403).json({ message: "Non autorizzato a eliminare questa nota" });
@@ -1411,11 +1372,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all doctor's notes
-  app.get('/api/doctor/all-notes', isAuthenticated, async (req, res) => {
+  app.get('/api/doctor/all-notes', isDoctor, async (req, res) => {
     try {
-      if (!req.user?.isDoctor) {
-        return res.status(403).json({ message: "Solo i medici possono accedere a questa funzione" });
-      }
 
       const notes = await storage.getDoctorNotesByDoctor(req.user.id);
       
@@ -4769,7 +4727,7 @@ Restituisci SOLO un JSON con:
   // *** TWO-FACTOR AUTHENTICATION (2FA) FOR DOCTORS ***
 
   // Doctor - Setup 2FA (generate secret and QR code)
-  app.post('/api/doctor/2fa/setup', isAuthenticated, async (req: any, res) => {
+  app.post('/api/doctor/2fa/setup', isDoctor, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
       if (!userId) {
@@ -4809,7 +4767,7 @@ Restituisci SOLO un JSON con:
   });
 
   // Doctor - Verify 2FA token
-  app.post('/api/doctor/2fa/verify', isAuthenticated, async (req: any, res) => {
+  app.post('/api/doctor/2fa/verify', isDoctor, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
       if (!userId) {
@@ -4862,7 +4820,7 @@ Restituisci SOLO un JSON con:
   });
 
   // Doctor - Enable 2FA (after successful verification)
-  app.post('/api/doctor/2fa/enable', isAuthenticated, async (req: any, res) => {
+  app.post('/api/doctor/2fa/enable', isDoctor, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
       if (!userId) {
@@ -4917,7 +4875,7 @@ Restituisci SOLO un JSON con:
   });
 
   // Doctor - Disable 2FA
-  app.post('/api/doctor/2fa/disable', isAuthenticated, async (req: any, res) => {
+  app.post('/api/doctor/2fa/disable', isDoctor, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
       if (!userId) {
@@ -4973,7 +4931,7 @@ Restituisci SOLO un JSON con:
   });
 
   // Doctor - Get 2FA status
-  app.get('/api/doctor/2fa/status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/doctor/2fa/status', isDoctor, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
       if (!userId) {
@@ -13480,12 +13438,9 @@ Fornisci:
   });
 
   // TELECONSULTO - Doctor Availability Management
-  app.post('/api/doctor/availability', isAuthenticated, async (req, res) => {
+  app.post('/api/doctor/availability', isDoctor, async (req, res) => {
     try {
       const user = req.user as any;
-      if (!user.isDoctor) {
-        return res.status(403).json({ message: 'Only doctors can manage availability' });
-      }
 
       // Validate request body
       const availabilitySchema = z.object({
@@ -13538,12 +13493,9 @@ Fornisci:
     }
   });
 
-  app.get('/api/doctor/availability', isAuthenticated, async (req, res) => {
+  app.get('/api/doctor/availability', isDoctor, async (req, res) => {
     try {
       const user = req.user as any;
-      if (!user.isDoctor) {
-        return res.status(403).json({ message: 'Only doctors can view availability' });
-      }
 
       const result = await db.execute(sql`
         SELECT * FROM doctor_availability 
@@ -13572,12 +13524,9 @@ Fornisci:
     }
   });
 
-  app.delete('/api/doctor/availability/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/doctor/availability/:id', isDoctor, async (req, res) => {
     try {
       const user = req.user as any;
-      if (!user.isDoctor) {
-        return res.status(403).json({ message: 'Only doctors can delete availability' });
-      }
 
       // Validate UUID param
       const { id } = req.params;

@@ -97,3 +97,18 @@ export const isAdmin: RequestHandler = async (req, res, next) => {
   console.log('User is admin, allowing access');
   return next();
 };
+
+export const isDoctor: RequestHandler = async (req, res, next) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const user = req.user as any;
+  const dbUser = await storage.getUser(user.id);
+
+  if (!dbUser?.isDoctor) {
+    return res.status(403).json({ message: "Forbidden: Doctor access required" });
+  }
+
+  return next();
+};

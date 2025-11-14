@@ -4,9 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireNonAiOnly?: boolean; // If true, blocks AI-only users from this route
+  requireDoctor?: boolean; // If true, blocks non-doctor users from this route
 }
 
-export default function ProtectedRoute({ children, requireNonAiOnly = false }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, requireNonAiOnly = false, requireDoctor = false }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
 
   // Show loading while checking auth
@@ -17,6 +18,11 @@ export default function ProtectedRoute({ children, requireNonAiOnly = false }: P
   // If not authenticated, redirect to login immediately
   if (!user) {
     return <Redirect to="/login" />;
+  }
+
+  // If route requires doctor access and user is not a doctor, redirect to dashboard
+  if (requireDoctor && !(user as any)?.isDoctor) {
+    return <Redirect to="/dashboard" />;
   }
 
   // If route requires non-AI-only access and user has AI-only access, redirect

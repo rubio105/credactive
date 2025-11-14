@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 interface Notification {
   id: string;
-  isRead: boolean;
+  read: boolean;
 }
 
 interface Alert {
@@ -18,7 +18,7 @@ export function useUnreadNotifications() {
     refetchOnWindowFocus: true, // Refetch when user returns to app
   });
 
-  const count = notifications.filter(n => !n.isRead).length;
+  const count = notifications.filter(n => !n.read).length;
 
   return {
     count,

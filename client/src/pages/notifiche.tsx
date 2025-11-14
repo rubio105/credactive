@@ -14,7 +14,7 @@ interface Notification {
   id: string;
   title: string;
   message: string;
-  isRead: boolean;
+  read: boolean;
   type: string;
   createdAt: string;
 }
@@ -27,7 +27,7 @@ export default function NotifichePage() {
   });
 
   const filteredNotifications = filter === "unread" 
-    ? notifications.filter(n => !n.isRead)
+    ? notifications.filter(n => !n.read)
     : notifications;
 
   const handleMarkAsRead = async (id: string) => {
@@ -56,7 +56,7 @@ export default function NotifichePage() {
                 Tutte ({notifications.length})
               </TabsTrigger>
               <TabsTrigger value="unread" data-testid="tab-unread">
-                Non lette ({notifications.filter(n => !n.isRead).length})
+                Non lette ({notifications.filter(n => !n.read).length})
               </TabsTrigger>
             </TabsList>
 
@@ -71,14 +71,14 @@ export default function NotifichePage() {
                 filteredNotifications.map((notification) => (
                   <Card
                     key={notification.id}
-                    className={notification.isRead ? "opacity-60" : ""}
+                    className={notification.read ? "opacity-60" : ""}
                     data-testid={`notification-${notification.id}`}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            {!notification.isRead && (
+                            {!notification.read && (
                               <Badge variant="default" className="text-xs">Nuovo</Badge>
                             )}
                             <span className="text-xs text-muted-foreground">
@@ -87,7 +87,7 @@ export default function NotifichePage() {
                           </div>
                           <CardTitle className="text-sm">{notification.title}</CardTitle>
                         </div>
-                        {!notification.isRead && (
+                        {!notification.read && (
                           <Button
                             variant="ghost"
                             size="sm"

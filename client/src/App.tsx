@@ -15,6 +15,7 @@ import Landing from "@/pages/landing";
 import Quiz from "@/pages/quiz";
 import Subscribe from "@/pages/subscribe";
 import PaymentSuccess from "@/pages/payment-success";
+import PaymentStatus from "@/pages/payment-status";
 import Report from "@/pages/report";
 import Admin from "@/pages/admin";
 import AdminAudit from "@/pages/admin-audit";
@@ -104,6 +105,9 @@ function Router() {
       </Route>
       <Route path="/payment-success">
         {() => <ProtectedRoute requireNonAiOnly><PaymentSuccess /></ProtectedRoute>}
+      </Route>
+      <Route path="/payment-status">
+        {() => <ProtectedRoute requireNonAiOnly><PaymentStatus /></ProtectedRoute>}
       </Route>
       <Route path="/settings">
         {() => <ProtectedRoute requireNonAiOnly><Settings /></ProtectedRoute>}

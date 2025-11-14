@@ -14118,6 +14118,7 @@ Fornisci:
         voiceNotes: z.string().optional(),
         appointmentType: z.enum(['video', 'in_person', 'both']).optional().default('video'),
         studioAddress: z.string().optional(),
+        sessionId: z.string().optional(), // Link to triage session for AI context
       });
 
       const validated = bookingSchema.safeParse(req.body);
@@ -14128,7 +14129,7 @@ Fornisci:
         });
       }
 
-      const { doctorId, startTime, endTime, notes, voiceNotes, appointmentType, studioAddress } = validated.data;
+      const { doctorId, startTime, endTime, notes, voiceNotes, appointmentType, studioAddress, sessionId } = validated.data;
 
       // Validate studioAddress is provided for in-person or both appointments
       if ((appointmentType === 'in_person' || appointmentType === 'both') && (!studioAddress || studioAddress.trim() === '')) {
@@ -14137,21 +14138,106 @@ Fornisci:
         });
       }
 
+      // Build patient context for doctor
+      let patientContext: any = null;
+      try {
+        // Get patient full profile
+        const patientResult = await db.execute(sql`
+          SELECT * FROM users WHERE id = ${user.id}
+        `);
+        const patient = patientResult.rows[0];
+
+        // Calculate age from date_of_birth
+        let age = null;
+        if (patient.date_of_birth) {
+          const today = new Date();
+          const birthDate = new Date(patient.date_of_birth);
+          age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+        }
+
+        // Extract AI motivation and medical history if sessionId provided
+        let aiMotivation = null;
+        let medicalHistory = null;
+        if (sessionId) {
+          // Get session for medical history
+          const sessionResult = await db.execute(sql`
+            SELECT medical_history FROM triage_sessions WHERE id = ${sessionId}
+          `);
+          if (sessionResult.rows.length > 0) {
+            medicalHistory = sessionResult.rows[0].medical_history;
+          }
+
+          // Get conversation messages
+          const messagesResult = await db.execute(sql`
+            SELECT role, content, created_at 
+            FROM triage_messages 
+            WHERE session_id = ${sessionId}
+            ORDER BY created_at DESC 
+            LIMIT 10
+          `);
+          
+          if (messagesResult.rows.length > 0) {
+            // Get last user messages to understand motivation
+            const userMessages = messagesResult.rows
+              .filter((m: any) => m.role === 'user')
+              .slice(0, 3)
+              .map((m: any) => m.content)
+              .reverse()
+              .join(' ');
+            
+            aiMotivation = userMessages.substring(0, 500); // Limit to 500 chars
+          }
+        }
+
+        // Build structured context
+        patientContext = {
+          demographics: {
+            firstName: patient.first_name,
+            lastName: patient.last_name,
+            age: age,
+            gender: patient.gender,
+            email: patient.email,
+            phone: patient.phone_number || patient.phone,
+          },
+          onboarding: {
+            weight: patient.weight_kg,
+            height: patient.height_cm,
+            bmi: patient.weight_kg && patient.height_cm ? 
+              Math.round((patient.weight_kg / Math.pow(patient.height_cm / 100, 2)) * 10) / 10 : null,
+            smokingStatus: patient.smoking_status,
+            physicalActivity: patient.physical_activity,
+            userBio: patient.user_bio,
+          },
+          medicalHistory: medicalHistory || null, // allergies, chronicConditions, currentMedications from session
+          aiMotivation: aiMotivation,
+          manualNotes: notes,
+        };
+      } catch (contextError) {
+        console.error('Failed to build patient context:', contextError);
+        // Continue without context - don't fail the booking
+      }
+
       // Generate video room URL for video or both appointments
       const videoRoomUrl = (appointmentType === 'video' || appointmentType === 'both')
         ? `https://meet.jit.si/ciry-${crypto.randomBytes(8).toString('hex')}`
         : null;
 
-      // Create appointment
+      // Create appointment with patient context
       const appointmentResult = await db.execute(sql`
         INSERT INTO appointments (
           doctor_id, patient_id, start_time, end_time, 
           title, type, status, notes, voice_notes, 
-          appointment_type, studio_address, meeting_url, meeting_platform
+          appointment_type, studio_address, meeting_url, meeting_platform,
+          patient_context, patient_session_id
         ) VALUES (
           ${doctorId}, ${user.id}, ${startTime}, ${endTime},
           'Teleconsulto', 'teleconsult', 'pending', ${notes ?? null}, ${voiceNotes ?? null},
-          ${appointmentType || 'video'}, ${studioAddress || null}, ${videoRoomUrl}, ${videoRoomUrl ? 'jitsi' : null}
+          ${appointmentType || 'video'}, ${studioAddress || null}, ${videoRoomUrl}, ${videoRoomUrl ? 'jitsi' : null},
+          ${patientContext ? JSON.stringify(patientContext) : null}, ${sessionId ?? null}
         ) RETURNING *
       `);
 

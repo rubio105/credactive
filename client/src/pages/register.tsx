@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, UserPlus, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { VisualSecurityPolicy } from "@/components/VisualSecurityPolicy";
 import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
@@ -23,6 +23,12 @@ export default function Register() {
   
   // Referral code state (derived from URL params)
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  
+  // Check invite-only mode setting
+  const { data: inviteOnlySettings } = useQuery({
+    queryKey: ['/api/settings/invite-only-mode'],
+  });
+  const inviteOnlyMode = inviteOnlySettings?.enabled ?? true;
   
   // Extract referral code from URL dynamically
   useEffect(() => {
@@ -171,8 +177,8 @@ export default function Register() {
       return;
     }
 
-    // Ensure referralCode is valid before submitting
-    if (!referralCode || referralCode.length === 0) {
+    // Ensure referralCode is valid only if invite-only mode is enabled
+    if (inviteOnlyMode && (!referralCode || referralCode.length === 0)) {
       toast({
         title: "Codice invito mancante",
         description: "Codice di invito medico non valido. Verifica il link ricevuto.",
@@ -233,8 +239,8 @@ export default function Register() {
     }
   };
 
-  // Show blocked message if no referral code
-  if (!referralCode) {
+  // Show blocked message only if invite-only mode is enabled AND no referral code
+  if (inviteOnlyMode && !referralCode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
         <Card className="w-full max-w-md shadow-2xl">
@@ -358,14 +364,18 @@ export default function Register() {
             Registrazione Paziente
           </CardTitle>
           <CardDescription className="text-base">
-            Sei stato invitato dal tuo medico. Completa i dati per creare il tuo account.
+            {referralCode 
+              ? "Sei stato invitato dal tuo medico. Completa i dati per creare il tuo account."
+              : "Completa i dati per creare il tuo account sulla piattaforma CIRY."}
           </CardDescription>
-          <div className="inline-flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-2">
-            <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
-            <span className="text-sm font-medium text-green-800 dark:text-green-200">
-              Codice medico valido: {referralCode}
-            </span>
-          </div>
+          {referralCode && (
+            <div className="inline-flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                Codice medico valido: {referralCode}
+              </span>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">

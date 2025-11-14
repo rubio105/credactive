@@ -1,25 +1,20 @@
 # Overview
 
-CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform that uses AI for medical document analysis, patient-doctor communication, and proactive health monitoring. Its main goal is to improve patient outcomes through early detection and personalized health management. The platform provides a REST API for integrations, offering comprehensive medical history, data storage, and doctor recommendations. CIRY is currently transitioning from Google Gemini AI to proprietary ML models using Active Learning.
+CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform leveraging AI for medical document analysis, patient-doctor communication, and proactive health monitoring. Its core purpose is to enhance patient outcomes through early detection and personalized health management. The platform provides a REST API for integrations, offering comprehensive medical history, data storage, and doctor recommendations. CIRY is transitioning from Google Gemini AI to proprietary ML models using Active Learning. The project aims to capture a significant market share in the B2B healthcare prevention sector by providing a robust, AI-powered solution that improves efficiency and patient care.
 
 # Recent Changes
 
 ## November 14, 2025
-- **Automatic View Mode (Removed Manual Selector)**: Removed the manual view mode toggle (mobile/desktop/auto selector) from the desktop navigation bar. The application now automatically determines the appropriate view mode based on screen width using a 768px breakpoint (< 768px = mobile, >= 768px = desktop). This simplifies the user experience by eliminating the need for manual mode selection. The `ViewModeContext` was refactored to always operate in auto mode while maintaining backward-compatible API for existing components. The `ViewToggle` component was removed entirely. System automatically adapts to window resizing in real-time without requiring page refresh. Architect-reviewed and approved.
-- **Twilio Integration Configuration**: Successfully configured Twilio integration via Replit Connectors for WhatsApp messaging and OTP verification. The integration securely manages Twilio Account SID, API Key, API Key Secret, and Phone Number through Replit's connector system, eliminating the need for manual environment variable configuration. Application can now send WhatsApp messages for critical alerts and OTP codes for phone number verification.
-- **Account Deletion Feature with OTP Verification**: Implemented comprehensive account deletion system in security settings page. Two-step flow: (1) user selects deletion reason from dropdown (non uso l'app, non credo nella tecnologia, preferisco altro, costi alti, altro) with mandatory text input for "altro", (2) system sends 6-digit OTP via email (bcrypt hashed, 10-minute expiry, max 5 attempts). Backend validates reasons strictly (whitelist enforcement, non-empty checks, otherReason requirement for "altro") preventing NOT NULL violations. Created `accountDeletionRequests` table with CASCADE deletion, implemented storage methods (createAccountDeletionRequest, getAccountDeletionRequestByUserId, incrementDeletionAttempts, deleteUserAndAllData), and endpoints (`POST /api/user/request-account-deletion`, `POST /api/user/confirm-account-deletion`). On confirmation, all user data deleted permanently, session destroyed, user redirected to login. Fixed users.id schema to varchar(191) with gen_random_uuid() default, aligning with production database. Architect-reviewed and approved.
-- **Settings Page Avatar Cleanup**: Removed duplicate large profile photo section from settings.tsx, keeping only navigation bar avatar for cleaner UI and consistency across the platform.
-- **Desktop Navigation Horizontal Layout**: Converted DesktopNavigation from vertical sidebar to horizontal navbar at top to prevent content overlap. Navbar now displays horizontally with Logo | Navigation Tabs | View Toggle | Logout button layout. Added global CSS padding (`padding-top: 4rem`) for desktop view mode to prevent content from appearing under fixed navbar. Implemented consistent logout functionality using shared `useLogout` hook across DesktopNavigation and patient-ai.tsx (mobile-only). Architect-reviewed and approved.
-- **Doctor AI Diagnostic Support (No Reminders)**: Modified patient-ai.tsx to suppress follow-up alert prompts for doctors. Doctors can now access AI chat at `/patient-ai` purely as diagnostic support tool without seeing personalized reminder popups like "l'ultima volta avevi questo problema" or "riprendiamo la conversazione". Alert condition gated with `!isDoctor` check. Patients continue to receive follow-up alerts as before. Architect-reviewed and approved.
-- **INVITE_ONLY_MODE Conditional UI**: Refactored registration pages to conditionally display invite-only messaging based on admin setting. Created centralized `useInviteOnlyMode` hook (defaults to `true` for fail-closed security) that fetches `/api/settings/invite-only-mode` with 5min cache and 3 retries. `register-choice.tsx` shows loading skeleton while fetching, then displays invite-required message when `inviteOnlyMode === true`, otherwise shows open registration message. Error handling shows toast notification and maintains invite-only mode for security. `register.tsx` updated to use same hook. This ensures registration messaging accurately reflects admin configuration, defaulting to secure invite-only if API fails.
-- **Robust Payment Cancellation Flow**: Implemented comprehensive payment cancellation handling with idempotent retry capability. Extended users schema with `currentPaymentIntentId`, `currentPaymentIntentStatus`, and `currentPaymentIntentCreatedAt` for payment intent lifecycle tracking. `/api/create-subscription` now reuses or cancels existing payment intents before creating new ones, preventing orphaned intents. Created `/api/cancel-subscription-attempt` endpoint for explicit user-initiated cancellation with automatic state cleanup. Added webhook handler for `payment_intent.canceled` event to clear tracking fields without affecting `isPremium` status. Implemented `/payment-status` page using `stripe.retrievePaymentIntent(clientSecret)` to robustly verify payment status (succeeded → finalize, processing → show pending, requires_payment_method/canceled → trigger cleanup and allow retry, error → display message). All payment intents flow through single `return_url` with comprehensive status branching. Backend cleanup ensures safe retries without stale payment intent conflicts. Architect-reviewed and approved.
-- **Video Permission Guidance**: Created reusable `VideoPermissionAlert` component using shadcn AlertDialog to inform users about microphone and camera permissions before opening Jitsi video sessions. Component displays clear guidance on browser permission prompts with visual icons, explanatory text for each permission type (mic/camera), and "Proceed" or "Cancel" actions. Integrated across all video meeting entry points: patient appointments page (`/appointments`), patient teleconsulto page (`/teleconsulto`), and doctor appointments page (`/doctor/appointments`). Prevents user confusion about permission prompts and improves video session success rate. Architect-reviewed and approved.
-- **Early Doctor Code Validation**: Fixed UX issue where registration page displayed "Codice medico valido" without backend verification, causing frustration when users filled entire form only to receive "invalid code" error at submission. Implemented POST `/api/auth/validate-doctor-code` endpoint with rate limiting that validates referral codes via database lookup, returning only `{valid: boolean}` without leaking doctor data. Frontend now triggers validation automatically when referral code detected (URL params or manual entry) via reactive useEffect, displaying distinct loading/valid/invalid badge states with data-testids. Submission is blocked if code invalid or validation pending, with informative toast messages. Architect-reviewed and approved.
-- **Flexible Registration System (Invite-Only Mode)**: Implemented admin-configurable registration control via `INVITE_ONLY_MODE` setting stored in database. When enabled (default), registration requires doctor referral codes maintaining existing behavior. When disabled by admin, anyone can register freely while doctor referral links still work for automatic patient-doctor linking. Backend (`/api/register`) validates setting before enforcing referral requirement, returning 403 if invite-only active without code. Public endpoint (`GET /api/settings/invite-only-mode`) exposes current mode to registration page for conditional UI rendering. Admin dashboard includes toggle switch in Settings tab for real-time mode switching with optimistic updates and query invalidation. System defaults to invite-only for security and backward compatibility. Architect-reviewed and approved.
-- **Doctor Registration Privacy Consents**: Added all 6 privacy consent checkboxes to doctor registration form matching patient registration flow (privacy policy, health data processing, terms & conditions as mandatory; marketing, commercial, scientific as optional). Form includes VisualSecurityPolicy component and privacy/terms dialogs. Custom validation ensures all mandatory consents are accepted before submission.
-- **Critical RBAC Security Implementation**: Fixed severe authorization vulnerabilities where patients could access doctor-only routes by manually entering URLs. Created `isDoctor` middleware (server/authSetup.ts) applied to all 19 `/api/doctor/*` backend endpoints. Extended `ProtectedRoute` component with `requireDoctor` prop for frontend protection, applied to all 5 `/doctor/*` routes. Patient registration now explicitly sets `isDoctor: false` to prevent role escalation. All changes architect-reviewed and validated.
-- **Teleconsulto Critical Fix**: Resolved issue where doctors and patients were stuck waiting indefinitely during video sessions. Modified `bookAppointment()` method to automatically generate unique Jitsi meeting URLs (`https://meet.jit.si/ciry-{appointmentId}-{timestamp}`) when appointments are booked. Both doctor and patient now receive the same meeting link, enabling successful video consultations.
-- **Subscription Management Enhancements**: Implemented complete Stripe subscription lifecycle management including: (1) Billing Portal endpoint (`/api/create-billing-portal`) allowing users to manage subscriptions via Stripe-hosted interface, (2) Comprehensive webhook handler (`/api/stripe/webhook`) processing subscription events (cancellation, payment failures, renewals) with signature verification, (3) "Torna indietro" button on subscribe page allowing users to exit payment flow without completing transaction. Premium status now synchronized automatically with Stripe subscription state.
+- **Doctor Alerts Fix**: Corrected API endpoint in `doctor-alerts.tsx` from `/api/alerts` to `/api/doctor/alerts` to resolve 403 authorization errors
+- **Health Reports Display**: Added "Referti AI" section to documents page (`/documenti`) showing AI-analyzed health reports with:
+  - Report metadata (filename, type, date, issuer)
+  - AI-generated summary preview
+  - Urgency badges based on radiological findings
+  - List of urgent/attention findings from radiological analysis
+  - PDF download functionality via `/api/health-score/reports/:id/pdf`
+  - Backward compatibility for legacy data formats
+- **API Endpoint Standardization**: Updated health reports query endpoint from non-existent `/api/health-score/reports/my` to standard `/api/health-score/reports` in both `documenti.tsx` and `patient-ai.tsx`
+- **Type Safety**: Created shared `HealthReport` type in `client/src/types/healthReport.ts` with helper functions for date formatting and urgency level calculation, including defensive checks for legacy data formats
 
 # User Preferences
 
@@ -28,23 +23,18 @@ Preferred communication style: Simple, everyday language.
 # System Architecture
 
 ## UI/UX Decisions
-The frontend is a React, TypeScript, Vite application utilizing `shadcn/ui`, TanStack Query, Wouter, and React Hook Form with Zod. Design principles include consistent internal navigation, role-based color theming (Patient: blue, Doctor: orange), a mobile-first approach with dedicated mobile navigation and role-aware dashboards, and color-coded medical alerts. Features such as real-time badge systems, responsive design, and WhatsApp notifications are implemented to enhance user experience. Doctor dashboards are designed with a 6-card grid layout for intuitive access to critical workflows. Login pages include a guard to redirect authenticated users to their role-appropriate dashboard.
+The frontend is built with React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, and React Hook Form with Zod. Key design principles include consistent internal navigation, role-based color theming (Patient: blue, Doctor: orange), a mobile-first approach with dedicated mobile navigation, and role-aware dashboards. Features such as real-time badge systems, responsive design, and color-coded medical alerts enhance user experience. Doctor dashboards utilize a 6-card grid layout. Login pages redirect authenticated users to their appropriate dashboard.
 
 ### Responsive View System
-The application uses an automatic responsive view system managed by `ViewModeContext` with a 768px breakpoint:
-- **Desktop mode** (>= 768px): Displays horizontal navigation bar at the top with logo, navigation tabs, and logout button
-- **Mobile mode** (< 768px): Shows dedicated mobile navigation appropriate for smaller screens
-- **Automatic switching**: View mode adapts in real-time as users resize their browser window
-- **No manual override**: The manual view mode selector was removed for simplified UX; the system always decides automatically based on screen dimensions
-- **CSS integration**: The effective mode is synchronized to `data-view-mode` attribute on the HTML element for conditional styling
+The application features an automatic responsive view system managed by `ViewModeContext` with a 768px breakpoint. It dynamically adapts to screen size, displaying a horizontal navigation bar for desktop (>= 768px) and a dedicated mobile navigation for smaller screens (< 768px). The system automatically switches views upon window resizing, and there is no manual view mode selector for simplified user experience. The effective mode is synchronized to the `data-view-mode` attribute on the HTML element for conditional styling.
 
 ## Technical Implementations
 
 ### Frontend
-Built with React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, React Hook Form with Zod, and PWA capabilities.
+Built using React, TypeScript, Vite, `shadcn/ui`, TanStack Query, Wouter, React Hook Form with Zod, and PWA capabilities.
 
 ### Backend
-Developed using Express.js, Node.js, and TypeScript, providing a RESTful API. It uses Passport.js for authentication and Drizzle ORM for type-safe PostgreSQL access, with security measures like rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.
+Developed with Express.js, Node.js, and TypeScript, offering a RESTful API. It employs Passport.js for authentication and Drizzle ORM for type-safe PostgreSQL access, with robust security measures including rate limiting, Helmet.js, CORS, XSS protection, and SQL injection prevention.
 
 ### Data Storage
 PostgreSQL, managed by Drizzle ORM, stores comprehensive data including user profiles, subscriptions, medical records, appointments, alerts, notifications, audit logs, ML training data, and wearable device monitoring data.
@@ -52,39 +42,39 @@ PostgreSQL, managed by Drizzle ORM, stores comprehensive data including user pro
 ## Feature Specifications
 
 ### Medical Prevention System
-CIRY offers AI-powered medical analysis (PDF/image OCR, radiological analysis, dual-content summaries, Prevention Index, contextual AI conversations), an AI-driven medical alert system with urgency levels, and a doctor-patient linking system for monitoring and secure note-sharing. It includes a RAG knowledge base using PostgreSQL + pgvector for semantic search and AI response enrichment, enhanced doctor contact flows, and AI-generated pre/post-visit patient reports. Critical (EMERGENCY/HIGH) alerts trigger immediate push notifications to linked doctors.
+CIRY provides AI-powered medical analysis (OCR for PDFs/images, radiological analysis, dual-content summaries, Prevention Index, contextual AI conversations), an AI-driven medical alert system with urgency levels, and a doctor-patient linking system for monitoring and secure note-sharing. It includes a RAG knowledge base utilizing PostgreSQL + pgvector, enhanced doctor contact flows, and AI-generated pre/post-visit patient reports. Critical alerts trigger immediate push notifications to linked doctors.
 
 ### Admin Features
-A comprehensive Admin Dashboard (`/admin`) facilitates the management of users, subscriptions, medical alerts, and system configurations. It includes a robust user management system with role-based permissions, GDPR-compliant audit logging, and a detailed login audit system.
+A comprehensive Admin Dashboard (`/admin`) allows management of users, subscriptions, medical alerts, and system configurations. It includes a robust user management system with role-based permissions, GDPR-compliant audit logging, and a detailed login audit system.
 
 ### Communication & Notifications
-The platform includes an email notification queue, real-time push and in-app notification systems, and WhatsApp notifications for critical alerts and appointment reminders with OTP verification. It integrates voice-enabled AI chat using OpenAI Whisper and TTS, and a comprehensive Teleconsulto (teleconsultation) system with doctor availability management, smart slot picking, patient booking flows, automated multi-channel notifications, and Jitsi video integration. An automated appointment reminder system sends notifications 24 hours prior to appointments.
+The platform integrates an email notification queue, real-time push and in-app notification systems, and WhatsApp notifications for critical alerts and appointment reminders with OTP verification. It features voice-enabled AI chat using OpenAI Whisper and TTS, and a comprehensive Teleconsulto (teleconsultation) system with doctor availability management, smart slot picking, patient booking flows, automated multi-channel notifications, and Jitsi video integration. An automated appointment reminder system sends notifications 24 hours prior.
 
 ### ML Training Data Collection System (Active Learning)
-An architecture is in place to intercept all platform interactions, collecting detailed `mlTrainingData` for training proprietary ML models, with a 12-month migration strategy.
+An architecture is in place to intercept all platform interactions, collecting detailed `mlTrainingData` for training proprietary ML models, supporting a 12-month migration strategy.
 
 ### Wearable Device Integration System
-Includes a dashboard for trending BP/HR data, device management (CRUD), Web Bluetooth API integration for data transmission, inline anomaly detection, centralized notification services (WhatsApp, push), and a background scheduler for proactive health triggers. Wearable data is automatically integrated into AI conversation contexts.
+Includes a dashboard for trending BP/HR data, device management (CRUD), Web Bluetooth API integration for data transmission, inline anomaly detection, centralized notification services, and a background scheduler for proactive health triggers. Wearable data is automatically integrated into AI conversation contexts.
 
 ### Patient Registration
-Patients can register via doctor-provided referral links, which automatically link them to their doctor post-email verification. Registration requires acceptance of mandatory privacy consents.
+Patients can register via doctor-provided referral links, which automatically link them to their doctor post-email verification. Registration requires acceptance of mandatory privacy consents, and an invite-only mode can be configured by admins, defaulting to requiring doctor codes.
 
 ## System Design Choices
 
 ### Security Audit
-A comprehensive security review confirms robust authentication, input validation, SQL injection prevention, authorization, and secure secrets management.
+A comprehensive security review confirms robust authentication, input validation, SQL injection prevention, authorization (with critical RBAC implementation), and secure secrets management.
 
 ### Deployment Architecture
 Production is hosted on Hetzner VPS with PM2, Neon PostgreSQL, Nginx, and Cloudflare SSL. The system uses Vite for frontend builds and esbuild for backend. Deployment involves GitHub for version control, a `deploy.sh` script for automated pipelines, and health monitoring via `/api/health`. Automated daily cleanup for login logs is also implemented.
 
 # External Dependencies
 
-- **Stripe**: Payment processing.
-- **Brevo (Sendinblue)**: Transactional emails and marketing.
-- **Neon Database**: Serverless PostgreSQL with `pgvector` extension.
-- **AI Infrastructure**:
-    - **Primary**: Self-hosted Gemma Med via Ollama.
-    - **Fallback**: Google Gemini AI (`gemini-2.5-pro`, `gemini-2.5-flash`).
-- **Twilio**: WhatsApp messaging.
-- **Jitsi Meet**: Video teleconsultations.
-- **OpenAI**: Whisper (STT) and TTS (text-to-speech).
+-   **Stripe**: Payment processing for subscriptions.
+-   **Brevo (Sendinblue)**: Transactional emails and marketing communications.
+-   **Neon Database**: Serverless PostgreSQL with `pgvector` extension for vector embeddings.
+-   **AI Infrastructure**:
+    -   **Primary**: Self-hosted Gemma Med via Ollama.
+    -   **Fallback**: Google Gemini AI (`gemini-2.5-pro`, `gemini-2.5-flash`).
+-   **Twilio**: WhatsApp messaging and OTP verification.
+-   **Jitsi Meet**: Video teleconsultations.
+-   **OpenAI**: Whisper (Speech-to-Text) and TTS (Text-to-Speech).

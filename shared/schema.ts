@@ -2598,8 +2598,8 @@ export const doctorScheduleExceptions = pgTable("doctor_schedule_exceptions", {
   index("idx_schedule_exceptions_doctor").on(table.doctorId),
   index("idx_schedule_exceptions_date").on(table.exceptionDate),
   index("idx_schedule_exceptions_rule").on(table.recurringRuleId),
-  // Unique constraint: one exception per doctor per date
-  unique("unique_exception_per_doctor_date").on(table.doctorId, table.exceptionDate),
+  // Composite index for efficient lookups of doctor's exceptions on specific dates
+  index("idx_schedule_exceptions_doctor_date").on(table.doctorId, table.exceptionDate),
 ]);
 
 export type DoctorScheduleException = typeof doctorScheduleExceptions.$inferSelect;

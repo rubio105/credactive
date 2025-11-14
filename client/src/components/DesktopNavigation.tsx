@@ -1,12 +1,14 @@
 import { Link, useLocation } from "wouter";
-import { Home, MessageSquare, Stethoscope, CalendarCheck, Bell, AlertTriangle, Users, Settings, Shield, FileText, Watch, Activity } from "lucide-react";
+import { Home, MessageSquare, Stethoscope, CalendarCheck, Bell, AlertTriangle, Users, Settings, Shield, FileText, Watch, Activity, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadNotifications, useUrgentAlerts } from "@/hooks/useNotificationBadge";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ViewToggle } from "@/components/ViewToggle";
 import { useViewMode } from "@/contexts/ViewModeContext";
+import { useLogout } from "@/hooks/useLogout";
 
 type BadgeType = "notifications" | "alerts" | null;
 
@@ -110,17 +112,17 @@ function TabItem({ tab, active, badgeCount }: TabItemProps) {
         aria-label={tab.label}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex items-center gap-3 px-4 py-2.5 rounded-lg relative cursor-pointer",
+          "flex items-center gap-2 px-3 py-2 rounded-lg relative cursor-pointer whitespace-nowrap",
           "transition-all duration-200 hover:bg-accent/50",
           active ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground hover:text-foreground"
         )}
       >
         <div className="relative">
-          <Icon className={cn("w-5 h-5", active && "stroke-[2.5px]")} />
+          <Icon className={cn("w-4 h-4", active && "stroke-[2.5px]")} />
           {badgeCount !== undefined && badgeCount > 0 && (
             <Badge 
               variant="destructive"
-              className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+              className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[9px]"
             >
               {badgeCount > 9 ? "9+" : badgeCount}
             </Badge>
@@ -138,6 +140,7 @@ export default function DesktopNavigation() {
   const { count: notificationsCount } = useUnreadNotifications();
   const { count: alertsCount } = useUrgentAlerts();
   const { isMobileView } = useViewMode();
+  const handleLogout = useLogout();
 
   if (isLoading || !isAuthenticated || isMobileView) {
     return null;
@@ -158,24 +161,37 @@ export default function DesktopNavigation() {
     <nav
       role="navigation"
       data-testid="desktop-nav"
-      className="fixed left-0 top-0 bottom-0 w-64 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-r flex-col p-4 gap-2 flex"
+      className="fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b z-50 flex items-center justify-between px-6"
     >
-      <div className="flex items-center justify-between mb-6 px-2">
+      <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <img src="/images/ciry-main-logo.png" alt="CIRY" className="h-8" />
         </div>
-        <ViewToggle />
+
+        <div className="flex items-center gap-1">
+          {tabs.map((tab) => (
+            <TabItem
+              key={tab.route}
+              tab={tab}
+              active={isActive(tab.route, location)}
+              badgeCount={getBadgeCount(tab.badgeType)}
+            />
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        {tabs.map((tab) => (
-          <TabItem
-            key={tab.route}
-            tab={tab}
-            active={isActive(tab.route, location)}
-            badgeCount={getBadgeCount(tab.badgeType)}
-          />
-        ))}
+      <div className="flex items-center gap-3">
+        <ViewToggle />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="flex items-center gap-2"
+          data-testid="button-logout"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="text-sm">Esci</span>
+        </Button>
       </div>
     </nav>
   );

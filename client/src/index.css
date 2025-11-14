@@ -123,6 +123,13 @@
 }
 
 @layer components {
+  [data-view-mode="desktop"] {
+    padding-top: 4rem;
+  }
+  
+  [data-view-mode="desktop"] > * {
+    min-height: calc(100vh - 4rem);
+  }
   .gradient-primary {
     background: linear-gradient(135deg, hsl(34, 88%, 59%) 0%, hsl(30, 68%, 51%) 100%);
   }

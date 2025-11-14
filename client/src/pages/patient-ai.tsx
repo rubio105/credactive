@@ -11,6 +11,8 @@ import { Shield, Send, FileText, Activity, Mic, MicOff, X, FileUp } from "lucide
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import { useViewMode } from "@/contexts/ViewModeContext";
+import { useLogout } from "@/hooks/useLogout";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalImageAnalysis } from "@/components/MedicalImageAnalysis";
@@ -73,6 +75,10 @@ export default function PatientAIPage() {
   const [, setLocation] = useLocation();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userInput, setUserInput] = useState("");
+  const { isMobileView } = useViewMode();
+  const handleLogout = useLogout();
+  
+  const isDoctor = (user as any)?.isDoctor;
   const [isListening, setIsListening] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -403,15 +409,15 @@ export default function PatientAIPage() {
                 </p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                window.location.href = '/api/auth/logout';
-              }}
-              data-testid="button-logout"
-            >
-              Esci
-            </Button>
+            {isMobileView && (
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                data-testid="button-logout-mobile"
+              >
+                Esci
+              </Button>
+            )}
           </div>
 
           <Tabs defaultValue="chat" className="w-full">
@@ -467,8 +473,8 @@ export default function PatientAIPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
-                  {/* Alert Follow-up personalizzato */}
-                  {pendingAlert && !sessionId && dismissedAlertId !== pendingAlert.id && (
+                  {/* Alert Follow-up personalizzato - solo per pazienti, non per medici */}
+                  {!isDoctor && pendingAlert && !sessionId && dismissedAlertId !== pendingAlert.id && (
                     <Alert className={`border-2 ${
                       pendingAlert.urgencyLevel === 'high' || pendingAlert.urgencyLevel === 'emergency' 
                         ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700' 

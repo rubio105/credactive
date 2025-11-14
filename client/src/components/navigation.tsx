@@ -203,31 +203,31 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                 {/* Doctor Menu */}
                 {typedUser?.isDoctor && (
                   <>
-                    <Link href="/doctor-appointments">
+                    <Link href="/doctor/appointments">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
                         <ChartLine className="w-4 h-4 mr-2" />
                         Dashboard
                       </Button>
                     </Link>
-                    <Link href="/doctor-patients">
+                    <Link href="/doctor/patients">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
                         <Users className="w-4 h-4 mr-2" />
                         Pazienti
                       </Button>
                     </Link>
-                    <Link href="/doctor-appointments">
+                    <Link href="/doctor/appointments">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-appointments">
                         <Video className="w-4 h-4 mr-2" />
                         Appuntamenti
                       </Button>
                     </Link>
-                    <Link href="/doctor-reports">
+                    <Link href="/doctor/reports">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reports">
                         <FileCheck className="w-4 h-4 mr-2" />
                         Referti
                       </Button>
                     </Link>
-                    <Link href="/doctor-alerts">
+                    <Link href="/doctor/alerts">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-alerts">
                         <AlertTriangle className="w-4 h-4 mr-2" />
                         Alert

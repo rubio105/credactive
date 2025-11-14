@@ -6,6 +6,7 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 ## November 14, 2025
 - **Doctor Registration Privacy Consents**: Added all 6 privacy consent checkboxes to doctor registration form matching patient registration flow (privacy policy, health data processing, terms & conditions as mandatory; marketing, commercial, scientific as optional). Form includes VisualSecurityPolicy component and privacy/terms dialogs. Custom validation ensures all mandatory consents are accepted before submission.
+- **Critical RBAC Security Implementation**: Fixed severe authorization vulnerabilities where patients could access doctor-only routes by manually entering URLs. Created `isDoctor` middleware (server/authSetup.ts) applied to all 19 `/api/doctor/*` backend endpoints. Extended `ProtectedRoute` component with `requireDoctor` prop for frontend protection, applied to all 5 `/doctor/*` routes. Patient registration now explicitly sets `isDoctor: false` to prevent role escalation. All changes architect-reviewed and validated.
 
 # User Preferences
 

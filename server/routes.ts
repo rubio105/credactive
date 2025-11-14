@@ -12540,15 +12540,11 @@ Format as JSON: {
   });
 
   // Update appointment status (doctor only)
-  app.put('/api/appointments/:id/status', isAuthenticated, async (req, res) => {
+  app.put('/api/appointments/:id/status', isDoctor, async (req, res) => {
     try {
       const user = req.user as any;
       const { id } = req.params;
       const { status, reason } = req.body;
-
-      if (!user.isDoctor) {
-        return res.status(403).json({ message: 'Only doctors can update appointment status' });
-      }
 
       const appointment = await storage.getAppointmentById(id);
       if (!appointment) {

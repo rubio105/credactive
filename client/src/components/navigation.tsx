@@ -127,6 +127,12 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
     }
   };
 
+  // Determine if the role-specific menu should be shown (only on home routes)
+  const showRoleMenu = isAuthenticated && typedUser && (
+    (!typedUser.isDoctor && !typedUser.isAdmin && location === '/dashboard') ||
+    (typedUser.isDoctor && location === '/doctor-patients')
+  );
+
   return (
     <nav className="bg-card shadow-sm border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -147,8 +153,32 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
           </Link>
           
           {/* Center Navigation Menu - Desktop Only, Horizontal Layout */}
+          {/* ONLY shown on home routes: /dashboard for patients, /doctor-patients for doctors */}
+          {/* Hidden for authenticated users when not on home */}
           <div className="hidden md:flex items-center gap-1 flex-1 justify-center flex-wrap">
-            {isAuthenticated && typedUser ? (
+            {!isAuthenticated ? (
+              <>
+                {/* Non-authenticated Menu */}
+                <Button variant="ghost" onClick={handlePlansClick} className="text-muted-foreground hover:text-foreground" data-testid="nav-plans">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  I Nostri Piani
+                </Button>
+                <Link href="/guida">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-guide">
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Guida
+                  </Button>
+                </Link>
+                {/* Show CMS pages only for non-authenticated users */}
+                {headerPages.map((page) => (
+                  <Link key={page.id} href={`/page/${page.slug}`}>
+                    <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid={`nav-${page.slug}`}>
+                      {page.title}
+                    </Button>
+                  </Link>
+                ))}
+              </>
+            ) : showRoleMenu ? (
               <>
                 {/* Patient Menu */}
                 {!typedUser.isDoctor && !typedUser.isAdmin && (
@@ -203,31 +233,31 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                 {/* Doctor Menu */}
                 {typedUser?.isDoctor && (
                   <>
-                    <Link href="/doctor/appointments">
+                    <Link href="/doctor-appointments">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
                         <ChartLine className="w-4 h-4 mr-2" />
                         Dashboard
                       </Button>
                     </Link>
-                    <Link href="/doctor/patients">
+                    <Link href="/doctor-patients">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
                         <Users className="w-4 h-4 mr-2" />
                         Pazienti
                       </Button>
                     </Link>
-                    <Link href="/doctor/appointments">
+                    <Link href="/doctor-appointments">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-appointments">
                         <Video className="w-4 h-4 mr-2" />
                         Appuntamenti
                       </Button>
                     </Link>
-                    <Link href="/doctor/reports">
+                    <Link href="/doctor-reports">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reports">
                         <FileCheck className="w-4 h-4 mr-2" />
                         Referti
                       </Button>
                     </Link>
-                    <Link href="/doctor/alerts">
+                    <Link href="/doctor-alerts">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-alerts">
                         <AlertTriangle className="w-4 h-4 mr-2" />
                         Alert
@@ -256,29 +286,7 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
                 
                 {/* Admin users - navigation handled by AdminLayout, show minimal header */}
               </>
-            ) : (
-              <>
-                {/* Non-authenticated Menu */}
-                <Button variant="ghost" onClick={handlePlansClick} className="text-muted-foreground hover:text-foreground" data-testid="nav-plans">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  I Nostri Piani
-                </Button>
-                <Link href="/guida">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-guide">
-                    <HelpCircle className="w-4 h-4 mr-2" />
-                    Guida
-                  </Button>
-                </Link>
-                {/* Show CMS pages only for non-authenticated users */}
-                {headerPages.map((page) => (
-                  <Link key={page.id} href={`/page/${page.slug}`}>
-                    <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid={`nav-${page.slug}`}>
-                      {page.title}
-                    </Button>
-                  </Link>
-                ))}
-              </>
-            )}
+            ) : null}
           </div>
 
           <div className="flex items-center space-x-4">

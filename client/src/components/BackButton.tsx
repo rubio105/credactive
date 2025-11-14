@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useViewMode } from "@/contexts/ViewModeContext";
 
 interface BackButtonProps {
   fallbackRoute?: string;
@@ -20,6 +21,12 @@ export function BackButton({
 }: BackButtonProps) {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const { isMobileView } = useViewMode();
+
+  // Don't render BackButton in mobile view
+  if (isMobileView) {
+    return null;
+  }
 
   const handleBack = () => {
     let defaultRoute = fallbackRoute;

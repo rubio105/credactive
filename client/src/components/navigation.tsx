@@ -146,24 +146,119 @@ export default function Navigation({ useLandingLogo = false }: NavigationProps =
             </div>
           </Link>
           
-          {/* Center Navigation Menu - Always Visible */}
-          <div className="hidden md:flex items-center flex-col gap-3 flex-1 justify-center">
+          {/* Center Navigation Menu - Desktop Only, Horizontal Layout */}
+          <div className="hidden md:flex items-center gap-1 flex-1 justify-center flex-wrap">
             {isAuthenticated ? (
               <>
-                {/* Regular Patients - Only Prenotazioni */}
+                {/* Patient Menu */}
                 {!typedUser?.isDoctor && !typedUser?.isAdmin && (
                   <>
+                    <Link href="/dashboard">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
+                        <ChartLine className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Button>
+                    </Link>
                     <Link href="/teleconsulto">
                       <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-teleconsulto">
                         <Video className="w-4 h-4 mr-2" />
                         Prenotazioni
                       </Button>
                     </Link>
+                    {typedUser?.aiOnlyAccess && (
+                      <Link href="/documenti">
+                        <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-documenti">
+                          <FileText className="w-4 h-4 mr-2" />
+                          Documenti
+                        </Button>
+                      </Link>
+                    )}
+                    <Link href="/wearable">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-wearable">
+                        <Activity className="w-4 h-4 mr-2" />
+                        Dispositivi
+                      </Button>
+                    </Link>
+                    <Link href="/settings">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-settings">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Impostazioni
+                      </Button>
+                    </Link>
+                    <Link href="/security">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-security">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Sicurezza
+                      </Button>
+                    </Link>
+                    <Link href="/guida">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-guida">
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        Guida
+                      </Button>
+                    </Link>
                   </>
                 )}
+                
+                {/* Doctor Menu */}
+                {typedUser?.isDoctor && !typedUser?.isAdmin && (
+                  <>
+                    <Link href="/dashboard">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-dashboard">
+                        <ChartLine className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Link href="/doctor-patients">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-patients">
+                        <Users className="w-4 h-4 mr-2" />
+                        Pazienti
+                      </Button>
+                    </Link>
+                    <Link href="/doctor-appointments">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-appointments">
+                        <Video className="w-4 h-4 mr-2" />
+                        Appuntamenti
+                      </Button>
+                    </Link>
+                    <Link href="/doctor-reports">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-reports">
+                        <FileCheck className="w-4 h-4 mr-2" />
+                        Referti
+                      </Button>
+                    </Link>
+                    <Link href="/doctor-alerts">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-alerts">
+                        <AlertTriangle className="w-4 h-4 mr-2" />
+                        Alert
+                      </Button>
+                    </Link>
+                    <Link href="/settings">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-settings">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Impostazioni
+                      </Button>
+                    </Link>
+                    <Link href="/security">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-security">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Sicurezza
+                      </Button>
+                    </Link>
+                    <Link href="/guida">
+                      <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="nav-guida">
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        Guida
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                
+                {/* Admin users - navigation handled by AdminLayout, show minimal header */}
               </>
             ) : (
               <>
+                {/* Non-authenticated Menu */}
                 <Button variant="ghost" onClick={handlePlansClick} className="text-muted-foreground hover:text-foreground" data-testid="nav-plans">
                   <CreditCard className="w-4 h-4 mr-2" />
                   I Nostri Piani

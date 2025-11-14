@@ -2147,6 +2147,10 @@ export const appointments = pgTable("appointments", {
   // Patient contact
   patientPhone: varchar("patient_phone", { length: 50 }), // Patient phone for appointment
   
+  // Patient context (demographics, onboarding, AI conversation summary)
+  patientContext: jsonb("patient_context"), // Structured JSON with patient info, onboarding data, and AI motivation
+  patientSessionId: uuid("patient_session_id"), // Link to triage session that triggered booking
+  
   // Notifications
   reminderSentAt: timestamp("reminder_sent_at"),
   confirmationSentAt: timestamp("confirmation_sent_at"),

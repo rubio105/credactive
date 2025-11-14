@@ -45,6 +45,17 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
   - **Production Setup**: `BASE_URL=https://ciry.app` must be set on Hetzner VPS for correct email links
   - **Fallback Logic**: `getBaseUrl()` in `server/email.ts` prioritizes BASE_URL > REPLIT_DOMAINS > localhost:5000
   - **Note**: Since production is on Hetzner VPS (not Replit), REPLIT_DOMAINS doesn't apply, so BASE_URL is required
+- **Doctor Alerts Page Fix**: Fixed critical bugs in doctor alerts page (`/doctor-alerts`)
+  - **Cache invalidation bug**: Fixed incorrect query key invalidation (`/api/alerts` → `/api/doctor/alerts`)
+  - **Patient information**: Added display of patient name and email in alert cards and response dialog
+  - **Impact**: Doctor can now see which patient sent the alert and the page updates correctly after responding
+- **Appointment Context Enhancement** (IN PROGRESS):
+  - **Schema**: Added `patientContext` (jsonb) and `patientSessionId` (uuid) fields to appointments table
+  - **Goal**: When patient books teleconsult, doctor receives rich context including:
+    * Demographics (name, age, gender, contacts)
+    * Onboarding data (weight, height, smoking status, physical activity, chronic conditions)
+    * AI conversation summary showing motivation for visit
+  - **Status**: Schema updated, backend integration pending
 
 # User Preferences
 

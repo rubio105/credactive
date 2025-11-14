@@ -205,7 +205,16 @@ export default function Login() {
             </Button>
           </form>
 
-          {/* Registrazione disabilitata - solo admin può censire utenti */}
+          <div className="mt-6 text-center border-t pt-6">
+            <p className="text-sm text-muted-foreground mb-3">
+              Non hai ancora un account?
+            </p>
+            <Link href="/register-choice">
+              <Button variant="outline" className="w-full" data-testid="button-go-to-register">
+                Registrati
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

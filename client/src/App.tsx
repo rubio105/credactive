@@ -37,6 +37,7 @@ import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import RegisterChoice from "@/pages/register-choice";
 import VerifyEmail from "@/pages/verify-email";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
@@ -89,6 +90,7 @@ function Router() {
       <Route path="/contatti" component={Contatti} />
       <Route path="/patient-ai" component={PatientAI} />
       <Route path="/login" component={Login} />
+      <Route path="/register-choice" component={RegisterChoice} />
       <Route path="/register" component={Register} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/forgot-password" component={ForgotPassword} />

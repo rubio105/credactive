@@ -471,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // If doctor: send email to medici@ciry.app instead of creating account
+      // If doctor: send email to ciry@prohmed.ai instead of creating account
       if (isDoctor === true) {
         await sendDoctorRegistrationRequestEmail({
           email,
@@ -481,6 +481,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           specialization: specialization || undefined,
           company: company || undefined,
           addressCity: addressCity || undefined,
+          addressProvince: addressProvince || undefined,
+          addressPostalCode: addressPostalCode || undefined,
         });
 
         return res.json({

@@ -1642,6 +1642,8 @@ export async function sendDoctorRegistrationRequestEmail(
     specialization?: string;
     company?: string;
     addressCity?: string;
+    addressProvince?: string;
+    addressPostalCode?: string;
   }
 ): Promise<void> {
   const htmlContent = `
@@ -1689,6 +1691,12 @@ export async function sendDoctorRegistrationRequestEmail(
             ${doctorData.addressCity ? `<div class="info-row">
               <span class="info-label">Città:</span> ${sanitizeUserInput(doctorData.addressCity)}
             </div>` : ''}
+            ${doctorData.addressProvince ? `<div class="info-row">
+              <span class="info-label">Provincia:</span> ${sanitizeUserInput(doctorData.addressProvince)}
+            </div>` : ''}
+            ${doctorData.addressPostalCode ? `<div class="info-row">
+              <span class="info-label">CAP:</span> ${sanitizeUserInput(doctorData.addressPostalCode)}
+            </div>` : ''}
           </div>
           
           <p style="margin-top: 30px;">Contattare il medico per completare la registrazione.</p>
@@ -1705,13 +1713,13 @@ Un medico ha richiesto la registrazione alla piattaforma CIRY.
 
 Dati del Medico:
 - Nome: ${doctorData.firstName} ${doctorData.lastName}
-- Email: ${doctorData.email}${doctorData.phone ? `\n- Telefono: ${doctorData.phone}` : ''}${doctorData.specialization ? `\n- Specializzazione: ${doctorData.specialization}` : ''}${doctorData.company ? `\n- Azienda/Organizzazione: ${doctorData.company}` : ''}${doctorData.addressCity ? `\n- Città: ${doctorData.addressCity}` : ''}
+- Email: ${doctorData.email}${doctorData.phone ? `\n- Telefono: ${doctorData.phone}` : ''}${doctorData.specialization ? `\n- Specializzazione: ${doctorData.specialization}` : ''}${doctorData.company ? `\n- Azienda/Organizzazione: ${doctorData.company}` : ''}${doctorData.addressCity ? `\n- Città: ${doctorData.addressCity}` : ''}${doctorData.addressProvince ? `\n- Provincia: ${doctorData.addressProvince}` : ''}${doctorData.addressPostalCode ? `\n- CAP: ${doctorData.addressPostalCode}` : ''}
 
 Contattare il medico per completare la registrazione.
   `;
 
   await sendEmail({
-    to: 'medici@ciry.app',
+    to: 'ciry@prohmed.ai',
     subject: '👨‍⚕️ Nuova Richiesta Registrazione Medico - CIRY',
     htmlContent,
     textContent,

@@ -1735,10 +1735,83 @@ export async function sendAppointmentBookedToDoctorEmail(
     appointmentDate: string;
     appointmentTime: string;
     notes?: string;
+    patientContext?: any; // Structured patient context with demographics, onboarding, medical history, AI motivation
   }
 ): Promise<void> {
-  const { patientName, patientEmail, appointmentDate, appointmentTime, notes } = appointmentData;
+  const { patientName, patientEmail, appointmentDate, appointmentTime, notes, patientContext } = appointmentData;
   
+  // Build patient context sections
+  let demographicsSection = '';
+  let clinicalSection = '';
+  let medicalHistorySection = '';
+  let aiMotivationSection = '';
+  
+  if (patientContext) {
+    // Demographics
+    if (patientContext.demographics) {
+      const demo = patientContext.demographics;
+      demographicsSection = `
+        <div class="info-box">
+          <h3 style="margin-top: 0; color: #059669;">👤 Anagrafica Paziente</h3>
+          <p><strong>Nome:</strong> ${sanitizeUserInput(demo.firstName || '')} ${sanitizeUserInput(demo.lastName || '')}</p>
+          ${demo.age ? `<p><strong>Età:</strong> ${demo.age} anni</p>` : ''}
+          ${demo.gender ? `<p><strong>Genere:</strong> ${sanitizeUserInput(demo.gender)}</p>` : ''}
+          <p><strong>Email:</strong> ${sanitizeUserInput(demo.email || '')}</p>
+          ${demo.phone ? `<p><strong>Telefono:</strong> ${sanitizeUserInput(demo.phone)}</p>` : ''}
+        </div>
+      `;
+    }
+    
+    // Clinical profile
+    if (patientContext.onboarding) {
+      const onb = patientContext.onboarding;
+      const hasData = onb.weight || onb.height || onb.bmi || onb.smokingStatus || onb.physicalActivity || onb.userBio;
+      
+      if (hasData) {
+        clinicalSection = `
+          <div class="info-box" style="background: #fef3c7; border-left-color: #f59e0b;">
+            <h3 style="margin-top: 0; color: #d97706;">🏥 Profilo Clinico</h3>
+            ${onb.weight ? `<p><strong>Peso:</strong> ${onb.weight} kg</p>` : ''}
+            ${onb.height ? `<p><strong>Altezza:</strong> ${onb.height} cm</p>` : ''}
+            ${onb.bmi ? `<p><strong>BMI:</strong> ${onb.bmi}</p>` : ''}
+            ${onb.smokingStatus ? `<p><strong>Stato fumatore:</strong> ${sanitizeUserInput(onb.smokingStatus)}</p>` : ''}
+            ${onb.physicalActivity ? `<p><strong>Attività fisica:</strong> ${sanitizeUserInput(onb.physicalActivity)}</p>` : ''}
+            ${onb.userBio ? `<p><strong>Note biografiche:</strong><br>${sanitizeUserInput(onb.userBio).substring(0, 300)}${onb.userBio.length > 300 ? '...' : ''}</p>` : ''}
+          </div>
+        `;
+      }
+    }
+    
+    // Medical history (allergies, chronic conditions, medications)
+    if (patientContext.medicalHistory) {
+      const mh = patientContext.medicalHistory;
+      const hasHistory = (mh.allergies && mh.allergies.length > 0) || 
+                        (mh.chronicConditions && mh.chronicConditions.length > 0) || 
+                        (mh.currentMedications && mh.currentMedications.length > 0);
+      
+      if (hasHistory) {
+        medicalHistorySection = `
+          <div class="info-box" style="background: #fee2e2; border-left-color: #ef4444;">
+            <h3 style="margin-top: 0; color: #dc2626;">⚕️ Storia Medica</h3>
+            ${mh.allergies && mh.allergies.length > 0 ? `<p><strong>Allergie:</strong> ${mh.allergies.map(a => sanitizeUserInput(a)).join(', ')}</p>` : ''}
+            ${mh.chronicConditions && mh.chronicConditions.length > 0 ? `<p><strong>Condizioni croniche:</strong> ${mh.chronicConditions.map(c => sanitizeUserInput(c)).join(', ')}</p>` : ''}
+            ${mh.currentMedications && mh.currentMedications.length > 0 ? `<p><strong>Farmaci attuali:</strong> ${mh.currentMedications.map(m => sanitizeUserInput(m)).join(', ')}</p>` : ''}
+          </div>
+        `;
+      }
+    }
+    
+    // AI Motivation
+    if (patientContext.aiMotivation) {
+      aiMotivationSection = `
+        <div class="info-box" style="background: #dbeafe; border-left-color: #3b82f6;">
+          <h3 style="margin-top: 0; color: #2563eb;">🤖 Motivazione dalla Conversazione AI</h3>
+          <p style="font-style: italic;">"${sanitizeUserInput(patientContext.aiMotivation)}"</p>
+        </div>
+      `;
+    }
+  }
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -1764,16 +1837,25 @@ export async function sendAppointmentBookedToDoctorEmail(
           <p>Un paziente ha prenotato una visita con lei attraverso la piattaforma CIRY.</p>
           
           <div class="info-box">
-            <p><strong>👤 Paziente:</strong> ${sanitizeUserInput(patientName)}</p>
-            <p><strong>📧 Email:</strong> ${sanitizeUserInput(patientEmail)}</p>
             <p><strong>📅 Data:</strong> ${sanitizeUserInput(appointmentDate)}</p>
             <p><strong>⏰ Orario:</strong> ${sanitizeUserInput(appointmentTime)}</p>
-            ${notes ? `<p><strong>📝 Note del paziente:</strong><br>${sanitizeUserInput(notes)}</p>` : ''}
           </div>
+          
+          ${demographicsSection}
+          ${clinicalSection}
+          ${medicalHistorySection}
+          ${aiMotivationSection}
+          
+          ${notes ? `
+          <div class="info-box">
+            <h3 style="margin-top: 0; color: #059669;">📝 Note Manuali del Paziente</h3>
+            <p>${sanitizeUserInput(notes)}</p>
+          </div>
+          ` : ''}
           
           <p>Acceda alla piattaforma per confermare o gestire l'appuntamento:</p>
           <p style="text-align: center;">
-            <a href="${getBaseUrl()}/doctor/appointments" class="button">Gestisci Appuntamenti</a>
+            <a href="${getBaseUrl()}/doctor-appointments" class="button">Gestisci Appuntamenti</a>
           </p>
         </div>
         <div class="footer">
@@ -1784,6 +1866,50 @@ export async function sendAppointmentBookedToDoctorEmail(
     </html>
   `;
   
+  // Build text content with patient context
+  let textPatientInfo = '';
+  if (patientContext) {
+    if (patientContext.demographics) {
+      const demo = patientContext.demographics;
+      textPatientInfo += `\n👤 ANAGRAFICA PAZIENTE\n`;
+      textPatientInfo += `Nome: ${demo.firstName || ''} ${demo.lastName || ''}\n`;
+      if (demo.age) textPatientInfo += `Età: ${demo.age} anni\n`;
+      if (demo.gender) textPatientInfo += `Genere: ${demo.gender}\n`;
+      textPatientInfo += `Email: ${demo.email || ''}\n`;
+      if (demo.phone) textPatientInfo += `Telefono: ${demo.phone}\n`;
+    }
+    
+    if (patientContext.onboarding) {
+      const onb = patientContext.onboarding;
+      const hasData = onb.weight || onb.height || onb.bmi || onb.smokingStatus || onb.physicalActivity;
+      if (hasData) {
+        textPatientInfo += `\n🏥 PROFILO CLINICO\n`;
+        if (onb.weight) textPatientInfo += `Peso: ${onb.weight} kg\n`;
+        if (onb.height) textPatientInfo += `Altezza: ${onb.height} cm\n`;
+        if (onb.bmi) textPatientInfo += `BMI: ${onb.bmi}\n`;
+        if (onb.smokingStatus) textPatientInfo += `Stato fumatore: ${onb.smokingStatus}\n`;
+        if (onb.physicalActivity) textPatientInfo += `Attività fisica: ${onb.physicalActivity}\n`;
+      }
+    }
+    
+    if (patientContext.medicalHistory) {
+      const mh = patientContext.medicalHistory;
+      const hasHistory = (mh.allergies && mh.allergies.length > 0) || 
+                        (mh.chronicConditions && mh.chronicConditions.length > 0) || 
+                        (mh.currentMedications && mh.currentMedications.length > 0);
+      if (hasHistory) {
+        textPatientInfo += `\n⚕️ STORIA MEDICA\n`;
+        if (mh.allergies && mh.allergies.length > 0) textPatientInfo += `Allergie: ${mh.allergies.join(', ')}\n`;
+        if (mh.chronicConditions && mh.chronicConditions.length > 0) textPatientInfo += `Condizioni croniche: ${mh.chronicConditions.join(', ')}\n`;
+        if (mh.currentMedications && mh.currentMedications.length > 0) textPatientInfo += `Farmaci: ${mh.currentMedications.join(', ')}\n`;
+      }
+    }
+    
+    if (patientContext.aiMotivation) {
+      textPatientInfo += `\n🤖 MOTIVAZIONE CONVERSAZIONE AI\n"${patientContext.aiMotivation}"\n`;
+    }
+  }
+
   const textContent = `
 NUOVA PRENOTAZIONE
 
@@ -1791,13 +1917,12 @@ Buongiorno Dottore,
 
 Un paziente ha prenotato una visita con lei:
 
-Paziente: ${patientName}
-Email: ${patientEmail}
 Data: ${appointmentDate}
 Orario: ${appointmentTime}
-${notes ? `Note: ${notes}` : ''}
+${textPatientInfo}
+${notes ? `\n📝 NOTE MANUALI DEL PAZIENTE\n${notes}\n` : ''}
 
-Acceda alla piattaforma per confermare: ${getBaseUrl()}/doctor/appointments
+Acceda alla piattaforma per confermare: ${getBaseUrl()}/doctor-appointments
 
 Il Team CIRY
   `;

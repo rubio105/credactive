@@ -14292,7 +14292,8 @@ Fornisci:
               weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
             }),
             appointmentTime: new Date(startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-            notes: notes || 'Nessuna nota',
+            notes: notes || undefined,
+            patientContext: patientContext, // Include structured patient context
           });
         }
       } catch (emailError) {

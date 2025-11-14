@@ -5,6 +5,8 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 # Recent Changes
 
 ## November 14, 2025
+- **Automatic View Mode (Removed Manual Selector)**: Removed the manual view mode toggle (mobile/desktop/auto selector) from the desktop navigation bar. The application now automatically determines the appropriate view mode based on screen width using a 768px breakpoint (< 768px = mobile, >= 768px = desktop). This simplifies the user experience by eliminating the need for manual mode selection. The `ViewModeContext` was refactored to always operate in auto mode while maintaining backward-compatible API for existing components. The `ViewToggle` component was removed entirely. System automatically adapts to window resizing in real-time without requiring page refresh. Architect-reviewed and approved.
+- **Twilio Integration Configuration**: Successfully configured Twilio integration via Replit Connectors for WhatsApp messaging and OTP verification. The integration securely manages Twilio Account SID, API Key, API Key Secret, and Phone Number through Replit's connector system, eliminating the need for manual environment variable configuration. Application can now send WhatsApp messages for critical alerts and OTP codes for phone number verification.
 - **Account Deletion Feature with OTP Verification**: Implemented comprehensive account deletion system in security settings page. Two-step flow: (1) user selects deletion reason from dropdown (non uso l'app, non credo nella tecnologia, preferisco altro, costi alti, altro) with mandatory text input for "altro", (2) system sends 6-digit OTP via email (bcrypt hashed, 10-minute expiry, max 5 attempts). Backend validates reasons strictly (whitelist enforcement, non-empty checks, otherReason requirement for "altro") preventing NOT NULL violations. Created `accountDeletionRequests` table with CASCADE deletion, implemented storage methods (createAccountDeletionRequest, getAccountDeletionRequestByUserId, incrementDeletionAttempts, deleteUserAndAllData), and endpoints (`POST /api/user/request-account-deletion`, `POST /api/user/confirm-account-deletion`). On confirmation, all user data deleted permanently, session destroyed, user redirected to login. Fixed users.id schema to varchar(191) with gen_random_uuid() default, aligning with production database. Architect-reviewed and approved.
 - **Settings Page Avatar Cleanup**: Removed duplicate large profile photo section from settings.tsx, keeping only navigation bar avatar for cleaner UI and consistency across the platform.
 - **Desktop Navigation Horizontal Layout**: Converted DesktopNavigation from vertical sidebar to horizontal navbar at top to prevent content overlap. Navbar now displays horizontally with Logo | Navigation Tabs | View Toggle | Logout button layout. Added global CSS padding (`padding-top: 4rem`) for desktop view mode to prevent content from appearing under fixed navbar. Implemented consistent logout functionality using shared `useLogout` hook across DesktopNavigation and patient-ai.tsx (mobile-only). Architect-reviewed and approved.
@@ -27,6 +29,14 @@ Preferred communication style: Simple, everyday language.
 
 ## UI/UX Decisions
 The frontend is a React, TypeScript, Vite application utilizing `shadcn/ui`, TanStack Query, Wouter, and React Hook Form with Zod. Design principles include consistent internal navigation, role-based color theming (Patient: blue, Doctor: orange), a mobile-first approach with dedicated mobile navigation and role-aware dashboards, and color-coded medical alerts. Features such as real-time badge systems, responsive design, and WhatsApp notifications are implemented to enhance user experience. Doctor dashboards are designed with a 6-card grid layout for intuitive access to critical workflows. Login pages include a guard to redirect authenticated users to their role-appropriate dashboard.
+
+### Responsive View System
+The application uses an automatic responsive view system managed by `ViewModeContext` with a 768px breakpoint:
+- **Desktop mode** (>= 768px): Displays horizontal navigation bar at the top with logo, navigation tabs, and logout button
+- **Mobile mode** (< 768px): Shows dedicated mobile navigation appropriate for smaller screens
+- **Automatic switching**: View mode adapts in real-time as users resize their browser window
+- **No manual override**: The manual view mode selector was removed for simplified UX; the system always decides automatically based on screen dimensions
+- **CSS integration**: The effective mode is synchronized to `data-view-mode` attribute on the HTML element for conditional styling
 
 ## Technical Implementations
 

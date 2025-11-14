@@ -492,20 +492,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // If patient: require valid doctor referral code
+      // If patient: check invite-only mode
       if (isDoctor === false) {
-        if (!doctorCode) {
+        // Check if invite-only mode is enabled
+        const inviteOnlySetting = await storage.getSetting('INVITE_ONLY_MODE');
+        const inviteOnlyMode = inviteOnlySetting?.value !== 'false';
+        
+        // If invite-only mode is enabled, require doctor code
+        if (inviteOnlyMode && !doctorCode) {
           return res.status(403).json({ 
             message: "La registrazione per pazienti è disponibile solo tramite invito medico. Per maggiori informazioni, contatta support@ciry.app" 
           });
         }
 
-        // Validate doctor code exists and belongs to an actual doctor
-        const doctor = await storage.getUserByDoctorCode(doctorCode.trim().toUpperCase());
-        if (!doctor || !doctor.isDoctor) {
-          return res.status(400).json({ 
-            message: "Codice medico non valido. Verifica il link di invito ricevuto dal tuo medico." 
-          });
+        // Validate doctor code if provided
+        if (doctorCode) {
+          const doctor = await storage.getUserByDoctorCode(doctorCode.trim().toUpperCase());
+          if (!doctor || !doctor.isDoctor) {
+            return res.status(400).json({ 
+              message: "Codice medico non valido. Verifica il link di invito ricevuto dal tuo medico." 
+            });
+          }
         }
       }
 
@@ -12603,6 +12610,18 @@ Format as JSON: {
     } catch (error: any) {
       console.error('Get appointments setting error:', error);
       res.status(500).json({ enabled: false });
+    }
+  });
+
+  // Get invite-only mode status (public endpoint for registration page)
+  app.get('/api/settings/invite-only-mode', async (req, res) => {
+    try {
+      const setting = await storage.getSetting('INVITE_ONLY_MODE');
+      const enabled = setting?.value !== 'false';
+      res.json({ enabled });
+    } catch (error: any) {
+      console.error('Get invite-only mode setting error:', error);
+      res.json({ enabled: true });
     }
   });
 

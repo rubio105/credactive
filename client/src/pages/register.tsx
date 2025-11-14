@@ -118,13 +118,25 @@ export default function Register() {
     const trimmedAddressProvince = addressProvince.trim().toUpperCase();
     const trimmedAddressCountry = addressCountry.trim();
 
-    // Validation
-    if (!trimmedEmail || !password || !trimmedFirstName || !trimmedLastName || !dateOfBirth || 
-        !gender || !trimmedAddressStreet || !trimmedAddressCity || !trimmedAddressPostalCode || 
-        !trimmedAddressProvince || !trimmedAddressCountry) {
+    // Validation with detailed error reporting
+    const missingFields = [];
+    if (!trimmedEmail) missingFields.push("email");
+    if (!password) missingFields.push("password");
+    if (!trimmedFirstName) missingFields.push("nome");
+    if (!trimmedLastName) missingFields.push("cognome");
+    if (!dateOfBirth) missingFields.push("data di nascita");
+    if (!gender) missingFields.push("genere");
+    if (!trimmedAddressStreet) missingFields.push("via");
+    if (!trimmedAddressCity) missingFields.push("città");
+    if (!trimmedAddressPostalCode) missingFields.push("CAP");
+    if (!trimmedAddressProvince) missingFields.push("provincia");
+    if (!trimmedAddressCountry) missingFields.push("paese");
+
+    if (missingFields.length > 0) {
+      console.error("Missing fields:", missingFields);
       toast({
         title: "Campi obbligatori mancanti",
-        description: "Compila tutti i campi obbligatori per continuare",
+        description: `Compila: ${missingFields.join(", ")}`,
         variant: "destructive",
       });
       return;

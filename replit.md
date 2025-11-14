@@ -49,13 +49,23 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
   - **Cache invalidation bug**: Fixed incorrect query key invalidation (`/api/alerts` → `/api/doctor/alerts`)
   - **Patient information**: Added display of patient name and email in alert cards and response dialog
   - **Impact**: Doctor can now see which patient sent the alert and the page updates correctly after responding
-- **Appointment Context Enhancement** (IN PROGRESS):
+- **Appointment Context Enhancement** (COMPLETED):
   - **Schema**: Added `patientContext` (jsonb) and `patientSessionId` (uuid) fields to appointments table
-  - **Goal**: When patient books teleconsult, doctor receives rich context including:
-    * Demographics (name, age, gender, contacts)
-    * Onboarding data (weight, height, smoking status, physical activity, chronic conditions)
-    * AI conversation summary showing motivation for visit
-  - **Status**: Schema updated, backend integration pending
+  - **Backend**: `/api/appointments/book-teleconsult` now:
+    * Accepts optional `sessionId` parameter to link booking to AI conversation
+    * Extracts patient demographics from users table (name, age, gender, contacts)
+    * Extracts onboarding data (weight, height, BMI, smoking status, physical activity, bio)
+    * Extracts medical history from triage session (allergies, chronic conditions, medications)
+    * Extracts AI motivation from last 3 user messages if sessionId provided
+    * Saves structured JSON context to `patient_context` field
+  - **Email**: Doctor notification email now includes rich patient context:
+    * 👤 Anagrafica: nome, età, genere, email, telefono
+    * 🏥 Profilo Clinico: peso, altezza, BMI, stato fumatore, attività fisica
+    * ⚕️ Storia Medica: allergie, condizioni croniche, farmaci (from triage session)
+    * 🤖 Motivazione AI: estratto conversazione che ha motivato la prenotazione
+    * 📝 Note Manuali: note aggiunte manualmente dal paziente
+  - **Frontend**: `prevention.tsx` now passes `sessionId` to booking API
+  - **Impact**: Doctors receive comprehensive patient context before teleconsultation, improving preparation and care quality
 
 # User Preferences
 

@@ -3020,6 +3020,7 @@ export default function PreventionPage() {
                       endTime: endTime.toISOString(),
                       notes: combinedNotes,
                       appointmentType: 'video',
+                      sessionId: sessionId || undefined, // Pass session ID for AI context
                     },
                     files: attachedReports,
                   });

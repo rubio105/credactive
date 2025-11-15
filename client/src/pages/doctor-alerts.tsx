@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Filter, MessageSquare, Info, Zap, Clock, AlertCircle, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, Filter, MessageSquare, Info, Zap, Clock, AlertCircle, FileText, ChevronLeft, ChevronRight, User, Activity, Sparkles, Edit } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow, isToday, startOfToday, endOfToday } from "date-fns";
@@ -60,6 +60,18 @@ interface TriageMessage {
   role: string;
   content: string;
   createdAt: string;
+}
+
+interface PatientContext {
+  age?: number;
+  gender?: string;
+  preventionIndex?: number;
+  lastAlerts?: Array<{id: string; reason: string; createdAt: string; status: string}>;
+  wearableData?: {
+    bloodPressure?: string;
+    heartRate?: number;
+    lastSync?: string;
+  };
 }
 
 const ALERTS_PER_PAGE = 10;
@@ -120,9 +132,10 @@ export default function DoctorAlertsPage() {
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [conversationMessages, setConversationMessages] = useState<TriageMessage[]>([]);
   const [loadingConversation, setLoadingConversation] = useState(false);
+  const [patientContext, setPatientContext] = useState<PatientContext | null>(null);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteText, setNoteText] = useState("");
-  const { toast } = useToast();
+  const { toast} = useToast();
 
   const { data: alerts = [], isLoading } = useQuery<Alert[]>({
     queryKey: ["/api/doctor/alerts"],
@@ -198,6 +211,7 @@ export default function DoctorAlertsPage() {
       
       const data = await response.json();
       setConversationMessages(data.messages || []);
+      setPatientContext(data.patientContext || null);
       setShowConversationDialog(true);
     } catch (error: any) {
       toast({
@@ -208,6 +222,35 @@ export default function DoctorAlertsPage() {
     } finally {
       setLoadingConversation(false);
     }
+  };
+
+  const generateAIResponseMutation = useMutation({
+    mutationFn: async (alertId: string) => {
+      const response = await apiRequest(`/api/doctor/alerts/${alertId}/generate-response`, "POST", {});
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setNoteText(data.generatedResponse || "");
+      setNoteTitle("Risposta generata da CIRY AI");
+      setShowNoteDialog(true);
+      setShowConversationDialog(false);
+      toast({
+        title: "Report generato",
+        description: "Puoi modificare la risposta prima di inviarla al paziente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile generare il report",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerateAIResponse = () => {
+    if (!selectedAlert) return;
+    generateAIResponseMutation.mutate(selectedAlert.id);
   };
 
   const handleRespond = (alert: Alert) => {
@@ -470,46 +513,166 @@ export default function DoctorAlertsPage() {
 
       {/* Conversation Dialog */}
       <Dialog open={showConversationDialog} onOpenChange={setShowConversationDialog}>
-        <DialogContent className="sm:max-w-3xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] md:max-w-[1200px] max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
               Conversazione di Triage
             </DialogTitle>
             <DialogDescription>
-              Questa è la conversazione AI che ha generato l'alert medico
+              Conversazione AI che ha generato l'alert • {selectedAlert?.patientName}
             </DialogDescription>
           </DialogHeader>
-          
-          <ScrollArea className="flex-1 max-h-[500px] pr-4">
-            <div className="space-y-3">
-              {conversationMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`p-3 rounded-lg ${
-                    msg.role === 'user' 
-                      ? 'bg-blue-50 dark:bg-blue-950/20 ml-8' 
-                      : 'bg-muted mr-8'
-                  }`}
-                  data-testid={`message-${msg.id}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold uppercase">
-                      {msg.role === 'user' ? 'Paziente' : 'AI'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(msg.createdAt), "HH:mm", { locale: it })}
-                    </span>
-                  </div>
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+
+          <div className="grid md:grid-cols-[1fr_320px] gap-4 p-6 overflow-hidden flex-1">
+            {/* Conversazione */}
+            <div className="flex flex-col min-h-0">
+              <ScrollArea className="flex-1 pr-4">
+                <div className="space-y-3">
+                  {conversationMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`p-3 rounded-lg ${
+                        msg.role === 'user' 
+                          ? 'bg-blue-50 dark:bg-blue-950/20 ml-8' 
+                          : 'bg-muted mr-8'
+                      }`}
+                      data-testid={`message-${msg.id}`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold uppercase">
+                          {msg.role === 'user' ? 'Paziente' : 'AI'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(msg.createdAt), "HH:mm", { locale: it })}
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </ScrollArea>
             </div>
-          </ScrollArea>
+
+            {/* Sidebar Contesto Paziente */}
+            <div className="border-l pl-4 flex flex-col space-y-4 overflow-y-auto">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <User className="w-4 h-4" />
+                  Contesto Paziente
+                </div>
+
+                {patientContext && (
+                  <>
+                    {/* Dati Demografici */}
+                    <Card className="p-3 bg-muted/50">
+                      <div className="space-y-2 text-sm">
+                        {patientContext.age && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Età:</span>
+                            <span className="font-medium">{patientContext.age} anni</span>
+                          </div>
+                        )}
+                        {patientContext.gender && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Sesso:</span>
+                            <span className="font-medium capitalize">{patientContext.gender}</span>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+
+                    {/* Prevention Index */}
+                    {patientContext.preventionIndex !== undefined && (
+                      <Card className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Activity className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium">Prevention Index</span>
+                          </div>
+                          <Badge variant="secondary" className="text-base font-bold">
+                            {patientContext.preventionIndex.toFixed(1)}/10
+                          </Badge>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Dati Wearable */}
+                    {patientContext.wearableData && (
+                      <Card className="p-3 bg-green-50 dark:bg-green-950/20">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2 font-medium mb-2">
+                            <Activity className="w-4 h-4 text-green-600" />
+                            Dati Dispositivo
+                          </div>
+                          {patientContext.wearableData.bloodPressure && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Pressione:</span>
+                              <span className="font-medium">{patientContext.wearableData.bloodPressure}</span>
+                            </div>
+                          )}
+                          {patientContext.wearableData.heartRate && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Frequenza:</span>
+                              <span className="font-medium">{patientContext.wearableData.heartRate} bpm</span>
+                            </div>
+                          )}
+                          {patientContext.wearableData.lastSync && (
+                            <div className="text-xs text-muted-foreground mt-2">
+                              Ultimo sync: {format(new Date(patientContext.wearableData.lastSync), "dd/MM HH:mm")}
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Alert Recenti */}
+                    {patientContext.lastAlerts && patientContext.lastAlerts.length > 0 && (
+                      <Card className="p-3">
+                        <div className="text-sm font-medium mb-2">Alert Recenti</div>
+                        <div className="space-y-2">
+                          {patientContext.lastAlerts.slice(0, 3).map((alert) => (
+                            <div key={alert.id} className="text-xs border-l-2 border-muted pl-2 py-1">
+                              <div className="font-medium">{alert.reason}</div>
+                              <div className="text-muted-foreground flex justify-between">
+                                <span>{format(new Date(alert.createdAt), "dd MMM", { locale: it })}</span>
+                                <Badge variant={alert.status === 'resolved' ? 'outline' : 'secondary'} className="text-xs">
+                                  {alert.status === 'resolved' ? 'Risolto' : 'Attivo'}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
           
-          <DialogFooter>
-            <Button onClick={() => setShowConversationDialog(false)} data-testid="button-close-conversation">
+          <DialogFooter className="px-6 pb-6 pt-4 border-t gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowConversationDialog(false)} 
+              data-testid="button-close-conversation"
+            >
               Chiudi
+            </Button>
+            <Button
+              onClick={handleGenerateAIResponse}
+              disabled={generateAIResponseMutation.isPending}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              data-testid="button-generate-ai-response"
+            >
+              {generateAIResponseMutation.isPending ? (
+                <>Generazione...</>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Genera Report AI
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -519,11 +682,28 @@ export default function DoctorAlertsPage() {
       <Dialog open={showNoteDialog} onOpenChange={setShowNoteDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nuova Nota Medica</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Nuova Nota Medica
+              {noteTitle.includes("generata da CIRY AI") && (
+                <Badge className="bg-gradient-to-r from-blue-600 to-purple-600">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  AI Generated
+                </Badge>
+              )}
+            </DialogTitle>
             <DialogDescription>
               {selectedAlert && `Risposta all'alert per: ${selectedAlert.patientName}`}
             </DialogDescription>
           </DialogHeader>
+
+          {noteTitle.includes("generata da CIRY AI") && (
+            <div className="px-6 py-3 bg-blue-50 dark:bg-blue-950/20 border-l-4 border-blue-600 rounded">
+              <p className="text-sm text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                <Edit className="w-4 h-4" />
+                Questa risposta è stata generata da CIRY AI. Puoi modificarla prima di inviarla al paziente.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">

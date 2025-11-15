@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Send, FileText, Activity, Mic, MicOff, X, FileUp } from "lucide-react";
+import { Shield, Send, FileText, Activity, Mic, MicOff, X, FileUp, Heart, TrendingUp, Clock, AlertCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
@@ -113,6 +113,18 @@ export default function PatientAIPage() {
   // Query per i referti del paziente
   const { data: healthReports = [] } = useQuery<HealthReport[]>({
     queryKey: ["/api/health-score/reports"],
+    enabled: !!user,
+  });
+
+  // Query per Prevention Index
+  const { data: preventionIndex } = useQuery<any>({
+    queryKey: ["/api/prevention-index"],
+    enabled: !!user,
+  });
+
+  // Query per dati wearable
+  const { data: wearableData } = useQuery<any>({
+    queryKey: ["/api/wearable/monitoring"],
     enabled: !!user,
   });
 
@@ -528,40 +540,127 @@ export default function PatientAIPage() {
 
                   {!sessionId ? (
                     <div className="space-y-4">
+                      {/* Widget Stato Salute */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Prevention Index */}
+                        {preventionIndex && (
+                          <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Heart className="w-5 h-5 text-blue-600" />
+                                <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Prevention Index</span>
+                              </div>
+                              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                                {preventionIndex.currentScore?.toFixed(1) || 'N/A'}
+                                <span className="text-sm font-normal">/10</span>
+                              </div>
+                            </div>
+                          </Card>
+                        )}
+
+                        {/* Dati Wearable */}
+                        {wearableData && (
+                          <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Activity className="w-5 h-5 text-green-600" />
+                                <span className="text-sm font-medium text-green-900 dark:text-green-100">Dispositivo</span>
+                              </div>
+                              <div className="text-xs text-green-800 dark:text-green-200 space-y-1">
+                                {wearableData.latestBloodPressure && (
+                                  <div>BP: {wearableData.latestBloodPressure}</div>
+                                )}
+                                {wearableData.latestHeartRate && (
+                                  <div>HR: {wearableData.latestHeartRate} bpm</div>
+                                )}
+                              </div>
+                            </div>
+                          </Card>
+                        )}
+
+                        {/* Referti */}
+                        <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-5 h-5 text-purple-600" />
+                              <span className="text-sm font-medium text-purple-900 dark:text-purple-100">Referti</span>
+                            </div>
+                            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                              {healthReports.length}
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+
                       <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
                         <AlertDescription className="text-sm text-emerald-800 dark:text-emerald-200">
-                          <p className="font-semibold mb-2">💡 Come funziona?</p>
-                          <ul className="space-y-1">
-                            <li>• Condividi il tuo caso personale o interesse</li>
-                            <li>• L'AI ti guida nell'apprendimento di strategie preventive</li>
-                            <li>• Ricevi consigli pratici basati su evidenze scientifiche</li>
-                          </ul>
+                          <p className="font-semibold mb-2 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4" />
+                            Come posso aiutarti oggi?
+                          </p>
+                          <p className="text-xs">
+                            Chiedi informazioni sui tuoi referti, ricevi consigli di prevenzione personalizzati o approfondisci argomenti di salute.
+                          </p>
                         </AlertDescription>
                       </Alert>
 
                       <div className="space-y-3">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          💬 Prova uno scenario di esempio:
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          Quick Actions:
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <Button
                             variant="outline"
                             className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-                            onClick={() => setUserInput("Raccontami l'ultimo referto")}
-                            data-testid="example-latest-report"
+                            onClick={() => setUserInput("Come sta il mio Prevention Index?")}
+                            data-testid="action-prevention-index"
                           >
                             <div className="flex items-start gap-2">
-                              <FileText className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <TrendingUp className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                               <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                                Raccontami l'ultimo referto
+                                Come sta il mio Prevention Index?
                               </span>
                             </div>
                           </Button>
+
+                          {healthReports.length > 0 && (
+                            <Button
+                              variant="outline"
+                              className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                              onClick={() => setUserInput("Raccontami l'ultimo referto")}
+                              data-testid="action-latest-report"
+                            >
+                              <div className="flex items-start gap-2">
+                                <FileText className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                                  Raccontami l'ultimo referto
+                                </span>
+                              </div>
+                            </Button>
+                          )}
+
+                          {wearableData && (
+                            <Button
+                              variant="outline"
+                              className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                              onClick={() => setUserInput("Analizza i miei dati del dispositivo")}
+                              data-testid="action-wearable-data"
+                            >
+                              <div className="flex items-start gap-2">
+                                <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                                  Analizza i miei dati del dispositivo
+                                </span>
+                              </div>
+                            </Button>
+                          )}
+
                           <Button
                             variant="outline"
                             className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
                             onClick={() => setUserInput("Vorrei imparare a prevenire l'ipertensione")}
-                            data-testid="example-hypertension"
+                            data-testid="action-hypertension"
                           >
                             <div className="flex items-start gap-2">
                               <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
@@ -570,29 +669,31 @@ export default function PatientAIPage() {
                               </span>
                             </div>
                           </Button>
-                          <Button
-                            variant="outline"
-                            className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-                            onClick={() => setUserInput("Come posso migliorare i miei valori del colesterolo?")}
-                            data-testid="example-cholesterol"
-                          >
-                            <div className="flex items-start gap-2">
-                              <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                              <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                                Come posso migliorare i miei valori del colesterolo?
-                              </span>
-                            </div>
-                          </Button>
+
                           <Button
                             variant="outline"
                             className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
                             onClick={() => setUserInput("Quali esami di screening sono consigliati per la mia età?")}
-                            data-testid="example-screening"
+                            data-testid="action-screening"
                           >
                             <div className="flex items-start gap-2">
                               <Shield className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                               <span className="text-sm text-emerald-700 dark:text-emerald-300">
                                 Quali esami di screening sono consigliati per la mia età?
+                              </span>
+                            </div>
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                            onClick={() => setUserInput("Come posso migliorare i miei valori del colesterolo?")}
+                            data-testid="action-cholesterol"
+                          >
+                            <div className="flex items-start gap-2">
+                              <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                                Come posso migliorare i miei valori del colesterolo?
                               </span>
                             </div>
                           </Button>

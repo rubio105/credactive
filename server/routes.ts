@@ -1129,14 +1129,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.getTriageMessagesBySession(alert.sessionId);
       const session = await storage.getTriageSessionById(alert.sessionId);
 
+      // Get patient context
+      const patient = await storage.getUserById(alert.userId);
+      const preventionIndex = await storage.getPreventionIndexByUserId(alert.userId);
+      const lastAlerts = await storage.getTriageAlertsByUser(alert.userId);
+      const wearableMonitoring = await storage.getWearableMonitoringByUserId(alert.userId);
+
+      // Calculate age from dateOfBirth
+      const age = patient?.dateOfBirth 
+        ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()
+        : undefined;
+
+      // Get latest wearable data
+      let wearableData = undefined;
+      if (wearableMonitoring) {
+        const latestBP = wearableMonitoring.latestBloodPressure;
+        const latestHR = wearableMonitoring.latestHeartRate;
+        wearableData = {
+          bloodPressure: latestBP || undefined,
+          heartRate: latestHR || undefined,
+          lastSync: wearableMonitoring.lastSyncAt?.toISOString() || undefined,
+        };
+      }
+
+      const patientContext = {
+        age,
+        gender: patient?.gender || undefined,
+        preventionIndex: preventionIndex?.currentScore || undefined,
+        lastAlerts: lastAlerts.slice(0, 5).map((a: any) => ({
+          id: a.id,
+          reason: a.reason,
+          createdAt: a.createdAt,
+          status: a.status,
+        })),
+        wearableData,
+      };
+
       res.json({
         alert,
         session,
         messages,
+        patientContext,
       });
     } catch (error) {
       console.error("Error getting triage conversation:", error);
       res.status(500).json({ message: "Errore durante il recupero della conversazione" });
+    }
+  });
+
+  // Generate AI response for alert (doctor only)
+  app.post('/api/doctor/alerts/:alertId/generate-response', isDoctor, async (req, res) => {
+    try {
+      const { alertId } = req.params;
+      
+      // Get alert and verify access
+      const alert = await storage.getTriageAlertById(alertId);
+      if (!alert) {
+        return res.status(404).json({ message: "Alert non trovato" });
+      }
+
+      const patientAlerts = await storage.getPatientAlertsByDoctor(req.user.id);
+      const hasAccess = patientAlerts.some((a: any) => a.id === alertId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Non hai accesso a questo alert" });
+      }
+
+      // Get conversation and patient context
+      const messages = await storage.getTriageMessagesBySession(alert.sessionId);
+      const patient = await storage.getUserById(alert.userId);
+      const preventionIndex = await storage.getPreventionIndexByUserId(alert.userId);
+      const wearableMonitoring = await storage.getWearableMonitoringByUserId(alert.userId);
+      const lastAlerts = await storage.getTriageAlertsByUser(alert.userId);
+
+      // Build context for AI
+      const age = patient?.dateOfBirth 
+        ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()
+        : 'Non disponibile';
+
+      const conversationSummary = messages.map((m: any) => 
+        `${m.role === 'user' ? 'Paziente' : 'AI'}: ${m.content}`
+      ).join('\n');
+
+      const wearableInfo = wearableMonitoring 
+        ? `Pressione: ${wearableMonitoring.latestBloodPressure || 'N/A'}, Frequenza: ${wearableMonitoring.latestHeartRate || 'N/A'} bpm`
+        : 'Nessun dato disponibile';
+
+      const alertHistory = lastAlerts.slice(0, 3).map((a: any) => 
+        `- ${a.reason} (${a.status === 'resolved' ? 'Risolto' : 'Attivo'})`
+      ).join('\n');
+
+      const prompt = `Come medico esperto, devi scrivere una risposta professionale ma empatica ad un paziente che ha ricevuto un alert medico dal sistema CIRY.
+
+CONTESTO PAZIENTE:
+- Nome: ${patient?.firstName} ${patient?.lastName}
+- Età: ${age} anni
+- Sesso: ${patient?.gender || 'Non specificato'}
+- Prevention Index: ${preventionIndex?.currentScore?.toFixed(1) || 'N/A'}/10
+- Dati Dispositivo: ${wearableInfo}
+
+ALERT:
+Tipo: ${alert.alertType}
+Motivo: ${alert.reason}
+Urgenza: ${alert.urgencyLevel}
+
+CONVERSAZIONE CON AI:
+${conversationSummary}
+
+STORICO ALERT RECENTI:
+${alertHistory || 'Nessuno'}
+
+ISTRUZIONI:
+Scrivi una nota medica professionale (200-300 parole) che:
+1. Riconosca le preoccupazioni del paziente emerse nella conversazione
+2. Fornisca rassicurazione o indicazioni appropriate basate sui dati clinici
+3. Suggerisca eventuali passi successivi (es: monitoraggio, visita, esami)
+4. Mantenga un tono professionale ma umano e rassicurante
+5. Faccia riferimento ai dati wearable se rilevanti
+
+Scrivi SOLO la nota, senza introduzioni o meta-commenti.`;
+
+      // Call AI service
+      const aiResponse = await generateAIResponse(prompt);
+
+      res.json({
+        generatedResponse: aiResponse,
+        alert,
+      });
+
+    } catch (error) {
+      console.error("Error generating AI response:", error);
+      res.status(500).json({ message: "Errore durante la generazione della risposta" });
     }
   });
 

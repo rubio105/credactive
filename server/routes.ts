@@ -12020,8 +12020,8 @@ Format as JSON: {
         return res.status(404).json({ message: 'Report not found' });
       }
       
-      // Verify ownership
-      if (report.userId !== user.id) {
+      // Verify ownership (convert both to string for comparison)
+      if (String(report.userId) !== String(user.id)) {
         return res.status(403).json({ message: 'Access denied' });
       }
       

@@ -8,14 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin, FileText, Download, ClipboardList, AlertTriangle, CalendarDays } from "lucide-react";
+import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin, FileText, Download, ClipboardList, AlertTriangle, CalendarDays, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackButton } from "@/components/BackButton";
-import { VideoPermissionAlert } from "@/components/VideoPermissionAlert";
+import { VideoCallRoom } from "@/components/VideoCallRoom";
 import { CalendarView } from "@/components/CalendarView";
 import type { Appointment } from "@shared/schema";
 
@@ -61,6 +61,7 @@ export default function DoctorAppointmentsPage() {
   const [reportAppointmentId, setReportAppointmentId] = useState<string | null>(null);
   const [preventionReportAppointmentId, setPreventionReportAppointmentId] = useState<string | null>(null);
   const [preventionReportContent, setPreventionReportContent] = useState<string>("");
+  const [activeVideoCall, setActiveVideoCall] = useState<string | null>(null);
   
   // Form state for creating appointment
   const [newAppointment, setNewAppointment] = useState({
@@ -373,6 +374,33 @@ export default function DoctorAppointmentsPage() {
   const bookedAppointments = appointments.filter(a => a.status === 'pending' || a.status === 'booked' || a.status === 'confirmed');
   const completedAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
 
+  // If in active video call, show full-screen video component
+  if (activeVideoCall) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center gap-4 mb-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setActiveVideoCall(null)} 
+            data-testid="button-back-from-video"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Videochiamata in Corso</h1>
+            <p className="text-muted-foreground">Appuntamento #{activeVideoCall.substring(0, 8)}</p>
+          </div>
+        </div>
+        <VideoCallRoom 
+          appointmentId={activeVideoCall}
+          onLeave={() => setActiveVideoCall(null)}
+          isDoctorView={true}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <BackButton className="mb-4" />
@@ -504,14 +532,16 @@ export default function DoctorAppointmentsPage() {
                             Report Pre-Visita
                           </Button>
                         )}
-                        {apt.meetingUrl && (apt.status === 'confirmed' || apt.status === 'booked') && (
-                          <VideoPermissionAlert
-                            meetingUrl={apt.meetingUrl}
-                            buttonText="Entra in Chiamata"
-                            buttonVariant="outline"
-                            buttonSize="sm"
-                            buttonTestId={`button-video-${apt.id}`}
-                          />
+                        {(apt.status === 'confirmed' || apt.status === 'booked') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setActiveVideoCall(apt.id)}
+                            data-testid={`button-video-${apt.id}`}
+                          >
+                            <Video className="w-4 h-4 mr-2" />
+                            Entra in Chiamata
+                          </Button>
                         )}
                         {(apt.status === 'pending' || apt.status === 'booked') && (
                           <>

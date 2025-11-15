@@ -14,7 +14,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
-import { VideoPermissionAlert } from "@/components/VideoPermissionAlert";
+import { VideoCallRoom } from "@/components/VideoCallRoom";
 
 type Doctor = {
   id: string;
@@ -55,6 +55,7 @@ export default function TeleconsultoPage() {
   const [bookingNotes, setBookingNotes] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [activeVideoCall, setActiveVideoCall] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -272,6 +273,33 @@ export default function TeleconsultoPage() {
     return !isNaN(startDate.getTime()) && startDate > new Date();
   });
 
+  // If in active video call, show full-screen video component
+  if (activeVideoCall) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center gap-4 mb-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setActiveVideoCall(null)} 
+            data-testid="button-back-from-video"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Videochiamata in Corso</h1>
+            <p className="text-muted-foreground">Appuntamento #{activeVideoCall.substring(0, 8)}</p>
+          </div>
+        </div>
+        <VideoCallRoom 
+          appointmentId={activeVideoCall}
+          onLeave={() => setActiveVideoCall(null)}
+          isDoctorView={false}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -351,13 +379,15 @@ export default function TeleconsultoPage() {
                         <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>
                           {apt.status === 'confirmed' ? 'Confermato' : 'In attesa'}
                         </Badge>
-                        {apt.meetingUrl && apt.status === 'confirmed' && (
-                          <VideoPermissionAlert
-                            meetingUrl={apt.meetingUrl}
-                            buttonText="Entra in Chiamata"
-                            buttonSize="sm"
-                            buttonTestId={`button-join-video-${apt.id}`}
-                          />
+                        {apt.status === 'confirmed' && (
+                          <Button
+                            size="sm"
+                            onClick={() => setActiveVideoCall(apt.id)}
+                            data-testid={`button-join-video-${apt.id}`}
+                          >
+                            <Video className="w-4 h-4 mr-2" />
+                            Entra in Chiamata
+                          </Button>
                         )}
                       </div>
                     </div>

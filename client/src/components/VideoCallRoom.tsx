@@ -133,15 +133,20 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
     };
 
     const attachTrack = (track: any) => {
-      if (remoteVideoRef.current && track.kind === 'video') {
+      if (track.kind === 'video' && remoteVideoRef.current) {
         const existingElement = remoteVideoRef.current.querySelector(`[data-track-sid="${track.sid}"]`);
         if (!existingElement) {
           const element = track.attach();
           element.setAttribute('data-track-sid', track.sid);
           remoteVideoRef.current.appendChild(element);
         }
-      } else if (track.kind === 'audio') {
-        track.attach();
+      } else if (track.kind === 'audio' && remoteVideoRef.current) {
+        const existingElement = remoteVideoRef.current.querySelector(`[data-track-sid="${track.sid}"]`);
+        if (!existingElement) {
+          const audioElement = track.attach();
+          audioElement.setAttribute('data-track-sid', track.sid);
+          remoteVideoRef.current.appendChild(audioElement);
+        }
       }
     };
 

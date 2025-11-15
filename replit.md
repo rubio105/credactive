@@ -33,6 +33,16 @@ A comprehensive Admin Dashboard (`/admin`) allows management of users, subscript
 ### Communication & Notifications
 The platform integrates an email notification queue, real-time push and in-app notifications, and WhatsApp notifications for critical alerts and appointment reminders. It features voice-enabled AI chat using OpenAI Whisper and TTS, and a Teleconsulto system with doctor availability, smart slot picking, patient booking, automated notifications, and Jitsi video integration.
 
+### Appointment Management System
+Doctor appointments page (`/appointments`) includes 5 tabs:
+- **Prenotate**: List of booked appointments with patient details, status badges, and action buttons (confirm, cancel, complete, no-show)
+- **Disponibili**: Available appointment slots created by doctor
+- **Completate**: Historical completed appointments
+- **Calendario**: Monthly calendar view (CalendarView component) showing all appointments with 8 color-coded statuses (available, pending, booked, confirmed, completed, cancelled, no_show, rescheduled), includes interactive legend, loading/empty states, and click handlers to open appointment details
+- **Disponibilità**: Weekly schedule management for creating recurring availability slots
+
+**Known Limitation**: Calendar click currently opens basic status dialog; future enhancement needed for full appointment detail view with all actions.
+
 ### ML Training Data Collection System (Active Learning)
 An architecture captures all platform interactions as `mlTrainingData` to train proprietary ML models, supporting a 12-month migration.
 

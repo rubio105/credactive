@@ -697,12 +697,12 @@ export interface IStorage {
   deleteProfessionalContactRequest(id: string): Promise<void>;
 
   // Doctor-Patient Link operations
-  generateDoctorCode(doctorId: number): Promise<string>;
-  linkPatientToDoctor(patientId: number, doctorCode: string): Promise<void>;
-  getDoctorPatients(doctorId: number): Promise<Array<User & { linkedAt: Date }>>;
-  getPatientDoctors(patientId: number): Promise<Array<User & { linkedAt: Date }>>;
-  unlinkPatientFromDoctor(doctorId: number, patientId: number): Promise<void>;
-  getDoctorStatsSummary(doctorId: number): Promise<{
+  generateDoctorCode(doctorId: string): Promise<string>;
+  linkPatientToDoctor(patientId: string, doctorCode: string): Promise<void>;
+  getDoctorPatients(doctorId: string): Promise<Array<User & { linkedAt: Date }>>;
+  getPatientDoctors(patientId: string): Promise<Array<User & { linkedAt: Date }>>;
+  unlinkPatientFromDoctor(doctorId: string, patientId: string): Promise<void>;
+  getDoctorStatsSummary(doctorId: string): Promise<{
     totalPatients: number;
     criticalAlerts: number;
     todayAppointments: number;
@@ -711,20 +711,20 @@ export interface IStorage {
   
   // Doctor Notes operations
   createDoctorNote(note: InsertDoctorNote): Promise<DoctorNote>;
-  getDoctorNotesByPatient(patientId: number): Promise<Array<DoctorNote & { doctor: { firstName: string | null, lastName: string | null }, doctorName: string }>>;
-  getDoctorNotesByDoctor(doctorId: number): Promise<DoctorNote[]>;
+  getDoctorNotesByPatient(patientId: string): Promise<Array<DoctorNote & { doctor: { firstName: string | null, lastName: string | null }, doctorName: string }>>;
+  getDoctorNotesByDoctor(doctorId: string): Promise<DoctorNote[]>;
   getDoctorNoteById(id: string): Promise<DoctorNote | undefined>;
   deleteDoctorNote(id: string): Promise<void>;
   
   // Doctor Alert operations  
-  getPatientAlertsByDoctor(doctorId: number): Promise<Array<TriageAlert & { patientName: string; patientEmail: string }>>;
+  getPatientAlertsByDoctor(doctorId: string): Promise<Array<TriageAlert & { patientName: string; patientEmail: string }>>;
   
   // Audit Log operations (GDPR compliance)
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
   getAuditLogs(filters?: {
     userId?: string;
     resourceType?: string;
-    resourceOwnerId?: number;
+    resourceOwnerId?: string;
     startDate?: Date;
     endDate?: Date;
     limit?: number;
@@ -733,7 +733,7 @@ export interface IStorage {
   getAuditLogsCount(filters?: {
     userId?: string;
     resourceType?: string;
-    resourceOwnerId?: number;
+    resourceOwnerId?: string;
     startDate?: Date;
     endDate?: Date;
   }): Promise<number>;
@@ -4164,7 +4164,7 @@ export class DatabaseStorage implements IStorage {
 
   // ========== DOCTOR-PATIENT LINK OPERATIONS ==========
 
-  async generateDoctorCode(doctorId: number): Promise<string> {
+  async generateDoctorCode(doctorId: string): Promise<string> {
     // Check if doctor already has a code
     const doctor = await this.getUser(doctorId);
     if (doctor?.doctorCode) {
@@ -4191,7 +4191,7 @@ export class DatabaseStorage implements IStorage {
     return code;
   }
 
-  async linkPatientToDoctor(patientId: number, doctorCode: string): Promise<void> {
+  async linkPatientToDoctor(patientId: string, doctorCode: string): Promise<void> {
     // Find doctor by code
     const [doctor] = await db.select().from(users).where(eq(users.doctorCode, doctorCode));
     
@@ -4222,7 +4222,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async getDoctorPatients(doctorId: number): Promise<Array<User & { linkedAt: Date }>> {
+  async getDoctorPatients(doctorId: string): Promise<Array<User & { linkedAt: Date }>> {
     const results = await db
       .select({
         user: users,
@@ -4236,7 +4236,7 @@ export class DatabaseStorage implements IStorage {
     return results.map(r => ({ ...r.user, linkedAt: r.linkedAt! }));
   }
 
-  async getPatientDoctors(patientId: number): Promise<Array<User & { linkedAt: Date }>> {
+  async getPatientDoctors(patientId: string): Promise<Array<User & { linkedAt: Date }>> {
     const results = await db
       .select({
         user: users,
@@ -4250,7 +4250,7 @@ export class DatabaseStorage implements IStorage {
     return results.map(r => ({ ...r.user, linkedAt: r.linkedAt! }));
   }
 
-  async unlinkPatientFromDoctor(doctorId: number, patientId: string): Promise<void> {
+  async unlinkPatientFromDoctor(doctorId: string, patientId: string): Promise<void> {
     await db.delete(doctorPatientLinks)
       .where(and(
         eq(doctorPatientLinks.doctorId, doctorId),
@@ -4258,7 +4258,7 @@ export class DatabaseStorage implements IStorage {
       ));
   }
 
-  async getDoctorStatsSummary(doctorId: number): Promise<{
+  async getDoctorStatsSummary(doctorId: string): Promise<{
     totalPatients: number;
     criticalAlerts: number;
     todayAppointments: number;
@@ -4344,7 +4344,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getDoctorNotesByPatient(patientId: number): Promise<Array<DoctorNote & { doctor: { firstName: string | null, lastName: string | null }, doctorName: string }>> {
+  async getDoctorNotesByPatient(patientId: string): Promise<Array<DoctorNote & { doctor: { firstName: string | null, lastName: string | null }, doctorName: string }>> {
     const results = await db
       .select({
         note: doctorNotes,
@@ -4366,7 +4366,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getDoctorNotesByDoctor(doctorId: number): Promise<DoctorNote[]> {
+  async getDoctorNotesByDoctor(doctorId: string): Promise<DoctorNote[]> {
     return await db
       .select()
       .from(doctorNotes)
@@ -4385,7 +4385,7 @@ export class DatabaseStorage implements IStorage {
 
   // ========== DOCTOR ALERT OPERATIONS ==========
 
-  async getPatientAlertsByDoctor(doctorId: number): Promise<Array<TriageAlert & { patientName: string; patientEmail: string }>> {
+  async getPatientAlertsByDoctor(doctorId: string): Promise<Array<TriageAlert & { patientName: string; patientEmail: string }>> {
     // Get all patients linked to this doctor
     const linkedPatients = await this.getDoctorPatients(doctorId);
     const patientIds = linkedPatients.map(p => p.id);
@@ -4655,7 +4655,7 @@ export class DatabaseStorage implements IStorage {
     return appointment;
   }
 
-  async getAppointmentsByDoctor(doctorId: number, startDate?: Date, endDate?: Date): Promise<any[]> {
+  async getAppointmentsByDoctor(doctorId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
     const conditions = [eq(appointments.doctorId, doctorId)];
     
     if (startDate && endDate) {
@@ -4685,7 +4685,7 @@ export class DatabaseStorage implements IStorage {
     return appointmentsWithAttachments;
   }
 
-  async getAppointmentsByPatient(patientId: number, status?: string): Promise<Appointment[]> {
+  async getAppointmentsByPatient(patientId: string, status?: string): Promise<Appointment[]> {
     const conditions = [eq(appointments.patientId, patientId)];
     
     if (status) {
@@ -4746,7 +4746,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getAppointmentsSummary(doctorId: number): Promise<{
+  async getAppointmentsSummary(doctorId: string): Promise<{
     total: number;
     pending: number;
     confirmed: number;
@@ -5071,7 +5071,7 @@ export class DatabaseStorage implements IStorage {
     return report;
   }
 
-  async getWearableDailyReportsByPatient(patientId: number, limit: number = 50): Promise<WearableDailyReport[]> {
+  async getWearableDailyReportsByPatient(patientId: string, limit: number = 50): Promise<WearableDailyReport[]> {
     return await db
       .select()
       .from(wearableDailyReports)
@@ -5080,7 +5080,7 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async getWearableDailyReportsByDoctor(doctorId: number, limit: number = 50): Promise<WearableDailyReport[]> {
+  async getWearableDailyReportsByDoctor(doctorId: string, limit: number = 50): Promise<WearableDailyReport[]> {
     return await db
       .select()
       .from(wearableDailyReports)
@@ -5089,7 +5089,7 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async getLatestWearableDailyReport(patientId: number): Promise<WearableDailyReport | undefined> {
+  async getLatestWearableDailyReport(patientId: string): Promise<WearableDailyReport | undefined> {
     const [report] = await db
       .select()
       .from(wearableDailyReports)

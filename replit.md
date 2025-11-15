@@ -4,6 +4,25 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 # Recent Changes
 
+## November 15, 2025
+- **Contextual AI Suggestions Feature** (COMPLETED):
+  - **Component**: Created `SuggestedActions.tsx` as purely presentational component (no internal queries)
+  - **Architecture**: Receives all data as props from parent (`prevention.tsx`), ensuring single source of truth
+  - **Role-Based Suggestions**:
+    * **Patients**: "Analizza referto recente", "Prenota visita preventiva", "Come sta la mia salute?", "Carica documento"
+    * **Doctors**: "Riepilogo pazienti oggi", "Analisi trend settimanali", "Genera nota clinica"
+  - **Contextual Urgency**:
+    * Patients with pending alerts: "🚨 Ho un alert urgente, cosa devo fare?"
+    * Doctors with pending alerts: "🚨 Rivedi N alert urgenti" (navigates to `/doctor-alerts`)
+  - **Query Optimization**:
+    * `pendingAlert`: enabled for ALL authenticated users (checks personal pending alert)
+    * `userAlerts`: enabled for patients only (`!isDoctor`)
+    * `doctorPatientAlerts`: enabled for doctors only
+  - **UI Placement**: Positioned outside `sessionId` conditional, making suggestions always visible (with or without active chat session)
+  - **Auto-Start Flow**: `handleSuggestedAction` auto-starts triage session and sends message via `setUserInput` + `setTimeout(handleSend, 100)` pattern
+  - **Grid Layout**: Responsive 1-column (mobile) to 2-column (desktop) grid with hover effects and icon transitions
+  - **Impact**: Users receive immediate, role-appropriate guidance at all times, improving feature discoverability and engagement
+
 ## November 14, 2025
 - **Doctor Alerts Fix**: Corrected API endpoint in `doctor-alerts.tsx` from `/api/alerts` to `/api/doctor/alerts` to resolve 403 authorization errors
 - **Health Reports Display**: Added "Referti AI" section to documents page (`/documenti`) showing AI-analyzed health reports with:

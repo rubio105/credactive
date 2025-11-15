@@ -6,6 +6,13 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 ## November 15, 2025
 - **Alert Consolidation**: Removed "Alert Pazienti" section from doctor home dashboard (`DoctorDashboard.tsx` component). Medical alerts are now exclusively shown in the dedicated `/doctor/alerts` page, eliminating redundancy and providing a focused alert management interface.
+- **Patient Quick Actions Restructuring**: Simplified patient AI quick actions in prevention page (`SuggestedActions.tsx`):
+  - Removed "Come sta la mia salute?" button
+  - Added "🔬 Quali esami devo fare?" - Opens dialog with AI exam recommendations based on age, lifestyle, and medical history
+  - Made "📄 Analizza il mio referto" always visible - Opens dialog that checks report age (warns if >3 months old) and provides detailed AI analysis
+  - Added "🛡️ Percorso di prevenzione" - Moved from "Strumenti Avanzati" section to main quick actions
+  - Kept "🏥 Prenota una visita" button
+- **Strumenti Avanzati Simplification**: Reduced "Strumenti Avanzati" section in prevention page to only show "Carica Documenti" button, removing duplicate "Percorso di Prevenzione" button (now in quick actions)
 
 # User Preferences
 

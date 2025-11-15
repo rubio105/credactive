@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus, Calendar, Paperclip, Radio } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus, Calendar, Paperclip, Radio, CheckCircle2, AlertCircle, Upload } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -138,6 +138,8 @@ export default function PreventionPage() {
   const [isConversationMode, setIsConversationMode] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
+  const [showExamsDialog, setShowExamsDialog] = useState(false);
+  const [showAnalyzeReportDialog, setShowAnalyzeReportDialog] = useState(false);
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -614,18 +616,20 @@ export default function PreventionPage() {
     const isDoctor = (user as any)?.isDoctor;
 
     switch (action) {
+      case 'exams-recommendation':
+        setShowExamsDialog(true);
+        break;
+      
       case 'analyze-report':
-        setUserInput('Analizza il mio ultimo referto caricato');
-        setTimeout(() => handleSend(), 100);
+        setShowAnalyzeReportDialog(true);
         break;
       
       case 'book-visit':
         setIsBookingDialogOpen(true);
         break;
       
-      case 'health-status':
-        setUserInput('Come sta la mia salute? Dammi un riepilogo del mio Prevention Index e situazione generale');
-        setTimeout(() => handleSend(), 100);
+      case 'prevention-path':
+        setShowPreventionPathDialog(true);
         break;
       
       case 'upload-document':
@@ -2230,32 +2234,18 @@ export default function PreventionPage() {
                     {/* Action Buttons */}
                     <div className="space-y-3">
                       <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Strumenti Avanzati:</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex justify-center">
                         <Button
                           variant="outline"
-                          className="group border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 h-auto py-4 hover:shadow-lg transition-all duration-200"
+                          className="group border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 h-auto py-4 px-6 hover:shadow-lg transition-all duration-200"
                           onClick={() => setShowUploadDialog(true)}
                           data-testid="button-upload-documents"
                         >
-                          <div className="flex flex-col items-center gap-2 w-full">
+                          <div className="flex flex-col items-center gap-2">
                             <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg group-hover:scale-110 transition-transform">
                               <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                             </div>
                             <span className="text-xs font-semibold">Carica Documenti</span>
-                          </div>
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          className="group border-2 border-purple-200 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 h-auto py-4 hover:shadow-lg transition-all duration-200"
-                          onClick={() => setShowPreventionPathDialog(true)}
-                          data-testid="button-generate-prevention-path"
-                        >
-                          <div className="flex flex-col items-center gap-2 w-full">
-                            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg group-hover:scale-110 transition-transform">
-                              <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <span className="text-xs font-semibold">Percorso di Prevenzione</span>
                           </div>
                         </Button>
                       </div>
@@ -3127,6 +3117,159 @@ export default function PreventionPage() {
         onGenerate={() => generatePreventionPathMutation.mutate()}
         isGenerating={generatePreventionPathMutation.isPending}
       />
+
+      {/* Exams Recommendation Dialog */}
+      <Dialog open={showExamsDialog} onOpenChange={setShowExamsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Stethoscope className="w-5 h-5 text-blue-600" />
+              Quali esami devo fare?
+            </DialogTitle>
+            <DialogDescription>
+              Ricevi raccomandazioni personalizzate sugli esami medici da effettuare
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
+                L'AI analizzerà il tuo profilo medico, età e stile di vita per suggerirti gli esami preventivi più indicati per te.
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-center">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                onClick={() => {
+                  setShowExamsDialog(false);
+                  setUserInput('Analizza il mio profilo medico considerando età, stile di vita e storia clinica. Quali esami preventivi dovrei fare?');
+                  setTimeout(() => handleSend(), 100);
+                }}
+                data-testid="button-request-exams"
+              >
+                <Stethoscope className="w-4 h-4 mr-2" />
+                Richiedi Raccomandazioni
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Analyze Report Dialog */}
+      <Dialog open={showAnalyzeReportDialog} onOpenChange={setShowAnalyzeReportDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-emerald-600" />
+              Analizza il mio referto
+            </DialogTitle>
+            <DialogDescription>
+              Analisi AI del tuo ultimo referto medico caricato
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {(() => {
+              const latestReport = healthReports[0];
+              const reportAge = latestReport 
+                ? Math.floor((Date.now() - new Date(latestReport.uploadedAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
+                : null;
+              const isOldReport = reportAge && reportAge >= 3;
+
+              if (!latestReport) {
+                return (
+                  <>
+                    <Alert className="bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800">
+                      <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <AlertDescription className="text-sm text-yellow-900 dark:text-yellow-200">
+                        Non hai ancora caricato nessun referto medico. Puoi caricare un documento per un'analisi dettagliata, oppure chiedere consigli preventivi all'AI.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="flex justify-center gap-3">
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="border-emerald-300 dark:border-emerald-700"
+                        onClick={() => {
+                          setShowAnalyzeReportDialog(false);
+                          setUserInput('Non ho ancora caricato referti medici. Puoi darmi consigli generali sulla prevenzione e sugli esami che dovrei fare?');
+                          setTimeout(() => handleSend(), 100);
+                        }}
+                        data-testid="button-ask-ai-without-report"
+                      >
+                        <MessageSquarePlus className="w-4 h-4 mr-2" />
+                        Chiedi all'AI
+                      </Button>
+                      <Button
+                        size="lg"
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                        onClick={() => {
+                          setShowAnalyzeReportDialog(false);
+                          setShowUploadDialog(true);
+                        }}
+                        data-testid="button-upload-first-report"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Carica Referto
+                      </Button>
+                    </div>
+                  </>
+                );
+              }
+
+              return (
+                <>
+                  {isOldReport && (
+                    <Alert className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">
+                        Il tuo ultimo referto risale a {reportAge} {reportAge === 1 ? 'mese' : 'mesi'} fa. 
+                        Considera di caricare referti più recenti per un'analisi più accurata.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <Alert className="bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <AlertDescription className="text-sm text-emerald-900 dark:text-emerald-200">
+                      <strong>Ultimo referto:</strong> {latestReport.documentType || 'Documento'} caricato il {new Date(latestReport.uploadedAt).toLocaleDateString('it-IT')}
+                    </AlertDescription>
+                  </Alert>
+                  <div className="flex justify-center gap-3">
+                    <Button
+                      size="lg"
+                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                      onClick={() => {
+                        setShowAnalyzeReportDialog(false);
+                        setUserInput('Analizza in dettaglio il mio ultimo referto caricato. Spiegami i risultati, evidenzia eventuali valori anomali e suggerisci azioni preventive.');
+                        setTimeout(() => handleSend(), 100);
+                      }}
+                      data-testid="button-analyze-report"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Analizza Referto
+                    </Button>
+                    {isOldReport && (
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="border-blue-300 dark:border-blue-700"
+                        onClick={() => {
+                          setShowAnalyzeReportDialog(false);
+                          setShowUploadDialog(true);
+                        }}
+                        data-testid="button-upload-new-report"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Carica Nuovo Referto
+                      </Button>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <OnboardingDialog 
         open={showOnboarding} 

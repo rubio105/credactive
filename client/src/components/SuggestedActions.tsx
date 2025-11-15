@@ -75,16 +75,6 @@ export function SuggestedActions({
       }
     );
   } else {
-    if (hasRecentUploads) {
-      patientActions.push({
-        id: 'analyze-report',
-        label: '📄 Analizza il mio referto',
-        icon: FileText,
-        onClick: () => onActionClick('analyze-report'),
-        className: 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-none',
-      });
-    }
-
     if (hasActiveAlert) {
       patientActions.push({
         id: 'alert-guidance',
@@ -96,7 +86,19 @@ export function SuggestedActions({
       });
     }
 
-    const greetingActions = [
+    patientActions.push(
+      {
+        id: 'exams-recommendation',
+        label: '🔬 Quali esami devo fare?',
+        icon: Stethoscope,
+        onClick: () => onActionClick('exams-recommendation'),
+      },
+      {
+        id: 'analyze-report',
+        label: '📄 Analizza il mio referto',
+        icon: FileText,
+        onClick: () => onActionClick('analyze-report'),
+      },
       {
         id: 'book-visit',
         label: '🏥 Prenota una visita',
@@ -104,30 +106,12 @@ export function SuggestedActions({
         onClick: () => onActionClick('book-visit'),
       },
       {
-        id: 'health-status',
-        label: '📊 Come sta la mia salute?',
-        icon: Activity,
-        onClick: () => onActionClick('health-status'),
-      },
-      {
-        id: 'upload-document',
-        label: '📤 Carica un documento',
-        icon: Upload,
-        onClick: () => onActionClick('upload-document'),
-      },
-      {
-        id: 'ask-question',
-        label: '💬 Ho una domanda medica',
-        icon: MessageSquarePlus,
-        onClick: () => onActionClick('ask-question'),
-      },
-    ];
-
-    if (!hasRecentUploads && !hasActiveAlert) {
-      patientActions.push(...greetingActions.slice(0, 4));
-    } else {
-      patientActions.push(...greetingActions.slice(0, 2));
-    }
+        id: 'prevention-path',
+        label: '🛡️ Percorso di prevenzione',
+        icon: TrendingUp,
+        onClick: () => onActionClick('prevention-path'),
+      }
+    );
   }
 
   const actions = isDoctor ? doctorActions : patientActions;

@@ -22,6 +22,7 @@ import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { PreventionPathDialog } from "@/components/PreventionPathDialog";
+import { SuggestedActions } from "@/components/SuggestedActions";
 import Navigation from "@/components/navigation";
 const ciryMainLogo = "/images/ciry-main-logo.png";
 import {
@@ -179,7 +180,7 @@ export default function PreventionPage() {
 
   const { data: userAlerts = [], refetch: refetchAlerts } = useQuery<TriageAlert[]>({
     queryKey: ["/api/user/alerts"],
-    enabled: !!(user as any)?.isDoctor,
+    enabled: !!user && !(user as any)?.isDoctor,  // For patients only, not doctors
     retry: false,
   });
 
@@ -316,10 +317,10 @@ export default function PreventionPage() {
     enabled: !!user && !!user.aiOnlyAccess,
   });
 
-  // Query per alert pendente (SOLO per medici)
+  // Query per alert pendente (per tutti gli utenti autenticati)
   const { data: pendingAlert } = useQuery<TriageAlert | null>({
     queryKey: ["/api/triage/pending-alert"],
-    enabled: !!(user as any)?.isDoctor,
+    enabled: !!user,  // Available for all authenticated users (patients and doctors)
   });
 
   // Assessment is optional - user can access directly without completing it
@@ -604,6 +605,61 @@ export default function PreventionPage() {
   const handleCloseSession = () => {
     if (sessionId) {
       closeSessionMutation.mutate(sessionId);
+    }
+  };
+
+  const handleSuggestedAction = async (action: string, params?: any) => {
+    const isDoctor = (user as any)?.isDoctor;
+
+    switch (action) {
+      case 'analyze-report':
+        setUserInput('Analizza il mio ultimo referto caricato');
+        setTimeout(() => handleSend(), 100);
+        break;
+      
+      case 'book-visit':
+        setIsBookingDialogOpen(true);
+        break;
+      
+      case 'health-status':
+        setUserInput('Come sta la mia salute? Dammi un riepilogo del mio Prevention Index e situazione generale');
+        setTimeout(() => handleSend(), 100);
+        break;
+      
+      case 'upload-document':
+        setShowUploadDialog(true);
+        break;
+      
+      case 'ask-question':
+        (document.querySelector('[data-testid="input-triage-message"]') as HTMLInputElement)?.focus();
+        break;
+      
+      case 'alert-guidance':
+        setUserInput('Ho ricevuto un alert. Cosa devo fare? Quando devo preoccuparmi?');
+        setTimeout(() => handleSend(), 100);
+        break;
+      
+      case 'review-alerts':
+        setLocation('/doctor-alerts');
+        break;
+      
+      case 'patient-summaries':
+        setUserInput('Dammi un riepilogo dettagliato dei miei pazienti che hanno appuntamenti oggi');
+        setTimeout(() => handleSend(), 100);
+        break;
+      
+      case 'patient-trends':
+        setUserInput('Mostrami i trend di salute e gli indicatori chiave dei miei pazienti');
+        setTimeout(() => handleSend(), 100);
+        break;
+      
+      case 'clinical-note':
+        setUserInput('Aiutami a generare una nota clinica professionale');
+        setTimeout(() => handleSend(), 100);
+        break;
+
+      default:
+        console.warn(`Azione non gestita: ${action}`);
     }
   };
 
@@ -2336,6 +2392,15 @@ export default function PreventionPage() {
                     </ScrollArea>
 
                     <div className="space-y-3 mt-4 px-1">
+                      {/* Suggested Actions - Show always for better discoverability */}
+                      <SuggestedActions
+                        isDoctor={(user as any)?.isDoctor || false}
+                        hasRecentUploads={healthReports.length > 0}
+                        hasActiveAlert={!!pendingAlert || userAlerts.some(a => a.status === 'pending')}
+                        pendingAlertCount={doctorPatientAlerts.filter((a: any) => a.status === 'pending').length}
+                        onActionClick={handleSuggestedAction}
+                      />
+
                       <div className="flex gap-3 items-end">
                         <Input
                           placeholder="Scrivi un messaggio o inizia nuova conversazione..."

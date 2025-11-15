@@ -2,6 +2,11 @@
 
 CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform that uses AI for medical document analysis, patient-doctor communication, and proactive health monitoring. Its main goal is to improve patient outcomes through early detection and personalized health management. The platform offers a REST API for integrations, providing comprehensive medical history, data storage, and doctor recommendations. CIRY is transitioning from Google Gemini AI to proprietary ML models using Active Learning, aiming to secure a significant market share in B2B healthcare prevention with its robust, AI-powered solution.
 
+# Recent Changes
+
+## November 15, 2025
+- **Alert Consolidation**: Removed "Alert Pazienti" section from doctor home dashboard (`DoctorDashboard.tsx` component). Medical alerts are now exclusively shown in the dedicated `/doctor/alerts` page, eliminating redundancy and providing a focused alert management interface.
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

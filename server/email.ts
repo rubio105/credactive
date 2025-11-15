@@ -1978,9 +1978,9 @@ export async function sendAppointmentConfirmedToPatientEmail(
           </div>
           
           ${meetingUrl ? `
-            <p>La visita si terrà online. Ecco il link per la videocall:</p>
+            <p>La visita si terrà online tramite videocall.</p>
             <p style="text-align: center;">
-              <a href="${sanitizeUserInput(meetingUrl)}" class="button">Accedi alla Videocall</a>
+              <a href="${getBaseUrl()}/teleconsulto" class="button">Accedi alla Videocall</a>
             </p>
           ` : ''}
           
@@ -2014,7 +2014,7 @@ Il suo appuntamento è stato confermato:
 Medico: ${doctorName}
 Data: ${appointmentDate}
 Orario: ${appointmentTime}
-${meetingUrl ? `Link videocall: ${meetingUrl}` : ''}
+${meetingUrl ? `Accedi alla videocall: ${getBaseUrl()}/teleconsulto` : ''}
 ${studioAddress ? `Indirizzo studio: ${studioAddress}` : ''}
 
 Vedi i tuoi appuntamenti: ${getBaseUrl()}/appointments

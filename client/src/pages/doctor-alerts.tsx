@@ -2,31 +2,54 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Filter, MessageSquare, Send } from "lucide-react";
+import { AlertTriangle, Filter, MessageSquare, Send, Info, Zap, Clock, AlertCircle, FileText } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
+import { formatDistanceToNow, startOfDay, endOfDay, isToday } from "date-fns";
+import { it, format } from "date-fns/locale";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Alert {
   id: string;
+  userId: string;
   patientId: string;
   patientName: string;
   patientEmail: string;
+  sessionId: string;
+  alertType: string;
+  reason: string;
+  urgencyLevel: string;
   urgency: string;
+  isReviewed: boolean;
   status: string;
   title: string;
   description: string;
+  createdAt: string;
+}
+
+interface TriageMessage {
+  id: string;
+  role: string;
+  content: string;
   createdAt: string;
 }
 

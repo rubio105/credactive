@@ -31,7 +31,7 @@ CIRY offers AI-powered medical analysis (OCR, radiological analysis, summaries, 
 A comprehensive Admin Dashboard (`/admin`) allows management of users, subscriptions, medical alerts, and system configurations, including robust user management with role-based permissions and GDPR-compliant audit logging.
 
 ### Communication & Notifications
-The platform integrates an email notification queue, real-time push and in-app notifications, and WhatsApp notifications for critical alerts and appointment reminders. It features voice-enabled AI chat using OpenAI Whisper and TTS, and a Teleconsulto system with doctor availability, smart slot picking, patient booking, automated notifications, and Jitsi video integration.
+The platform integrates an email notification queue, real-time push and in-app notifications, and WhatsApp notifications for critical alerts and appointment reminders. It features voice-enabled AI chat using OpenAI Whisper and TTS, and a Teleconsulto system with doctor availability, smart slot picking, patient booking, automated notifications, and **embedded Twilio Video calls** for in-app video consultations.
 
 ### Appointment Management System
 Doctor appointments page (`/appointments`) includes 5 tabs:
@@ -52,6 +52,16 @@ Includes a dashboard for trending BP/HR data, device management, Web Bluetooth A
 ### Patient Registration
 Patients can register via doctor-provided referral links, automatically linking them to their doctor post-email verification. Registration requires privacy consents, and an invite-only mode can be configured.
 
+### Twilio Video Integration (Embedded Video Calls)
+CIRY now features **fully embedded video calls** using Twilio Video, replacing external Jitsi redirects. This enables:
+- **In-app video consultations**: Patients and doctors connect directly within CIRY without external windows
+- **Mobile-ready architecture**: Video calls embedded in the app for future mobile deployment
+- **Brandable UI**: Custom CIRY-branded video interface with role-based colors (blue for patients, orange for doctors)
+- **Backend**: POST `/api/video/token` endpoint generates secure Twilio Video access tokens for authenticated users
+- **Frontend**: `VideoCallRoom` component manages video/audio tracks, participant handling, and responsive controls
+- **Patient flow**: `/teleconsulto` page → "Entra in Chiamata" button → embedded video room
+- **Doctor flow**: `/doctor/appointments` page → "Entra in Chiamata" button → embedded video room with doctor branding
+
 ## System Design Choices
 
 ### Security Audit
@@ -68,6 +78,5 @@ Production is on Hetzner VPS with PM2, Neon PostgreSQL, Nginx, and Cloudflare SS
 -   **AI Infrastructure**:
     -   **Primary**: Self-hosted Gemma Med via Ollama.
     -   **Fallback**: Google Gemini AI (`gemini-2.5-pro`, `gemini-2.5-flash`).
--   **Twilio**: WhatsApp messaging and OTP verification.
--   **Jitsi Meet**: Video teleconsultations.
+-   **Twilio**: WhatsApp messaging, OTP verification, and **Twilio Video** for embedded video calls.
 -   **OpenAI**: Whisper (Speech-to-Text) and TTS (Text-to-Speech).

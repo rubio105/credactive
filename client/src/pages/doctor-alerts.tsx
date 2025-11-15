@@ -135,6 +135,7 @@ export default function DoctorAlertsPage() {
   const [patientContext, setPatientContext] = useState<PatientContext | null>(null);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteText, setNoteText] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast} = useToast();
 
   const { data: alerts = [], isLoading } = useQuery<Alert[]>({
@@ -259,7 +260,7 @@ export default function DoctorAlertsPage() {
     setShowNoteDialog(true);
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!selectedAlert || !noteText) return;
 
     // Use patientId if available, fallback to userId for legacy alerts
@@ -275,13 +276,44 @@ export default function DoctorAlertsPage() {
       return;
     }
 
-    createNoteMutation.mutate({
-      patientId: patient.id,
-      noteTitle: noteTitle || null,
-      noteText,
-      isReport: false,
-      alertId: selectedAlert.id,
-    });
+    const formData = new FormData();
+    formData.append('patientId', patient.id);
+    formData.append('noteTitle', noteTitle || '');
+    formData.append('noteText', noteText);
+    formData.append('isReport', 'false');
+    formData.append('alertId', selectedAlert.id);
+    if (selectedFile) {
+      formData.append('attachment', selectedFile);
+    }
+
+    try {
+      const response = await fetch('/api/doctor/notes', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore durante la creazione della nota');
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/alerts"] });
+      toast({
+        title: "Nota creata",
+        description: "La nota è stata inviata al paziente",
+      });
+      setShowNoteDialog(false);
+      setNoteTitle("");
+      setNoteText("");
+      setSelectedFile(null);
+      setSelectedAlert(null);
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -446,7 +478,7 @@ export default function DoctorAlertsPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex justify-end">
                       <Button
                         variant="outline"
                         size="sm"
@@ -456,15 +488,6 @@ export default function DoctorAlertsPage() {
                       >
                         <MessageSquare className="w-4 h-4 mr-2" />
                         {loadingConversation ? "Caricamento..." : "Vedi Conversazione"}
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleRespond(alert)}
-                        data-testid={`button-respond-alert-${alert.id}`}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Rispondi
                       </Button>
                     </div>
                   </div>
@@ -727,6 +750,22 @@ export default function DoctorAlertsPage() {
                 className="min-h-[200px]"
                 data-testid="textarea-note-text"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="attachment">Allegato (opzionale)</Label>
+              <Input
+                id="attachment"
+                type="file"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                data-testid="input-note-attachment"
+              />
+              {selectedFile && (
+                <p className="text-sm text-muted-foreground">
+                  File selezionato: {selectedFile.name}
+                </p>
+              )}
             </div>
           </div>
 

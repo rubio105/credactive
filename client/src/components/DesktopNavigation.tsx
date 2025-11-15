@@ -273,9 +273,11 @@ export default function DesktopNavigation() {
       className="fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b z-50 flex items-center justify-between px-6"
     >
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <img src="/images/ciry-main-logo.png" alt="CIRY" className="h-8" />
-        </div>
+        <Link href="/">
+          <div className="flex items-center gap-2 cursor-pointer">
+            <img src="/images/ciry-main-logo.png" alt="CIRY" className="h-8" />
+          </div>
+        </Link>
 
         <div className="flex items-center gap-1">
           {tabs.map((tab) => (

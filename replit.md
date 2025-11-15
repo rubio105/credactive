@@ -13,6 +13,7 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
   - Added "🛡️ Percorso di prevenzione" - Moved from "Strumenti Avanzati" section to main quick actions
   - Kept "🏥 Prenota una visita" button
 - **Strumenti Avanzati Simplification**: Reduced "Strumenti Avanzati" section in prevention page to only show "Carica Documenti" button, removing duplicate "Percorso di Prevenzione" button (now in quick actions)
+- **Auto-close Pending Conversations**: Modified `startTriageMutation` in prevention page to automatically close any pending active session before starting a new conversation, eliminating multiple confirmation dialogs and providing seamless conversation flow
 
 # User Preferences
 

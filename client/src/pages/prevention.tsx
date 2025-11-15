@@ -426,6 +426,18 @@ export default function PreventionPage() {
 
   const startTriageMutation = useMutation({
     mutationFn: async (data: { symptom: string; role: 'patient' | 'doctor' }) => {
+      // Auto-close any pending active session before starting a new one
+      const currentActiveSession = queryClient.getQueryData<TriageSession>(["/api/triage/session/active"]);
+      if (currentActiveSession?.id && currentActiveSession.status === 'active') {
+        try {
+          await apiRequest(`/api/triage/${currentActiveSession.id}/close`, "POST", {});
+          queryClient.setQueryData(["/api/triage/session/active"], null);
+        } catch (error) {
+          console.error("Error auto-closing pending session:", error);
+          // Continue anyway - start the new session
+        }
+      }
+      
       const response = await apiRequest("/api/triage/start", "POST", { 
         initialSymptom: data.symptom,
         userRole: data.role

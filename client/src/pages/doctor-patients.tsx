@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,50 +9,23 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserPlus, Copy, FileText, Trash2, Check, X, AlertCircle, AlertTriangle, Info, Zap, MessageSquare, Clock } from "lucide-react";
+import { Users, UserPlus, Copy, FileText, Trash2, Check, X } from "lucide-react";
 import Navigation from "@/components/navigation";
 import { BackButton } from "@/components/BackButton";
 import { SEO } from "@/components/SEO";
 import type { User } from "@shared/schema";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
 
 interface Patient extends User {
   linkedAt: Date;
 }
 
-interface Alert {
-  id: string;
-  userId: string;
-  sessionId: string;
-  alertType: string;
-  reason: string;
-  urgencyLevel: string;
-  isReviewed: boolean;
-  status: string;
-  createdAt: string;
-  patientName: string;
-  patientEmail: string;
-}
-
-interface TriageMessage {
-  id: string;
-  role: string;
-  content: string;
-  createdAt: string;
-}
-
 export default function DoctorPatientsPage() {
   const { toast } = useToast();
   const [showNoteDialog, setShowNoteDialog] = useState(false);
-  const [showConversationDialog, setShowConversationDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteText, setNoteText] = useState("");
   const [isReport, setIsReport] = useState(false);
-  const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
-  const [conversationMessages, setConversationMessages] = useState<TriageMessage[]>([]);
-  const [loadingConversation, setLoadingConversation] = useState(false);
 
   // Get doctor code automatically
   const { data: doctorCode } = useQuery<{ code: string }>({
@@ -65,11 +37,6 @@ export default function DoctorPatientsPage() {
     queryKey: ["/api/doctor/patients"],
   });
 
-  // Get patient alerts
-  const { data: alerts = [] } = useQuery<Alert[]>({
-    queryKey: ["/api/doctor/alerts"],
-  });
-
   // Create note mutation
   const createNoteMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -77,7 +44,6 @@ export default function DoctorPatientsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctor/patients"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/doctor/alerts"] });
       toast({
         title: "Nota creata",
         description: "La nota è stata inviata al paziente",
@@ -86,7 +52,6 @@ export default function DoctorPatientsPage() {
       setNoteTitle("");
       setNoteText("");
       setIsReport(false);
-      setSelectedAlert(null);
       setSelectedPatient(null);
     },
     onError: (error: Error) => {
@@ -138,90 +103,12 @@ export default function DoctorPatientsPage() {
       noteTitle: noteTitle || null,
       noteText,
       isReport,
-      alertId: selectedAlert || null,
     });
   };
 
-  const openNoteDialog = (patient: Patient, alert?: Alert) => {
+  const openNoteDialog = (patient: Patient) => {
     setSelectedPatient(patient);
-    if (alert) {
-      setSelectedAlert(alert.id);
-      setNoteTitle(`Risposta ad alert: ${alert.reason}`);
-    }
     setShowNoteDialog(true);
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity.toLowerCase()) {
-      case 'urgent':
-      case 'high':
-      case 'emergency':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'moderate':
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      default:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-    }
-  };
-
-  const getUrgencyIcon = (urgencyLevel: string) => {
-    switch (urgencyLevel.toLowerCase()) {
-      case 'urgent':
-      case 'high':
-      case 'emergency':
-        return <AlertTriangle className="w-4 h-4 text-red-600" />;
-      case 'moderate':
-      case 'medium':
-        return <Zap className="w-4 h-4 text-yellow-600" />;
-      case 'low':
-        return <Info className="w-4 h-4 text-green-600" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-blue-600" />;
-    }
-  };
-
-  const getAlertTypeLabel = (alertType: string) => {
-    switch (alertType) {
-      case 'sensitive_topic':
-        return 'Argomento Sensibile';
-      case 'doctor_referral':
-      case 'doctor_suggested':
-        return 'Richiesta Medico';
-      case 'high_urgency':
-        return 'Alta Urgenza';
-      case 'emergency':
-        return 'Emergenza';
-      default:
-        return alertType;
-    }
-  };
-
-  const loadConversation = async (alertId: string) => {
-    setLoadingConversation(true);
-    try {
-      const response = await fetch(`/api/doctor/alerts/${alertId}/conversation`, {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Impossibile caricare la conversazione');
-      }
-      
-      const data = await response.json();
-      setConversationMessages(data.messages || []);
-      setShowConversationDialog(true);
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.message || "Impossibile caricare la conversazione",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingConversation(false);
-    }
   };
 
   return (
@@ -346,92 +233,6 @@ export default function DoctorPatientsPage() {
                 )}
               </CardContent>
             </Card>
-
-            {/* Alerts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5" />
-                  Alert Pazienti
-                </CardTitle>
-                <CardDescription>
-                  Alert medici generati dall'AI per i tuoi pazienti
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {alerts.length === 0 ? (
-                  <div className="text-center py-12 bg-muted/30 rounded-lg">
-                    <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">Nessun alert al momento</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {alerts.map((alert) => (
-                      <div
-                        key={alert.id}
-                        className="p-4 border-l-4 rounded-lg space-y-3 shadow-sm hover:shadow-md transition-shadow"
-                        style={{
-                          borderLeftColor: alert.urgencyLevel.toLowerCase().includes('high') || alert.urgencyLevel.toLowerCase().includes('urgent') || alert.urgencyLevel.toLowerCase().includes('emergency') ? '#dc2626' : 
-                                          alert.urgencyLevel.toLowerCase().includes('medium') || alert.urgencyLevel.toLowerCase().includes('moderate') ? '#f59e0b' : '#22c55e'
-                        }}
-                        data-testid={`alert-card-${alert.id}`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              {getUrgencyIcon(alert.urgencyLevel)}
-                              <p className="font-medium">{alert.patientName}</p>
-                              <Badge className={getSeverityColor(alert.urgencyLevel)}>
-                                {alert.urgencyLevel.toUpperCase()}
-                              </Badge>
-                              <Badge variant="outline" className="bg-blue-50">
-                                {getAlertTypeLabel(alert.alertType)}
-                              </Badge>
-                              {alert.isReviewed && (
-                                <Badge variant="secondary">Revisionato</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {alert.reason}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                              <Clock className="w-3 h-3" />
-                              {format(new Date(alert.createdAt), "dd MMM yyyy 'alle' HH:mm", { locale: it })}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => loadConversation(alert.id)}
-                            disabled={loadingConversation}
-                            data-testid={`button-view-conversation-${alert.id}`}
-                          >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            {loadingConversation ? "Caricamento..." : "Vedi Conversazione"}
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => {
-                              const patient = patients.find(p => p.id === alert.userId);
-                              if (patient) {
-                                openNoteDialog(patient, alert);
-                              }
-                            }}
-                            data-testid={`button-respond-alert-${alert.id}`}
-                          >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Rispondi
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           {/* Create Note Dialog */}
@@ -491,7 +292,6 @@ export default function DoctorPatientsPage() {
                     setNoteTitle("");
                     setNoteText("");
                     setIsReport(false);
-                    setSelectedAlert(null);
                     setSelectedPatient(null);
                   }}
                   data-testid="button-cancel-note"
@@ -506,68 +306,6 @@ export default function DoctorPatientsPage() {
                 >
                   <Check className="w-4 h-4 mr-2" />
                   {createNoteMutation.isPending ? "Invio..." : "Invia Nota"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Conversation Dialog */}
-          <Dialog open={showConversationDialog} onOpenChange={setShowConversationDialog}>
-            <DialogContent className="sm:max-w-3xl max-h-[80vh] flex flex-col">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  Conversazione di Triage
-                </DialogTitle>
-                <DialogDescription>
-                  Questa è la conversazione AI che ha generato l'alert medico
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="flex-1 overflow-y-auto space-y-4 py-4">
-                {conversationMessages.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nessun messaggio nella conversazione
-                  </p>
-                ) : (
-                  conversationMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      data-testid={`message-${msg.id}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg p-4 ${
-                          msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold">
-                            {msg.role === 'user' ? 'Paziente' : 'AI Medico'}
-                          </span>
-                          <span className="text-xs opacity-70">
-                            {format(new Date(msg.createdAt), "HH:mm", { locale: it })}
-                          </span>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowConversationDialog(false);
-                    setConversationMessages([]);
-                  }}
-                  data-testid="button-close-conversation"
-                >
-                  Chiudi
                 </Button>
               </DialogFooter>
             </DialogContent>

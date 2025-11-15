@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin, FileText, Download, ClipboardList, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, User, Video, CheckCircle, XCircle, Plus, Trash2, Edit2, MapPin, FileText, Download, ClipboardList, AlertTriangle, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackButton } from "@/components/BackButton";
 import { VideoPermissionAlert } from "@/components/VideoPermissionAlert";
+import { CalendarView } from "@/components/CalendarView";
+import type { Appointment } from "@shared/schema";
 
 type AppointmentAttachment = {
   id: string;
@@ -26,19 +28,7 @@ type AppointmentAttachment = {
   uploadedBy: string;
 };
 
-type Appointment = {
-  id: string;
-  doctorId: string;
-  patientId: string | null;
-  startTime: string;
-  endTime: string;
-  title: string;
-  type: string;
-  status: string;
-  description: string | null;
-  meetingUrl: string | null;
-  studioAddress: string | null;
-  cancellationReason: string | null;
+type AppointmentWithRelations = Appointment & {
   attachments?: AppointmentAttachment[];
   patient?: {
     firstName: string;
@@ -63,7 +53,7 @@ type DoctorAvailability = {
 export default function DoctorAppointmentsPage() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithRelations | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
@@ -92,7 +82,7 @@ export default function DoctorAppointmentsPage() {
   });
 
   // Get all appointments
-  const { data: appointments = [], isLoading } = useQuery<Appointment[]>({
+  const { data: appointments = [], isLoading } = useQuery<AppointmentWithRelations[]>({
     queryKey: ['/api/appointments'],
   });
 
@@ -398,7 +388,7 @@ export default function DoctorAppointmentsPage() {
       </div>
 
       <Tabs defaultValue="booked" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
           <TabsTrigger value="booked" data-testid="tab-booked">
             Prenotate ({bookedAppointments.length})
           </TabsTrigger>
@@ -407,6 +397,10 @@ export default function DoctorAppointmentsPage() {
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
             Completate ({completedAppointments.length})
+          </TabsTrigger>
+          <TabsTrigger value="calendar" data-testid="tab-calendar">
+            <CalendarDays className="w-4 h-4 mr-1" />
+            Calendario
           </TabsTrigger>
           <TabsTrigger value="availability" data-testid="tab-availability">
             Disponibilità
@@ -430,12 +424,12 @@ export default function DoctorAppointmentsPage() {
                         <div className="flex items-center gap-3">
                           <Calendar className="w-5 h-5 text-muted-foreground" />
                           <div>
-                            <p className="font-semibold">{apt.title}</p>
+                            <p className="font-semibold">{apt.title || 'Visita'}</p>
                             <p className="text-sm text-muted-foreground">
                               {format(new Date(apt.startTime), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
                             </p>
                           </div>
-                          {getStatusBadge(apt.status)}
+                          {getStatusBadge(apt.status || 'available')}
                         </div>
 
                         {apt.patient && (
@@ -631,7 +625,7 @@ export default function DoctorAppointmentsPage() {
                       <div className="flex items-center gap-3">
                         <Calendar className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <p className="font-medium">{apt.title}</p>
+                          <p className="font-medium">{apt.title || 'Visita'}</p>
                           <p className="text-sm text-muted-foreground">
                             {format(new Date(apt.startTime), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
                           </p>
@@ -642,7 +636,7 @@ export default function DoctorAppointmentsPage() {
                           )}
                         </div>
                       </div>
-                      {getStatusBadge(apt.status)}
+                      {getStatusBadge(apt.status || 'available')}
                     </div>
                   </CardContent>
                 </Card>
@@ -743,6 +737,19 @@ export default function DoctorAppointmentsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-6">
+          <CalendarView
+            appointments={appointments as any}
+            onAppointmentClick={(apt) => {
+              setSelectedAppointment(apt as AppointmentWithRelations);
+              setIsStatusDialogOpen(true);
+            }}
+            isDoctor={true}
+            isLoading={isLoading}
+            emptyMessage="Nessun appuntamento trovato. Crea nuovi slot dalla sezione Disponibilità."
+          />
         </TabsContent>
       </Tabs>
 

@@ -174,13 +174,13 @@ export default function TeleconsultoPage() {
       let uploadError = '';
       
       // Upload files if any were selected
-      if (selectedFiles.length > 0 && appointmentData.id) {
+      if (selectedFiles.length > 0 && appointmentData.appointment?.id) {
         try {
           const formData = new FormData();
           selectedFiles.forEach(file => {
             formData.append('files', file);
           });
-          formData.append('appointmentId', appointmentData.id);
+          formData.append('appointmentId', appointmentData.appointment.id);
           
           const uploadResponse = await fetch('/api/appointments/upload-attachments', {
             method: 'POST',

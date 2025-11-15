@@ -211,7 +211,7 @@ export const quizGenerationJobs = pgTable("quiz_generation_jobs", {
 // User quiz attempts
 export const userQuizAttempts = pgTable("user_quiz_attempts", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   quizId: uuid("quiz_id").notNull().references(() => quizzes.id),
   score: integer("score").notNull(), // percentage
   correctAnswers: integer("correct_answers").notNull(),
@@ -225,7 +225,7 @@ export const userQuizAttempts = pgTable("user_quiz_attempts", {
 // User progress tracking
 export const userProgress = pgTable("user_progress", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   categoryId: uuid("category_id").notNull().references(() => categories.id),
   quizzesCompleted: integer("quizzes_completed").default(0),
   averageScore: integer("average_score").default(0),
@@ -238,7 +238,7 @@ export const userProgress = pgTable("user_progress", {
 export const quizReports = pgTable("quiz_reports", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   attemptId: uuid("attempt_id").notNull().references(() => userQuizAttempts.id),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   quizId: uuid("quiz_id").notNull().references(() => quizzes.id),
   reportData: jsonb("report_data").notNull(), // Full report with analysis
   weakAreas: jsonb("weak_areas"), // Array of topics to improve
@@ -296,7 +296,7 @@ export const liveCourseSessions = pgTable("live_course_sessions", {
 // Live course enrollments
 export const liveCourseEnrollments = pgTable("live_course_enrollments", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   courseId: uuid("course_id").notNull().references(() => liveCourses.id),
   sessionId: uuid("session_id").notNull().references(() => liveCourseSessions.id),
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
@@ -322,7 +322,7 @@ export const liveStreamingSessions = pgTable("live_streaming_sessions", {
 export const liveStreamingMessages = pgTable("live_streaming_messages", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   streamingSessionId: uuid("streaming_session_id").notNull().references(() => liveStreamingSessions.id, { onDelete: 'cascade' }),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   userName: varchar("user_name", { length: 200 }).notNull(), // Cached for performance
   message: text("message").notNull(),
   isAdminMessage: boolean("is_admin_message").default(false),
@@ -346,7 +346,7 @@ export const liveStreamingPolls = pgTable("live_streaming_polls", {
 export const liveStreamingPollResponses = pgTable("live_streaming_poll_responses", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   pollId: uuid("poll_id").notNull().references(() => liveStreamingPolls.id, { onDelete: 'cascade' }),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   selectedOption: varchar("selected_option", { length: 10 }).notNull(),
   isCorrect: boolean("is_correct"), // Set if poll is a quiz question
   createdAt: timestamp("created_at").defaultNow(),
@@ -436,7 +436,7 @@ export const courseQuestions = pgTable("course_questions", {
 // User video progress tracking
 export const userVideoProgress = pgTable("user_video_progress", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   courseId: uuid("course_id").notNull().references(() => onDemandCourses.id),
   videoId: uuid("video_id").notNull().references(() => courseVideos.id),
   completed: boolean("completed").default(false),
@@ -464,7 +464,7 @@ export const badges = pgTable("badges", {
 // User badges - Badges earned by users
 export const userBadges = pgTable("user_badges", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   badgeId: uuid("badge_id").notNull().references(() => badges.id),
   earnedAt: timestamp("earned_at").defaultNow(),
 });
@@ -488,7 +488,7 @@ export const achievements = pgTable("achievements", {
 // User achievements - Achievements earned by users
 export const userAchievements = pgTable("user_achievements", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   achievementId: uuid("achievement_id").notNull().references(() => achievements.id),
   progress: integer("progress").default(0), // Current progress towards achievement
   isUnlocked: boolean("is_unlocked").default(false),
@@ -513,7 +513,7 @@ export const dailyChallenges = pgTable("daily_challenges", {
 // User daily challenge completions
 export const userDailyChallenges = pgTable("user_daily_challenges", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   challengeId: uuid("challenge_id").notNull().references(() => dailyChallenges.id),
   attemptId: uuid("attempt_id").references(() => userQuizAttempts.id), // Link to quiz attempt
   score: integer("score").notNull(), // Percentage score
@@ -526,7 +526,7 @@ export const userDailyChallenges = pgTable("user_daily_challenges", {
 // User certificates
 export const userCertificates = pgTable("user_certificates", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   categoryId: uuid("category_id").references(() => categories.id),
   quizId: uuid("quiz_id").references(() => quizzes.id),
   certificateType: varchar("certificate_type", { length: 50 }).notNull(), // quiz_completion, category_mastery, course_completion
@@ -544,7 +544,7 @@ export const userCertificates = pgTable("user_certificates", {
 // Leaderboard entries (materialized view / cache table for performance)
 export const leaderboard = pgTable("leaderboard", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   categoryId: uuid("category_id").references(() => categories.id), // null = global leaderboard
   rank: integer("rank").notNull(),
   points: integer("points").notNull(),
@@ -557,7 +557,7 @@ export const leaderboard = pgTable("leaderboard", {
 // Activity log for tracking user actions and awarding points
 export const activityLog = pgTable("activity_log", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   activityType: varchar("activity_type", { length: 50 }).notNull(), // quiz_completed, streak_maintained, badge_earned, etc.
   points: integer("points").default(0),
   metadata: jsonb("metadata"), // Additional context about the activity
@@ -1185,7 +1185,7 @@ export type InsertMarketingTemplate = z.infer<typeof insertMarketingTemplateSche
 export const campaignRecipients = pgTable("campaign_recipients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   campaignId: varchar("campaign_id").notNull().references(() => marketingCampaigns.id, { onDelete: "cascade" }),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   status: varchar("status", { length: 20 }).default("pending"), // pending, sent, failed, opened, clicked
   sentAt: timestamp("sent_at"),
@@ -1201,7 +1201,7 @@ export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
 // AI Scenario Conversations (post-answer interactive scenarios)
 export const scenarioConversations = pgTable("scenario_conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   questionId: uuid("question_id").notNull().references(() => questions.id, { onDelete: "cascade" }),
   quizId: uuid("quiz_id").notNull().references(() => quizzes.id, { onDelete: "cascade" }),
   
@@ -1249,7 +1249,7 @@ export type InsertScenarioMessage = z.infer<typeof insertScenarioMessageSchema>;
 // User Feedback (rating and comments)
 export const userFeedback = pgTable("user_feedback", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
   rating: integer("rating").notNull(), // 1-5 stars
   comment: text("comment"),
   message: text("message"), // Detailed feedback message
@@ -1327,7 +1327,7 @@ export type InsertPreventionTopic = z.infer<typeof insertPreventionTopicSchema>;
 // Medical Triage Sessions (conversational AI triage "Chiedi a Prohmed")
 export const triageSessions = pgTable("triage_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }), // Nullable for anonymous educational sessions
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }), // Nullable for anonymous educational sessions
   
   // Session metadata
   title: varchar("title", { length: 200 }), // Auto-generated from first message
@@ -1399,7 +1399,7 @@ export type InsertTriageMessage = z.infer<typeof insertTriageMessageSchema>;
 export const triageAlerts = pgTable("triage_alerts", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: varchar("session_id").notNull().references(() => triageSessions.id, { onDelete: "cascade" }),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   
   alertType: varchar("alert_type", { length: 50 }).notNull(), // sensitive_topic, high_urgency, emergency, doctor_suggested
   reason: text("reason").notNull(),
@@ -1429,7 +1429,7 @@ export type InsertTriageAlert = z.infer<typeof insertTriageAlertSchema>;
 // Prevention Assessments (initial health assessment with max 10 questions)
 export const preventionAssessments = pgTable("prevention_assessments", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   // Assessment metadata
   title: varchar("title", { length: 200 }).default("Assessment Prevenzione"),
@@ -1488,7 +1488,7 @@ export const preventionUserResponses = pgTable("prevention_user_responses", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   assessmentId: uuid("assessment_id").notNull().references(() => preventionAssessments.id, { onDelete: "cascade" }),
   questionId: uuid("question_id").notNull().references(() => preventionAssessmentQuestions.id, { onDelete: "cascade" }),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   answer: text("answer").notNull(), // User's answer
   answerType: varchar("answer_type", { length: 20 }).notNull(), // text, choice, scale_value
@@ -1510,7 +1510,7 @@ export type InsertPreventionUserResponse = z.infer<typeof insertPreventionUserRe
 // Prevention Index (engagement metric calculated from user activity)
 export const preventionIndices = pgTable("prevention_indices", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
   
   // Calculated score (0-100)
   score: integer("score").notNull().default(0),
@@ -1538,7 +1538,7 @@ export type InsertPreventionIndex = z.infer<typeof insertPreventionIndexSchema>;
 // Health Risk Predictions (AI-powered predictive health analysis)
 export const healthRiskPredictions = pgTable("health_risk_predictions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   // Risk identification
   riskType: varchar("risk_type", { length: 100 }).notNull(), // diabetes, cardiovascular, hypertension, obesity, etc.
@@ -1579,7 +1579,7 @@ export const prohmedCodes = pgTable("prohmed_codes", {
   code: varchar("code", { length: 50 }).notNull().unique(), // Generated access code
   
   // User who earned/received the code (nullable until redeemed)
-  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
   
   // How the code was earned
   source: varchar("source", { length: 50 }).notNull().default("admin_bulk"), // full_plus_subscription, crossword_winner, admin_bulk
@@ -1649,7 +1649,7 @@ export type InsertCrosswordPuzzle = z.infer<typeof insertCrosswordPuzzleSchema>;
 export const crosswordAttempts = pgTable("crossword_attempts", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   puzzleId: uuid("puzzle_id").notNull().references(() => crosswordPuzzles.id, { onDelete: "cascade" }),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   // Progress
   status: varchar("status", { length: 20 }).default("in_progress"), // in_progress, completed, abandoned
@@ -1686,7 +1686,7 @@ export const crosswordLeaderboard = pgTable("crossword_leaderboard", {
   
   weekNumber: integer("week_number").notNull(),
   weekYear: integer("week_year").notNull(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   // Performance metrics
   totalScore: integer("total_score").default(0),
@@ -1718,7 +1718,7 @@ export type InsertCrosswordLeaderboard = z.infer<typeof insertCrosswordLeaderboa
 // User Health Reports (uploaded medical reports with anonymization)
 export const userHealthReports = pgTable("user_health_reports", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   // File metadata
   fileName: varchar("file_name", { length: 255 }).notNull(),
@@ -1773,7 +1773,7 @@ export type InsertUserHealthReport = z.infer<typeof insertUserHealthReportSchema
 // Health Score History (track user's health score over time)
 export const healthScoreHistory = pgTable("health_score_history", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   // Score calculation
   overallScore: integer("overall_score").notNull(), // 0-100
@@ -1809,7 +1809,7 @@ export type InsertHealthScoreHistory = z.infer<typeof insertHealthScoreHistorySc
 // Health Insights (AI-generated personalized health insights and recommendations)
 export const healthInsights = pgTable("health_insights", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   // Insight metadata
   insightType: varchar("insight_type", { length: 50 }).notNull(), // attention_area, strength, recommendation, warning
@@ -1850,7 +1850,7 @@ export type InsertHealthInsight = z.infer<typeof insertHealthInsightSchema>;
 // User Token Usage (for AI conversation limits)
 export const userTokenUsage = pgTable("user_token_usage", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   monthYear: varchar("month_year", { length: 7 }).notNull(), // Format: YYYY-MM
   tokensUsed: integer("tokens_used").default(0).notNull(),
   messageCount: integer("message_count").default(0).notNull(),
@@ -1871,7 +1871,7 @@ export type InsertUserTokenUsage = z.infer<typeof insertUserTokenUsageSchema>;
 // Job Queue (for async processing of heavy tasks like document analysis)
 export const jobQueue = pgTable("job_queue", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
   // Job metadata
   jobType: varchar("job_type", { length: 50 }).notNull(), // medical_report_analysis, health_score_calculation
@@ -2011,8 +2011,8 @@ export type InsertProfessionalContactRequest = z.infer<typeof insertProfessional
 // Doctor-Patient Links (for doctor-patient relationship via doctor code)
 export const doctorPatientLinks = pgTable("doctor_patient_links", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  doctorId: integer("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  patientId: integer("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  patientId: varchar("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   doctorCode: varchar("doctor_code", { length: 20 }).notNull(), // The code used by patient to link
   linkedAt: timestamp("linked_at").defaultNow(),
 }, (table) => [
@@ -2032,8 +2032,8 @@ export type InsertDoctorPatientLink = z.infer<typeof insertDoctorPatientLinkSche
 // Doctor Notes (medical notes sent by doctors to patients)
 export const doctorNotes = pgTable("doctor_notes", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  doctorId: integer("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  patientId: integer("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  patientId: varchar("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   preventionDocumentId: uuid("prevention_document_id").references(() => preventionDocuments.id, { onDelete: 'set null' }), // Optional: link to specific document
   alertId: uuid("alert_id").references(() => triageAlerts.id, { onDelete: 'set null' }), // Optional: link to specific alert
   noteTitle: varchar("note_title", { length: 200 }),
@@ -2067,7 +2067,7 @@ export type InsertDoctorNote = z.infer<typeof insertDoctorNoteSchema>;
 // Audit Logs (GDPR-compliant access tracking)
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   action: varchar("action", { length: 100 }).notNull(), // view_report, download_report, share_report, delete_report
   resourceType: varchar("resource_type", { length: 50 }).notNull(), // health_report, prevention_document, doctor_note
   resourceId: uuid("resource_id").notNull(), // ID of the accessed resource
@@ -2093,7 +2093,7 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 // Login Logs (Track user authentication events)
 export const loginLogs = pgTable("login_logs", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").references(() => users.id, { onDelete: 'set null' }), // Nullable to track failed logins
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }), // Nullable to track failed logins
   userEmail: varchar("user_email", { length: 255 }).notNull(),
   userName: varchar("user_name", { length: 255 }),
   userRole: varchar("user_role", { length: 50 }),
@@ -2119,8 +2119,8 @@ export type InsertLoginLog = z.infer<typeof insertLoginLogSchema>;
 // Appointments (Calendar system for doctor-patient appointments)
 export const appointments = pgTable("appointments", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  doctorId: integer("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  patientId: integer("patient_id").references(() => users.id, { onDelete: 'cascade' }), // Nullable if slot not yet booked
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  patientId: varchar("patient_id").references(() => users.id, { onDelete: 'cascade' }), // Nullable if slot not yet booked
   
   // Appointment details
   startTime: timestamp("start_time").notNull(),
@@ -2266,7 +2266,7 @@ export type InsertClinicOrganization = z.infer<typeof insertClinicOrganizationSc
 // Email Notifications (Queue for intelligent email notifications)
 export const emailNotifications = pgTable("email_notifications", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   
   // Email details
   recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
@@ -2313,7 +2313,7 @@ export type InsertEmailNotification = z.infer<typeof insertEmailNotificationSche
 // Push Notification Subscriptions
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   
   // Push subscription data from browser
   endpoint: text("endpoint").notNull().unique(),
@@ -2338,7 +2338,7 @@ export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema
 // In-App Notifications (Bell icon notifications)
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   
   // Notification content
   title: varchar("title", { length: 200 }).notNull(),
@@ -2401,7 +2401,7 @@ export const mlTrainingData = pgTable("ml_training_data", {
   outputRaw: text("output_raw"), // Raw text response from Gemini
   
   // User context
-  userId: integer("user_id").references(() => users.id, { onDelete: 'set null' }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
   userAge: integer("user_age"),
   userGender: varchar("user_gender", { length: 10 }),
   
@@ -2487,7 +2487,7 @@ export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 // Doctor availability slots for teleconsultation booking (LEGACY - migrating to doctor_schedule_rules)
 export const doctorAvailability = pgTable("doctor_availability", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  doctorId: integer("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   dayOfWeek: integer("day_of_week").notNull(), // 0=Sunday, 1=Monday, ..., 6=Saturday
   startTime: varchar("start_time", { length: 5 }).notNull(), // HH:MM format (e.g., "09:00")
   endTime: varchar("end_time", { length: 5 }).notNull(), // HH:MM format (e.g., "17:00")
@@ -2514,7 +2514,7 @@ export type InsertDoctorAvailability = z.infer<typeof insertDoctorAvailabilitySc
 // Advanced doctor scheduling rules (supports weekly, biweekly, monthly, custom recurrence patterns)
 export const doctorScheduleRules = pgTable("doctor_schedule_rules", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  doctorId: integer("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   
   // Recurrence pattern
   frequency: varchar("frequency", { length: 20 }).notNull(), // weekly, biweekly, monthly, custom
@@ -2577,7 +2577,7 @@ export type InsertDoctorScheduleRule = z.infer<typeof insertDoctorScheduleRuleSc
 // Doctor schedule exceptions (block dates, modify hours, one-time slots)
 export const doctorScheduleExceptions = pgTable("doctor_schedule_exceptions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  doctorId: integer("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   
   // Optional: link to rule being overridden (nullable for standalone exceptions)
   recurringRuleId: uuid("recurring_rule_id").references(() => doctorScheduleRules.id, { onDelete: 'cascade' }),
@@ -2650,7 +2650,7 @@ export type InsertAppointmentReminder = z.infer<typeof insertAppointmentReminder
 // Registered wearable devices (blood pressure monitors, etc.)
 export const wearableDevices = pgTable("wearable_devices", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   deviceType: varchar("device_type", { length: 50 }).notNull(), // blood_pressure, glucose, heart_rate, etc.
   manufacturer: varchar("manufacturer", { length: 100 }), // Omron, Withings, Apple, etc.
   model: varchar("model", { length: 100 }),
@@ -2679,7 +2679,7 @@ export type InsertWearableDevice = z.infer<typeof insertWearableDeviceSchema>;
 // Blood pressure readings from wearable devices
 export const bloodPressureReadings = pgTable("blood_pressure_readings", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   deviceId: uuid("device_id").references(() => wearableDevices.id, { onDelete: 'set null' }),
   systolic: integer("systolic").notNull(), // mmHg (es. 120)
   diastolic: integer("diastolic").notNull(), // mmHg (es. 80)
@@ -2739,7 +2739,7 @@ export type InsertProactiveHealthTrigger = z.infer<typeof insertProactiveHealthT
 // Log of proactive notifications sent to users
 export const proactiveNotifications = pgTable("proactive_notifications", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   triggerId: uuid("trigger_id").references(() => proactiveHealthTriggers.id, { onDelete: 'set null' }),
   notificationType: varchar("notification_type", { length: 50 }).notNull(), // checkup_reminder, anomaly_alert, medication_reminder, etc.
   channel: varchar("channel", { length: 20 }).notNull(), // email, whatsapp, push, sms
@@ -2769,8 +2769,8 @@ export type InsertProactiveNotification = z.infer<typeof insertProactiveNotifica
 // Daily wearable reports generated by doctors for AI context integration
 export const wearableDailyReports = pgTable("wearable_daily_reports", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  patientId: integer("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  doctorId: integer("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  patientId: varchar("patient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  doctorId: varchar("doctor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   startDate: timestamp("start_date").notNull(), // Report period start
   endDate: timestamp("end_date").notNull(), // Report period end
   reportData: jsonb("report_data").notNull(), // Aggregated stats: {avgSystolic, avgDiastolic, avgHeartRate, anomalyCount, readings, etc.}

@@ -1131,31 +1131,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get patient context
       const patient = await storage.getUserById(alert.userId);
-      const preventionIndex = await storage.getPreventionIndexByUserId(alert.userId);
-      const lastAlerts = await storage.getTriageAlertsByUser(alert.userId);
-      const wearableMonitoring = await storage.getWearableMonitoringByUserId(alert.userId);
+      const lastAlerts = await storage.getUserTriageAlerts(alert.userId);
+      const wearableDevices = await storage.getWearableDevicesByUser(alert.userId);
 
       // Calculate age from dateOfBirth
       const age = patient?.dateOfBirth 
         ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()
         : undefined;
 
-      // Get latest wearable data
+      // Get latest wearable data from devices
       let wearableData = undefined;
-      if (wearableMonitoring) {
-        const latestBP = wearableMonitoring.latestBloodPressure;
-        const latestHR = wearableMonitoring.latestHeartRate;
-        wearableData = {
-          bloodPressure: latestBP || undefined,
-          heartRate: latestHR || undefined,
-          lastSync: wearableMonitoring.lastSyncAt?.toISOString() || undefined,
-        };
+      if (wearableDevices && wearableDevices.length > 0) {
+        const activeDevice = wearableDevices.find(d => d.isActive);
+        if (activeDevice) {
+          wearableData = {
+            bloodPressure: activeDevice.latestBloodPressure || undefined,
+            heartRate: activeDevice.latestHeartRate || undefined,
+            lastSync: activeDevice.lastSyncAt?.toISOString() || undefined,
+          };
+        }
+      }
+
+      // Get Prevention Index from the service
+      let preventionIndexScore = undefined;
+      try {
+        const { calculatePreventionIndex } = await import('./preventionIndexService');
+        const preventionResult = await calculatePreventionIndex(alert.userId);
+        preventionIndexScore = preventionResult ? (preventionResult.score / 10) : undefined;
+      } catch (e) {
+        console.error('Error calculating prevention index:', e);
       }
 
       const patientContext = {
         age,
         gender: patient?.gender || undefined,
-        preventionIndex: preventionIndex?.currentScore || undefined,
+        preventionIndex: preventionIndexScore,
         lastAlerts: lastAlerts.slice(0, 5).map((a: any) => ({
           id: a.id,
           reason: a.reason,
@@ -1198,9 +1208,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get conversation and patient context
       const messages = await storage.getTriageMessagesBySession(alert.sessionId);
       const patient = await storage.getUserById(alert.userId);
-      const preventionIndex = await storage.getPreventionIndexByUserId(alert.userId);
-      const wearableMonitoring = await storage.getWearableMonitoringByUserId(alert.userId);
-      const lastAlerts = await storage.getTriageAlertsByUser(alert.userId);
+      const wearableDevices = await storage.getWearableDevicesByUser(alert.userId);
+      const lastAlerts = await storage.getUserTriageAlerts(alert.userId);
 
       // Build context for AI
       const age = patient?.dateOfBirth 
@@ -1211,13 +1220,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `${m.role === 'user' ? 'Paziente' : 'AI'}: ${m.content}`
       ).join('\n');
 
-      const wearableInfo = wearableMonitoring 
-        ? `Pressione: ${wearableMonitoring.latestBloodPressure || 'N/A'}, Frequenza: ${wearableMonitoring.latestHeartRate || 'N/A'} bpm`
-        : 'Nessun dato disponibile';
+      // Get wearable info
+      let wearableInfo = 'Nessun dato disponibile';
+      if (wearableDevices && wearableDevices.length > 0) {
+        const activeDevice = wearableDevices.find(d => d.isActive);
+        if (activeDevice && (activeDevice.latestBloodPressure || activeDevice.latestHeartRate)) {
+          wearableInfo = `Pressione: ${activeDevice.latestBloodPressure || 'N/A'}, Frequenza: ${activeDevice.latestHeartRate || 'N/A'} bpm`;
+        }
+      }
 
       const alertHistory = lastAlerts.slice(0, 3).map((a: any) => 
         `- ${a.reason} (${a.status === 'resolved' ? 'Risolto' : 'Attivo'})`
       ).join('\n');
+
+      // Get Prevention Index
+      let preventionIndexDisplay = 'N/A';
+      try {
+        const { calculatePreventionIndex } = await import('./preventionIndexService');
+        const preventionResult = await calculatePreventionIndex(alert.userId);
+        if (preventionResult) {
+          preventionIndexDisplay = (preventionResult.score / 10).toFixed(1);
+        }
+      } catch (e) {
+        console.error('Error calculating prevention index for AI:', e);
+      }
 
       const prompt = `Come medico esperto, devi scrivere una risposta professionale ma empatica ad un paziente che ha ricevuto un alert medico dal sistema CIRY.
 
@@ -1225,7 +1251,7 @@ CONTESTO PAZIENTE:
 - Nome: ${patient?.firstName} ${patient?.lastName}
 - Età: ${age} anni
 - Sesso: ${patient?.gender || 'Non specificato'}
-- Prevention Index: ${preventionIndex?.currentScore?.toFixed(1) || 'N/A'}/10
+- Prevention Index: ${preventionIndexDisplay}/10
 - Dati Dispositivo: ${wearableInfo}
 
 ALERT:
@@ -1250,7 +1276,8 @@ Scrivi una nota medica professionale (200-300 parole) che:
 Scrivi SOLO la nota, senza introduzioni o meta-commenti.`;
 
       // Call AI service
-      const aiResponse = await generateAIResponse(prompt);
+      const { generateGeminiContent } = await import('./gemini');
+      const aiResponse = await generateGeminiContent(prompt, "gemini-2.5-flash");
 
       res.json({
         generatedResponse: aiResponse,

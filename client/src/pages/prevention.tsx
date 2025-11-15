@@ -2390,53 +2390,53 @@ export default function PreventionPage() {
                         <div ref={messagesEndRef} />
                       </div>
                     </ScrollArea>
-
-                    <div className="space-y-3 mt-4 px-1">
-                      {/* Suggested Actions - Show always for better discoverability */}
-                      <SuggestedActions
-                        isDoctor={(user as any)?.isDoctor || false}
-                        hasRecentUploads={healthReports.length > 0}
-                        hasActiveAlert={!!pendingAlert || userAlerts.some(a => a.status === 'pending')}
-                        pendingAlertCount={doctorPatientAlerts.filter((a: any) => a.status === 'pending').length}
-                        onActionClick={handleSuggestedAction}
-                      />
-
-                      <div className="flex gap-3 items-end">
-                        <Input
-                          placeholder="Scrivi un messaggio o inizia nuova conversazione..."
-                          value={userInput}
-                          onChange={(e) => setUserInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                          className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1"
-                          data-testid="input-triage-message"
-                        />
-                        <Button
-                          onClick={handleSend}
-                          disabled={sendMessageMutation.isPending || !userInput.trim()}
-                          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all flex-shrink-0"
-                          data-testid="button-send-message"
-                        >
-                          <Send className="w-5 h-5" />
-                        </Button>
-                      </div>
-                      
-                      {session?.status === 'active' && (
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => setShowUploadDialog(true)}
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 rounded-xl transition-all"
-                            data-testid="button-upload-report-chat"
-                          >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Carica Referto
-                          </Button>
-                        </div>
-                      )}
-                    </div>
                   </>
                 )}
+
+                {/* Suggested Actions + Input - Always visible for both patients and doctors */}
+                <div className="space-y-3 mt-4 px-1">
+                  <SuggestedActions
+                    isDoctor={(user as any)?.isDoctor || false}
+                    hasRecentUploads={healthReports.length > 0}
+                    hasActiveAlert={!!pendingAlert || userAlerts.some(a => a.status === 'pending')}
+                    pendingAlertCount={doctorPatientAlerts.filter((a: any) => a.status === 'pending').length}
+                    onActionClick={handleSuggestedAction}
+                  />
+
+                  <div className="flex gap-3 items-end">
+                    <Input
+                      placeholder="Scrivi un messaggio o inizia nuova conversazione..."
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                      className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1"
+                      data-testid="input-triage-message"
+                    />
+                    <Button
+                      onClick={handleSend}
+                      disabled={sendMessageMutation.isPending || !userInput.trim()}
+                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all flex-shrink-0"
+                      data-testid="button-send-message"
+                    >
+                      <Send className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  
+                  {session?.status === 'active' && (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setShowUploadDialog(true)}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 rounded-xl transition-all"
+                        data-testid="button-upload-report-chat"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Carica Referto
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 

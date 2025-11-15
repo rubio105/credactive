@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, type WebSocket } from "ws";
 import Stripe from "stripe";
 import OpenAI from "openai";
+import twilio from "twilio";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -12902,6 +12903,66 @@ Format as JSON: {
     } catch (error: any) {
       console.error('Send push notification error:', error);
       res.status(500).json({ message: error.message || 'Failed to send push notifications' });
+    }
+  });
+
+  // ========== VIDEO CALL ROUTES (TWILIO VIDEO) ==========
+
+  // Generate Twilio Video access token for authenticated users
+  app.post('/api/video/token', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { roomName } = req.body;
+
+      if (!roomName) {
+        return res.status(400).json({ message: 'Room name is required' });
+      }
+
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const apiKeySid = process.env.TWILIO_API_KEY_SID;
+      const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+
+      if (!accountSid || !apiKeySid || !apiKeySecret) {
+        console.error('[Twilio Video] Missing credentials:', {
+          hasAccountSid: !!accountSid,
+          hasApiKeySid: !!apiKeySid,
+          hasApiKeySecret: !!apiKeySecret
+        });
+        return res.status(500).json({ message: 'Twilio Video credentials not configured' });
+      }
+
+      const AccessToken = twilio.jwt.AccessToken;
+      const VideoGrant = AccessToken.VideoGrant;
+
+      const identity = `${user.firstName} ${user.lastName}`.trim() || user.email || `User-${user.id}`;
+
+      const token = new AccessToken(
+        accountSid,
+        apiKeySid,
+        apiKeySecret,
+        { identity }
+      );
+
+      const videoGrant = new VideoGrant({
+        room: roomName
+      });
+
+      token.addGrant(videoGrant);
+
+      console.log('[Twilio Video] Token generated for:', {
+        identity,
+        roomName,
+        userId: user.id
+      });
+
+      res.json({
+        token: token.toJwt(),
+        identity,
+        roomName
+      });
+    } catch (error: any) {
+      console.error('[Twilio Video] Token generation error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate video token' });
     }
   });
 

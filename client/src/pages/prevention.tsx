@@ -7,7 +7,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus, Calendar, Paperclip } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus, Calendar, Paperclip, Radio } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -2258,29 +2260,6 @@ export default function PreventionPage() {
                         </Button>
                       </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Oppure scrivi la tua domanda:</p>
-                      <div className="flex gap-3">
-                        <Input
-                          placeholder="Es: Vorrei imparare a prevenire l'ipertensione..."
-                          value={userInput}
-                          onChange={(e) => setUserInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                          className="border-2 border-emerald-300 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all text-base bg-white dark:bg-gray-900 flex-1"
-                          data-testid="input-triage-start"
-                        />
-                        <Button
-                          onClick={handleStart}
-                          disabled={startTriageMutation.isPending}
-                          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-xl hover:shadow-2xl transition-all duration-200 px-8 py-6 rounded-xl text-base font-semibold"
-                          data-testid="button-start-triage"
-                        >
-                          <Send className="w-5 h-5 mr-2" />
-                          {startTriageMutation.isPending ? "Avvio..." : "Inizia"}
-                        </Button>
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   <>
@@ -2314,9 +2293,23 @@ export default function PreventionPage() {
                                       : 'bg-white dark:bg-gray-800 border border-emerald-100 dark:border-emerald-800 rounded-tl-sm'
                                   } p-3 sm:p-4 rounded-2xl shadow-md transition-all hover:shadow-lg`}
                                 >
-                                  <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed break-words">
-                                    {msg.content}
-                                  </p>
+                                  <div
+                                    className={`text-sm sm:text-base prose dark:prose-invert max-w-none
+                                      prose-p:my-2 prose-p:leading-relaxed
+                                      prose-ul:my-2 prose-ol:my-2 prose-li:my-1
+                                      prose-headings:font-semibold prose-headings:my-3
+                                      prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+                                      prose-pre:bg-gray-100 dark:prose-pre:bg-gray-900 prose-pre:p-3 prose-pre:rounded-lg
+                                      prose-a:underline prose-a:decoration-dotted
+                                      ${msg.role === 'user' 
+                                        ? 'prose-strong:text-white prose-code:bg-emerald-700 prose-code:text-white prose-a:text-white' 
+                                        : 'prose-strong:text-emerald-700 dark:prose-strong:text-emerald-300 prose-code:bg-emerald-50 dark:prose-code:bg-emerald-950 prose-a:text-emerald-600 dark:prose-a:text-emerald-400'
+                                      }`}
+                                  >
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {msg.content}
+                                    </ReactMarkdown>
+                                  </div>
                                   
                                   {/* Text-to-Speech Button for AI messages */}
                                   {msg.role === 'assistant' && (
@@ -2412,6 +2405,30 @@ export default function PreventionPage() {
                       className="border-2 border-emerald-200 focus:border-emerald-500 dark:border-emerald-700 dark:focus:border-emerald-500 py-6 rounded-xl shadow-sm transition-all flex-1"
                       data-testid="input-triage-message"
                     />
+                    
+                    {/* Voice Input Button */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={toggleVoiceInput}
+                            disabled={sendMessageMutation.isPending}
+                            className={`${
+                              isConversationMode 
+                                ? 'bg-red-600 hover:bg-red-700 animate-pulse' 
+                                : 'bg-purple-600 hover:bg-purple-700'
+                            } text-white shadow-lg h-12 w-12 rounded-xl p-0 disabled:opacity-50 transition-all flex-shrink-0`}
+                            data-testid="button-voice-input"
+                          >
+                            {isConversationMode ? <Radio className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{isConversationMode ? 'Stop Conversazione Vocale' : 'Parla con l\'AI'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
                     <Button
                       onClick={handleSend}
                       disabled={sendMessageMutation.isPending || !userInput.trim()}

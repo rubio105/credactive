@@ -5,6 +5,14 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 # Recent Changes
 
 ## November 16, 2025
+- **Doctor Alerts "Genera Report AI" Button Loading State Fix** (`client/src/pages/doctor-alerts.tsx`): Fixed critical bug preventing loading state when generating AI reports:
+  - **Problem**: Clicking "Genera Report AI" button showed no loading state (no spinner, no "Generazione..." text), appeared unresponsive
+  - **Root Cause**: `loadConversation()` received only `alertId` string, never set `selectedAlert` state, causing early return in `handleGenerateAIResponse()` before mutation could fire
+  - **Solution**:
+    - Changed `loadConversation` signature from `(alertId: string)` to `(alert: Alert)`
+    - Added `setSelectedAlert(alert)` at function start to persist selected alert for AI generation
+    - Updated onClick to pass full alert object: `onClick={() => loadConversation(alert)}`
+  - **Result**: "Genera Report AI" button now shows proper loading state (disabled + "Generazione..." spinner) and mutation fires correctly
 - **Exam Recommendation Dialog System** (`server/routes.ts`, `client/src/pages/prevention.tsx`, `client/src/pages/patient-ai.tsx`, `shared/schema.ts`): Implemented personalized exam recommendations in popup dialog instead of chat messages in BOTH pages (`/chat` and `/patient-ai`):
   - **Problem**: Exam recommendations were sent as chat messages, cluttering conversation and preventing structured viewing
   - **Solution**:

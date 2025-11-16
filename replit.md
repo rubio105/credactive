@@ -5,17 +5,20 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 # Recent Changes
 
 ## November 16, 2025
-- **Patient AI Quick Actions Enhancement** (`client/src/pages/patient-ai.tsx`): Completely restructured Quick Actions to use dialog-based interactions instead of direct text input, providing better user guidance and context:
-  - ❌ **Removed**: "Come sta il mio Prevention Index?" button
-  - ✅ **Added**: "🔬 Quali esami devo fare?" - Opens dialog explaining AI analysis capabilities, then starts conversation with personalized exam recommendations
-  - ✅ **Added**: "📄 Analizza il mio referto" - Always visible dialog that:
-    - Checks if user has uploaded reports
-    - Warns if latest report is >3 months old
-    - Offers options to analyze existing report or upload new one
-    - Starts AI conversation with detailed analysis request
-  - ✅ **Added**: "🛡️ Percorso di prevenzione" - Opens PreventionPathDialog for generating personalized prevention path using `generatePreventionPathMutation`
-  - ✅ **Added**: "🏥 Prenota una visita" - Navigates to `/teleconsulto` page for appointment booking
-  - **Implementation Pattern**: Each dialog provides context/information, then closes and triggers AI conversation with specific prompt via `handleStart()` - identical to `prevention.tsx` pattern
+- **Twilio Video Credentials Fix** (`server/twilio-client.ts`, `server/routes.ts`): Resolved "Missing credentials" error for Twilio Video calls:
+  - **Problem**: Backend was reading Twilio credentials from static env vars (TWILIO_ACCOUNT_SID, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET) which were not available at runtime
+  - **Solution**: 
+    - Created `server/twilio-client.ts` using Replit Twilio connection integration for secure credential management
+    - Updated `/api/video/token` route to use `getTwilioVideoCredentials()` from integration
+    - Implemented graceful fallback to env vars if Replit connection fails
+    - Added robust error handling with descriptive logging
+  - **Result**: Video calls now work reliably; no "Missing credentials" errors in logs
+- **Dialog-Based Quick Actions Verification** (`client/src/pages/prevention.tsx`, `/chat` page): Confirmed existing implementation is correct:
+  - ✅ "🔬 Quali esami devo fare?" - Opens dialog explaining AI capabilities, triggers personalized exam recommendations
+  - ✅ "📄 Analizza il mio referto" - Always visible; checks report age, warns if >3 months old, offers analysis or upload options
+  - ✅ "🛡️ Percorso di prevenzione" - Opens PreventionPathDialog for personalized prevention path
+  - ✅ "🏥 Prenota una visita" - Opens booking dialog for teleconsulto appointments
+  - **Pattern**: Each dialog shows context → closes → prepares AI prompt → calls `handleSend()`
 
 ## November 15, 2025
 - **Alert Consolidation**: Removed "Alert Pazienti" section from doctor home dashboard (`DoctorDashboard.tsx` component). Medical alerts are now exclusively shown in the dedicated `/doctor/alerts` page, eliminating redundancy and providing a focused alert management interface.

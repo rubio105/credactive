@@ -5,6 +5,15 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 # Recent Changes
 
 ## November 16, 2025
+- **Exam Recommendation Dialog System** (`server/routes.ts`, `client/src/pages/prevention.tsx`, `shared/schema.ts`): Implemented personalized exam recommendations in popup dialog instead of chat messages:
+  - **Problem**: Exam recommendations were sent as chat messages, cluttering conversation and preventing structured viewing
+  - **Solution**:
+    - Created backend POST `/api/exams/recommend` endpoint using Gemini AI with structured JSON output
+    - Implemented `ExamRecommendationSchema` Zod DTO for type-safe validation (category, exam, urgency, reason, estimatedCost)
+    - Frontend dialog auto-fetches on open, displays categorized recommendations with urgency badges (low/medium/high)
+    - State reset pattern: clears `examsRecommendations` and resets mutation BEFORE opening dialog to guarantee fresh generation
+    - "Discuti con l'AI" button prepares follow-up prompt and closes dialog
+  - **Result**: Patients receive well-structured exam recommendations in dedicated dialog with clear categorization and urgency levels
 - **Patient Context Persistence System** (`shared/schema.ts`, `server/routes.ts`, `server/storage.ts`): Implemented database-backed patient context for doctor sessions:
   - **Problem**: When doctors selected a patient in chat, the AI only received context in the first message. Subsequent messages lost patient context, making AI responses generic.
   - **Solution**:

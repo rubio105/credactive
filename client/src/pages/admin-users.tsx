@@ -191,6 +191,7 @@ export default function AdminUsers() {
         subscriptionTier: editingUser.subscriptionTier,
         isAdmin: editingUser.isAdmin,
         isDoctor: editingUser.isDoctor,
+        isProhmedDoctor: editingUser.isProhmedDoctor,
         aiOnlyAccess: editingUser.aiOnlyAccess,
       },
     });

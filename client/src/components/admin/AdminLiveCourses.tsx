@@ -325,10 +325,10 @@ export function AdminLiveCourses() {
               <CardDescription>Gestisci i corsi live e le relative sessioni</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Link href="/">
+              <Link href="/admin">
                 <Button variant="outline" data-testid="button-back-home">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Torna alla Home
+                  Torna alla Dashboard
                 </Button>
               </Link>
               <Button onClick={handleCreateCourse} data-testid="button-create-course">

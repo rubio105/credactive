@@ -1916,31 +1916,40 @@ Scrivi SOLO la nota, senza introduzioni o meta-commenti.`;
       const user = req.user as any;
       const { currentPassword, newPassword } = req.body;
 
+      console.log(`[CHANGE PASSWORD] User ${user.email} (ID: ${user.id}) requesting password change`);
+
       if (!currentPassword || !newPassword) {
+        console.log('[CHANGE PASSWORD] Missing password fields');
         return res.status(400).json({ message: "Password attuale e nuova password richieste" });
       }
 
       if (newPassword.length < 8) {
+        console.log('[CHANGE PASSWORD] New password too short');
         return res.status(400).json({ message: "La nuova password deve avere almeno 8 caratteri" });
       }
 
+      console.log('[CHANGE PASSWORD] Verifying current password...');
       // Verify current password
       const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
       if (!isPasswordValid) {
+        console.log('[CHANGE PASSWORD] Current password invalid');
         return res.status(401).json({ message: "Password attuale non corretta" });
       }
 
+      console.log('[CHANGE PASSWORD] Current password verified. Hashing new password...');
       // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
+      console.log('[CHANGE PASSWORD] Updating user in database...');
       // Update password
       await storage.updateUser(user.id, {
         password: hashedPassword,
       });
 
+      console.log('[CHANGE PASSWORD] Password updated successfully in database');
       res.json({ message: "Password modificata con successo" });
     } catch (error: any) {
-      console.error('Change password error:', error);
+      console.error('[CHANGE PASSWORD] Error:', error?.message || 'Unknown error');
       res.status(500).json({ message: "Errore durante il cambio password" });
     }
   });

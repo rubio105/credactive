@@ -5,6 +5,14 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 # Recent Changes
 
 ## November 16, 2025
+- **Twilio Credentials Production Fallback** (`server/twilio-client.ts`): Enhanced credential management to support both Replit integration and production env vars:
+  - **Problem**: Production Hetzner server couldn't access Replit integration API (requires REPL_IDENTITY/WEB_REPL_RENEWAL), causing "Missing credentials" error
+  - **Solution**:
+    - Split credential loading into `getCredentialsFromReplit()` and `getCredentialsFromEnv()`
+    - Main `getCredentials()` tries Replit integration first, automatically falls back to env vars
+    - Added clear logging for debugging production issues
+    - Supports env vars: TWILIO_ACCOUNT_SID, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET, TWILIO_PHONE_NUMBER
+  - **Result**: Seamless Twilio integration in Replit dev environment, robust fallback for production deployment
 - **Doctor Alerts "Genera Report AI" Button Loading State Fix** (`client/src/pages/doctor-alerts.tsx`): Fixed critical bug preventing loading state when generating AI reports:
   - **Problem**: Clicking "Genera Report AI" button showed no loading state (no spinner, no "Generazione..." text), appeared unresponsive
   - **Root Cause**: `loadConversation()` received only `alertId` string, never set `selectedAlert` state, causing early return in `handleGenerateAIResponse()` before mutation could fire

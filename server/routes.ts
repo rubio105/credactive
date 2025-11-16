@@ -13068,9 +13068,25 @@ Format as JSON: {
         return res.status(400).json({ message: 'Room name is required' });
       }
 
-      const accountSid = process.env.TWILIO_ACCOUNT_SID;
-      const apiKeySid = process.env.TWILIO_API_KEY_SID;
-      const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+      // Get credentials from Twilio integration (fallback to env vars)
+      let accountSid: string;
+      let apiKeySid: string;
+      let apiKeySecret: string;
+
+      try {
+        const { getTwilioVideoCredentials } = await import('./twilio-client');
+        const credentials = await getTwilioVideoCredentials();
+        accountSid = credentials.accountSid;
+        apiKeySid = credentials.apiKeySid;
+        apiKeySecret = credentials.apiKeySecret;
+        console.log('[Twilio Video] Using credentials from Replit connection');
+      } catch (error: any) {
+        // Fallback to env vars if Replit connection fails
+        console.warn('[Twilio Video] Replit connection failed, falling back to env vars:', error.message);
+        accountSid = process.env.TWILIO_ACCOUNT_SID || '';
+        apiKeySid = process.env.TWILIO_API_KEY_SID || '';
+        apiKeySecret = process.env.TWILIO_API_KEY_SECRET || '';
+      }
 
       if (!accountSid || !apiKeySid || !apiKeySecret) {
         console.error('[Twilio Video] Missing credentials:', {

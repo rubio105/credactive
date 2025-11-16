@@ -2,7 +2,7 @@ import twilio from 'twilio';
 
 let connectionSettings: any;
 
-async function getCredentials() {
+async function getCredentialsFromReplit() {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
@@ -49,6 +49,41 @@ async function getCredentials() {
     apiKeySecret: connectionSettings.settings.api_key_secret,
     phoneNumber: connectionSettings.settings.phone_number
   };
+}
+
+function getCredentialsFromEnv() {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const apiKey = process.env.TWILIO_API_KEY_SID;
+  const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+  const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+  if (!accountSid || !apiKey || !apiKeySecret) {
+    throw new Error('Missing required Twilio environment variables (TWILIO_ACCOUNT_SID, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET)');
+  }
+
+  return {
+    accountSid,
+    apiKey,
+    apiKeySecret,
+    phoneNumber
+  };
+}
+
+async function getCredentials() {
+  try {
+    // Try Replit integration first (when in Replit environment)
+    return await getCredentialsFromReplit();
+  } catch (replitError: any) {
+    console.log(`[Twilio] Replit connection failed, falling back to env vars: ${replitError.message}`);
+    
+    // Fallback to environment variables (for production deployment)
+    try {
+      return getCredentialsFromEnv();
+    } catch (envError: any) {
+      console.error(`[Twilio] Failed to load credentials from env vars: ${envError.message}`);
+      throw new Error('Twilio credentials not available from Replit integration or environment variables');
+    }
+  }
 }
 
 export async function getTwilioClient() {

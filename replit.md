@@ -19,6 +19,23 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
   - ✅ "🛡️ Percorso di prevenzione" - Opens PreventionPathDialog for personalized prevention path
   - ✅ "🏥 Prenota una visita" - Opens booking dialog for teleconsulto appointments
   - **Pattern**: Each dialog shows context → closes → prepares AI prompt → calls `handleSend()`
+- **Doctor Patient Context System** (`prevention.tsx`, `SuggestedActions.tsx`):
+  - **Quick Actions Cleanup**: Removed all doctor-specific quick actions from `SuggestedActions.tsx` (kept only patient actions and urgent alert button for doctors)
+  - **PatientContextDialog**: Created engaging patient selection dialog for doctors with:
+    - Personalized greeting: "Ciao Dott. {Nome}! 👋 Vuoi indicarmi il paziente sul quale vuoi fare prevenzione?"
+    - Patient select dropdown with patient list from `/api/doctor/patients`
+    - Alert informativo with icon explaining feature
+    - "Salta" and "Conferma" buttons with validation
+    - Loading and empty states handling
+  - **Auto-Open UX**: Dialog automatically appears when doctor enters `/chat` page without a patient selected
+  - **Patient Context Integration**: Added `selectedPatient` state and integrated into AI conversations:
+    - Modified `startTriageMutation` to include `patientContext: {patientId, patientName}` when doctor has selected patient
+    - Modified `sendMessageMutation` to include patient context in every message
+    - Backend receives patient context for AI to provide personalized recommendations
+  - **Patient Badge & Switcher**: Added UI component above chat input showing:
+    - Badge displaying selected patient name (or "Nessun paziente selezionato")
+    - "Cambia Paziente" / "Seleziona Paziente" button to change context during conversation
+    - Orange theme colors for doctor branding consistency
 
 ## November 15, 2025
 - **Alert Consolidation**: Removed "Alert Pazienti" section from doctor home dashboard (`DoctorDashboard.tsx` component). Medical alerts are now exclusively shown in the dedicated `/doctor/alerts` page, eliminating redundancy and providing a focused alert management interface.

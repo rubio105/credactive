@@ -10399,6 +10399,7 @@ Il medico sta chiedendo informazioni/raccomandazioni per questo paziente. Fornis
         userId: user?.id || null,
         status: 'active',
         userRole: userRole || 'patient', // Default to patient if not specified
+        patientContext: patientContext || null, // Save patient context for doctor sessions
       });
 
       // Create initial message
@@ -10594,7 +10595,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
   app.post('/api/triage/:sessionId/message', aiGenerationLimiter, async (req, res) => {
     try {
       const user = req.user as any;
-      const { content, language, patientContext } = req.body;
+      const { content, language } = req.body;
       const sessionId = req.params.sessionId;
 
       if (!content) {
@@ -10765,23 +10766,24 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         }
       }
 
-      // If doctor is asking about a specific patient, get patient info
+      // If doctor is asking about a specific patient, get patient info from session
       let doctorPatientContext: string | undefined;
-      if (session.userRole === 'doctor' && patientContext?.patientId) {
+      const sessionPatientContext = session.patientContext as { patientId: string; patientName: string } | null;
+      if (session.userRole === 'doctor' && sessionPatientContext?.patientId) {
         try {
-          const patient = await storage.getUserById(patientContext.patientId);
+          const patient = await storage.getUserById(sessionPatientContext.patientId);
           if (patient) {
             const patientAge = patient.dateOfBirth 
               ? Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
               : 'Non disponibile';
             
-            doctorPatientContext = `[CONTESTO MEDICO - Paziente: ${patientContext.patientName}]
+            doctorPatientContext = `[CONTESTO MEDICO - Paziente: ${sessionPatientContext.patientName}]
 Età: ${patientAge} anni
 Sesso: ${patient.gender || 'Non specificato'}
 Email: ${patient.email}
 
 Il medico sta chiedendo informazioni/raccomandazioni per questo paziente. Fornisci risposte professionali considerando il profilo del paziente.`;
-            console.log(`[Doctor Context] Doctor asking about patient ${patientContext.patientName} in session ${sessionId}`);
+            console.log(`[Doctor Context] Doctor asking about patient ${sessionPatientContext.patientName} in session ${sessionId}`);
           }
         } catch (error) {
           console.error('[Doctor Context] Failed to fetch patient data:', error);

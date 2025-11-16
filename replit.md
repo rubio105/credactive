@@ -5,6 +5,20 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 # Recent Changes
 
 ## November 16, 2025
+- **Patient Context Persistence System** (`shared/schema.ts`, `server/routes.ts`, `server/storage.ts`): Implemented database-backed patient context for doctor sessions:
+  - **Problem**: When doctors selected a patient in chat, the AI only received context in the first message. Subsequent messages lost patient context, making AI responses generic.
+  - **Solution**:
+    - Added `patientContext: jsonb("patient_context")` field to `triageSessions` table
+    - Modified `/api/triage/start` endpoint to save `patientContext` when session is created
+    - Modified `/api/triage/:sessionId/message` endpoint to read `patientContext` from session (not request body)
+    - AI now receives patient context (`{ patientId, patientName }`) consistently throughout entire conversation
+    - Drizzle auto-generates `InsertTriageSession` type to include new field via `createInsertSchema`
+  - **Result**: Doctors get personalized AI recommendations for specific patients across all messages in conversation
+- **Compact "Carica Referto" Button** (`client/src/pages/prevention.tsx`): Redesigned report upload button for doctors:
+  - Changed from large full-width button below input to compact inline button (12x12) next to voice/send buttons
+  - Added tooltip "Carica Referto" on hover for clarity
+  - Only visible when triage session is active
+  - Maintains orange doctor branding with consistent UI/UX
 - **Twilio Video Credentials Fix** (`server/twilio-client.ts`, `server/routes.ts`): Resolved "Missing credentials" error for Twilio Video calls:
   - **Problem**: Backend was reading Twilio credentials from static env vars (TWILIO_ACCOUNT_SID, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET) which were not available at runtime
   - **Solution**: 

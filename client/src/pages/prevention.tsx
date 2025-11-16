@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus, Calendar, Paperclip, Radio, CheckCircle2, AlertCircle, Upload } from "lucide-react";
+import { Shield, Send, FileText, AlertTriangle, Download, X, RotateCcw, Crown, Mic, MicOff, Activity, BarChart3, Smartphone, TrendingUp, Lightbulb, FileUp, Filter, Search, SortAsc, User, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Stethoscope, Info, Camera, MessageSquarePlus, Calendar, Paperclip, Radio, CheckCircle2, AlertCircle, Upload, Clock, Loader2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -141,6 +141,7 @@ export default function PreventionPage() {
   const [showExamsDialog, setShowExamsDialog] = useState(false);
   const [showAnalyzeReportDialog, setShowAnalyzeReportDialog] = useState(false);
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
+  const [examsRecommendations, setExamsRecommendations] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadQueue, setUploadQueue] = useState<Array<{ file: File; status: 'pending' | 'uploading' | 'completed' | 'error'; error?: string; result?: any }>>([]);
@@ -630,6 +631,9 @@ export default function PreventionPage() {
 
     switch (action) {
       case 'exams-recommendation':
+        // Reset state before opening to ensure fresh generation
+        setExamsRecommendations(null);
+        generateExamsRecommendationsMutation.reset();
         setShowExamsDialog(true);
         break;
       
@@ -874,6 +878,28 @@ export default function PreventionPage() {
       toast({ 
         title: "Errore", 
         description: error.message || "Errore durante la generazione del percorso",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Generate Exams Recommendations Mutation
+  const generateExamsRecommendationsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/exams/recommend", "POST", { language: "it" });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setExamsRecommendations(data);
+      toast({ 
+        title: "Raccomandazioni generate!", 
+        description: "Le raccomandazioni sugli esami sono pronte."
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante la generazione delle raccomandazioni",
         variant: "destructive" 
       });
     },
@@ -3175,40 +3201,130 @@ export default function PreventionPage() {
       />
 
       {/* Exams Recommendation Dialog */}
-      <Dialog open={showExamsDialog} onOpenChange={setShowExamsDialog}>
-        <DialogContent className="max-w-2xl">
+      <Dialog 
+        open={showExamsDialog} 
+        onOpenChange={(open) => {
+          setShowExamsDialog(open);
+          if (open) {
+            // Reset state first to ensure fresh generation
+            setExamsRecommendations(null);
+            generateExamsRecommendationsMutation.reset();
+            // Then trigger new generation
+            generateExamsRecommendationsMutation.mutate();
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Stethoscope className="w-5 h-5 text-blue-600" />
+              <Stethoscope className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               Quali esami devo fare?
             </DialogTitle>
             <DialogDescription>
-              Ricevi raccomandazioni personalizzate sugli esami medici da effettuare
+              Raccomandazioni personalizzate basate sul tuo profilo medico
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
-                L'AI analizzerà il tuo profilo medico, età e stile di vita per suggerirti gli esami preventivi più indicati per te.
+
+          {/* Loading State */}
+          {generateExamsRecommendationsMutation.isPending && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-600 dark:text-blue-400" />
+              <p className="text-sm text-muted-foreground">Sto analizzando il tuo profilo medico...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {generateExamsRecommendationsMutation.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Errore durante la generazione delle raccomandazioni. 
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  onClick={() => generateExamsRecommendationsMutation.mutate()}
+                  className="ml-2"
+                >
+                  Riprova
+                </Button>
               </AlertDescription>
             </Alert>
-            <div className="flex justify-center">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-                onClick={() => {
-                  setShowExamsDialog(false);
-                  setUserInput('Analizza il mio profilo medico considerando età, stile di vita e storia clinica. Quali esami preventivi dovrei fare?');
-                  setTimeout(() => handleSend(), 100);
-                }}
-                data-testid="button-request-exams"
-              >
-                <Stethoscope className="w-4 h-4 mr-2" />
-                Richiedi Raccomandazioni
-              </Button>
+          )}
+
+          {/* Results */}
+          {examsRecommendations && !generateExamsRecommendationsMutation.isPending && (
+            <div className="space-y-6 py-4">
+              {/* Summary */}
+              <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
+                  {examsRecommendations.summary}
+                </AlertDescription>
+              </Alert>
+
+              {/* Recommendations by Category */}
+              {examsRecommendations.recommendations?.map((category: any, catIdx: number) => (
+                <div key={catIdx} className="space-y-3">
+                  <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
+                    <div className="w-1 h-6 bg-blue-600 dark:bg-blue-400 rounded" />
+                    {category.category}
+                  </h3>
+                  <div className="space-y-2 pl-4">
+                    {category.exams?.map((exam: any, examIdx: number) => {
+                      const urgencyStyle = getUrgencyStyle(exam.urgency);
+                      return (
+                        <div 
+                          key={examIdx} 
+                          className={`p-4 rounded-lg border-l-4 ${urgencyStyle.bg} ${urgencyStyle.border}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-foreground">{exam.name}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded ${urgencyStyle.badge}`}>
+                                  {urgencyStyle.label}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">{exam.reason}</p>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                <span>{exam.frequency}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowExamsDialog(false);
+                    setUserInput(`Ho letto le raccomandazioni sugli esami. Vorrei approfondire: ${examsRecommendations.recommendations?.map((c: any) => c.category).join(', ')}`);
+                    setTimeout(() => handleSend(), 100);
+                  }}
+                  className="flex-1"
+                  data-testid="button-discuss-exams"
+                >
+                  <MessageSquarePlus className="w-4 h-4 mr-2" />
+                  Discuti con l'AI
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() => setShowExamsDialog(false)}
+                  className="flex-1"
+                  data-testid="button-close-exams"
+                >
+                  Chiudi
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 

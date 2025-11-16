@@ -10591,6 +10591,152 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
     }
   });
 
+  // Generate personalized exam recommendations (POST /api/exams/recommend)
+  app.post('/api/exams/recommend', isAuthenticated, aiGenerationLimiter, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { language = 'it' } = req.body;
+
+      if (!user?.id) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Gather patient context
+      const age = user.dateOfBirth 
+        ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        : undefined;
+
+      // Get recent medical reports
+      let reportsContext = 'Nessun referto caricato';
+      try {
+        const reports = await storage.getHealthReportsByUser(user.id);
+        if (reports.length > 0) {
+          const recentReports = reports.slice(0, 3);
+          reportsContext = recentReports.map(r => {
+            const summary = r.aiAnalysis?.patientSummary || r.aiSummary || '';
+            return `- ${r.reportType}: ${summary.substring(0, 150)}...`;
+          }).join('\n');
+        }
+      } catch (e) {
+        console.error('[Exams] Failed to fetch reports:', e);
+      }
+
+      // Get Prevention Index
+      let preventionIndexScore: number | undefined;
+      try {
+        const { calculatePreventionIndex } = await import('./preventionIndexService');
+        const result = await calculatePreventionIndex(user.id);
+        if (result) {
+          preventionIndexScore = result.score;
+        }
+      } catch (e) {
+        console.error('[Exams] Failed to calculate prevention index:', e);
+      }
+
+      // Get wearable data context
+      let wearableContext = 'Nessun dispositivo connesso';
+      try {
+        const devices = await storage.getWearableDevicesByUser(user.id);
+        const activeDevice = devices?.find(d => d.isActive);
+        if (activeDevice && (activeDevice.latestBloodPressure || activeDevice.latestHeartRate)) {
+          wearableContext = `Pressione: ${activeDevice.latestBloodPressure || 'N/A'}, Frequenza: ${activeDevice.latestHeartRate || 'N/A'} bpm`;
+        }
+      } catch (e) {
+        console.error('[Exams] Failed to fetch wearable data:', e);
+      }
+
+      // Create AI prompt for structured JSON output
+      const prompt = `Come medico di medicina preventiva, fornisci raccomandazioni personalizzate sugli esami medici preventivi per questo paziente.
+
+PROFILO PAZIENTE:
+- Nome: ${user.firstName} ${user.lastName || ''}
+- Età: ${age || 'Non disponibile'} anni
+- Sesso: ${user.gender || 'Non specificato'}
+- Altezza: ${user.heightCm ? `${user.heightCm} cm` : 'N/A'}
+- Peso: ${user.weightKg ? `${user.weightKg} kg` : 'N/A'}
+- Fumatore: ${user.smokingStatus || 'Non specificato'}
+- Attività fisica: ${user.physicalActivity || 'Non specificato'}
+- Prevention Index: ${preventionIndexScore ? `${(preventionIndexScore/10).toFixed(1)}/10` : 'N/A'}
+
+REFERTI RECENTI:
+${reportsContext}
+
+DATI DISPOSITIVI WEARABLE:
+${wearableContext}
+
+ISTRUZIONI:
+Genera raccomandazioni sugli esami preventivi organizzate per categoria. Considera:
+1. Età e sesso del paziente (es: screening mammografia per donne >40 anni)
+2. Fattori di rischio (es: colesterolo se fumatore/sovrappeso)
+3. Frequenza appropriata per ogni esame
+4. Livello di urgenza (low/medium/high) basato su profilo rischio
+
+Restituisci la risposta come JSON valido con questo schema esatto:
+{
+  "recommendations": [
+    {
+      "category": "Nome Categoria (es: Esami del sangue, Controlli cardiaci, Screening oncologici)",
+      "exams": [
+        {
+          "name": "Nome esame completo",
+          "frequency": "Frequenza raccomandata (es: Annualmente, Ogni 6 mesi, Una tantum)",
+          "reason": "Motivazione personalizzata per questo paziente (1-2 frasi)",
+          "urgency": "low | medium | high"
+        }
+      ]
+    }
+  ],
+  "summary": "Riepilogo generale personalizzato (2-3 frasi) che spiega le raccomandazioni basate sul profilo del paziente"
+}
+
+IMPORTANTE: Restituisci SOLO il JSON valido, senza markdown, senza testo aggiuntivo.`;
+
+      // Call Gemini with JSON mode
+      const { generateGeminiContent } = await import('./gemini');
+      const aiResponseRaw = await generateGeminiContent(prompt, "gemini-2.5-flash", { 
+        temperature: 0.3, // Lower temp for more consistent JSON
+      });
+
+      // Parse and validate JSON response
+      let aiResponse: any;
+      try {
+        // Strip markdown code blocks if present
+        const cleanJson = aiResponseRaw.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
+        aiResponse = JSON.parse(cleanJson);
+      } catch (parseError) {
+        console.error('[Exams] JSON parse error:', parseError);
+        console.error('[Exams] Raw AI response:', aiResponseRaw);
+        return res.status(500).json({ 
+          message: 'Errore nella generazione delle raccomandazioni. Riprova.',
+          error: 'Invalid JSON from AI'
+        });
+      }
+
+      // Validate with Zod
+      const { examsRecommendationResponseSchema } = await import('@shared/schema');
+      const validationResult = examsRecommendationResponseSchema.safeParse(aiResponse);
+
+      if (!validationResult.success) {
+        console.error('[Exams] Validation error:', validationResult.error);
+        console.error('[Exams] Invalid data:', aiResponse);
+        return res.status(500).json({ 
+          message: 'Errore nella validazione delle raccomandazioni. Riprova.',
+          error: 'Schema validation failed'
+        });
+      }
+
+      // Return validated recommendations
+      res.json(validationResult.data);
+
+    } catch (error: any) {
+      console.error('[Exams] Error generating recommendations:', error);
+      res.status(500).json({ 
+        message: error.message || 'Errore durante la generazione delle raccomandazioni',
+        error: 'Internal server error'
+      });
+    }
+  });
+
   // Send message to triage session (POST /api/triage/:sessionId/message) - Public endpoint for educational access
   app.post('/api/triage/:sessionId/message', aiGenerationLimiter, async (req, res) => {
     try {

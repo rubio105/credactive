@@ -2823,3 +2823,27 @@ export type InsertAccountDeletionRequest = z.infer<typeof insertAccountDeletionR
 
 // Extended types for API responses
 export type QuizWithCount = Quiz & { questionCount: number; crosswordId?: string };
+
+// ========== EXAMS RECOMMENDATION DTO ==========
+
+// Exam recommendation schema (on-demand API response, not persisted)
+export const examRecommendationItemSchema = z.object({
+  name: z.string(),
+  frequency: z.string(), // "Annualmente", "Ogni 6 mesi", "Una tantum"
+  reason: z.string(),
+  urgency: z.enum(['low', 'medium', 'high']),
+});
+
+export const examCategorySchema = z.object({
+  category: z.string(), // "Esami del sangue", "Controlli cardiaci", etc.
+  exams: z.array(examRecommendationItemSchema),
+});
+
+export const examsRecommendationResponseSchema = z.object({
+  recommendations: z.array(examCategorySchema),
+  summary: z.string(), // Riepilogo generale personalizzato
+});
+
+export type ExamRecommendationItem = z.infer<typeof examRecommendationItemSchema>;
+export type ExamCategory = z.infer<typeof examCategorySchema>;
+export type ExamsRecommendationResponse = z.infer<typeof examsRecommendationResponseSchema>;

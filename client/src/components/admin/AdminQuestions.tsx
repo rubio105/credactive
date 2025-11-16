@@ -344,9 +344,9 @@ export function AdminQuestions() {
   return (
     <div>
       <Button variant="ghost" asChild className="mb-4">
-        <Link href="/" data-testid="button-back-home">
+        <Link href="/admin" data-testid="button-back-home">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Torna alla Home
+          Torna alla Dashboard
         </Link>
       </Button>
       <div className="mb-6 flex justify-between items-center">

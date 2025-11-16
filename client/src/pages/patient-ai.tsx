@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Send, FileText, Activity, Mic, MicOff, X, FileUp, Heart, TrendingUp, Clock, AlertCircle, Sparkles } from "lucide-react";
+import { Shield, Send, FileText, Activity, Mic, MicOff, X, FileUp, Heart, TrendingUp, Clock, AlertCircle, Sparkles, Stethoscope, Info, MessageSquarePlus, Upload, Calendar, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
@@ -16,6 +16,8 @@ import { useLogout } from "@/hooks/useLogout";
 import { MedicalReportCard } from "@/components/MedicalReportCard";
 import { MedicalTimeline } from "@/components/MedicalTimeline";
 import { MedicalImageAnalysis } from "@/components/MedicalImageAnalysis";
+import { PreventionPathDialog } from "@/components/PreventionPathDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const ciryLogo = "/images/ciry-full-logo.png";
 
@@ -81,6 +83,10 @@ export default function PatientAIPage() {
   const isDoctor = (user as any)?.isDoctor;
   const [isListening, setIsListening] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showExamsDialog, setShowExamsDialog] = useState(false);
+  const [showAnalyzeReportDialog, setShowAnalyzeReportDialog] = useState(false);
+  const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
+  const [preventionPathData, setPreventionPathData] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<any>(null);
   const [prohmedCode, setProhmedCode] = useState("");
@@ -312,6 +318,27 @@ export default function PatientAIPage() {
       toast({
         title: "Errore",
         description: error?.message || "Errore durante l'invio del messaggio",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const generatePreventionPathMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/prevention/generate-path", "POST", {});
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setPreventionPathData(data);
+      toast({
+        title: "Percorso generato!",
+        description: "Il tuo percorso di prevenzione personalizzato è pronto.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error?.message || "Errore durante la generazione del percorso",
         variant: "destructive"
       });
     },
@@ -613,59 +640,13 @@ export default function PatientAIPage() {
                           <Button
                             variant="outline"
                             className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-                            onClick={() => setUserInput("Come sta il mio Prevention Index?")}
-                            data-testid="action-prevention-index"
+                            onClick={() => setShowExamsDialog(true)}
+                            data-testid="action-exams-recommendation"
                           >
                             <div className="flex items-start gap-2">
-                              <TrendingUp className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <Stethoscope className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                               <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                                Come sta il mio Prevention Index?
-                              </span>
-                            </div>
-                          </Button>
-
-                          {healthReports.length > 0 && (
-                            <Button
-                              variant="outline"
-                              className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-                              onClick={() => setUserInput("Raccontami l'ultimo referto")}
-                              data-testid="action-latest-report"
-                            >
-                              <div className="flex items-start gap-2">
-                                <FileText className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                                <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                                  Raccontami l'ultimo referto
-                                </span>
-                              </div>
-                            </Button>
-                          )}
-
-                          {wearableData && (
-                            <Button
-                              variant="outline"
-                              className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-                              onClick={() => setUserInput("Analizza i miei dati del dispositivo")}
-                              data-testid="action-wearable-data"
-                            >
-                              <div className="flex items-start gap-2">
-                                <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                                <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                                  Analizza i miei dati del dispositivo
-                                </span>
-                              </div>
-                            </Button>
-                          )}
-
-                          <Button
-                            variant="outline"
-                            className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-                            onClick={() => setUserInput("Vorrei imparare a prevenire l'ipertensione")}
-                            data-testid="action-hypertension"
-                          >
-                            <div className="flex items-start gap-2">
-                              <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                              <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                                Vorrei imparare a prevenire l'ipertensione
+                                🔬 Quali esami devo fare?
                               </span>
                             </div>
                           </Button>
@@ -673,13 +654,27 @@ export default function PatientAIPage() {
                           <Button
                             variant="outline"
                             className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-                            onClick={() => setUserInput("Quali esami di screening sono consigliati per la mia età?")}
-                            data-testid="action-screening"
+                            onClick={() => setShowAnalyzeReportDialog(true)}
+                            data-testid="action-analyze-report"
+                          >
+                            <div className="flex items-start gap-2">
+                              <FileText className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                                📄 Analizza il mio referto
+                              </span>
+                            </div>
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                            onClick={() => setShowPreventionPathDialog(true)}
+                            data-testid="action-prevention-path"
                           >
                             <div className="flex items-start gap-2">
                               <Shield className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                               <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                                Quali esami di screening sono consigliati per la mia età?
+                                🛡️ Percorso di prevenzione
                               </span>
                             </div>
                           </Button>
@@ -687,13 +682,13 @@ export default function PatientAIPage() {
                           <Button
                             variant="outline"
                             className="text-left h-auto py-3 px-4 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
-                            onClick={() => setUserInput("Come posso migliorare i miei valori del colesterolo?")}
-                            data-testid="action-cholesterol"
+                            onClick={() => setLocation('/teleconsulto')}
+                            data-testid="action-book-visit"
                           >
                             <div className="flex items-start gap-2">
-                              <Activity className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <Calendar className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                               <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                                Come posso migliorare i miei valori del colesterolo?
+                                🏥 Prenota una visita
                               </span>
                             </div>
                           </Button>
@@ -913,6 +908,154 @@ export default function PatientAIPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Prevention Path Dialog */}
+      <PreventionPathDialog
+        open={showPreventionPathDialog}
+        onOpenChange={setShowPreventionPathDialog}
+        preventionPathData={preventionPathData}
+        onReset={() => setPreventionPathData(null)}
+        onGenerate={() => generatePreventionPathMutation.mutate()}
+        isGenerating={generatePreventionPathMutation.isPending}
+      />
+
+      {/* Exams Recommendation Dialog */}
+      <Dialog open={showExamsDialog} onOpenChange={setShowExamsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Stethoscope className="w-5 h-5 text-blue-600" />
+              Quali esami devo fare?
+            </DialogTitle>
+            <DialogDescription>
+              Ricevi raccomandazioni personalizzate sugli esami medici da effettuare
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
+                L'AI analizzerà il tuo profilo medico, età e stile di vita per suggerirti gli esami preventivi più indicati per te.
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-center">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                onClick={() => {
+                  setShowExamsDialog(false);
+                  setUserInput('Analizza il mio profilo medico considerando età, stile di vita e storia clinica. Quali esami preventivi dovrei fare?');
+                  setTimeout(() => handleStart(), 100);
+                }}
+                data-testid="button-request-exams"
+              >
+                <Stethoscope className="w-4 h-4 mr-2" />
+                Richiedi Raccomandazioni
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Analyze Report Dialog */}
+      <Dialog open={showAnalyzeReportDialog} onOpenChange={setShowAnalyzeReportDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-emerald-600" />
+              Analizza il mio referto
+            </DialogTitle>
+            <DialogDescription>
+              Analisi AI del tuo ultimo referto medico caricato
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {(() => {
+              const latestReport = healthReports[0];
+              const reportAge = latestReport 
+                ? Math.floor((Date.now() - new Date(latestReport.createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
+                : null;
+              const isOldReport = reportAge && reportAge >= 3;
+
+              if (!latestReport) {
+                return (
+                  <>
+                    <Alert className="bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800">
+                      <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <AlertDescription className="text-sm text-yellow-900 dark:text-yellow-200">
+                        Non hai ancora caricato nessun referto medico. Puoi caricare un documento per un'analisi dettagliata, oppure chiedere consigli preventivi all'AI.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="flex justify-center gap-3">
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="border-emerald-300 dark:border-emerald-700"
+                        onClick={() => {
+                          setShowAnalyzeReportDialog(false);
+                          setUserInput('Non ho ancora caricato referti medici. Puoi darmi consigli generali sulla prevenzione e sugli esami che dovrei fare?');
+                          setTimeout(() => handleStart(), 100);
+                        }}
+                        data-testid="button-ask-ai-without-report"
+                      >
+                        <MessageSquarePlus className="w-4 h-4 mr-2" />
+                        Chiedi all'AI
+                      </Button>
+                      <Button
+                        size="lg"
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                        onClick={() => {
+                          setShowAnalyzeReportDialog(false);
+                          setShowUploadDialog(true);
+                        }}
+                        data-testid="button-upload-first-report"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Carica Referto
+                      </Button>
+                    </div>
+                  </>
+                );
+              }
+
+              return (
+                <>
+                  {isOldReport && (
+                    <Alert className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">
+                        Il tuo ultimo referto risale a {reportAge} {reportAge === 1 ? 'mese' : 'mesi'} fa. 
+                        Considera di caricare referti più recenti per un'analisi più accurata.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <Alert className="bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <AlertDescription className="text-sm text-emerald-900 dark:text-emerald-200">
+                      <strong>Ultimo referto:</strong> {latestReport.reportType || 'Documento'} caricato il {new Date(latestReport.createdAt).toLocaleDateString('it-IT')}
+                    </AlertDescription>
+                  </Alert>
+                  <div className="flex justify-center gap-3">
+                    <Button
+                      size="lg"
+                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                      onClick={() => {
+                        setShowAnalyzeReportDialog(false);
+                        setUserInput('Analizza in dettaglio il mio ultimo referto caricato. Spiegami i risultati, evidenzia eventuali valori anomali e suggerisci azioni preventive.');
+                        setTimeout(() => handleStart(), 100);
+                      }}
+                      data-testid="button-analyze-latest-report"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Analizza Referto
+                    </Button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

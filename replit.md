@@ -4,16 +4,24 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 
 # Recent Changes
 
+## November 16, 2025
+- **Patient AI Quick Actions Enhancement** (`client/src/pages/patient-ai.tsx`): Completely restructured Quick Actions to use dialog-based interactions instead of direct text input, providing better user guidance and context:
+  - ❌ **Removed**: "Come sta il mio Prevention Index?" button
+  - ✅ **Added**: "🔬 Quali esami devo fare?" - Opens dialog explaining AI analysis capabilities, then starts conversation with personalized exam recommendations
+  - ✅ **Added**: "📄 Analizza il mio referto" - Always visible dialog that:
+    - Checks if user has uploaded reports
+    - Warns if latest report is >3 months old
+    - Offers options to analyze existing report or upload new one
+    - Starts AI conversation with detailed analysis request
+  - ✅ **Added**: "🛡️ Percorso di prevenzione" - Opens PreventionPathDialog for generating personalized prevention path using `generatePreventionPathMutation`
+  - ✅ **Added**: "🏥 Prenota una visita" - Navigates to `/teleconsulto` page for appointment booking
+  - **Implementation Pattern**: Each dialog provides context/information, then closes and triggers AI conversation with specific prompt via `handleStart()` - identical to `prevention.tsx` pattern
+
 ## November 15, 2025
 - **Alert Consolidation**: Removed "Alert Pazienti" section from doctor home dashboard (`DoctorDashboard.tsx` component). Medical alerts are now exclusively shown in the dedicated `/doctor/alerts` page, eliminating redundancy and providing a focused alert management interface.
-- **Patient Quick Actions Restructuring**: Simplified patient AI quick actions in prevention page (`SuggestedActions.tsx`):
-  - Removed "Come sta la mia salute?" button
-  - Added "🔬 Quali esami devo fare?" - Opens dialog with AI exam recommendations based on age, lifestyle, and medical history
-  - Made "📄 Analizza il mio referto" always visible - Opens dialog that checks report age (warns if >3 months old) and provides detailed AI analysis
-  - Added "🛡️ Percorso di prevenzione" - Moved from "Strumenti Avanzati" section to main quick actions
-  - Kept "🏥 Prenota una visita" button
-- **Strumenti Avanzati Simplification**: Reduced "Strumenti Avanzati" section in prevention page to only show "Carica Documenti" button, removing duplicate "Percorso di Prevenzione" button (now in quick actions)
-- **Auto-close Pending Conversations**: Modified `startTriageMutation` in prevention page to automatically close any pending active session before starting a new conversation, eliminating multiple confirmation dialogs and providing seamless conversation flow
+- **Prevention Page Quick Actions** (`prevention.tsx` and `SuggestedActions.tsx`): Implemented dialog-based quick actions for prevention page using `SuggestedActions` component
+- **Strumenti Avanzati Simplification**: Reduced "Strumenti Avanzati" section in prevention page to only show "Carica Documenti" button
+- **Auto-close Pending Conversations**: Modified `startTriageMutation` in prevention page to automatically close any pending active session before starting a new conversation
 
 # User Preferences
 

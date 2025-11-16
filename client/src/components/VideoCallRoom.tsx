@@ -229,8 +229,15 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-white">
               <VideoIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium">In attesa del medico...</p>
-              <p className="text-sm text-gray-400 mt-2">La chiamata inizierà quando il medico si unirà</p>
+              <p className="text-lg font-medium">
+                {isDoctorView ? "In attesa del paziente..." : "In attesa del medico..."}
+              </p>
+              <p className="text-sm text-gray-400 mt-2">
+                {isDoctorView 
+                  ? "La chiamata inizierà quando il paziente si unirà" 
+                  : "La chiamata inizierà quando il medico si unirà"
+                }
+              </p>
             </div>
           </div>
         ) : (

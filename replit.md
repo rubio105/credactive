@@ -5,7 +5,7 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 # Recent Changes
 
 ## November 16, 2025
-- **Exam Recommendation Dialog System** (`server/routes.ts`, `client/src/pages/prevention.tsx`, `shared/schema.ts`): Implemented personalized exam recommendations in popup dialog instead of chat messages:
+- **Exam Recommendation Dialog System** (`server/routes.ts`, `client/src/pages/prevention.tsx`, `client/src/pages/patient-ai.tsx`, `shared/schema.ts`): Implemented personalized exam recommendations in popup dialog instead of chat messages in BOTH pages (`/chat` and `/patient-ai`):
   - **Problem**: Exam recommendations were sent as chat messages, cluttering conversation and preventing structured viewing
   - **Solution**:
     - Created backend POST `/api/exams/recommend` endpoint using Gemini AI with structured JSON output

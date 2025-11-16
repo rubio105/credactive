@@ -123,6 +123,40 @@ function getSeverityColor(urgencyLevel: 'low' | 'medium' | 'high' | 'emergency')
   }
 }
 
+// Urgency style for exam recommendations
+function getUrgencyStyle(urgency: 'low' | 'medium' | 'high') {
+  switch (urgency) {
+    case 'high':
+      return {
+        bg: 'bg-red-50 dark:bg-red-950/30',
+        border: 'border-red-400',
+        badge: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200',
+        label: 'Alta priorità'
+      };
+    case 'medium':
+      return {
+        bg: 'bg-yellow-50 dark:bg-yellow-950/30',
+        border: 'border-yellow-400',
+        badge: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200',
+        label: 'Priorità media'
+      };
+    case 'low':
+      return {
+        bg: 'bg-green-50 dark:bg-green-950/30',
+        border: 'border-green-400',
+        badge: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200',
+        label: 'Bassa priorità'
+      };
+    default:
+      return {
+        bg: 'bg-gray-50 dark:bg-gray-950/30',
+        border: 'border-gray-400',
+        badge: 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200',
+        label: 'Normale'
+      };
+  }
+}
+
 export default function PreventionPage() {
   const { user } = useAuth();
   const { toast } = useToast();

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Send, FileText, Activity, Mic, MicOff, X, FileUp, Heart, TrendingUp, Clock, AlertCircle, Sparkles, Stethoscope, Info, MessageSquarePlus, Upload, Calendar, CheckCircle2 } from "lucide-react";
+import { Shield, Send, FileText, Activity, Mic, MicOff, X, FileUp, Heart, TrendingUp, Clock, AlertCircle, Sparkles, Stethoscope, Info, MessageSquarePlus, Upload, Calendar, CheckCircle2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
@@ -71,6 +71,40 @@ interface HealthReport {
   createdAt: string;
 }
 
+// Urgency style for exam recommendations
+function getUrgencyStyle(urgency: 'low' | 'medium' | 'high') {
+  switch (urgency) {
+    case 'high':
+      return {
+        bg: 'bg-red-50 dark:bg-red-950/30',
+        border: 'border-red-400',
+        badge: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200',
+        label: 'Alta priorità'
+      };
+    case 'medium':
+      return {
+        bg: 'bg-yellow-50 dark:bg-yellow-950/30',
+        border: 'border-yellow-400',
+        badge: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200',
+        label: 'Priorità media'
+      };
+    case 'low':
+      return {
+        bg: 'bg-green-50 dark:bg-green-950/30',
+        border: 'border-green-400',
+        badge: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200',
+        label: 'Bassa priorità'
+      };
+    default:
+      return {
+        bg: 'bg-gray-50 dark:bg-gray-950/30',
+        border: 'border-gray-400',
+        badge: 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200',
+        label: 'Normale'
+      };
+  }
+}
+
 export default function PatientAIPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -87,6 +121,7 @@ export default function PatientAIPage() {
   const [showAnalyzeReportDialog, setShowAnalyzeReportDialog] = useState(false);
   const [showPreventionPathDialog, setShowPreventionPathDialog] = useState(false);
   const [preventionPathData, setPreventionPathData] = useState<any>(null);
+  const [examsRecommendations, setExamsRecommendations] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<any>(null);
   const [prohmedCode, setProhmedCode] = useState("");
@@ -340,6 +375,28 @@ export default function PatientAIPage() {
         title: "Errore",
         description: error?.message || "Errore durante la generazione del percorso",
         variant: "destructive"
+      });
+    },
+  });
+
+  // Generate Exams Recommendations Mutation
+  const generateExamsRecommendationsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/exams/recommend", "POST", { language: "it" });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setExamsRecommendations(data);
+      toast({ 
+        title: "Raccomandazioni generate!", 
+        description: "Le raccomandazioni sugli esami sono pronte."
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Errore", 
+        description: error.message || "Errore durante la generazione delle raccomandazioni",
+        variant: "destructive" 
       });
     },
   });
@@ -920,40 +977,130 @@ export default function PatientAIPage() {
       />
 
       {/* Exams Recommendation Dialog */}
-      <Dialog open={showExamsDialog} onOpenChange={setShowExamsDialog}>
-        <DialogContent className="max-w-2xl">
+      <Dialog 
+        open={showExamsDialog} 
+        onOpenChange={(open) => {
+          setShowExamsDialog(open);
+          if (open) {
+            // Reset state first to ensure fresh generation
+            setExamsRecommendations(null);
+            generateExamsRecommendationsMutation.reset();
+            // Then trigger new generation
+            generateExamsRecommendationsMutation.mutate();
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Stethoscope className="w-5 h-5 text-blue-600" />
+              <Stethoscope className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               Quali esami devo fare?
             </DialogTitle>
             <DialogDescription>
-              Ricevi raccomandazioni personalizzate sugli esami medici da effettuare
+              Raccomandazioni personalizzate basate sul tuo profilo medico
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
-                L'AI analizzerà il tuo profilo medico, età e stile di vita per suggerirti gli esami preventivi più indicati per te.
+
+          {/* Loading State */}
+          {generateExamsRecommendationsMutation.isPending && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-600 dark:text-blue-400" />
+              <p className="text-sm text-muted-foreground">Sto analizzando il tuo profilo medico...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {generateExamsRecommendationsMutation.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Errore durante la generazione delle raccomandazioni. 
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  onClick={() => generateExamsRecommendationsMutation.mutate()}
+                  className="ml-2"
+                >
+                  Riprova
+                </Button>
               </AlertDescription>
             </Alert>
-            <div className="flex justify-center">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-                onClick={() => {
-                  setShowExamsDialog(false);
-                  setUserInput('Analizza il mio profilo medico considerando età, stile di vita e storia clinica. Quali esami preventivi dovrei fare?');
-                  setTimeout(() => handleStart(), 100);
-                }}
-                data-testid="button-request-exams"
-              >
-                <Stethoscope className="w-4 h-4 mr-2" />
-                Richiedi Raccomandazioni
-              </Button>
+          )}
+
+          {/* Results */}
+          {examsRecommendations && !generateExamsRecommendationsMutation.isPending && (
+            <div className="space-y-6 py-4">
+              {/* Summary */}
+              <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
+                  {examsRecommendations.summary}
+                </AlertDescription>
+              </Alert>
+
+              {/* Recommendations by Category */}
+              {examsRecommendations.recommendations?.map((category: any, catIdx: number) => (
+                <div key={catIdx} className="space-y-3">
+                  <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
+                    <div className="w-1 h-6 bg-blue-600 dark:bg-blue-400 rounded" />
+                    {category.category}
+                  </h3>
+                  <div className="space-y-2 pl-4">
+                    {category.exams?.map((exam: any, examIdx: number) => {
+                      const urgencyStyle = getUrgencyStyle(exam.urgency);
+                      return (
+                        <div 
+                          key={examIdx} 
+                          className={`p-4 rounded-lg border-l-4 ${urgencyStyle.bg} ${urgencyStyle.border}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-foreground">{exam.name}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded ${urgencyStyle.badge}`}>
+                                  {urgencyStyle.label}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">{exam.reason}</p>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                <span>{exam.frequency}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowExamsDialog(false);
+                    setUserInput(`Ho letto le raccomandazioni sugli esami. Vorrei approfondire: ${examsRecommendations.recommendations?.map((c: any) => c.category).join(', ')}`);
+                    setTimeout(() => handleStart(), 100);
+                  }}
+                  className="flex-1"
+                  data-testid="button-discuss-exams"
+                >
+                  <MessageSquarePlus className="w-4 h-4 mr-2" />
+                  Discuti con l'AI
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() => setShowExamsDialog(false)}
+                  className="flex-1"
+                  data-testid="button-close-exams"
+                >
+                  Chiudi
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 

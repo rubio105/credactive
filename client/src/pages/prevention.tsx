@@ -155,6 +155,8 @@ export default function PreventionPage() {
   const [attachedReports, setAttachedReports] = useState<File[]>([]);
   const [selectedBookingDoctor, setSelectedBookingDoctor] = useState<string>("");
   const [selectedBookingSlot, setSelectedBookingSlot] = useState<any>(null);
+  const [showPatientContextDialog, setShowPatientContextDialog] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<{id: string, name: string} | null>(null);
   // Auto-detect role based on user type: doctor for diagnosis, patient for prevention
   const userRole = (user as any)?.isDoctor ? 'doctor' : 'patient';
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
@@ -234,6 +236,12 @@ export default function PreventionPage() {
   const { data: availableSlots = [], isLoading: isSlotsLoading } = useQuery<any[]>({
     queryKey: ['/api/appointments/available-slots', selectedBookingDoctor],
     enabled: !!selectedBookingDoctor && isBookingDialogOpen,
+  });
+
+  // Query for doctor's patients list
+  const { data: doctorPatients = [], isLoading: isPatientsLoading } = useQuery<any[]>({
+    queryKey: ['/api/doctor/patients'],
+    enabled: !!(user as any)?.isDoctor,
   });
 
   // Sync uploadQueue state with ref for reliable access
@@ -351,48 +359,21 @@ export default function PreventionPage() {
   // Don't auto-restore sessions - let user choose to continue or start new
   // This prevents old conversation history from blocking the input field
 
-  // Auto-open AI dialog for doctors when they access prevention page
+  // Auto-open patient context dialog for doctors when they access prevention page
   useEffect(() => {
     const isDoctor = (user as any)?.isDoctor;
-    // Wait for activeSession query to resolve (activeSession will be null if no active session)
-    // Only auto-start if: 1) user is a doctor, 2) activeSession resolved to null, 3) no sessionId, 4) haven't already auto-started
-    if (isDoctor && activeSession === null && !sessionId && !doctorAutoStartedRef.current) {
-      // Mark as started immediately to prevent multiple attempts
+    // Show patient selection dialog if: 1) user is a doctor, 2) no patient selected, 3) haven't shown dialog yet
+    if (isDoctor && !selectedPatient && !doctorAutoStartedRef.current && doctorPatients.length > 0) {
+      // Mark as shown immediately to prevent multiple attempts
       doctorAutoStartedRef.current = true;
       
       // Small delay for better UX
-      const timer = setTimeout(async () => {
-        const initialMessage = "Benvenuto! Come posso aiutarti nella prevenzione e diagnosi oggi?";
-        
-        try {
-          const response = await apiRequest("/api/triage/start", "POST", { 
-            initialSymptom: initialMessage,
-            userRole: 'doctor'
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data?.session?.id) {
-              setSessionId(data.session.id);
-              queryClient.invalidateQueries({ queryKey: ["/api/triage/messages"] });
-              // Keep input empty for clean UI
-              setUserInput("");
-            } else {
-              console.error("Doctor auto-start: Invalid response data");
-              doctorAutoStartedRef.current = false; // Allow retry
-            }
-          } else {
-            console.error("Doctor auto-start: HTTP error", response.status);
-            doctorAutoStartedRef.current = false; // Allow retry
-          }
-        } catch (error: any) {
-          console.error("Doctor auto-start error:", error);
-          doctorAutoStartedRef.current = false; // Allow retry
-        }
-      }, 300);
+      const timer = setTimeout(() => {
+        setShowPatientContextDialog(true);
+      }, 500);
       return () => clearTimeout(timer);
     }
-  }, [user, sessionId, activeSession]);
+  }, [user, selectedPatient, doctorPatients]);
 
   // Check if user needs onboarding (only for patients, not doctors)
   useEffect(() => {
@@ -438,10 +419,20 @@ export default function PreventionPage() {
         }
       }
       
-      const response = await apiRequest("/api/triage/start", "POST", { 
+      // Include patient context for doctors if patient is selected
+      const requestBody: any = { 
         initialSymptom: data.symptom,
         userRole: data.role
-      });
+      };
+      
+      if (data.role === 'doctor' && selectedPatient) {
+        requestBody.patientContext = {
+          patientId: selectedPatient.id,
+          patientName: selectedPatient.name
+        };
+      }
+      
+      const response = await apiRequest("/api/triage/start", "POST", requestBody);
       return response.json();
     },
     onSuccess: (data: any) => {
@@ -478,13 +469,23 @@ export default function PreventionPage() {
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       // Use fetch directly to check status before throwing
+      // Include patient context for doctors if patient is selected
+      const requestBody: any = { 
+        content: message,
+        language: user?.language || 'it' // Pass user's language for consistent AI responses
+      };
+      
+      if ((user as any)?.isDoctor && selectedPatient) {
+        requestBody.patientContext = {
+          patientId: selectedPatient.id,
+          patientName: selectedPatient.name
+        };
+      }
+      
       const response = await fetch(`/api/triage/${sessionId}/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          content: message,
-          language: user?.language || 'it' // Pass user's language for consistent AI responses
-        }),
+        body: JSON.stringify(requestBody),
         credentials: "include",
       });
       
@@ -2390,6 +2391,43 @@ export default function PreventionPage() {
 
                 {/* Suggested Actions + Input - Always visible for both patients and doctors */}
                 <div className="space-y-3 mt-4 px-1">
+                  {/* Patient Context Badge for Doctors */}
+                  {(user as any)?.isDoctor && (
+                    <div className="flex items-center gap-2 mb-2">
+                      {selectedPatient ? (
+                        <Badge 
+                          variant="outline" 
+                          className="flex items-center gap-2 px-3 py-2 bg-orange-50 dark:bg-orange-950/30 border-orange-300 dark:border-orange-700 text-orange-900 dark:text-orange-200"
+                          data-testid="badge-selected-patient"
+                        >
+                          <User className="w-4 h-4" />
+                          <span className="font-medium">{selectedPatient.name}</span>
+                        </Badge>
+                      ) : (
+                        <Badge 
+                          variant="outline" 
+                          className="px-3 py-2 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700"
+                          data-testid="badge-no-patient"
+                        >
+                          Nessun paziente selezionato
+                        </Badge>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          doctorAutoStartedRef.current = false; // Allow dialog to show again
+                          setShowPatientContextDialog(true);
+                        }}
+                        className="border-orange-300 dark:border-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+                        data-testid="button-change-patient"
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        {selectedPatient ? 'Cambia Paziente' : 'Seleziona Paziente'}
+                      </Button>
+                    </div>
+                  )}
+
                   <SuggestedActions
                     isDoctor={(user as any)?.isDoctor || false}
                     hasRecentUploads={healthReports.length > 0}
@@ -3279,6 +3317,97 @@ export default function PreventionPage() {
                 </>
               );
             })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Patient Context Dialog for Doctors */}
+      <Dialog open={showPatientContextDialog} onOpenChange={setShowPatientContextDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+              <User className="w-6 h-6" />
+              Ciao Dott. {user?.firstName || 'Dottore'}! 👋
+            </DialogTitle>
+            <DialogDescription>
+              Vuoi indicarmi il paziente sul quale vuoi fare prevenzione?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <Alert className="bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
+              <Info className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              <AlertDescription className="text-sm text-orange-900 dark:text-orange-200">
+                Seleziona un paziente per ricevere informazioni contestualizzate e raccomandazioni personalizzate dall'AI.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-3">
+              <Label htmlFor="patient-select" className="text-base font-medium">
+                Seleziona Paziente
+              </Label>
+              <Select
+                value={selectedPatient?.id || ''}
+                onValueChange={(patientId) => {
+                  const patient = doctorPatients.find((p: any) => p.id === patientId);
+                  if (patient) {
+                    setSelectedPatient({
+                      id: patient.id,
+                      name: `${patient.firstName} ${patient.lastName}`.trim()
+                    });
+                  }
+                }}
+                disabled={isPatientsLoading}
+              >
+                <SelectTrigger id="patient-select" className="w-full" data-testid="select-patient">
+                  <SelectValue placeholder={isPatientsLoading ? "Caricamento..." : "Seleziona un paziente..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {doctorPatients.length === 0 && !isPatientsLoading ? (
+                    <div className="p-4 text-center text-muted-foreground text-sm">
+                      Nessun paziente trovato
+                    </div>
+                  ) : (
+                    doctorPatients.map((patient: any) => (
+                      <SelectItem key={patient.id} value={patient.id} data-testid={`patient-option-${patient.id}`}>
+                        {patient.firstName} {patient.lastName}
+                        {patient.email && <span className="text-muted-foreground ml-2 text-xs">({patient.email})</span>}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-center gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPatientContextDialog(false);
+                  setSelectedPatient(null);
+                }}
+                data-testid="button-skip-patient-selection"
+              >
+                Salta
+              </Button>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white"
+                onClick={() => {
+                  if (selectedPatient) {
+                    setShowPatientContextDialog(false);
+                    toast({
+                      title: "Paziente selezionato",
+                      description: `Contesto impostato per ${selectedPatient.name}`,
+                    });
+                  }
+                }}
+                disabled={!selectedPatient}
+                data-testid="button-confirm-patient-selection"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Conferma
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

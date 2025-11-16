@@ -53,27 +53,6 @@ export function SuggestedActions({
         className: 'bg-red-600 hover:bg-red-700 text-white border-none',
       });
     }
-
-    doctorActions.push(
-      {
-        id: 'patient-summaries',
-        label: '👥 Riepilogo pazienti di oggi',
-        icon: Users,
-        onClick: () => onActionClick('patient-summaries'),
-      },
-      {
-        id: 'patient-trends',
-        label: '📊 Analisi trend pazienti',
-        icon: TrendingUp,
-        onClick: () => onActionClick('patient-trends'),
-      },
-      {
-        id: 'clinical-note',
-        label: '📝 Genera nota clinica',
-        icon: FileCheck,
-        onClick: () => onActionClick('clinical-note'),
-      }
-    );
   } else {
     if (hasActiveAlert) {
       patientActions.push({

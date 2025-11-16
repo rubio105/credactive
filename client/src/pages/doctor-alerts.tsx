@@ -199,10 +199,11 @@ export default function DoctorAlertsPage() {
     },
   });
 
-  const loadConversation = async (alertId: string) => {
+  const loadConversation = async (alert: Alert) => {
     setLoadingConversation(true);
+    setSelectedAlert(alert); // ✅ Set selected alert for "Genera Report AI" button
     try {
-      const response = await fetch(`/api/doctor/alerts/${alertId}/conversation`, {
+      const response = await fetch(`/api/doctor/alerts/${alert.id}/conversation`, {
         credentials: 'include',
       });
       
@@ -482,7 +483,7 @@ export default function DoctorAlertsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => loadConversation(alert.id)}
+                        onClick={() => loadConversation(alert)}
                         disabled={loadingConversation}
                         data-testid={`button-view-conversation-${alert.id}`}
                       >

@@ -89,6 +89,7 @@ export const users = pgTable("users", {
   subscriptionTier: varchar("subscription_tier", { length: 20 }).default("free"), // free, premium, premium_plus
   isAdmin: boolean("is_admin").default(false),
   isDoctor: boolean("is_doctor").default(false), // Medical professional flag
+  isProhmedDoctor: boolean("is_prohmed_doctor").default(false), // Flag to identify Prohmed medical staff
   doctorCode: varchar("doctor_code", { length: 20 }).unique(), // Unique code for doctors to share with patients
   pendingDoctorCode: varchar("pending_doctor_code", { length: 20 }), // Temporary referral code until email verification
   aiOnlyAccess: boolean("ai_only_access").default(false), // User can access ONLY AI prevention, not quiz/courses

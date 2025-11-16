@@ -1,9 +1,21 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
+import { useEffect } from "react";
 import PatientDashboard from "@/pages/dashboard/PatientDashboard";
 import DoctorDashboard from "@/pages/dashboard/DoctorDashboard";
 
 export default function RoleDashboard() {
   const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const isAdmin = (user as any)?.isAdmin;
+  const isDoctor = (user as any)?.isDoctor;
+
+  useEffect(() => {
+    if (!isLoading && user && isAdmin) {
+      setLocation("/admin");
+    }
+  }, [isLoading, user, isAdmin, setLocation]);
 
   if (isLoading) {
     return null;
@@ -12,11 +24,12 @@ export default function RoleDashboard() {
   if (!user) {
     return null;
   }
-  
-  const isDoctor = (user as any)?.isDoctor;
-  const isAdmin = (user as any)?.isAdmin;
 
-  if (isDoctor || isAdmin) {
+  if (isAdmin) {
+    return null;
+  }
+
+  if (isDoctor) {
     return <DoctorDashboard />;
   }
 

@@ -56,6 +56,7 @@ interface User {
   subscriptionTier: string;
   isAdmin: boolean;
   isDoctor: boolean;
+  isProhmedDoctor: boolean;
   aiOnlyAccess: boolean;
   createdAt: string;
 }
@@ -69,6 +70,7 @@ interface NewUser {
   subscriptionTier: string;
   isAdmin: boolean;
   isDoctor: boolean;
+  isProhmedDoctor: boolean;
   aiOnlyAccess: boolean;
 }
 
@@ -92,6 +94,7 @@ export default function AdminUsers() {
     subscriptionTier: 'free',
     isAdmin: false,
     isDoctor: false,
+    isProhmedDoctor: false,
     aiOnlyAccess: false,
   });
 
@@ -152,6 +155,7 @@ export default function AdminUsers() {
         subscriptionTier: 'free',
         isAdmin: false,
         isDoctor: false,
+        isProhmedDoctor: false,
         aiOnlyAccess: false,
       });
     },
@@ -686,6 +690,7 @@ export default function AdminUsers() {
                       isAdmin: value === 'admin',
                       isDoctor: value === 'doctor',
                       aiOnlyAccess: value === 'ai_only',
+                      isProhmedDoctor: value === 'doctor' ? editingUser.isProhmedDoctor : false,
                     });
                   }}
                 >
@@ -700,6 +705,22 @@ export default function AdminUsers() {
                   </SelectContent>
                 </Select>
               </div>
+              {editingUser.isDoctor && (
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="prohmed-doctor" className="font-medium">Medical Prohmed</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Contrassegna questo dottore come parte del team medico Prohmed
+                    </p>
+                  </div>
+                  <Switch
+                    id="prohmed-doctor"
+                    checked={editingUser.isProhmedDoctor || false}
+                    onCheckedChange={(checked) => setEditingUser({ ...editingUser, isProhmedDoctor: checked })}
+                    data-testid="switch-prohmed-doctor"
+                  />
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -795,6 +816,7 @@ export default function AdminUsers() {
                     isAdmin: value === 'admin',
                     isDoctor: value === 'doctor',
                     aiOnlyAccess: value === 'ai_only',
+                    isProhmedDoctor: value === 'doctor' ? newUser.isProhmedDoctor : false,
                   });
                 }}
               >
@@ -809,6 +831,22 @@ export default function AdminUsers() {
                 </SelectContent>
               </Select>
             </div>
+            {newUser.isDoctor && (
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                <div className="space-y-0.5">
+                  <Label htmlFor="new-prohmed-doctor" className="font-medium">Medical Prohmed</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Contrassegna questo dottore come parte del team medico Prohmed
+                  </p>
+                </div>
+                <Switch
+                  id="new-prohmed-doctor"
+                  checked={newUser.isProhmedDoctor || false}
+                  onCheckedChange={(checked) => setNewUser({ ...newUser, isProhmedDoctor: checked })}
+                  data-testid="switch-new-prohmed-doctor"
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button 
@@ -824,6 +862,7 @@ export default function AdminUsers() {
                   subscriptionTier: 'free',
                   isAdmin: false,
                   isDoctor: false,
+                  isProhmedDoctor: false,
                   aiOnlyAccess: false,
                 });
               }}

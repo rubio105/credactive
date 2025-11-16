@@ -10364,10 +10364,34 @@ Questa email è stata generata automaticamente dalla piattaforma CIRY
   app.post('/api/triage/start', aiGenerationLimiter, async (req, res) => {
     try {
       const user = req.user as any;
-      const { initialSymptom, language, userRole } = req.body;
+      const { initialSymptom, language, userRole, patientContext } = req.body;
 
       if (!initialSymptom) {
         return res.status(400).json({ message: 'Initial symptom is required' });
+      }
+
+      // If doctor is asking about a specific patient, get patient info
+      let doctorPatientContext: string | undefined;
+      if (userRole === 'doctor' && patientContext?.patientId) {
+        try {
+          const patient = await storage.getUserById(patientContext.patientId);
+          if (patient) {
+            const patientAge = patient.dateOfBirth 
+              ? Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+              : 'Non disponibile';
+            
+            doctorPatientContext = `[CONTESTO MEDICO - Paziente: ${patientContext.patientName}]
+Età: ${patientAge} anni
+Sesso: ${patient.gender || 'Non specificato'}
+Email: ${patient.email}
+
+Il medico sta chiedendo informazioni/raccomandazioni per questo paziente. Fornisci risposte professionali considerando il profilo del paziente.`;
+            console.log(`[Doctor Context] Doctor ${user.firstName} ${user.lastName} asking about patient ${patientContext.patientName}`);
+          }
+        } catch (error) {
+          console.error('[Doctor Context] Failed to fetch patient data:', error);
+          // Continue without patient context if it fails
+        }
       }
 
       // Create triage session (userId null for anonymous users)
@@ -10476,10 +10500,15 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
       }
 
       // Get AI response (pass complete health profile for personalization)
+      // If doctor is querying about a patient, prepend patient context to documentContext
+      const fullDocumentContext = doctorPatientContext 
+        ? `${doctorPatientContext}\n\n${documentContext || ''}`.trim()
+        : documentContext;
+      
       const aiResponse = await generateTriageResponse(
         initialSymptom, 
         [], 
-        documentContext, 
+        fullDocumentContext, 
         user?.firstName,
         scientificContext,
         session.userRole as 'patient' | 'doctor', // Pass user role to customize response style
@@ -10565,7 +10594,7 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
   app.post('/api/triage/:sessionId/message', aiGenerationLimiter, async (req, res) => {
     try {
       const user = req.user as any;
-      const { content, language } = req.body;
+      const { content, language, patientContext } = req.body;
       const sessionId = req.params.sessionId;
 
       if (!content) {
@@ -10736,11 +10765,40 @@ Riepilogo: ${summary}${diagnosis}${prevention}${radiologicalAnalysis}`;
         }
       }
 
+      // If doctor is asking about a specific patient, get patient info
+      let doctorPatientContext: string | undefined;
+      if (session.userRole === 'doctor' && patientContext?.patientId) {
+        try {
+          const patient = await storage.getUserById(patientContext.patientId);
+          if (patient) {
+            const patientAge = patient.dateOfBirth 
+              ? Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+              : 'Non disponibile';
+            
+            doctorPatientContext = `[CONTESTO MEDICO - Paziente: ${patientContext.patientName}]
+Età: ${patientAge} anni
+Sesso: ${patient.gender || 'Non specificato'}
+Email: ${patient.email}
+
+Il medico sta chiedendo informazioni/raccomandazioni per questo paziente. Fornisci risposte professionali considerando il profilo del paziente.`;
+            console.log(`[Doctor Context] Doctor asking about patient ${patientContext.patientName} in session ${sessionId}`);
+          }
+        } catch (error) {
+          console.error('[Doctor Context] Failed to fetch patient data:', error);
+          // Continue without patient context if it fails
+        }
+      }
+
       // Get AI response (pass complete health profile for personalization)
+      // If doctor is querying about a patient, prepend patient context to documentContext
+      const fullDocumentContext = doctorPatientContext 
+        ? `${doctorPatientContext}\n\n${documentContext || ''}`.trim()
+        : documentContext;
+      
       const aiResponse = await generateTriageResponse(
         content, 
         history, 
-        documentContext, 
+        fullDocumentContext, 
         user?.firstName,
         scientificContext,
         session.userRole as 'patient' | 'doctor', // Pass user role to customize response style

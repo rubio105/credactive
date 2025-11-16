@@ -2469,6 +2469,27 @@ export default function PreventionPage() {
                       </Tooltip>
                     </TooltipProvider>
                     
+                    {/* Upload Report Button - Compact and inline for doctors */}
+                    {session?.status === 'active' && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              onClick={() => setShowUploadDialog(true)}
+                              variant="outline"
+                              className="border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 h-12 w-12 rounded-xl p-0 transition-all flex-shrink-0"
+                              data-testid="button-upload-report-chat"
+                            >
+                              <FileText className="w-5 h-5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Carica Referto</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    
                     <Button
                       onClick={handleSend}
                       disabled={sendMessageMutation.isPending || !userInput.trim()}
@@ -2478,21 +2499,6 @@ export default function PreventionPage() {
                       <Send className="w-5 h-5" />
                     </Button>
                   </div>
-                  
-                  {session?.status === 'active' && (
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => setShowUploadDialog(true)}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 rounded-xl transition-all"
-                        data-testid="button-upload-report-chat"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Carica Referto
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>

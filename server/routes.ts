@@ -13294,10 +13294,15 @@ Format as JSON: {
         accountSid = credentials.accountSid;
         apiKeySid = credentials.apiKeySid;
         apiKeySecret = credentials.apiKeySecret;
+        
+        // Check if we actually got valid credentials
+        if (!accountSid || !apiKeySid || !apiKeySecret) {
+          throw new Error('Incomplete credentials from Replit connection');
+        }
         console.log('[Twilio Video] Using credentials from Replit connection');
       } catch (error: any) {
         // Fallback to env vars if Replit connection fails
-        console.warn('[Twilio Video] Replit connection failed, falling back to env vars:', error.message);
+        console.log('[Twilio Video] Using credentials from env vars');
         accountSid = process.env.TWILIO_ACCOUNT_SID || '';
         apiKeySid = process.env.TWILIO_API_KEY_SID || '';
         apiKeySecret = process.env.TWILIO_API_KEY_SECRET || '';

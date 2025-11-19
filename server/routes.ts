@@ -13287,6 +13287,7 @@ Format as JSON: {
       let accountSid: string;
       let apiKeySid: string;
       let apiKeySecret: string;
+      let authToken: string = '';
 
       try {
         const { getTwilioVideoCredentials } = await import('./twilio-client');
@@ -13294,6 +13295,7 @@ Format as JSON: {
         accountSid = credentials.accountSid;
         apiKeySid = credentials.apiKeySid;
         apiKeySecret = credentials.apiKeySecret;
+        authToken = credentials.authToken || process.env.TWILIO_AUTH_TOKEN || '';
         
         // Check if we actually got valid credentials
         if (!accountSid || !apiKeySid || !apiKeySecret) {
@@ -13306,6 +13308,7 @@ Format as JSON: {
         accountSid = process.env.TWILIO_ACCOUNT_SID || '';
         apiKeySid = process.env.TWILIO_API_KEY_SID || '';
         apiKeySecret = process.env.TWILIO_API_KEY_SECRET || '';
+        authToken = process.env.TWILIO_AUTH_TOKEN || '';
       }
 
       if (!accountSid || !apiKeySid || !apiKeySecret) {
@@ -13315,6 +13318,30 @@ Format as JSON: {
           hasApiKeySecret: !!apiKeySecret
         });
         return res.status(500).json({ message: 'Twilio Video credentials not configured' });
+      }
+
+      // Create or get existing room with recording enabled
+      const twilioClient = twilio(accountSid, authToken || apiKeySecret);
+      let room;
+      
+      try {
+        // Check if room exists
+        room = await twilioClient.video.rooms(roomName).fetch();
+        console.log('[Twilio Video] Existing room found:', roomName);
+      } catch (error) {
+        // Room doesn't exist, create it with recording enabled
+        try {
+          room = await twilioClient.video.rooms.create({
+            uniqueName: roomName,
+            type: 'group',
+            recordParticipantsOnConnect: true,
+            statusCallback: `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://ciry.app'}/api/video/webhook`
+          });
+          console.log('[Twilio Video] Created room with recording enabled:', roomName, room.sid);
+        } catch (createError: any) {
+          console.error('[Twilio Video] Failed to create room:', createError);
+          // Continue anyway - room might exist but fetch failed
+        }
       }
 
       const AccessToken = twilio.jwt.AccessToken;

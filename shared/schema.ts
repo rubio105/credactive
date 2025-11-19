@@ -2170,6 +2170,21 @@ export const appointments = pgTable("appointments", {
   originId: uuid("origin_id"), // Points to doctorScheduleRules.id or doctorScheduleExceptions.id
   originVersion: integer("origin_version"), // Tracks version of rule/exception at expansion time
   
+  // Twilio Video Recording (AI-powered post-call report generation)
+  recordingSid: varchar("recording_sid", { length: 255 }), // Twilio Recording SID
+  recordingUrl: text("recording_url"), // URL to download recording
+  recordingStatus: varchar("recording_status", { length: 20 }), // processing, completed, failed, null
+  recordingDuration: integer("recording_duration"), // Duration in seconds
+  
+  // AI-Generated Medical Report (post-call)
+  transcription: text("transcription"), // Whisper transcription of the call
+  aiGeneratedReport: text("ai_generated_report"), // AI-generated medical report
+  doctorEditedReport: text("doctor_edited_report"), // Doctor's edited version of the report
+  reportStatus: varchar("report_status", { length: 20 }), // draft, pending_review, approved, sent
+  reportGeneratedAt: timestamp("report_generated_at"), // When AI generated the report
+  reportSentAt: timestamp("report_sent_at"), // When doctor sent the report to patient
+  reportAttachments: jsonb("report_attachments"), // Array of {fileName, fileUrl, fileSize} for doctor attachments
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [

@@ -47,7 +47,8 @@ async function getCredentialsFromReplit() {
     accountSid: connectionSettings.settings.account_sid,
     apiKey: connectionSettings.settings.api_key,
     apiKeySecret: connectionSettings.settings.api_key_secret,
-    phoneNumber: connectionSettings.settings.phone_number
+    phoneNumber: connectionSettings.settings.phone_number,
+    authToken: connectionSettings.settings.auth_token || process.env.TWILIO_AUTH_TOKEN
   };
 }
 
@@ -65,7 +66,8 @@ function getCredentialsFromEnv() {
     accountSid,
     apiKey,
     apiKeySecret,
-    phoneNumber
+    phoneNumber,
+    authToken: process.env.TWILIO_AUTH_TOKEN
   };
 }
 
@@ -99,10 +101,11 @@ export async function getTwilioFromPhoneNumber() {
 }
 
 export async function getTwilioVideoCredentials() {
-  const { accountSid, apiKey, apiKeySecret } = await getCredentials();
+  const { accountSid, apiKey, apiKeySecret, authToken } = await getCredentials();
   return {
     accountSid,
     apiKeySid: apiKey,
-    apiKeySecret
+    apiKeySecret,
+    authToken
   };
 }

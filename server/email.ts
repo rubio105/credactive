@@ -54,12 +54,17 @@ function sanitizeUserInput(input: string | undefined): string {
 
 // Helper function to get base URL for emails
 function getBaseUrl(): string {
-  // Priority: BASE_URL env var > Replit domain > localhost fallback
+  // Priority: BASE_URL env var > Production domain > Replit domain > localhost fallback
   if (process.env.BASE_URL) {
     return process.env.BASE_URL;
   }
   
-  // Auto-detect Replit domain in production
+  // Use production domain if NODE_ENV is production
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://ciry.app';
+  }
+  
+  // Auto-detect Replit domain in development
   if (process.env.REPLIT_DOMAINS) {
     const domains = process.env.REPLIT_DOMAINS.split(',').filter(Boolean);
     if (domains.length > 0) {

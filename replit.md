@@ -55,7 +55,10 @@ Complete automated workflow for generating, editing, and distributing AI-powered
 1. **Auto-Recording**: Twilio Video automatically records all teleconsult calls (enabled via `recordParticipantsOnConnect: true`)
 2. **Report Generation**: Doctor triggers AI report generation from completed appointments via `AIReportDialog` component
 3. **Transcription**: Backend downloads Twilio recording via REST API, transcribes using OpenAI Whisper (whisper-1 model)
-4. **AI Analysis**: Gemini AI (`gemini-2.5-flash`) generates structured medical report from transcription
+4. **AI Analysis**: Gemini AI (`gemini-2.5-pro`) generates **structured medical report** with THREE mandatory sections:
+   - **Sintesi Diagnostica**: Visit reason, relevant medical history, clinical observations, diagnosis
+   - **Proposta Terapeutica**: Pharmacological therapy (drugs, dosages, contraindications), non-pharmacological therapy (lifestyle changes), warnings
+   - **Piano di Follow-up**: Diagnostic exams, scheduled visits, monitoring objectives
 5. **Doctor Review**: Doctor edits AI-generated content in rich text editor before finalizing
 6. **Distribution**: Final report saved to patient's `mlTrainingData` (dataType='teleconsult_report'), sent via email (Brevo) and WhatsApp (Twilio)
 
@@ -83,6 +86,8 @@ Complete automated workflow for generating, editing, and distributing AI-powered
 - Twilio API Keys must be from **US1 region** (IE1/Ireland keys fail authentication)
 - Recording download requires `TWILIO_AUTH_TOKEN` in addition to API Key credentials
 - All reports stored as `mlTrainingData` for Active Learning ML training pipeline
+- Production email links use `https://ciry.app` (configured via `NODE_ENV=production` check in `getBaseUrl()`)
+- Appointment confirmation emails include prominent reminder box encouraging patients to upload medical documents before visits
 
 ## System Design Choices
 

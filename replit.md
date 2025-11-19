@@ -48,6 +48,42 @@ Patients can register via doctor-provided referral links, automatically linking 
 ### Twilio Video Integration (Embedded Video Calls)
 CIRY features fully embedded video calls using Twilio Video, enabling in-app video consultations with a brandable UI. The backend provides secure access tokens, and the frontend `VideoCallRoom` component manages video/audio tracks and participant handling.
 
+### AI Medical Report Generation (Teleconsult Reports)
+Complete automated workflow for generating, editing, and distributing AI-powered medical reports from teleconsult video calls:
+
+**Technical Workflow:**
+1. **Auto-Recording**: Twilio Video automatically records all teleconsult calls (enabled via `recordParticipantsOnConnect: true`)
+2. **Report Generation**: Doctor triggers AI report generation from completed appointments via `AIReportDialog` component
+3. **Transcription**: Backend downloads Twilio recording via REST API, transcribes using OpenAI Whisper (whisper-1 model)
+4. **AI Analysis**: Gemini AI (`gemini-2.5-flash`) generates structured medical report from transcription
+5. **Doctor Review**: Doctor edits AI-generated content in rich text editor before finalizing
+6. **Distribution**: Final report saved to patient's `mlTrainingData` (dataType='teleconsult_report'), sent via email (Brevo) and WhatsApp (Twilio)
+
+**Database Schema Extensions:**
+- `appointments.recordingSid`: Twilio recording identifier
+- `appointments.recordingUrl`: Public URL for audio file
+- `appointments.transcription`: Full Whisper transcription text
+- `appointments.aiGeneratedReport`: Raw AI output from Gemini
+- `appointments.doctorEditedReport`: Final version after doctor review
+- `appointments.reportStatus`: Workflow state (null → 'generated' → 'reviewed' → 'sent')
+- `appointments.reportSentAt`: Distribution timestamp
+
+**API Endpoints:**
+- `POST /api/appointments/:id/generate-report`: Downloads recording, transcribes, generates AI report
+- `GET /api/appointments/:id/report`: Retrieves existing report data
+- `PUT /api/appointments/:id/report`: Saves doctor edits
+- `POST /api/appointments/:id/report/send`: Finalizes and distributes report to patient
+- `GET /api/appointments/teleconsult-reports`: Patient-facing endpoint for viewing received reports
+
+**UI Components:**
+- `AIReportDialog.tsx`: Doctor interface for generate/edit/send workflow with tabs for AI output vs transcription
+- Patient Appointments page: Displays received teleconsult reports with detail dialog showing full content
+
+**Critical Configuration:**
+- Twilio API Keys must be from **US1 region** (IE1/Ireland keys fail authentication)
+- Recording download requires `TWILIO_AUTH_TOKEN` in addition to API Key credentials
+- All reports stored as `mlTrainingData` for Active Learning ML training pipeline
+
 ## System Design Choices
 
 ### Security Audit

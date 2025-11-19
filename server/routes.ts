@@ -49,7 +49,7 @@ import passport from "passport";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
 import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail, sendAppointmentBookedToDoctorEmail, sendAppointmentConfirmedToPatientEmail, sendAppointmentCancelledToPatientEmail } from "./email";
-import { sendWhatsAppMessage } from "./twilio";
+import { sendWhatsAppMessage, sendWhatsAppTemplate } from "./twilio";
 import { sendPendingReminders } from "./appointmentReminderService";
 import { z } from "zod";
 import { generateQuizReport, generateInsightDiscoveryReport } from "./reportGenerator";
@@ -13848,20 +13848,27 @@ Il team CIRY`;
   });
 
   // Request WhatsApp number verification (send OTP code)
-  app.post('/api/user/whatsapp/request-verification', isAuthenticated, async (req, res) => {
+  app.post('/api/user/whatsapp/request-verification', isAuthenticated, authLimiter, async (req, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
-      const { whatsappNumber } = req.body;
 
-      console.log(`[WhatsApp Verification] Request received for user ${userId}, number: ${whatsappNumber}`);
+      // Validate request body with Zod
+      const whatsappVerificationSchema = z.object({
+        whatsappNumber: z.string()
+          .regex(/^\+\d{1,15}$/, 'Numero WhatsApp non valido. Deve iniziare con + seguito da 1-15 cifre (es: +393494645096)')
+          .refine(num => num.length >= 10, 'Numero troppo corto')
+      });
 
-      // Validate phone number format (should start with +)
-      if (!whatsappNumber || !whatsappNumber.startsWith('+')) {
-        console.log('[WhatsApp Verification] Invalid phone number format');
+      const validation = whatsappVerificationSchema.safeParse(req.body);
+      if (!validation.success) {
+        console.log('[WhatsApp Verification] Validation failed:', validation.error.errors);
         return res.status(400).json({ 
-          message: 'Numero WhatsApp non valido. Deve iniziare con + seguito dal prefisso internazionale (es: +39...)' 
+          message: validation.error.errors[0].message 
         });
       }
+
+      const { whatsappNumber } = validation.data;
+      console.log(`[WhatsApp Verification] Request received for user ${userId}, number: ${whatsappNumber}`);
 
       // Generate 6-digit OTP code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -13870,9 +13877,46 @@ Il team CIRY`;
       const expiryDate = new Date();
       expiryDate.setMinutes(expiryDate.getMinutes() + 5);
 
-      console.log(`[WhatsApp Verification] Generated OTP code for user ${userId}`);
+      console.log(`[WhatsApp Verification] Generated OTP code: ${verificationCode} for user ${userId}`);
 
-      // Save code to database
+      // FIRST: Try to send OTP via WhatsApp using approved template
+      console.log(`[WhatsApp Verification] Attempting to send WhatsApp template to ${whatsappNumber}`);
+      let result = await sendWhatsAppTemplate(
+        whatsappNumber,
+        'HX229f5a04fd0510ce1b071852155d3e75', // Approved WhatsApp template for OTP
+        { '1': verificationCode }
+      );
+      
+      // Fallback: If template fails, try free-form message
+      if (!result.success) {
+        console.warn('[WhatsApp Verification] Template failed, falling back to free-form message');
+        const fallbackMessage = `🔐 *Verifica WhatsApp CIRY*\n\n` +
+          `Il tuo codice di verifica è: *${verificationCode}*\n\n` +
+          `Il codice scade tra 5 minuti.\n\n` +
+          `Se non hai richiesto questa verifica, ignora questo messaggio.`;
+        
+        result = await sendWhatsAppMessage(whatsappNumber, fallbackMessage);
+      }
+      
+      // If both methods failed, return sanitized error
+      if (!result.success) {
+        console.error('[WhatsApp Verification] All send attempts failed:', result.error);
+        
+        // Sanitize error message for user
+        let userMessage = 'Impossibile inviare il codice WhatsApp. ';
+        if (result.error?.includes('21408') || result.error?.includes('non autorizzato')) {
+          userMessage += 'Il numero non è autorizzato. Se stai usando il Sandbox, invia prima "join [codice]" al numero +14155238886.';
+        } else if (result.error?.includes('21211') || result.error?.includes('non valido')) {
+          userMessage += 'Verifica che il numero sia corretto (formato: +39...).';
+        } else {
+          userMessage += 'Riprova tra qualche minuto.';
+        }
+        
+        return res.status(500).json({ message: userMessage });
+      }
+
+      // SECOND: Only save to database AFTER successful send
+      console.log(`[WhatsApp Verification] WhatsApp sent successfully (SID: ${result.sid}), saving to database...`);
       await storage.updateUser(userId, {
         whatsappNumber,
         whatsappVerificationCode: verificationCode,
@@ -13881,25 +13925,7 @@ Il team CIRY`;
         whatsappNotificationsEnabled: false,
       });
 
-      console.log(`[WhatsApp Verification] Saved OTP to database for user ${userId}`);
-
-      // Send OTP via WhatsApp
-      const message = `🔐 *Verifica WhatsApp CIRY*\n\n` +
-        `Il tuo codice di verifica è: *${verificationCode}*\n\n` +
-        `Il codice scade tra 5 minuti.\n\n` +
-        `Se non hai richiesto questa verifica, ignora questo messaggio.`;
-
-      console.log(`[WhatsApp Verification] Attempting to send WhatsApp message to ${whatsappNumber}`);
-      const result = await sendWhatsAppMessage(whatsappNumber, message);
-      
-      if (!result.success) {
-        console.error('[WhatsApp Verification] Failed to send OTP:', result.error);
-        return res.status(500).json({ 
-          message: `Errore nell'invio del codice WhatsApp: ${result.error || 'Verifica che il numero sia corretto e che Twilio sia configurato.'}`
-        });
-      }
-
-      console.log(`[WhatsApp Verification] OTP sent successfully to ${whatsappNumber} for user ${userId}, SID: ${result.sid}`);
+      console.log(`[WhatsApp Verification] OTP saved and sent successfully to ${whatsappNumber} for user ${userId}`);
       res.json({ 
         success: true, 
         message: 'Codice di verifica inviato via WhatsApp',

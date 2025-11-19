@@ -33,6 +33,14 @@ A comprehensive Admin Dashboard (`/admin`) facilitates user, subscription, medic
 ### Communication & Notifications
 The platform integrates an email notification queue, real-time push and in-app notifications, and WhatsApp notifications for critical alerts and appointment reminders. It features voice-enabled AI chat using OpenAI Whisper and TTS, and a Teleconsulto system with doctor availability, smart slot picking, patient booking, automated notifications, and embedded Twilio Video calls for in-app video consultations.
 
+**WhatsApp Notification System:**
+- **OTP Verification**: Uses approved WhatsApp Content Template `HX229f5a04fd0510ce1b071852155d3e75` for sending verification codes
+- **Fallback Mechanism**: If template fails, automatically falls back to free-form WhatsApp messages
+- **Sandbox Support**: Development environment uses Twilio Sandbox WhatsApp number (`+14155238886`)
+- **Security**: Rate-limited endpoint (`authLimiter`), Zod validation for phone numbers (international format), sanitized error messages
+- **Robustness**: Messages sent BEFORE saving codes to database, preventing undelivered-but-valid codes
+- **Notifications**: General WhatsApp notifications (appointments, alerts) use free-form messages via `sendWhatsAppMessage()`
+
 ### Appointment Management System
 The Doctor appointments page (`/appointments`) includes tabs for managing booked, available, and completed appointments, a monthly calendar view, and weekly schedule management for recurring availability slots.
 

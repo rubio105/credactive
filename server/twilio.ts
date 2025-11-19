@@ -138,6 +138,59 @@ export async function sendWhatsAppMessage(to: string, message: string): Promise<
   }
 }
 
+export async function sendWhatsAppTemplate(
+  to: string, 
+  contentSid: string, 
+  contentVariables: Record<string, string>
+): Promise<{ success: boolean; sid?: string; error?: string }> {
+  try {
+    const client = await getTwilioClient();
+    let fromNumber = await getTwilioFromPhoneNumber();
+    
+    // If no phone number configured, use Twilio Sandbox WhatsApp number
+    if (!fromNumber || fromNumber === 'Not configured') {
+      fromNumber = '+14155238886'; // Twilio Sandbox WhatsApp number
+      console.log('[WhatsApp Template] Using Twilio Sandbox WhatsApp number');
+    }
+    
+    // WhatsApp requires "whatsapp:" prefix
+    const fromWhatsApp = fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`;
+    const toWhatsApp = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
+    
+    console.log(`[WhatsApp Template] Sending template ${contentSid} from ${fromWhatsApp} to ${toWhatsApp}`);
+    console.log(`[WhatsApp Template] Variables:`, contentVariables);
+    
+    const result = await client.messages.create({
+      from: fromWhatsApp,
+      to: toWhatsApp,
+      contentSid: contentSid,
+      contentVariables: JSON.stringify(contentVariables)
+    });
+    
+    console.log(`[WhatsApp Template] Template sent successfully: ${result.sid}`);
+    return { success: true, sid: result.sid };
+  } catch (error: any) {
+    console.error('[WhatsApp Template] Error sending template:', error);
+    console.error('[WhatsApp Template] Error details:', {
+      message: error.message,
+      code: error.code,
+      moreInfo: error.moreInfo
+    });
+    
+    // Provide more detailed error messages
+    let errorMessage = error.message;
+    if (error.code === 21408) {
+      errorMessage = 'Numero WhatsApp non autorizzato. Se stai usando il Sandbox, devi prima inviare "join [codice]" al numero +14155238886';
+    } else if (error.code === 21211) {
+      errorMessage = 'Numero destinatario non valido. Verifica il formato (+39...)';
+    } else if (error.code === 63007) {
+      errorMessage = 'Numero WhatsApp mittente non configurato correttamente';
+    }
+    
+    return { success: false, error: errorMessage };
+  }
+}
+
 export async function sendSMS(to: string, message: string): Promise<{ success: boolean; sid?: string; error?: string }> {
   try {
     const client = await getTwilioClient();

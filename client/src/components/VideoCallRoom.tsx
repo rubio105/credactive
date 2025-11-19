@@ -71,7 +71,14 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
         localParticipant.videoTracks.forEach(publication => {
           const track = publication.track as LocalVideoTrack;
           if (localVideoRef.current && track) {
-            localVideoRef.current.appendChild(track.attach());
+            const videoElement = track.attach() as HTMLVideoElement;
+            // Safari/iOS compatibility
+            videoElement.setAttribute('autoplay', '');
+            videoElement.setAttribute('muted', '');
+            videoElement.setAttribute('playsinline', '');
+            // Mobile touch events pass-through
+            videoElement.style.pointerEvents = 'none';
+            localVideoRef.current.appendChild(videoElement);
           }
         });
 
@@ -136,8 +143,13 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
       if (track.kind === 'video' && remoteVideoRef.current) {
         const existingElement = remoteVideoRef.current.querySelector(`[data-track-sid="${track.sid}"]`);
         if (!existingElement) {
-          const element = track.attach();
+          const element = track.attach() as HTMLVideoElement;
           element.setAttribute('data-track-sid', track.sid);
+          // Safari/iOS compatibility
+          element.setAttribute('autoplay', '');
+          element.setAttribute('playsinline', '');
+          // Mobile touch events pass-through
+          element.style.pointerEvents = 'none';
           remoteVideoRef.current.appendChild(element);
         }
       } else if (track.kind === 'audio' && remoteVideoRef.current) {

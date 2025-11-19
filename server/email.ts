@@ -2109,3 +2109,84 @@ Il Team CIRY
     textContent,
   });
 }
+
+export async function sendReportEmail(
+  patientEmail: string,
+  patientName: string | undefined,
+  doctorName: string,
+  documentTitle: string,
+  reportContent: string
+): Promise<void> {
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #ffffff; padding: 30px; }
+        .report-box { background: #f8fafc; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .button { display: inline-block; padding: 12px 30px; background: #3b82f6; color: white !important; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🩺 Referto Medico Disponibile</h1>
+        </div>
+        <div class="content">
+          <p>Gentile ${sanitizeUserInput(patientName || 'Paziente')},</p>
+          <p>Il referto del tuo teleconsulto è ora disponibile.</p>
+          
+          <div class="report-box">
+            <p><strong>📄 Titolo:</strong> ${sanitizeUserInput(documentTitle)}</p>
+            <p><strong>👨‍⚕️ Medico:</strong> ${sanitizeUserInput(doctorName)}</p>
+            <p><strong>📅 Data generazione:</strong> ${new Date().toLocaleDateString('it-IT')}</p>
+          </div>
+          
+          <p>Il referto completo è disponibile nella sezione documenti della tua area personale.</p>
+          <p style="text-align: center;">
+            <a href="${getBaseUrl()}/documents" class="button">Visualizza Referto</a>
+          </p>
+          
+          <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
+            <strong>Nota:</strong> Questo referto è stato generato automaticamente con intelligenza artificiale e revisionato dal tuo medico. 
+            Per qualsiasi domanda o chiarimento, contatta il tuo medico.
+          </p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} CIRY - Piattaforma di Prevenzione Sanitaria</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const textContent = `
+REFERTO MEDICO DISPONIBILE
+
+Gentile ${patientName || 'Paziente'},
+
+Il referto del tuo teleconsulto è ora disponibile.
+
+Titolo: ${documentTitle}
+Medico: ${doctorName}
+Data: ${new Date().toLocaleDateString('it-IT')}
+
+Visualizza il referto completo: ${getBaseUrl()}/documents
+
+Nota: Questo referto è stato generato automaticamente con intelligenza artificiale e revisionato dal tuo medico.
+
+Il Team CIRY
+  `;
+  
+  await sendEmail({
+    to: patientEmail,
+    subject: '🩺 Il tuo Referto Medico è Disponibile - CIRY',
+    htmlContent,
+    textContent,
+  });
+}

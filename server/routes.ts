@@ -13049,6 +13049,335 @@ Format as JSON: {
     }
   });
 
+  // Generate AI medical report from recording (doctor only)
+  app.post('/api/appointments/:id/generate-report', isDoctor, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+
+      const appointment = await storage.getAppointmentById(id);
+      if (!appointment) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      if (appointment.doctorId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to access this appointment' });
+      }
+
+      if (!appointment.meetingUrl) {
+        return res.status(400).json({ message: 'Appointment has no video call associated' });
+      }
+
+      // Extract room name from meeting URL (format: /video-call/:roomName)
+      const roomName = appointment.meetingUrl.split('/').pop();
+      if (!roomName) {
+        return res.status(400).json({ message: 'Invalid meeting URL format' });
+      }
+
+      // Get Twilio credentials
+      let accountSid: string;
+      let authToken: string;
+
+      try {
+        const { getTwilioVideoCredentials } = await import('./twilio-client');
+        const credentials = await getTwilioVideoCredentials();
+        accountSid = credentials.accountSid;
+        authToken = credentials.authToken || process.env.TWILIO_AUTH_TOKEN || '';
+      } catch (error: any) {
+        accountSid = process.env.TWILIO_ACCOUNT_SID || '';
+        authToken = process.env.TWILIO_AUTH_TOKEN || '';
+      }
+
+      if (!accountSid || !authToken) {
+        return res.status(500).json({ message: 'Twilio credentials not configured' });
+      }
+
+      const twilioClient = twilio(accountSid, authToken);
+
+      // Get room and recordings
+      const room = await twilioClient.video.rooms(roomName).fetch();
+      const recordings = await twilioClient.video.recordings.list({ 
+        roomSid: room.sid,
+        status: 'completed'
+      });
+
+      if (recordings.length === 0) {
+        return res.status(404).json({ message: 'No completed recordings found for this appointment' });
+      }
+
+      // Get the first recording
+      const recording = recordings[0];
+      const recordingUrl = `https://video.twilio.com/v1/Recordings/${recording.sid}/Media`;
+
+      // Download recording
+      console.log('[AI Report] Downloading recording:', recording.sid);
+      const recordingResponse = await fetch(recordingUrl, {
+        headers: {
+          'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+        }
+      });
+
+      if (!recordingResponse.ok) {
+        throw new Error(`Failed to download recording: ${recordingResponse.statusText}`);
+      }
+
+      const audioBuffer = Buffer.from(await recordingResponse.arrayBuffer());
+
+      // Transcribe with Whisper
+      console.log('[AI Report] Transcribing audio with Whisper...');
+      const { transcribeAudio } = await import('./voice');
+      const transcription = await transcribeAudio(audioBuffer, `appointment-${id}.mp4`);
+
+      // Generate medical report with Gemini
+      console.log('[AI Report] Generating medical report with Gemini...');
+      const { generateGeminiContent } = await import('./gemini');
+      
+      const reportPrompt = `
+Sei un assistente medico AI. Hai ricevuto la trascrizione di una teleconsulto tra un medico e un paziente.
+
+TRASCRIZIONE:
+${transcription}
+
+COMPITO:
+Genera un referto medico professionale in formato strutturato che includa:
+
+1. **Motivo della visita**: breve descrizione del problema o sintomo principale del paziente
+2. **Anamnesi rilevante**: informazioni mediche importanti emerse durante il colloquio
+3. **Esame obiettivo/osservazioni**: cosa il medico ha notato o discusso
+4. **Diagnosi o impressione clinica**: conclusioni preliminari o finali
+5. **Piano terapeutico**: raccomandazioni, prescrizioni, esami suggeriti, follow-up
+6. **Note aggiuntive**: qualsiasi altra informazione rilevante
+
+FORMATO:
+Usa un linguaggio medico professionale ma chiaro. Organizza il referto in sezioni ben definite.
+Non includere informazioni inventate - usa solo ciò che emerge dalla trascrizione.
+Se alcune informazioni non sono disponibili, indica "Non specificato nella conversazione".
+`;
+
+      const aiGeneratedReport = await generateGeminiContent(reportPrompt, 'gemini-2.5-pro');
+
+      // Update appointment with recording info and AI report
+      await storage.updateAppointment(id, {
+        recordingSid: recording.sid,
+        recordingUrl,
+        transcription,
+        aiGeneratedReport,
+        reportStatus: 'pending_review'
+      });
+
+      console.log(`[AI Report] Successfully generated report for appointment ${id}`);
+
+      res.json({
+        success: true,
+        recordingSid: recording.sid,
+        transcription,
+        aiGeneratedReport,
+        reportStatus: 'pending_review'
+      });
+    } catch (error: any) {
+      console.error('[AI Report] Generation error:', error);
+      res.status(500).json({ message: error.message || 'Failed to generate AI report' });
+    }
+  });
+
+  // Get appointment report (doctor only)
+  app.get('/api/appointments/:id/report', isDoctor, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+
+      const appointment = await storage.getAppointmentById(id);
+      if (!appointment) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      if (appointment.doctorId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to access this appointment' });
+      }
+
+      if (!appointment.aiGeneratedReport) {
+        return res.status(404).json({ message: 'No report generated for this appointment yet' });
+      }
+
+      res.json({
+        recordingSid: appointment.recordingSid,
+        recordingUrl: appointment.recordingUrl,
+        transcription: appointment.transcription,
+        aiGeneratedReport: appointment.aiGeneratedReport,
+        doctorEditedReport: appointment.doctorEditedReport,
+        reportStatus: appointment.reportStatus
+      });
+    } catch (error: any) {
+      console.error('[AI Report] Get report error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get appointment report' });
+    }
+  });
+
+  // Update appointment report (doctor edits AI report)
+  app.put('/api/appointments/:id/report', isDoctor, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+      const { doctorEditedReport } = req.body;
+
+      if (!doctorEditedReport || typeof doctorEditedReport !== 'string') {
+        return res.status(400).json({ message: 'Edited report text is required' });
+      }
+
+      const appointment = await storage.getAppointmentById(id);
+      if (!appointment) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      if (appointment.doctorId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to edit this appointment report' });
+      }
+
+      if (!appointment.aiGeneratedReport) {
+        return res.status(400).json({ message: 'No AI report exists to edit' });
+      }
+
+      await storage.updateAppointment(id, {
+        doctorEditedReport,
+        reportStatus: 'reviewed'
+      });
+
+      console.log(`[AI Report] Doctor ${user.id} edited report for appointment ${id}`);
+
+      res.json({
+        success: true,
+        doctorEditedReport,
+        reportStatus: 'reviewed'
+      });
+    } catch (error: any) {
+      console.error('[AI Report] Update report error:', error);
+      res.status(500).json({ message: error.message || 'Failed to update appointment report' });
+    }
+  });
+
+  // Send approved report to patient (creates medical document)
+  app.post('/api/appointments/:id/report/send', isDoctor, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+
+      const appointment = await storage.getAppointmentById(id);
+      if (!appointment) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+
+      if (appointment.doctorId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to send this report' });
+      }
+
+      if (!appointment.patientId) {
+        return res.status(400).json({ message: 'No patient assigned to this appointment' });
+      }
+
+      if (appointment.reportStatus !== 'reviewed') {
+        return res.status(400).json({ message: 'Report must be reviewed before sending to patient' });
+      }
+
+      const finalReport = appointment.doctorEditedReport || appointment.aiGeneratedReport;
+      if (!finalReport) {
+        return res.status(400).json({ message: 'No report available to send' });
+      }
+
+      // Get patient info
+      const patient = await storage.getUser(appointment.patientId);
+      if (!patient) {
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+
+      // Create medical document for patient
+      const documentTitle = `Referto Teleconsulto - ${new Date(appointment.startTime).toLocaleDateString('it-IT')}`;
+      const documentType = 'teleconsult_report';
+      
+      // Store report as a medical document using the ML training data storage
+      // (since we don't have a dedicated documents table, we'll use mlTrainingData as storage)
+      await storage.createMLTrainingData({
+        userId: appointment.patientId,
+        dataType: 'teleconsult_report',
+        sourceType: 'video_call',
+        inputData: {
+          appointmentId: id,
+          doctorId: appointment.doctorId,
+          date: appointment.startTime,
+          transcription: appointment.transcription
+        },
+        outputData: {
+          aiGeneratedReport: appointment.aiGeneratedReport,
+          doctorEditedReport: appointment.doctorEditedReport,
+          finalReport
+        },
+        metadata: {
+          recordingSid: appointment.recordingSid,
+          documentTitle
+        },
+        confidence: 1.0,
+        needsReview: false
+      });
+
+      // Update appointment status
+      await storage.updateAppointment(id, {
+        reportStatus: 'sent'
+      });
+
+      // Send email notification to patient
+      try {
+        const doctorInfo = await storage.getUser(appointment.doctorId);
+        const doctorName = doctorInfo ? `${doctorInfo.firstName} ${doctorInfo.lastName}` : 'Il tuo medico';
+        
+        await sendReportEmail(
+          patient.email,
+          patient.firstName,
+          doctorName,
+          documentTitle,
+          finalReport
+        );
+        console.log(`[AI Report] Email sent to patient ${patient.id}`);
+      } catch (emailError) {
+        console.error('[AI Report] Failed to send email:', emailError);
+        // Continue even if email fails
+      }
+
+      // Send WhatsApp notification if available
+      if (patient.whatsappNumber) {
+        try {
+          const whatsappMessage = `🩺 *CIRY - Nuovo Referto Disponibile*
+
+Gentile ${patient.firstName},
+
+Il tuo referto medico del teleconsulto è ora disponibile nella sezione documenti della tua area personale.
+
+📄 *${documentTitle}*
+
+Accedi all'app per visualizzarlo: ${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://ciry.app'}/documents
+
+Un caro saluto,
+Il team CIRY`;
+
+          await sendWhatsAppMessage(patient.whatsappNumber, whatsappMessage);
+          console.log(`[AI Report] WhatsApp notification sent to patient ${patient.id}`);
+        } catch (whatsappError) {
+          console.error('[AI Report] Failed to send WhatsApp:', whatsappError);
+          // Continue even if WhatsApp fails
+        }
+      }
+
+      console.log(`[AI Report] Report sent to patient ${patient.id} for appointment ${id}`);
+
+      res.json({
+        success: true,
+        reportStatus: 'sent',
+        documentTitle
+      });
+    } catch (error: any) {
+      console.error('[AI Report] Send report error:', error);
+      res.status(500).json({ message: error.message || 'Failed to send report to patient' });
+    }
+  });
+
   // Get appointments summary (doctor only)
   app.get('/api/appointments/summary', isAuthenticated, async (req, res) => {
     try {

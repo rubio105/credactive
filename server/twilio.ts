@@ -23,14 +23,16 @@ async function getCredentials() {
   }
 
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const replIdentity = process.env.REPL_IDENTITY;
+  const xReplitToken = process.env.REPL_IDENTITY 
+    ? 'repl ' + process.env.REPL_IDENTITY 
+    : process.env.WEB_REPL_RENEWAL 
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+    : null;
   
   console.log('[Twilio] Env vars not found, trying Replit Connectors:', {
     hasHostname: !!hostname,
-    hasReplIdentity: !!replIdentity
+    hasToken: !!xReplitToken
   });
-  
-  const xReplitToken = replIdentity ? 'repl ' + replIdentity : null;
 
   if (!xReplitToken || !hostname) {
     console.error('[Twilio] Neither direct env vars nor Replit Connectors available');

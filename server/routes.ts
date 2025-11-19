@@ -13692,10 +13692,10 @@ Il team CIRY`;
         if (!accountSid || !apiKeySid || !apiKeySecret) {
           throw new Error('Incomplete credentials from Replit connection');
         }
-        console.log('[Twilio Video] Using credentials from Replit connection');
+        console.log('[Twilio Video] Credentials loaded successfully (from Replit or env vars)');
       } catch (error: any) {
         // Fallback to env vars if Replit connection fails
-        console.log('[Twilio Video] Using credentials from env vars');
+        console.log('[Twilio Video] Using fallback env vars');
         accountSid = process.env.TWILIO_ACCOUNT_SID || '';
         apiKeySid = process.env.TWILIO_API_KEY_SID || '';
         apiKeySecret = process.env.TWILIO_API_KEY_SECRET || '';
@@ -13712,7 +13712,8 @@ Il team CIRY`;
       }
 
       // Create or get existing room with recording enabled
-      const twilioClient = twilio(accountSid, authToken || apiKeySecret);
+      // CRITICAL: Use API Key authentication format (not AccountSid + AuthToken)
+      const twilioClient = twilio(apiKeySid, apiKeySecret, { accountSid: accountSid });
       let room;
       
       try {

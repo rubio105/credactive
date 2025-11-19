@@ -276,12 +276,12 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
       </Card>
 
       {/* Controls */}
-      <div className="flex justify-center items-center gap-4">
+      <div className="flex justify-center items-center gap-4 relative z-50">
         <Button
           variant={isAudioEnabled ? "outline" : "destructive"}
           size="lg"
           onClick={toggleAudio}
-          className="w-14 h-14 rounded-full"
+          className="w-14 h-14 rounded-full relative z-50"
           data-testid="button-toggle-audio"
         >
           {isAudioEnabled ? (
@@ -295,7 +295,7 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
           variant={isVideoEnabled ? "outline" : "destructive"}
           size="lg"
           onClick={toggleVideo}
-          className="w-14 h-14 rounded-full"
+          className="w-14 h-14 rounded-full relative z-50"
           data-testid="button-toggle-video"
         >
           {isVideoEnabled ? (
@@ -309,7 +309,7 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
           variant="destructive"
           size="lg"
           onClick={handleLeaveRoom}
-          className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700"
+          className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 relative z-50"
           data-testid="button-leave-call"
         >
           <PhoneOff className="w-6 h-6" />

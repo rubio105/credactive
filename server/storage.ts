@@ -4677,6 +4677,8 @@ export class DatabaseStorage implements IStorage {
     const meetingRoomId = `ciry-${appointmentId}-${Date.now()}`;
     const meetingUrl = `https://meet.jit.si/${meetingRoomId}`;
     
+    // Optimistic lock: only update if status is 'available'
+    // This prevents race conditions when two patients try to book the same slot
     const [updated] = await db.update(appointments)
       .set({
         patientId,
@@ -4685,8 +4687,19 @@ export class DatabaseStorage implements IStorage {
         meetingUrl,
         updatedAt: new Date(),
       })
-      .where(eq(appointments.id, appointmentId))
+      .where(
+        and(
+          eq(appointments.id, appointmentId),
+          eq(appointments.status, 'available')  // Atomic check-and-set
+        )
+      )
       .returning();
+    
+    // If no row was updated, the slot was already booked by someone else
+    if (!updated) {
+      throw new Error('Questo slot non è più disponibile. Scegli un altro orario.');
+    }
+    
     return updated;
   }
 

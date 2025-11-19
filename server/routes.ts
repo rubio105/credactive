@@ -12901,6 +12901,10 @@ Format as JSON: {
       res.json(booked);
     } catch (error: any) {
       console.error('Book appointment error:', error);
+      // Return 409 Conflict if slot is no longer available (optimistic lock failed)
+      if (error.message && error.message.includes('non è più disponibile')) {
+        return res.status(409).json({ message: error.message });
+      }
       res.status(500).json({ message: error.message || 'Failed to book appointment' });
     }
   });
@@ -15106,6 +15110,24 @@ Fornisci:
       } catch (contextError) {
         console.error('Failed to build patient context:', contextError);
         // Continue without context - don't fail the booking
+      }
+
+      // Check for overlapping appointments (prevent obvious conflicts)
+      const overlapCheck = await db.execute(sql`
+        SELECT id FROM appointments
+        WHERE doctor_id = ${doctorId}
+          AND status NOT IN ('cancelled', 'completed')
+          AND (
+            (start_time <= ${startTime} AND end_time > ${startTime})
+            OR (start_time < ${endTime} AND end_time >= ${endTime})
+            OR (start_time >= ${startTime} AND end_time <= ${endTime})
+          )
+      `);
+
+      if (overlapCheck.rows.length > 0) {
+        return res.status(409).json({ 
+          message: 'Il dottore ha già un appuntamento in questo orario. Scegli un orario diverso.' 
+        });
       }
 
       // Generate video room URL for video or both appointments

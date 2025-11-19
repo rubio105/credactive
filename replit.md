@@ -44,6 +44,12 @@ The platform integrates an email notification queue, real-time push and in-app n
 ### Appointment Management System
 The Doctor appointments page (`/appointments`) includes tabs for managing booked, available, and completed appointments, a monthly calendar view, and weekly schedule management for recurring availability slots.
 
+**Double-Booking Prevention:**
+- **Optimistic Locking**: `bookAppointment()` uses atomic UPDATE with `WHERE status = 'available'` to prevent race conditions when multiple patients attempt to book the same slot simultaneously
+- **Overlap Detection**: Direct teleconsult bookings (`/api/appointments/book-teleconsult`) check for overlapping appointments before creation
+- **Database Constraint**: Unique constraint `unique_doctor_time` on `(doctorId, startTime)` prevents duplicate slots
+- **Error Handling**: Returns HTTP 409 Conflict when slot is no longer available, with Italian user-friendly message
+
 ### ML Training Data Collection System (Active Learning)
 An architecture captures all platform interactions as `mlTrainingData` to train proprietary ML models, supporting a 12-month migration.
 

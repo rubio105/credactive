@@ -13139,19 +13139,48 @@ TRASCRIZIONE:
 ${transcription}
 
 COMPITO:
-Genera un referto medico professionale in formato strutturato che includa:
+Genera un referto medico professionale in formato strutturato che DEVE includere le seguenti sezioni obbligatorie:
 
-1. **Motivo della visita**: breve descrizione del problema o sintomo principale del paziente
-2. **Anamnesi rilevante**: informazioni mediche importanti emerse durante il colloquio
-3. **Esame obiettivo/osservazioni**: cosa il medico ha notato o discusso
-4. **Diagnosi o impressione clinica**: conclusioni preliminari o finali
-5. **Piano terapeutico**: raccomandazioni, prescrizioni, esami suggeriti, follow-up
-6. **Note aggiuntive**: qualsiasi altra informazione rilevante
+## 1. SINTESI DIAGNOSTICA
+- Motivo della visita
+- Anamnesi rilevante (patologie pregresse, allergie, farmaci in uso)
+- Esame obiettivo/osservazioni cliniche
+- Diagnosi o impressione clinica
 
-FORMATO:
-Usa un linguaggio medico professionale ma chiaro. Organizza il referto in sezioni ben definite.
-Non includere informazioni inventate - usa solo ciò che emerge dalla trascrizione.
-Se alcune informazioni non sono disponibili, indica "Non specificato nella conversazione".
+## 2. PROPOSTA TERAPEUTICA
+**IMPORTANTE**: Questa sezione DEVE essere sempre presente e includere:
+
+**Terapia Farmacologica (se indicata):**
+- Nome farmaco, dosaggio, via di somministrazione, frequenza
+- Durata del trattamento
+- Note su possibili interazioni o controindicazioni
+
+**Terapia Non Farmacologica:**
+- Modifiche dello stile di vita (dieta, attività fisica, etc.)
+- Consigli comportamentali
+- Interventi complementari
+
+**Avvertenze:**
+- Effetti collaterali da monitorare
+- Controindicazioni specifiche
+- Quando contattare il medico
+
+## 3. PIANO DI FOLLOW-UP
+- Esami diagnostici da effettuare (con tempistiche)
+- Visite di controllo programmate
+- Obiettivi terapeutici da monitorare
+- Indicazioni per il prossimo consulto
+
+## NOTE AGGIUNTIVE
+- Qualsiasi altra informazione rilevante per la continuità delle cure
+
+ISTRUZIONI CRITICHE:
+1. Usa linguaggio medico professionale ma comprensibile al paziente
+2. NON inventare informazioni - usa SOLO ciò che emerge dalla trascrizione
+3. Se informazioni mancano, scrivi "Da valutare in base alla risposta del paziente" o "Da definire in visita di controllo"
+4. Se non emerge alcuna indicazione terapeutica, scrivi nella sezione PROPOSTA TERAPEUTICA: "Nessuna terapia farmacologica indicata al momento. Continua monitoraggio sintomi."
+5. Evidenzia chiaramente eventuali urgenze o red flags
+6. Ricorda che questo referto sarà REVISIONATO dal medico prima dell'invio al paziente
 `;
 
       const aiGeneratedReport = await generateGeminiContent(reportPrompt, 'gemini-2.5-pro');

@@ -45,6 +45,11 @@ Includes a dashboard for trending BP/HR data, device management, Web Bluetooth A
 ### Patient Registration
 Patients can register via doctor-provided referral links, automatically linking them to their doctor post-email verification. Registration requires privacy consents, and an invite-only mode can be configured.
 
+**Role Assignment Logic**:
+- Patients registering **with doctor referral code**: `aiOnlyAccess = false` (full patient access to all platform features)
+- Patients registering **without referral code**: `aiOnlyAccess = true` (AI Prevention mode - restricted access)
+- Current setting: `INVITE_ONLY_MODE = false` (registration enabled for all users)
+
 ### Twilio Video Integration (Embedded Video Calls)
 CIRY features fully embedded video calls using Twilio Video, enabling in-app video consultations with a brandable UI. The backend provides secure access tokens, and the frontend `VideoCallRoom` component manages video/audio tracks and participant handling.
 

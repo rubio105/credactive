@@ -619,7 +619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           companyName,
           corporateAgreementId,
           pendingDoctorCode: isDoctor === false && doctorCode ? doctorCode.trim().toUpperCase() : null, // Store referral code until email verification
-          aiOnlyAccess: true, // All new users are AI-only by default
+          aiOnlyAccess: !(isDoctor === false && doctorCode), // Patients with doctor referral get full access, others get AI-only
         });
       } catch (error) {
         // If user creation failed but we reserved a slot, release it

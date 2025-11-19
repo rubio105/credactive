@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export function AIReportDialog({ appointmentId, isOpen, onClose, onReportSent }:
   });
 
   // Initialize edited report when data loads
-  useState(() => {
+  useEffect(() => {
     if (reportData?.doctorEditedReport) {
       setEditedReport(reportData.doctorEditedReport);
     } else if (reportData?.aiGeneratedReport) {

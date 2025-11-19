@@ -13395,6 +13395,35 @@ Il team CIRY`;
     }
   });
 
+  // Get patient's teleconsult medical reports
+  app.get('/api/appointments/teleconsult-reports', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user.claims?.sub || user.id;
+
+      // Get all teleconsult reports for this patient
+      const reports = await storage.getMLTrainingDataByUser(userId, 'teleconsult_report');
+
+      // Format reports for frontend
+      const formattedReports = reports.map((report: any) => ({
+        id: report.id,
+        title: report.metadata?.documentTitle || 'Referto Teleconsulto',
+        date: report.inputData?.date || report.createdAt,
+        appointmentId: report.inputData?.appointmentId,
+        doctorId: report.inputData?.doctorId,
+        report: report.outputData?.finalReport || report.outputData?.doctorEditedReport || report.outputData?.aiGeneratedReport,
+        transcription: report.inputData?.transcription,
+        recordingSid: report.metadata?.recordingSid,
+        createdAt: report.createdAt
+      }));
+
+      res.json(formattedReports);
+    } catch (error: any) {
+      console.error('[Teleconsult Reports] Get reports error:', error);
+      res.status(500).json({ message: error.message || 'Failed to get teleconsult reports' });
+    }
+  });
+
   // Admin: Toggle appointments feature
   app.post('/api/admin/settings/appointments/toggle', isAdmin, async (req, res) => {
     try {

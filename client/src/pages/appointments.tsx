@@ -3,11 +3,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Clock, User, Video, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Video, CheckCircle, XCircle, AlertCircle, FileText, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -33,12 +33,26 @@ type Appointment = {
   };
 };
 
+type TeleconsultReport = {
+  id: string;
+  title: string;
+  date: string;
+  appointmentId: string;
+  doctorId: string;
+  report: string;
+  transcription?: string;
+  recordingSid?: string;
+  createdAt: string;
+};
+
 export default function AppointmentsPage() {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [bookingNotes, setBookingNotes] = useState("");
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<TeleconsultReport | null>(null);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
   // Check if appointments feature is enabled
   const { data: featureStatus } = useQuery({
@@ -48,6 +62,11 @@ export default function AppointmentsPage() {
   // Get user's appointments
   const { data: myAppointments = [], isLoading: isLoadingMy } = useQuery<Appointment[]>({
     queryKey: ['/api/appointments'],
+  });
+
+  // Get teleconsult reports
+  const { data: teleconsultReports = [], isLoading: isLoadingReports } = useQuery<TeleconsultReport[]>({
+    queryKey: ['/api/appointments/teleconsult-reports'],
   });
 
   // Get available appointments for selected date
@@ -309,6 +328,71 @@ export default function AppointmentsPage() {
         </Card>
       </div>
 
+      {/* Teleconsult Reports Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <Sparkles className="w-5 h-5" />
+            I Miei Referti Teleconsulto
+          </CardTitle>
+          <CardDescription className="text-sm">
+            Referti medici generati dall'AI dopo le videochiamate con il tuo medico
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingReports ? (
+            <div className="space-y-3">
+              {[1,2].map(i => (
+                <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : teleconsultReports.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p className="text-sm font-medium">Nessun referto disponibile</p>
+              <p className="text-xs mt-1">I referti delle tue visite appariranno qui</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {teleconsultReports.map((report) => (
+                <Card 
+                  key={report.id} 
+                  className="p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setSelectedReport(report);
+                    setIsReportDialogOpen(true);
+                  }}
+                  data-testid={`teleconsult-report-${report.id}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
+                        <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm">{report.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(report.date), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
+                        </p>
+                        {report.transcription && (
+                          <Badge variant="secondary" className="mt-2 text-xs">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Generato con AI
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Button size="sm" variant="ghost" data-testid={`button-view-report-${report.id}`}>
+                      Visualizza
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Booking Confirmation Dialog */}
       <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
         <DialogContent data-testid="dialog-booking-confirm">
@@ -364,6 +448,70 @@ export default function AppointmentsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Teleconsult Report Detail Dialog */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto" data-testid="dialog-report-detail">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              {selectedReport?.title}
+            </DialogTitle>
+            <DialogDescription>
+              Referto generato dall'AI e revisionato dal tuo medico
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedReport && (
+            <div className="space-y-4">
+              <div className="flex gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline">
+                  Data: {format(new Date(selectedReport.date), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
+                </Badge>
+                {selectedReport.transcription && (
+                  <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Generato con AI
+                  </Badge>
+                )}
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Referto Medico
+                </h4>
+                <div className="whitespace-pre-wrap text-sm leading-relaxed" data-testid="text-report-content">
+                  {selectedReport.report}
+                </div>
+              </div>
+
+              {selectedReport.transcription && (
+                <details className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border">
+                  <summary className="font-semibold cursor-pointer text-sm">
+                    📝 Trascrizione conversazione (opzionale)
+                  </summary>
+                  <div className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground max-h-60 overflow-y-auto">
+                    {selectedReport.transcription}
+                  </div>
+                </details>
+              )}
+
+              <p className="text-xs text-muted-foreground border-t pt-3">
+                <strong>Nota:</strong> Questo referto è stato generato automaticamente con intelligenza artificiale 
+                utilizzando la trascrizione della videochiamata e successivamente revisionato dal tuo medico.
+                Per qualsiasi domanda o chiarimento, contatta direttamente il tuo medico.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReportDialogOpen(false)} data-testid="button-close-report-dialog">
+              Chiudi
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

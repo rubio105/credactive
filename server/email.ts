@@ -1996,6 +1996,24 @@ export async function sendAppointmentConfirmedToPatientEmail(
             </div>
           ` : ''}
           
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0 0 10px 0;"><strong>📋 Importante: Carica i tuoi documenti</strong></p>
+            <p style="margin: 0; font-size: 14px;">
+              Per una visita più efficace, ricordati di caricare i tuoi documenti medici prima dell'appuntamento:
+            </p>
+            <ul style="margin: 10px 0 0 20px; font-size: 14px;">
+              <li>Esami del sangue recenti</li>
+              <li>Referti medici precedenti</li>
+              <li>Radiografie o ecografie</li>
+              <li>Lista farmaci in uso</li>
+            </ul>
+            <p style="text-align: center; margin-top: 15px;">
+              <a href="${getBaseUrl()}/medical-records" style="display: inline-block; padding: 10px 20px; background: #f59e0b; color: white !important; text-decoration: none; border-radius: 6px; font-size: 14px;">
+                Carica Documenti Ora
+              </a>
+            </p>
+          </div>
+          
           <p>Si ricordi di presentarsi puntuale all'appuntamento.</p>
           <p style="text-align: center;">
             <a href="${getBaseUrl()}/appointments" class="button">Vedi i Miei Appuntamenti</a>
@@ -2022,7 +2040,15 @@ Orario: ${appointmentTime}
 ${meetingUrl ? `Accedi alla videocall: ${getBaseUrl()}/teleconsulto` : ''}
 ${studioAddress ? `Indirizzo studio: ${studioAddress}` : ''}
 
-Vedi i tuoi appuntamenti: ${getBaseUrl()}/appointments
+📋 IMPORTANTE: CARICA I TUOI DOCUMENTI
+Per una visita più efficace, carica prima dell'appuntamento:
+- Esami del sangue recenti
+- Referti medici precedenti
+- Radiografie o ecografie
+- Lista farmaci in uso
+
+Carica documenti: ${getBaseUrl()}/medical-records
+Vedi appuntamenti: ${getBaseUrl()}/appointments
 
 Il Team CIRY
   `;

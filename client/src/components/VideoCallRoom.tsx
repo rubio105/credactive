@@ -76,8 +76,6 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
             videoElement.setAttribute('autoplay', '');
             videoElement.setAttribute('muted', '');
             videoElement.setAttribute('playsinline', '');
-            // Mobile touch events pass-through
-            videoElement.style.pointerEvents = 'none';
             localVideoRef.current.appendChild(videoElement);
           }
         });
@@ -148,8 +146,6 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
           // Safari/iOS compatibility
           element.setAttribute('autoplay', '');
           element.setAttribute('playsinline', '');
-          // Mobile touch events pass-through
-          element.style.pointerEvents = 'none';
           remoteVideoRef.current.appendChild(element);
         }
       } else if (track.kind === 'audio' && remoteVideoRef.current) {

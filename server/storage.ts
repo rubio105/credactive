@@ -4612,20 +4612,33 @@ export class DatabaseStorage implements IStorage {
       conditions.push(lte(appointments.startTime, endDate));
     }
     
-    const appointmentsList = await db.select()
+    const appointmentsList = await db.select({
+      appointment: appointments,
+      patient: users,
+    })
       .from(appointments)
+      .leftJoin(users, eq(appointments.patientId, users.id))
       .where(and(...conditions))
       .orderBy(asc(appointments.startTime));
     
     // Fetch attachments for each appointment
     const appointmentsWithAttachments = await Promise.all(
-      appointmentsList.map(async (apt) => {
+      appointmentsList.map(async (row) => {
         const attachments = await db.select()
           .from(appointmentAttachments)
-          .where(eq(appointmentAttachments.appointmentId, apt.id));
+          .where(eq(appointmentAttachments.appointmentId, row.appointment.id));
         
         return {
-          ...apt,
+          ...row.appointment,
+          patient: row.patient?.id ? {
+            id: row.patient.id,
+            firstName: row.patient.firstName,
+            lastName: row.patient.lastName,
+            email: row.patient.email,
+            phone: row.patient.phone,
+            dateOfBirth: row.patient.dateOfBirth,
+            gender: row.patient.gender,
+          } : null,
           attachments
         };
       })

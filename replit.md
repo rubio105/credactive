@@ -95,6 +95,11 @@ Patients can register via doctor-provided referral links, automatically linking 
 ### Twilio Video Integration (Embedded Video Calls)
 CIRY features fully embedded video calls using Twilio Video, enabling in-app video consultations with a brandable UI. The backend provides secure access tokens, and the frontend `VideoCallRoom` component manages video/audio tracks and participant handling.
 
+**Video Self-View Mirror:**
+- Local video tracks display mirrored (CSS `transform: scaleX(-1)`) for natural self-viewing experience
+- DOM cleanup before track attachment prevents browser caching issues (Safari/WebKit compatibility)
+- Patients cannot join completed appointments (button hidden when `status='completed'`)
+
 ### AI Medical Report Generation (Teleconsult Reports)
 Complete automated workflow for generating, editing, and distributing AI-powered medical reports from teleconsult video calls:
 
@@ -108,6 +113,14 @@ Complete automated workflow for generating, editing, and distributing AI-powered
    - **Piano di Follow-up**: Diagnostic exams, scheduled visits, monitoring objectives
 5. **Doctor Review**: Doctor edits AI-generated content in rich text editor before finalizing
 6. **Distribution**: Final report saved to patient's `mlTrainingData` (dataType='teleconsult_report'), sent via email (Brevo) and WhatsApp (Twilio)
+
+**Editable Prevention Reports (Report Prevenzione):**
+- **Doctor Workflow**: Post-teleconsult, doctor clicks "Report Prevenzione" → AI generates prevention report from call transcription → Doctor edits text in modal + optionally attaches 1 document (PDF/image, max 10MB) → "Salva e Condividi" sends to patient
+- **Backend**: `POST /api/appointments/:id/generate-prevention-report` generates AI report (rate-limited via `authLimiter`), `POST /api/doctor/notes` (multipart FormData) saves edited report with category "Report Prevenzione"
+- **Patient View**: Reports displayed compressed (first 3 lines) in `/documenti` with orange badge "Report Prevenzione" + expandable "Vedi Piano Completo" button
+- **Backward Compatibility**: Category normalization handles legacy `'prevention_report'` values (lowercase, underscore) → displays as "Report Prevenzione"
+- **Current Limitation**: Max 1 attachment per report (endpoint uses `.single('attachment')`)
+- **Future Enhancement**: Extend to support multiple attachments via `doctorNoteAttachments` table
 
 **Database Schema Extensions:**
 - `appointments.recordingSid`: Twilio recording identifier

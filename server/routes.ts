@@ -12798,6 +12798,9 @@ Format as JSON: {
   
   // Helper function to generate slots from doctor availability
   async function generateSlotsFromAvailability(doctorId?: string, daysAhead: number = 30) {
+    const correlationId = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`[SlotGen:${correlationId}] Starting slot generation for doctorId=${doctorId || 'all'}, daysAhead=${daysAhead}`);
+    
     try {
       // Get all active doctor availabilities (or specific doctor)
       const availabilityQuery = doctorId 
@@ -12805,6 +12808,7 @@ Format as JSON: {
         : sql`SELECT * FROM doctor_availability WHERE is_active = true`;
       
       const availabilityResult = await db.execute(availabilityQuery);
+      console.log(`[SlotGen:${correlationId}] Found ${availabilityResult.rows.length} active availability patterns`);
       
       if (availabilityResult.rows.length === 0) {
         return;
@@ -12850,16 +12854,8 @@ Format as JSON: {
                 continue;
               }
 
-              // Check if slot already exists
-              const existingSlot = await db.execute(sql`
-                SELECT id FROM appointments 
-                WHERE doctor_id = ${doctor_id} 
-                AND start_time = ${slotStart.toISOString()}
-                AND end_time = ${slotEnd.toISOString()}
-              `);
-
-              if (existingSlot.rows.length === 0) {
-                // Create the slot
+              // Use ON CONFLICT DO NOTHING for idempotent insert (prevents duplicate key errors)
+              try {
                 await db.execute(sql`
                   INSERT INTO appointments (
                     doctor_id, 
@@ -12880,7 +12876,10 @@ Format as JSON: {
                     ${appointment_type},
                     ${studio_address}
                   )
+                  ON CONFLICT (doctor_id, start_time) DO NOTHING
                 `);
+              } catch (insertError) {
+                console.error(`[SlotGen:${correlationId}] Failed to insert slot for doctor ${doctor_id} at ${slotStart.toISOString()}:`, insertError);
               }
 
               slotStart = slotEnd;
@@ -12891,20 +12890,24 @@ Format as JSON: {
         }
       }
 
-      console.log(`[Slot Generator] Generated slots for ${doctorId || 'all doctors'} for next ${daysAhead} days`);
+      console.log(`[SlotGen:${correlationId}] Completed slot generation for ${doctorId || 'all doctors'} for next ${daysAhead} days`);
     } catch (error) {
-      console.error('[Slot Generator] Error generating slots:', error);
+      console.error(`[SlotGen:${correlationId}] Error generating slots:`, error);
     }
   }
   
   // Get appointments for current user (doctor or patient)
   app.get('/api/appointments', isAuthenticated, async (req, res) => {
+    const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
       const user = req.user as any;
       const { status, startDate, endDate } = req.query;
+      
+      console.log(`[AppointmentsAPI:${requestId}] userId=${user.id}, isDoctor=${user.isDoctor}, status=${status || 'undefined'}, startDate=${startDate || 'none'}, endDate=${endDate || 'none'}`);
 
       // If patient is requesting available appointments, generate slots first
       if (!user.isDoctor && status === 'available') {
+        console.log(`[AppointmentsAPI:${requestId}] Patient requesting available slots - triggering generation`);
         await generateSlotsFromAvailability();
       }
 
@@ -12914,12 +12917,15 @@ Format as JSON: {
         // Doctor sees all their appointments
         const start = startDate ? new Date(startDate as string) : undefined;
         const end = endDate ? new Date(endDate as string) : undefined;
+        console.log(`[AppointmentsAPI:${requestId}] Fetching doctor appointments`);
         appointments = await storage.getAppointmentsByDoctor(user.id, start, end);
       } else {
         // Patient requesting available appointments sees ALL available slots (not just their own)
         if (status === 'available') {
           const start = startDate ? new Date(startDate as string) : undefined;
           const end = endDate ? new Date(endDate as string) : undefined;
+          
+          console.log(`[AppointmentsAPI:${requestId}] Fetching ALL available slots (not patient-specific)`);
           
           // Get all available appointments (patient_id IS NULL)
           const query = await db.select({
@@ -12948,6 +12954,8 @@ Format as JSON: {
           )
           .orderBy(appointments.startTime);
 
+          console.log(`[AppointmentsAPI:${requestId}] Found ${query.length} available slots`);
+
           // Fetch doctor info for each appointment
           const appointmentsWithDoctors = await Promise.all(
             query.map(async (apt) => {
@@ -12959,13 +12967,40 @@ Format as JSON: {
           appointments = appointmentsWithDoctors;
         } else {
           // Patient sees their own appointments (booked/confirmed/completed)
-          appointments = await storage.getAppointmentsByPatient(user.id, status as string);
+          // When status is undefined, we want ALL patient appointments (not just available ones)
+          console.log(`[AppointmentsAPI:${requestId}] Fetching patient's own appointments (status=${status || 'any'})`);
+          
+          if (status) {
+            appointments = await storage.getAppointmentsByPatient(user.id, status as string);
+          } else {
+            // Get all appointments where this user is the patient (any status except 'available')
+            const query = await db.select()
+              .from(appointments)
+              .where(
+                and(
+                  eq(appointments.patientId, user.id),
+                  sql`${appointments.status} != 'available'` // Exclude available slots
+                )
+              )
+              .orderBy(desc(appointments.startTime));
+            
+            // Fetch doctor info for each appointment
+            const appointmentsWithDoctors = await Promise.all(
+              query.map(async (apt) => {
+                const doctor = await storage.getUserById(apt.doctorId);
+                return { ...apt, doctor };
+              })
+            );
+            
+            appointments = appointmentsWithDoctors;
+          }
         }
       }
 
+      console.log(`[AppointmentsAPI:${requestId}] Returning ${appointments.length} appointments`);
       res.json(appointments);
     } catch (error: any) {
-      console.error('Get appointments error:', error);
+      console.error(`[AppointmentsAPI:${requestId}] Error:`, error);
       res.status(500).json({ message: error.message || 'Failed to get appointments' });
     }
   });

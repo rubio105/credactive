@@ -52,8 +52,8 @@ function sanitizeUserInput(input: string | undefined): string {
   return escapeHtml(input.trim());
 }
 
-// Helper function to get base URL for emails
-function getBaseUrl(): string {
+// Helper function to get base URL for emails and links
+export function getBaseUrl(): string {
   // Priority: BASE_URL env var > Production domain > Replit domain > localhost fallback
   if (process.env.BASE_URL) {
     return process.env.BASE_URL;

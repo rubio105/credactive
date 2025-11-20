@@ -48,7 +48,7 @@ import crypto from "crypto";
 import passport from "passport";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
-import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail, sendAppointmentBookedToDoctorEmail, sendAppointmentConfirmedToPatientEmail, sendAppointmentCancelledToPatientEmail } from "./email";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationCodeEmail, sendCorporateInviteEmail, sendPremiumUpgradeEmail, sendTemplateEmail, sendEmail, sendProhmedInviteEmail, sendDoctorRegistrationRequestEmail, sendAppointmentBookedToDoctorEmail, sendAppointmentConfirmedToPatientEmail, sendAppointmentCancelledToPatientEmail, getBaseUrl } from "./email";
 import { sendWhatsAppMessage, sendWhatsAppTemplate } from "./twilio";
 import { sendPendingReminders } from "./appointmentReminderService";
 import { z } from "zod";
@@ -3241,7 +3241,7 @@ ${JSON.stringify(questionsToTranslate)}`;
       const stripe = await getStripe();
       const session = await stripe.billingPortal.sessions.create({
         customer: user.stripeCustomerId,
-        return_url: `${req.headers.origin || process.env.BASE_URL || 'http://localhost:5000'}/subscribe`,
+        return_url: `${req.headers.origin || getBaseUrl()}/subscribe`,
       });
 
       res.json({ url: session.url });
@@ -8301,8 +8301,7 @@ Explicación de audio:`
           });
           
           // Send email
-          const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
-          const inviteUrl = `${baseUrl}/accept-invite/${token}`;
+          const inviteUrl = `${getBaseUrl()}/accept-invite/${token}`;
           
           await sendCorporateInviteEmail(
             normalizedEmail, 
@@ -8712,8 +8711,7 @@ Explicación de audio:`
 
           const enrollments = await storage.getLiveCourseEnrollmentsByCourseId(session.courseId);
           
-          const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
-          const sessionUrl = `${baseUrl}/live-session/${session.id}`;
+          const sessionUrl = `${getBaseUrl()}/live-session/${session.id}`;
           const startDate = new Date(session.startDate).toLocaleString('it-IT', {
             day: 'numeric',
             month: 'long',
@@ -13411,7 +13409,7 @@ Il tuo referto medico del teleconsulto è ora disponibile nella sezione document
 
 📄 *${documentTitle}*
 
-Accedi all'app per visualizzarlo: ${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://ciry.app'}/documents
+Accedi all'app per visualizzarlo: ${getBaseUrl()}/documents
 
 Un caro saluto,
 Il team CIRY`;
@@ -13753,7 +13751,7 @@ Il team CIRY`;
             uniqueName: roomName,
             type: 'group',
             recordParticipantsOnConnect: true,
-            statusCallback: `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://ciry.app'}/api/video/webhook`
+            statusCallback: `${getBaseUrl()}/api/video/webhook`
           });
           console.log('[Twilio Video] Created room with recording enabled:', roomName, room.sid);
         } catch (createError: any) {

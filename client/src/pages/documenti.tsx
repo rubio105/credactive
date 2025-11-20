@@ -394,7 +394,9 @@ export default function DocumentiPage() {
                   <div className="space-y-4">
                     {doctorNotes.map((note) => {
                       const isExpanded = expandedNotes.has(note.id);
-                      const isPreventionReport = note.category === 'Report Prevenzione';
+                      // Normalize category for backward compatibility (prevention_report → Report Prevenzione)
+                      const normalizedCategory = note.category?.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      const isPreventionReport = normalizedCategory === 'Report Prevenzione' || note.category === 'Report Prevenzione';
                       const preview = note.noteText.split('\n').slice(0, 3).join('\n');
                       const hasMore = note.noteText.length > preview.length;
 

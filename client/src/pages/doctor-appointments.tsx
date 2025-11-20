@@ -1339,11 +1339,10 @@ export default function DoctorAppointmentsPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="attachments">Allega Documenti (opzionale)</Label>
+                <Label htmlFor="attachments">Allega Documento (opzionale - max 1 file)</Label>
                 <Input
                   id="attachments"
                   type="file"
-                  multiple
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
@@ -1400,48 +1399,61 @@ export default function DoctorAppointmentsPage() {
                 try {
                   const apptId = preventionReportAppointmentId!;
                   
-                  // Upload attachments first
-                  for (const file of preventionReportAttachments) {
-                    const formData = new FormData();
-                    formData.append('attachment', file);
-                    formData.append('description', 'Allegato al referto prevenzione');
-                    
-                    await fetch(`/api/appointments/${apptId}/attachments`, {
-                      method: 'POST',
-                      body: formData,
-                      credentials: 'include',
-                    });
-                  }
-                  
                   // Get patient ID from appointment
                   const appointment = appointments.find(a => a.id === apptId);
                   if (!appointment?.patientId) {
                     throw new Error('Paziente non trovato');
                   }
                   
-                  // Save report as doctor note with correct category
-                  await apiRequest(`/api/doctor/notes`, 'POST', {
-                    patientId: appointment.patientId,
-                    noteText: preventionReportContent,
-                    noteTitle: `Report Prevenzione - ${format(new Date(), 'dd/MM/yyyy')}`,
-                    category: 'Report Prevenzione',
-                    isReport: true,
+                  // Use FormData to send report + attachment in single request
+                  const formData = new FormData();
+                  formData.append('patientId', appointment.patientId);
+                  formData.append('noteText', preventionReportContent);
+                  formData.append('noteTitle', `Report Prevenzione - ${format(new Date(), 'dd/MM/yyyy')}`);
+                  formData.append('category', 'Report Prevenzione');
+                  formData.append('isReport', 'true');
+                  
+                  // Add first attachment if present (endpoint supports only 1)
+                  if (preventionReportAttachments.length > 0) {
+                    formData.append('attachment', preventionReportAttachments[0]);
+                  }
+                  
+                  const response = await fetch('/api/doctor/notes', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include',
                   });
+                  
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Errore durante il salvataggio');
+                  }
                   
                   toast({
                     title: "✅ Referto salvato",
-                    description: `Referto salvato con ${preventionReportAttachments.length} allegati`,
+                    description: preventionReportAttachments.length > 0 
+                      ? "Referto salvato con allegato" 
+                      : "Referto salvato",
                   });
                   queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/patient/notes'] });
+                  
+                  // Reset state after successful save
                   setPreventionReportAppointmentId(null);
                   setPreventionReportContent("");
                   setPreventionReportAttachments([]);
                 } catch (error: any) {
+                  console.error('[Prevention Report] Save error:', error);
                   toast({
                     title: "Errore",
                     description: error.message || "Impossibile salvare il referto",
                     variant: "destructive",
                   });
+                  
+                  // CRITICAL: Reset state even on error to prevent stuck dialog
+                  setPreventionReportAppointmentId(null);
+                  setPreventionReportContent("");
+                  setPreventionReportAttachments([]);
                 }
               }} data-testid="button-save-prevention-report">
                 Salva e Condividi

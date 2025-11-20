@@ -54,13 +54,18 @@ The Doctor appointments page (`/appointments`) includes tabs for managing booked
 - **Automatic Generation**: When patient views available appointments (`GET /api/appointments?status=available`):
   - Backend calls `generateSlotsFromAvailability()` to create individual slots for next 30 days
   - Divides availability windows into slot-duration intervals (e.g., 9:00-17:00 with 60min → 9:00-10:00, 10:00-11:00, ..., 16:00-17:00)
+  - Uses `INSERT ... ON CONFLICT (doctor_id, start_time) DO NOTHING` for idempotent, race-safe generation
   - Inserts slots into `appointments` table with `status='available'`, `patient_id=NULL`
-  - Skips slots already existing (no duplicates) and slots in the past
-  - Enforces availability boundaries (no overflow slots beyond end_time)
+  - Skips slots in the past and enforces availability boundaries (no overflow slots beyond end_time)
+  - Structured logging with correlation IDs for production diagnostics
 - **Patient View**: Patients see:
   - Calendar with highlighted days (blue) when slots exist
   - Individual bookable time slots (e.g., "9:00 - 60 min") when clicking a day
   - All available slots from all doctors (not filtered by patient)
+- **Patient Appointments Query**:
+  - `GET /api/appointments` (no params) → returns all patient's booked/confirmed/completed appointments
+  - `GET /api/appointments?status=available` → returns all available slots (all doctors)
+  - `GET /api/appointments?status=confirmed` → returns only confirmed appointments
 
 **Double-Booking Prevention:**
 - **Optimistic Locking**: `bookAppointment()` uses atomic UPDATE with `WHERE status = 'available'` to prevent race conditions when multiple patients attempt to book the same slot simultaneously

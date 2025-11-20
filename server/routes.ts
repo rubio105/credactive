@@ -15299,11 +15299,18 @@ Fornisci:
           `);
 
           // Filter out the available slot we're about to book (others are real conflicts)
-          // Compare timestamps as ISO strings since apt.start_time is a Date object
-          const targetTime = new Date(startTime).toISOString();
+          // Match by start_time AND end_time to ensure exact slot identification
+          const targetStartTime = new Date(startTime).toISOString();
+          const targetEndTime = new Date(endTime).toISOString();
           const realConflicts = overlapCheck.rows.filter((apt: any) => {
-            const aptTime = new Date(apt.start_time).toISOString();
-            return !(apt.status === 'available' && apt.patient_id === null && aptTime === targetTime);
+            const aptStartTime = new Date(apt.start_time).toISOString();
+            const aptEndTime = new Date(apt.end_time).toISOString();
+            // Exclude ONLY the exact available slot we're booking (same start AND end time)
+            const isTargetSlot = apt.status === 'available' && 
+                                 apt.patient_id === null && 
+                                 aptStartTime === targetStartTime && 
+                                 aptEndTime === targetEndTime;
+            return !isTargetSlot;
           });
 
           if (realConflicts.length > 0) {

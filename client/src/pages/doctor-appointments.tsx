@@ -60,6 +60,7 @@ export default function DoctorAppointmentsPage() {
   const [reportAppointmentId, setReportAppointmentId] = useState<string | null>(null);
   const [preventionReportAppointmentId, setPreventionReportAppointmentId] = useState<string | null>(null);
   const [preventionReportContent, setPreventionReportContent] = useState<string>("");
+  const [preventionReportAttachments, setPreventionReportAttachments] = useState<File[]>([]);
   const [activeVideoCall, setActiveVideoCall] = useState<string | null>(null);
   
   // Form state for creating appointment
@@ -1327,14 +1328,32 @@ export default function DoctorAppointmentsPage() {
             </div>
           ) : preventionReportContent ? (
             <div className="space-y-4">
-              <Label htmlFor="prevention-report">Modifica il Referto (puoi editare prima di salvare)</Label>
-              <Textarea
-                id="prevention-report"
-                value={preventionReportContent}
-                onChange={(e) => setPreventionReportContent(e.target.value)}
-                className="min-h-[400px] font-mono text-sm"
-                data-testid="textarea-prevention-report"
-              />
+              <div>
+                <Label htmlFor="prevention-report">Modifica il Referto</Label>
+                <Textarea
+                  id="prevention-report"
+                  value={preventionReportContent}
+                  onChange={(e) => setPreventionReportContent(e.target.value)}
+                  className="min-h-[300px] font-mono text-sm"
+                  data-testid="textarea-prevention-report"
+                />
+              </div>
+              <div>
+                <Label htmlFor="attachments">Allega Documenti (opzionale)</Label>
+                <Input
+                  id="attachments"
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setPreventionReportAttachments(Array.from(e.target.files || []))}
+                  data-testid="input-attachments"
+                />
+                {preventionReportAttachments.length > 0 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {preventionReportAttachments.length} file selezionati
+                  </p>
+                )}
+              </div>
             </div>
           ) : (
             <div className="py-12 text-center text-muted-foreground">
@@ -1346,24 +1365,43 @@ export default function DoctorAppointmentsPage() {
             <Button variant="outline" onClick={() => {
               setPreventionReportAppointmentId(null);
               setPreventionReportContent("");
+              setPreventionReportAttachments([]);
             }} data-testid="button-close-prevention-report">
               Annulla
             </Button>
             {preventionReportContent && (
               <Button onClick={async () => {
                 try {
+                  const apptId = preventionReportAppointmentId!;
+                  
+                  // Upload attachments first
+                  for (const file of preventionReportAttachments) {
+                    const formData = new FormData();
+                    formData.append('attachment', file);
+                    formData.append('description', 'Allegato al referto prevenzione');
+                    
+                    await fetch(`/api/appointments/${apptId}/attachments`, {
+                      method: 'POST',
+                      body: formData,
+                      credentials: 'include',
+                    });
+                  }
+                  
+                  // Save report as doctor note
                   await apiRequest(`/api/doctor/notes`, 'POST', {
-                    patientId: appointments.find(a => a.id === preventionReportAppointmentId)?.patientId,
+                    patientId: appointments.find(a => a.id === apptId)?.patientId,
                     content: preventionReportContent,
                     category: 'prevention_report',
                   });
+                  
                   toast({
                     title: "✅ Referto salvato",
-                    description: "Il referto è stato salvato e condiviso con il paziente",
+                    description: `Referto salvato con ${preventionReportAttachments.length} allegati`,
                   });
                   queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
                   setPreventionReportAppointmentId(null);
                   setPreventionReportContent("");
+                  setPreventionReportAttachments([]);
                 } catch (error: any) {
                   toast({
                     title: "Errore",

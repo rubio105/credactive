@@ -380,10 +380,10 @@ export default function TeleconsultoPage() {
                         )}
                       </div>
                       <div className="flex flex-col gap-2 items-end">
-                        <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>
-                          {apt.status === 'confirmed' ? 'Confermato' : 'In attesa'}
+                        <Badge variant={apt.status === 'confirmed' ? 'default' : apt.status === 'completed' ? 'outline' : 'secondary'}>
+                          {apt.status === 'confirmed' ? 'Confermato' : apt.status === 'completed' ? 'Completato' : 'In attesa'}
                         </Badge>
-                        {apt.status === 'confirmed' && (
+                        {(apt.status === 'confirmed' || apt.status === 'booked') && (
                           <Button
                             size="sm"
                             onClick={() => setActiveVideoCall(apt.id)}

@@ -15312,6 +15312,22 @@ Fornisci:
 
       const appointment = appointmentResult.rows[0];
 
+      // CRITICAL: Delete the 'available' slot to prevent double-booking
+      // This removes the generated slot that was booked
+      try {
+        await db.execute(sql`
+          DELETE FROM appointments
+          WHERE doctor_id = ${doctorId}
+            AND start_time = ${startTime}
+            AND status = 'available'
+            AND patient_id IS NULL
+        `);
+        console.log(`[BookTeleconsult] Deleted available slot for doctor ${doctorId} at ${startTime}`);
+      } catch (deleteError) {
+        console.error('[BookTeleconsult] Failed to delete available slot:', deleteError);
+        // Continue - booking already created
+      }
+
       // Send WhatsApp to doctor
       try {
         const doctorResult = await db.execute(sql`

@@ -15738,7 +15738,7 @@ Fornisci:
   });
 
   // Generate post-visit prevention report (POST /api/appointments/:appointmentId/generate-prevention-report)
-  app.post('/api/appointments/:appointmentId/generate-prevention-report', isAuthenticated, async (req, res) => {
+  app.post('/api/appointments/:appointmentId/generate-prevention-report', authLimiter, isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const { appointmentId } = req.params;
@@ -15841,7 +15841,7 @@ Il dottore potrà personalizzare il contenuto prima dell'invio.
         reportText 
       });
     } catch (error: any) {
-      console.error('Generate prevention report error:', error);
+      console.error('[Prevention Report] Generation error:', error.message);
       res.status(500).json({ message: 'Failed to generate prevention report' });
     }
   });

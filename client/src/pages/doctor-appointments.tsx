@@ -1345,7 +1345,33 @@ export default function DoctorAppointmentsPage() {
                   type="file"
                   multiple
                   accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => setPreventionReportAttachments(Array.from(e.target.files || []))}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+                    const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+                    
+                    const validFiles = files.filter(file => {
+                      if (file.size > MAX_SIZE) {
+                        toast({
+                          title: "File troppo grande",
+                          description: `${file.name} supera i 10MB`,
+                          variant: "destructive",
+                        });
+                        return false;
+                      }
+                      if (!ALLOWED_TYPES.includes(file.type)) {
+                        toast({
+                          title: "Tipo file non valido",
+                          description: `${file.name} deve essere PDF o immagine`,
+                          variant: "destructive",
+                        });
+                        return false;
+                      }
+                      return true;
+                    });
+                    
+                    setPreventionReportAttachments(validFiles);
+                  }}
                   data-testid="input-attachments"
                 />
                 {preventionReportAttachments.length > 0 && (

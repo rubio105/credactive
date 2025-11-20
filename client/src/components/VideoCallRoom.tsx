@@ -66,21 +66,48 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
 
         console.log('[Twilio Video] Connected to room:', localRoom.name);
 
-        // Attach local video track
+        // Attach local video tracks
         const localParticipant = localRoom.localParticipant;
-        localParticipant.videoTracks.forEach(publication => {
-          const track = publication.track as LocalVideoTrack;
+        
+        // Function to attach a single video track
+        const attachLocalVideoTrack = (track: LocalVideoTrack) => {
           if (localVideoRef.current && track) {
             const videoElement = track.attach() as HTMLVideoElement;
             // Safari/iOS compatibility
             videoElement.setAttribute('autoplay', '');
             videoElement.setAttribute('muted', '');
             videoElement.setAttribute('playsinline', '');
-            // CSS to make video visible and fill container
-            videoElement.style.width = '100%';
-            videoElement.style.height = '100%';
-            videoElement.style.objectFit = 'cover';
+            // Styling is now handled by container's Tailwind classes
             localVideoRef.current.appendChild(videoElement);
+            console.log('[Twilio Video] Local video track attached');
+          }
+        };
+        
+        // Attach already published video tracks
+        localParticipant.videoTracks.forEach(publication => {
+          if (publication.track) {
+            attachLocalVideoTrack(publication.track as LocalVideoTrack);
+          } else {
+            // Track not yet available - listen for trackSubscribed
+            publication.on('subscribed', (track) => {
+              if (track.kind === 'video') {
+                attachLocalVideoTrack(track as LocalVideoTrack);
+              }
+            });
+          }
+        });
+        
+        // Listen for new video tracks being published (handles late camera access)
+        localParticipant.on('trackPublished', publication => {
+          if (publication.track && publication.track.kind === 'video') {
+            attachLocalVideoTrack(publication.track as LocalVideoTrack);
+          } else {
+            // Track not yet available - wait for subscription
+            publication.on('subscribed', (track) => {
+              if (track.kind === 'video') {
+                attachLocalVideoTrack(track as LocalVideoTrack);
+              }
+            });
           }
         });
 
@@ -185,6 +212,24 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
     return () => {
       mounted = false;
       if (roomRef.current) {
+        // Detach local video tracks before disconnecting to prevent memory leaks
+        roomRef.current.localParticipant.videoTracks.forEach(publication => {
+          if (publication.track) {
+            publication.track.detach().forEach((element: HTMLElement) => {
+              element.remove();
+            });
+          }
+        });
+        
+        // Detach local audio tracks
+        roomRef.current.localParticipant.audioTracks.forEach(publication => {
+          if (publication.track) {
+            publication.track.detach().forEach((element: HTMLElement) => {
+              element.remove();
+            });
+          }
+        });
+        
         roomRef.current.disconnect();
       }
     };
@@ -268,7 +313,7 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
         <div className="absolute bottom-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden shadow-xl border-2 border-white">
           <div 
             ref={localVideoRef} 
-            className="w-full h-full"
+            className="w-full h-full [&>video]:w-full [&>video]:h-full [&>video]:object-cover"
             data-testid="local-video-container"
           />
           {!isVideoEnabled && (

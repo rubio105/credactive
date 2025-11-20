@@ -15272,61 +15272,99 @@ Fornisci:
         // Continue without context - don't fail the booking
       }
 
-      // Check for overlapping appointments (prevent obvious conflicts)
-      const overlapCheck = await db.execute(sql`
-        SELECT id FROM appointments
-        WHERE doctor_id = ${doctorId}
-          AND status NOT IN ('cancelled', 'completed')
-          AND (
-            (start_time <= ${startTime} AND end_time > ${startTime})
-            OR (start_time < ${endTime} AND end_time >= ${endTime})
-            OR (start_time >= ${startTime} AND end_time <= ${endTime})
-          )
-      `);
-
-      if (overlapCheck.rows.length > 0) {
-        return res.status(409).json({ 
-          message: 'Il dottore ha già un appuntamento in questo orario. Scegli un orario diverso.' 
-        });
-      }
-
+      // CRITICAL: Transactional booking to completely eliminate race conditions
+      // Uses database transaction to atomically: check overlap + convert slot → appointment
+      
       // Generate video room URL for video or both appointments
       const videoRoomUrl = (appointmentType === 'video' || appointmentType === 'both')
         ? `https://meet.jit.si/ciry-${crypto.randomBytes(8).toString('hex')}`
         : null;
 
-      // Create appointment with patient context
-      const appointmentResult = await db.execute(sql`
-        INSERT INTO appointments (
-          doctor_id, patient_id, start_time, end_time, 
-          title, type, status, notes, voice_notes, 
-          appointment_type, studio_address, meeting_url, meeting_platform,
-          patient_context, patient_session_id
-        ) VALUES (
-          ${doctorId}, ${user.id}, ${startTime}, ${endTime},
-          'Teleconsulto', 'teleconsult', 'pending', ${notes ?? null}, ${voiceNotes ?? null},
-          ${appointmentType || 'video'}, ${studioAddress || null}, ${videoRoomUrl}, ${videoRoomUrl ? 'jitsi' : null},
-          ${patientContext ? JSON.stringify(patientContext) : null}, ${sessionId ?? null}
-        ) RETURNING *
-      `);
-
-      const appointment = appointmentResult.rows[0];
-
-      // CRITICAL: Delete the 'available' slot to prevent double-booking
-      // This removes the generated slot that was booked
+      let appointment: any;
+      
       try {
-        await db.execute(sql`
-          DELETE FROM appointments
-          WHERE doctor_id = ${doctorId}
-            AND start_time = ${startTime}
-            AND status = 'available'
-            AND patient_id IS NULL
-        `);
-        console.log(`[BookTeleconsult] Deleted available slot for doctor ${doctorId} at ${startTime}`);
-      } catch (deleteError) {
-        console.error('[BookTeleconsult] Failed to delete available slot:', deleteError);
-        // Continue - booking already created
+        // Wrap booking in transaction for atomicity (prevents ALL race conditions)
+        appointment = await db.transaction(async (tx) => {
+          // Phase 1: Check for overlapping appointments with row-level lock
+          const overlapCheck = await tx.execute(sql`
+            SELECT id, status, patient_id, start_time, end_time FROM appointments
+            WHERE doctor_id = ${doctorId}
+              AND status NOT IN ('cancelled', 'completed')
+              AND (
+                (start_time <= ${startTime} AND end_time > ${startTime})
+                OR (start_time < ${endTime} AND end_time >= ${endTime})
+                OR (start_time >= ${startTime} AND end_time <= ${endTime})
+              )
+            FOR UPDATE
+          `);
+
+          // Filter out the available slot we're about to book (others are real conflicts)
+          // Compare timestamps as ISO strings since apt.start_time is a Date object
+          const targetTime = new Date(startTime).toISOString();
+          const realConflicts = overlapCheck.rows.filter((apt: any) => {
+            const aptTime = new Date(apt.start_time).toISOString();
+            return !(apt.status === 'available' && apt.patient_id === null && aptTime === targetTime);
+          });
+
+          if (realConflicts.length > 0) {
+            throw new Error('OVERLAP_CONFLICT');
+          }
+
+          // Phase 2: Atomic UPDATE to convert available slot → booked appointment
+          const appointmentResult = await tx.execute(sql`
+            UPDATE appointments
+            SET 
+              patient_id = ${user.id},
+              status = 'pending',
+              title = 'Teleconsulto',
+              type = 'teleconsult',
+              notes = ${notes ?? null},
+              voice_notes = ${voiceNotes ?? null},
+              appointment_type = ${appointmentType || 'video'},
+              studio_address = ${studioAddress || null},
+              meeting_url = ${videoRoomUrl},
+              meeting_platform = ${videoRoomUrl ? 'jitsi' : null},
+              patient_context = ${patientContext ? JSON.stringify(patientContext) : null},
+              patient_session_id = ${sessionId ?? null}
+            WHERE doctor_id = ${doctorId}
+              AND start_time = ${startTime}
+              AND status = 'available'
+              AND patient_id IS NULL
+            RETURNING *
+          `);
+
+          // If no row was updated, the slot was already booked (race condition)
+          if (!appointmentResult.rows || appointmentResult.rows.length === 0) {
+            throw new Error('SLOT_ALREADY_BOOKED');
+          }
+
+          return appointmentResult.rows[0];
+        });
+      } catch (error: any) {
+        if (error.message === 'OVERLAP_CONFLICT') {
+          return res.status(409).json({ 
+            message: 'Il dottore ha già un appuntamento in questo orario. Scegli un orario diverso.' 
+          });
+        }
+        if (error.message === 'SLOT_ALREADY_BOOKED') {
+          return res.status(409).json({ 
+            message: 'Questo slot è stato appena prenotato da un altro paziente. Scegli un orario diverso.' 
+          });
+        }
+        // Database unique constraint violation (duplicate doctor_id + start_time)
+        if (error.code === '23505' || error.message?.includes('unique_doctor_time')) {
+          return res.status(409).json({ 
+            message: 'Questo slot è stato appena prenotato da un altro paziente. Scegli un orario diverso.' 
+          });
+        }
+        // Unexpected error - transaction automatically rolled back
+        console.error('[BookTeleconsult] Transaction failed:', error);
+        return res.status(500).json({ 
+          message: 'Errore durante la prenotazione. Riprova.' 
+        });
       }
+
+      console.log(`[BookTeleconsult] Successfully booked slot ${appointment.id} for patient ${user.id}`);
 
       // Send WhatsApp to doctor
       try {

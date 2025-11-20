@@ -13280,11 +13280,11 @@ Format as JSON: {
 
       const twilioClient = twilio(accountSid, authToken);
 
-      // Get room and recordings
-      const room = await twilioClient.video.rooms(roomName).fetch();
+      // Get room and recordings using v1 API
+      const room = await twilioClient.video.v1.rooms(roomName).fetch();
       
       // Check all recordings (including processing ones)
-      const allRecordings = await twilioClient.video.recordings.list({ 
+      const allRecordings = await twilioClient.video.v1.recordings.list({ 
         roomSid: room.sid
       });
       
@@ -13925,13 +13925,13 @@ Il team CIRY`;
       let room;
       
       try {
-        // Check if room exists
-        room = await twilioClient.video.rooms(roomName).fetch();
+        // Check if room exists using v1 API
+        room = await twilioClient.video.v1.rooms(roomName).fetch();
         console.log('[Twilio Video] Existing room found:', roomName);
       } catch (error) {
         // Room doesn't exist, create it with recording enabled
         try {
-          room = await twilioClient.video.rooms.create({
+          room = await twilioClient.video.v1.rooms.create({
             uniqueName: roomName,
             type: 'group',
             recordParticipantsOnConnect: true,

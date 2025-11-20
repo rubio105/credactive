@@ -12796,11 +12796,117 @@ Format as JSON: {
 
   // ========== APPOINTMENTS ROUTES ==========
   
+  // Helper function to generate slots from doctor availability
+  async function generateSlotsFromAvailability(doctorId?: string, daysAhead: number = 30) {
+    try {
+      // Get all active doctor availabilities (or specific doctor)
+      const availabilityQuery = doctorId 
+        ? sql`SELECT * FROM doctor_availability WHERE doctor_id = ${doctorId} AND is_active = true`
+        : sql`SELECT * FROM doctor_availability WHERE is_active = true`;
+      
+      const availabilityResult = await db.execute(availabilityQuery);
+      
+      if (availabilityResult.rows.length === 0) {
+        return;
+      }
+
+      const now = new Date();
+      const endDate = new Date(now);
+      endDate.setDate(endDate.getDate() + daysAhead);
+
+      for (const availability of availabilityResult.rows as any[]) {
+        const { doctor_id, day_of_week, start_time, end_time, slot_duration, appointment_type, studio_address } = availability;
+
+        // Generate slots for each occurrence of this day in the next daysAhead days
+        const currentDate = new Date(now);
+        currentDate.setHours(0, 0, 0, 0);
+
+        while (currentDate <= endDate) {
+          // Check if this date matches the day of week
+          if (currentDate.getDay() === day_of_week) {
+            // Parse start and end times
+            const [startHour, startMinute] = start_time.split(':').map(Number);
+            const [endHour, endMinute] = end_time.split(':').map(Number);
+
+            // Generate slots for this day
+            let slotStart = new Date(currentDate);
+            slotStart.setHours(startHour, startMinute, 0, 0);
+
+            const dayEnd = new Date(currentDate);
+            dayEnd.setHours(endHour, endMinute, 0, 0);
+
+            while (slotStart < dayEnd) {
+              const slotEnd = new Date(slotStart);
+              slotEnd.setMinutes(slotEnd.getMinutes() + slot_duration);
+
+              // Don't create slots that extend past the availability end time
+              if (slotEnd > dayEnd) {
+                break;
+              }
+
+              // Don't create slots in the past
+              if (slotEnd <= now) {
+                slotStart = slotEnd;
+                continue;
+              }
+
+              // Check if slot already exists
+              const existingSlot = await db.execute(sql`
+                SELECT id FROM appointments 
+                WHERE doctor_id = ${doctor_id} 
+                AND start_time = ${slotStart.toISOString()}
+                AND end_time = ${slotEnd.toISOString()}
+              `);
+
+              if (existingSlot.rows.length === 0) {
+                // Create the slot
+                await db.execute(sql`
+                  INSERT INTO appointments (
+                    doctor_id, 
+                    start_time, 
+                    end_time, 
+                    title, 
+                    type, 
+                    status,
+                    appointment_type,
+                    studio_address
+                  ) VALUES (
+                    ${doctor_id},
+                    ${slotStart.toISOString()},
+                    ${slotEnd.toISOString()},
+                    ${'Visita disponibile'},
+                    ${'consultation'},
+                    ${'available'},
+                    ${appointment_type},
+                    ${studio_address}
+                  )
+                `);
+              }
+
+              slotStart = slotEnd;
+            }
+          }
+
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+
+      console.log(`[Slot Generator] Generated slots for ${doctorId || 'all doctors'} for next ${daysAhead} days`);
+    } catch (error) {
+      console.error('[Slot Generator] Error generating slots:', error);
+    }
+  }
+  
   // Get appointments for current user (doctor or patient)
   app.get('/api/appointments', isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const { status, startDate, endDate } = req.query;
+
+      // If patient is requesting available appointments, generate slots first
+      if (!user.isDoctor && status === 'available') {
+        await generateSlotsFromAvailability();
+      }
 
       let appointments;
       
@@ -12810,8 +12916,51 @@ Format as JSON: {
         const end = endDate ? new Date(endDate as string) : undefined;
         appointments = await storage.getAppointmentsByDoctor(user.id, start, end);
       } else {
-        // Patient sees only their appointments
-        appointments = await storage.getAppointmentsByPatient(user.id, status as string);
+        // Patient requesting available appointments sees ALL available slots (not just their own)
+        if (status === 'available') {
+          const start = startDate ? new Date(startDate as string) : undefined;
+          const end = endDate ? new Date(endDate as string) : undefined;
+          
+          // Get all available appointments (patient_id IS NULL)
+          const query = await db.select({
+            id: appointments.id,
+            doctorId: appointments.doctorId,
+            patientId: appointments.patientId,
+            startTime: appointments.startTime,
+            endTime: appointments.endTime,
+            title: appointments.title,
+            type: appointments.type,
+            status: appointments.status,
+            notes: appointments.notes,
+            meetingUrl: appointments.meetingUrl,
+            appointmentType: appointments.appointmentType,
+            studioAddress: appointments.studioAddress,
+            createdAt: appointments.createdAt,
+            updatedAt: appointments.updatedAt,
+          })
+          .from(appointments)
+          .where(
+            and(
+              eq(appointments.status, 'available'),
+              start ? sql`${appointments.startTime} >= ${start.toISOString()}` : undefined,
+              end ? sql`${appointments.startTime} <= ${end.toISOString()}` : undefined
+            )
+          )
+          .orderBy(appointments.startTime);
+
+          // Fetch doctor info for each appointment
+          const appointmentsWithDoctors = await Promise.all(
+            query.map(async (apt) => {
+              const doctor = await storage.getUserById(apt.doctorId);
+              return { ...apt, doctor };
+            })
+          );
+
+          appointments = appointmentsWithDoctors;
+        } else {
+          // Patient sees their own appointments (booked/confirmed/completed)
+          appointments = await storage.getAppointmentsByPatient(user.id, status as string);
+        }
       }
 
       res.json(appointments);

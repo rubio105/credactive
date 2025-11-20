@@ -13254,6 +13254,14 @@ Format as JSON: {
         return res.status(400).json({ message: 'Appointment has no video call associated' });
       }
 
+      // Check if appointment uses legacy Jitsi integration (not supported for AI reports)
+      if (appointment.meetingUrl.includes('jit.si')) {
+        return res.status(400).json({ 
+          message: 'Il referto AI è disponibile solo per videochiamате con Twilio Video. Questo appuntamento usa il vecchio sistema Jitsi che non registra le chiamate.',
+          isLegacyAppointment: true
+        });
+      }
+
       // Extract room name from meeting URL (format: /video-call/:roomName)
       const roomName = appointment.meetingUrl.split('/').pop();
       if (!roomName) {

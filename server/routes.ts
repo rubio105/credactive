@@ -12911,14 +12911,14 @@ Format as JSON: {
         await generateSlotsFromAvailability();
       }
 
-      let appointments;
+      let result;
       
       if (user.isDoctor) {
         // Doctor sees all their appointments
         const start = startDate ? new Date(startDate as string) : undefined;
         const end = endDate ? new Date(endDate as string) : undefined;
         console.log(`[AppointmentsAPI:${requestId}] Fetching doctor appointments`);
-        appointments = await storage.getAppointmentsByDoctor(user.id, start, end);
+        result = await storage.getAppointmentsByDoctor(user.id, start, end);
       } else {
         // Patient requesting available appointments sees ALL available slots (not just their own)
         if (status === 'available') {
@@ -12964,14 +12964,14 @@ Format as JSON: {
             })
           );
 
-          appointments = appointmentsWithDoctors;
+          result = appointmentsWithDoctors;
         } else {
           // Patient sees their own appointments (booked/confirmed/completed)
           // When status is undefined, we want ALL patient appointments (not just available ones)
           console.log(`[AppointmentsAPI:${requestId}] Fetching patient's own appointments (status=${status || 'any'})`);
           
           if (status) {
-            appointments = await storage.getAppointmentsByPatient(user.id, status as string);
+            result = await storage.getAppointmentsByPatient(user.id, status as string);
           } else {
             // Get all appointments where this user is the patient (any status except 'available')
             const query = await db.select()
@@ -12992,13 +12992,13 @@ Format as JSON: {
               })
             );
             
-            appointments = appointmentsWithDoctors;
+            result = appointmentsWithDoctors;
           }
         }
       }
 
-      console.log(`[AppointmentsAPI:${requestId}] Returning ${appointments.length} appointments`);
-      res.json(appointments);
+      console.log(`[AppointmentsAPI:${requestId}] Returning ${result.length} appointments`);
+      res.json(result);
     } catch (error: any) {
       console.error(`[AppointmentsAPI:${requestId}] Error:`, error);
       res.status(500).json({ message: error.message || 'Failed to get appointments' });

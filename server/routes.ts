@@ -15094,8 +15094,9 @@ Fornisci:
     }
   });
 
-  // TELECONSULTO - Patient views available slots (ONLY AVAILABLE DATES)
+  // TELECONSULTO - Patient views available slots (individual time slots)
   app.get('/api/appointments/available-slots/:doctorId', isAuthenticated, async (req, res) => {
+    const requestId = `available-slots-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
       const { doctorId } = req.params;
 
@@ -15106,100 +15107,50 @@ Fornisci:
         return res.status(400).json({ message: 'Invalid doctor ID' });
       }
 
-      // Get doctor's recurring availability patterns
-      const patternsResult = await db.execute(sql`
-        SELECT id, doctor_id, day_of_week, start_time, end_time, 
-               slot_duration, appointment_type, studio_address, is_active, created_at
-        FROM doctor_availability 
-        WHERE doctor_id = ${validated.data} AND is_active = true
-        ORDER BY day_of_week, start_time
-      `);
+      console.log(`[AvailableSlots:${requestId}] Generating slots for doctor ${validated.data}`);
+      
+      // CRITICAL: Generate slots from availability FIRST
+      await generateSlotsFromAvailability(validated.data, 60);
 
-      if (patternsResult.rows.length === 0) {
-        return res.json([]);
-      }
-
-      // Fetch ALL booked appointments for next 60 days in ONE query (performance optimization)
+      // Now fetch generated slots from database
       const today = new Date();
       const futureDate = new Date(today);
       futureDate.setDate(today.getDate() + 60);
-      
-      const bookedAppointments = await db.execute(sql`
-        SELECT start_time, end_time FROM appointments
-        WHERE doctor_id = ${validated.data}
-          AND status IN ('booked', 'confirmed', 'pending')
-          AND start_time >= ${today.toISOString()}
-          AND start_time < ${futureDate.toISOString()}
-      `);
 
-      const bookedSlots = bookedAppointments.rows.map((row: any) => ({
-        start: new Date(row.start_time),
-        end: new Date(row.end_time),
+      const query = await db.select({
+        id: appointments.id,
+        doctorId: appointments.doctorId,
+        startTime: appointments.startTime,
+        endTime: appointments.endTime,
+        appointmentType: appointments.appointmentType,
+        studioAddress: appointments.studioAddress,
+      })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.doctorId, validated.data),
+          eq(appointments.status, 'available'),
+          sql`${appointments.startTime} >= ${today.toISOString()}`,
+          sql`${appointments.startTime} < ${futureDate.toISOString()}`
+        )
+      )
+      .orderBy(appointments.startTime);
+
+      console.log(`[AvailableSlots:${requestId}] Found ${query.length} individual slots`);
+
+      // Transform to match expected frontend format
+      const availableSlots = query.map(slot => ({
+        date: slot.startTime,
+        startTime: new Date(slot.startTime).toTimeString().slice(0, 5),
+        endTime: new Date(slot.endTime).toTimeString().slice(0, 5),
+        appointmentType: slot.appointmentType,
+        studioAddress: slot.studioAddress,
+        slotDuration: Math.round((new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) / 60000),
       }));
-
-      // Generate concrete dates for next 60 days
-      const availableSlots: any[] = [];
-      const addedSlots = new Set<string>(); // Dedupe tracker
-      today.setHours(0, 0, 0, 0);
-      
-      for (let dayOffset = 0; dayOffset < 60; dayOffset++) {
-        const currentDate = new Date(today);
-        currentDate.setDate(today.getDate() + dayOffset);
-        const dayOfWeek = currentDate.getDay(); // 0=Sunday, 1=Monday, etc.
-
-        // Find availability patterns for this day
-        for (const pattern of patternsResult.rows) {
-          if (pattern.day_of_week === dayOfWeek) {
-            const [hours, minutes] = pattern.start_time.split(':');
-            const [endHours, endMinutes] = pattern.end_time.split(':');
-            
-            const slotStart = new Date(currentDate);
-            slotStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-            
-            const slotEnd = new Date(currentDate);
-            slotEnd.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
-
-            // Skip if slot is in the past
-            if (slotStart < new Date()) {
-              continue;
-            }
-
-            // Create unique key based ONLY on concrete timespan (dedupes identical slots from duplicate patterns)
-            const slotKey = `${slotStart.toISOString()}-${slotEnd.toISOString()}-${pattern.appointment_type || 'video'}`;
-            
-            // Skip if already added (dedupe)
-            if (addedSlots.has(slotKey)) {
-              continue;
-            }
-
-            // Check if this slot overlaps with any booked appointment (in-memory check)
-            const isBooked = bookedSlots.some(booked => {
-              return (
-                (slotStart >= booked.start && slotStart < booked.end) ||
-                (slotEnd > booked.start && slotEnd <= booked.end) ||
-                (slotStart <= booked.start && slotEnd >= booked.end)
-              );
-            });
-
-            // Only add if NOT booked
-            if (!isBooked) {
-              availableSlots.push({
-                date: slotStart.toISOString(), // Full ISO datetime to avoid timezone issues
-                startTime: pattern.start_time,
-                endTime: pattern.end_time,
-                appointmentType: pattern.appointment_type,
-                studioAddress: pattern.studio_address,
-                slotDuration: pattern.slot_duration,
-              });
-              addedSlots.add(slotKey); // Mark as added
-            }
-          }
-        }
-      }
 
       res.json(availableSlots);
     } catch (error: any) {
-      console.error('Get available slots error:', error);
+      console.error(`[AvailableSlots:${requestId}] Error:`, error);
       res.status(500).json({ message: 'Internal server error' });
     }
   });

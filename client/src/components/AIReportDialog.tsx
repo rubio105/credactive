@@ -52,6 +52,16 @@ export function AIReportDialog({ appointmentId, isOpen, onClose, onReportSent }:
       return await apiRequest(`/api/appointments/${appointmentId}/generate-report`, 'POST');
     },
     onSuccess: (data: any) => {
+      // Handle 202 response (recording still processing)
+      if (data.status === 'processing') {
+        toast({
+          title: "⏳ Elaborazione in corso",
+          description: data.message || "La registrazione è ancora in elaborazione. Riprova tra 1-2 minuti.",
+          variant: "default",
+        });
+        return;
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/appointments', appointmentId, 'report'] });
       setEditedReport(data.aiGeneratedReport || "");
       toast({

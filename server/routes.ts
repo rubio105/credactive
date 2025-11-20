@@ -13100,16 +13100,42 @@ Format as JSON: {
 
       // Get room and recordings
       const room = await twilioClient.video.rooms(roomName).fetch();
-      const recordings = await twilioClient.video.recordings.list({ 
-        roomSid: room.sid,
-        status: 'completed'
+      
+      // Check all recordings (including processing ones)
+      const allRecordings = await twilioClient.video.recordings.list({ 
+        roomSid: room.sid
       });
-
-      if (recordings.length === 0) {
-        return res.status(404).json({ message: 'No completed recordings found for this appointment' });
+      
+      if (allRecordings.length === 0) {
+        return res.status(404).json({ 
+          message: 'Nessuna registrazione trovata. La videochiamata potrebbe non essere stata registrata o è troppo recente. Riprova tra qualche minuto.' 
+        });
+      }
+      
+      // Filter only completed recordings
+      const completedRecordings = allRecordings.filter(r => r.status === 'completed');
+      
+      if (completedRecordings.length === 0) {
+        const processingCount = allRecordings.filter(r => r.status === 'processing').length;
+        if (processingCount > 0) {
+          return res.status(202).json({ 
+            message: `La registrazione è ancora in elaborazione (${processingCount} file). Riprova tra 1-2 minuti.`,
+            status: 'processing'
+          });
+        }
+        return res.status(404).json({ 
+          message: 'Registrazioni trovate ma nessuna completata. Riprova tra qualche minuto.' 
+        });
       }
 
-      // Get the first recording
+      // Sort by date (newest first) to ensure deterministic selection
+      const recordings = completedRecordings.sort((a, b) => {
+        const dateA = new Date(a.dateCreated).getTime();
+        const dateB = new Date(b.dateCreated).getTime();
+        return dateB - dateA; // Newest first
+      });
+
+      // Get the most recent recording
       const recording = recordings[0];
       const recordingUrl = `https://video.twilio.com/v1/Recordings/${recording.sid}/Media`;
 

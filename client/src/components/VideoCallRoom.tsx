@@ -72,15 +72,21 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
         // Function to attach a single video track
         const attachLocalVideoTrack = (track: LocalVideoTrack) => {
           if (localVideoRef.current && track) {
+            // CRITICAL: Clear existing video elements to prevent DOM reuse issues
+            while (localVideoRef.current.firstChild) {
+              localVideoRef.current.removeChild(localVideoRef.current.firstChild);
+            }
+            
             const videoElement = track.attach() as HTMLVideoElement;
             // Safari/iOS compatibility
             videoElement.setAttribute('autoplay', '');
             videoElement.setAttribute('muted', '');
             videoElement.setAttribute('playsinline', '');
-            // Mirror self-view
+            // Mirror self-view (always apply on fresh element)
             videoElement.style.transform = 'scaleX(-1)';
+            videoElement.style.webkitTransform = 'scaleX(-1)'; // Safari fallback
             localVideoRef.current.appendChild(videoElement);
-            console.log('[Twilio Video] Local video track attached');
+            console.log('[Twilio Video] Local video track attached with mirror effect');
           }
         };
         

@@ -1413,11 +1413,19 @@ export default function DoctorAppointmentsPage() {
                     });
                   }
                   
-                  // Save report as doctor note
+                  // Get patient ID from appointment
+                  const appointment = appointments.find(a => a.id === apptId);
+                  if (!appointment?.patientId) {
+                    throw new Error('Paziente non trovato');
+                  }
+                  
+                  // Save report as doctor note with correct category
                   await apiRequest(`/api/doctor/notes`, 'POST', {
-                    patientId: appointments.find(a => a.id === apptId)?.patientId,
-                    content: preventionReportContent,
-                    category: 'prevention_report',
+                    patientId: appointment.patientId,
+                    noteText: preventionReportContent,
+                    noteTitle: `Report Prevenzione - ${format(new Date(), 'dd/MM/yyyy')}`,
+                    category: 'Report Prevenzione',
+                    isReport: true,
                   });
                   
                   toast({

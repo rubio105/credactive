@@ -77,6 +77,7 @@ export default function DocumentiPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [doctorCode, setDoctorCode] = useState("");
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
 
   // Fetch linked doctors
   const { data: linkedDoctors = [], isLoading: loadingDoctors } = useQuery<LinkedDoctor[]>({
@@ -391,7 +392,13 @@ export default function DocumentiPage() {
                   </Alert>
                 ) : (
                   <div className="space-y-4">
-                    {doctorNotes.map((note) => (
+                    {doctorNotes.map((note) => {
+                      const isExpanded = expandedNotes.has(note.id);
+                      const isPreventionReport = note.category === 'Report Prevenzione';
+                      const preview = note.noteText.split('\n').slice(0, 3).join('\n');
+                      const hasMore = note.noteText.length > preview.length;
+
+                      return (
                       <div key={note.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
@@ -400,7 +407,7 @@ export default function DocumentiPage() {
                             )}
                             <div className="flex flex-wrap gap-2 mb-2">
                               {note.category && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className="text-xs bg-orange-50 dark:bg-orange-950/20 border-orange-300 text-orange-700 dark:text-orange-300">
                                   {note.category}
                                 </Badge>
                               )}
@@ -408,9 +415,51 @@ export default function DocumentiPage() {
                                 <Badge variant="secondary" className="text-xs">Referto Medico</Badge>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap">
-                              {note.noteText}
-                            </p>
+                            {isPreventionReport && !isExpanded ? (
+                              <>
+                                <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap line-clamp-3">
+                                  {preview}
+                                </p>
+                                {hasMore && (
+                                  <Button
+                                    variant="link"
+                                    size="sm"
+                                    className="p-0 h-auto text-orange-600 hover:text-orange-700"
+                                    onClick={() => {
+                                      const newExpanded = new Set(expandedNotes);
+                                      newExpanded.add(note.id);
+                                      setExpandedNotes(newExpanded);
+                                    }}
+                                    data-testid={`button-expand-${note.id}`}
+                                  >
+                                    Vedi Piano Prevenzione Completo →
+                                  </Button>
+                                )}
+                              </>
+                            ) : isPreventionReport && isExpanded ? (
+                              <>
+                                <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap">
+                                  {note.noteText}
+                                </p>
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="p-0 h-auto text-orange-600 hover:text-orange-700"
+                                  onClick={() => {
+                                    const newExpanded = new Set(expandedNotes);
+                                    newExpanded.delete(note.id);
+                                    setExpandedNotes(newExpanded);
+                                  }}
+                                  data-testid={`button-collapse-${note.id}`}
+                                >
+                                  ← Nascondi
+                                </Button>
+                              </>
+                            ) : (
+                              <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap">
+                                {note.noteText}
+                              </p>
+                            )}
                             {note.attachmentPath && (
                               <div className="mt-3">
                                 <Button
@@ -439,7 +488,8 @@ export default function DocumentiPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

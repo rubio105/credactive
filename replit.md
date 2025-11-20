@@ -110,6 +110,24 @@ Complete automated workflow for generating, editing, and distributing AI-powered
 
 ## System Design Choices
 
+### Base URL Configuration
+All backend-generated URLs (emails, invites, notifications, webhooks) are centralized through the `getBaseUrl()` helper function in `server/email.ts`. This ensures consistent URL generation across the entire backend:
+
+**Priority Logic:**
+1. `BASE_URL` environment variable (if explicitly set)
+2. `https://ciry.app` when `NODE_ENV=production` (**production default**)
+3. Auto-detected Replit domain in development
+4. `http://localhost:5000` fallback
+
+**Usage:**
+- Email links (verification, password reset, invites)
+- Stripe billing portal return URLs
+- Live course session notifications
+- WhatsApp document links
+- Twilio Video webhook callbacks
+
+All backend code imports and uses `getBaseUrl()` to guarantee production links always resolve to `https://ciry.app`.
+
 ### Security Audit
 A comprehensive security review confirms robust authentication, input validation, SQL injection prevention, authorization (RBAC), and secure secrets management.
 

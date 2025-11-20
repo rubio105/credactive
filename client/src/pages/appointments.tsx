@@ -69,6 +69,36 @@ export default function AppointmentsPage() {
     queryKey: ['/api/appointments/teleconsult-reports'],
   });
 
+  // Get all available appointments for next 30 days (to highlight calendar)
+  const { data: allAvailableAppointments = [], isFetching: isFetchingCalendarHighlights } = useQuery<Appointment[]>({
+    queryKey: ['/api/appointments', 'all-available'],
+    queryFn: async () => {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const end = new Date();
+      end.setDate(end.getDate() + 30);
+      end.setHours(23, 59, 59, 999);
+      
+      const response = await fetch(
+        `/api/appointments?status=available&startDate=${start.toISOString()}&endDate=${end.toISOString()}`
+      );
+      if (!response.ok) return [];
+      return response.json();
+    },
+    placeholderData: (previousData) => previousData, // Keep previous data during refetch
+  });
+
+  // Get unique dates with available appointments (filter to ensure only 'available' status)
+  const datesWithAvailability = new Set(
+    allAvailableAppointments
+      .filter(apt => apt.status === 'available') // Explicit client-side filter
+      .map(apt => {
+        const date = new Date(apt.startTime);
+        date.setHours(0, 0, 0, 0);
+        return date.toISOString();
+      })
+  );
+
   // Get available appointments for selected date
   const { data: availableAppointments = [], isLoading: isLoadingAvailable } = useQuery<Appointment[]>({
     queryKey: ['/api/appointments', 'available', selectedDate?.toISOString()],
@@ -184,7 +214,7 @@ export default function AppointmentsPage() {
             <CardDescription className="text-sm">Seleziona una data per vedere le visite disponibili</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-center">
+            <div className="flex justify-center relative">
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -192,8 +222,34 @@ export default function AppointmentsPage() {
                 locale={it}
                 className="rounded-md border w-full"
                 data-testid="calendar-appointments"
+                modifiers={{
+                  available: (date) => {
+                    const checkDate = new Date(date);
+                    checkDate.setHours(0, 0, 0, 0);
+                    return datesWithAvailability.has(checkDate.toISOString());
+                  }
+                }}
+                modifiersClassNames={{
+                  available: "bg-blue-100 dark:bg-blue-900 font-semibold text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-800"
+                }}
               />
+              {isFetchingCalendarHighlights && (
+                <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-md">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-xs text-muted-foreground">Aggiornamento disponibilità...</p>
+                  </div>
+                </div>
+              )}
             </div>
+            {!isFetchingCalendarHighlights && allAvailableAppointments.length > 0 && (
+              <div className="text-center text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 bg-blue-100 dark:bg-blue-900 rounded-sm border"></span>
+                  Giorni con slot disponibili
+                </span>
+              </div>
+            )}
 
             {selectedDate && (
               <div className="space-y-3 pt-4 border-t">
@@ -213,42 +269,87 @@ export default function AppointmentsPage() {
                     <p className="text-sm font-medium">Nessuna visita disponibile</p>
                     <p className="text-xs mt-1">Prova a selezionare un'altra data</p>
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    {availableAppointments.map((apt) => (
-                      <Card key={apt.id} className="p-3 hover:bg-accent/50 transition-colors" data-testid={`available-appointment-${apt.id}`}>
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="flex flex-col items-center justify-center bg-primary/10 rounded-lg px-3 py-2 min-w-[80px]">
-                              <p className="font-bold text-primary text-base">
-                                {format(new Date(apt.startTime), "HH:mm")}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {Math.round((new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000)} min
-                              </p>
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{apt.title}</p>
-                              {apt.doctor && (
-                                <p className="text-xs text-muted-foreground">
-                                  Dr. {apt.doctor.firstName} {apt.doctor.lastName}
+                ) : (() => {
+                  // Group appointments by doctor
+                  const appointmentsByDoctor = availableAppointments.reduce((acc, apt) => {
+                    const doctorKey = apt.doctorId || 'unknown';
+                    if (!acc[doctorKey]) {
+                      acc[doctorKey] = {
+                        doctorId: apt.doctorId,
+                        doctor: apt.doctor,
+                        appointments: []
+                      };
+                    }
+                    acc[doctorKey].appointments.push(apt);
+                    return acc;
+                  }, {} as Record<string, { doctorId: string, doctor: typeof availableAppointments[0]['doctor'], appointments: Appointment[] }>);
+
+                  const doctorGroups = Object.values(appointmentsByDoctor);
+                  const hasMultipleDoctors = doctorGroups.length > 1;
+
+                  return (
+                    <div className="space-y-3">
+                      {doctorGroups.map((group) => {
+                        const doctorName = group.doctor 
+                          ? `Dr. ${group.doctor.firstName} ${group.doctor.lastName}`
+                          : 'Medico';
+                        
+                        return (
+                          <div key={group.doctorId || 'unknown'} className="space-y-2">
+                            {hasMultipleDoctors && (
+                              <div 
+                                className="flex items-center gap-2 px-2 py-1 bg-muted/50 rounded-md"
+                                data-testid={`doctor-group-${group.doctorId || 'unknown'}`}
+                              >
+                                <User className="w-4 h-4 text-muted-foreground" />
+                                <p className="text-sm font-medium text-muted-foreground">
+                                  {doctorName}
                                 </p>
-                              )}
+                                <Badge variant="secondary" className="ml-auto text-xs">
+                                  {group.appointments.length} {group.appointments.length === 1 ? 'slot' : 'slots'}
+                                </Badge>
+                              </div>
+                            )}
+                            <div className="space-y-2">
+                              {group.appointments.map((apt) => (
+                                <Card key={apt.id} className="p-3 hover:bg-accent/50 transition-colors" data-testid={`available-appointment-${apt.id}`}>
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 flex-1">
+                                      <div className="flex flex-col items-center justify-center bg-primary/10 rounded-lg px-3 py-2 min-w-[80px]">
+                                        <p className="font-bold text-primary text-base">
+                                          {format(new Date(apt.startTime), "HH:mm")}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {Math.round((new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000)} min
+                                        </p>
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="font-medium text-sm">{apt.title}</p>
+                                        {!hasMultipleDoctors && apt.doctor && (
+                                          <p className="text-xs text-muted-foreground">
+                                            Dr. {apt.doctor.firstName} {apt.doctor.lastName}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleBookAppointment(apt)}
+                                      data-testid={`button-book-${apt.id}`}
+                                      className="shrink-0"
+                                    >
+                                      Prenota
+                                    </Button>
+                                  </div>
+                                </Card>
+                              ))}
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleBookAppointment(apt)}
-                            data-testid={`button-book-${apt.id}`}
-                            className="shrink-0"
-                          >
-                            Prenota
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </CardContent>

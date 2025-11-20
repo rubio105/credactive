@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoCallRoom } from "@/components/VideoCallRoom";
 import { CalendarView } from "@/components/CalendarView";
-import { AIReportDialog } from "@/components/AIReportDialog";
 import type { Appointment } from "@shared/schema";
 
 type AppointmentAttachment = {
@@ -62,7 +61,6 @@ export default function DoctorAppointmentsPage() {
   const [preventionReportAppointmentId, setPreventionReportAppointmentId] = useState<string | null>(null);
   const [preventionReportContent, setPreventionReportContent] = useState<string>("");
   const [activeVideoCall, setActiveVideoCall] = useState<string | null>(null);
-  const [aiReportAppointmentId, setAiReportAppointmentId] = useState<string | null>(null);
   
   // Form state for creating appointment
   const [newAppointment, setNewAppointment] = useState({
@@ -580,18 +578,7 @@ export default function DoctorAppointmentsPage() {
                               <FileText className="w-4 h-4 mr-2" />
                               {generatePreventionReportMutation.isPending ? 'Generando...' : 'Report Prevenzione'}
                             </Button>
-                            {apt.meetingUrl && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900"
-                                onClick={() => setAiReportAppointmentId(apt.id)}
-                                data-testid={`button-ai-report-${apt.id}`}
-                              >
-                                <Sparkles className="w-4 h-4 mr-2" />
-                                Referto AI
-                              </Button>
-                            )}
+
                           </>
                         )}
                         {apt.status === 'confirmed' && (
@@ -744,18 +731,7 @@ export default function DoctorAppointmentsPage() {
                               <FileText className="w-4 h-4 mr-2" />
                               {generatePreventionReportMutation.isPending ? 'Generando...' : 'Report Prevenzione'}
                             </Button>
-                            {apt.meetingUrl && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900"
-                                onClick={() => setAiReportAppointmentId(apt.id)}
-                                data-testid={`button-ai-report-${apt.id}`}
-                              >
-                                <Sparkles className="w-4 h-4 mr-2" />
-                                Referto AI
-                              </Button>
-                            )}
+
                           </>
                         )}
                       </div>
@@ -1371,19 +1347,6 @@ export default function DoctorAppointmentsPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* AI Medical Report Dialog */}
-      {aiReportAppointmentId && (
-        <AIReportDialog
-          appointmentId={aiReportAppointmentId}
-          isOpen={!!aiReportAppointmentId}
-          onClose={() => setAiReportAppointmentId(null)}
-          onReportSent={() => {
-            queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
-            setAiReportAppointmentId(null);
-          }}
-        />
-      )}
     </div>
   );
 }

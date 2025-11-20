@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Calendar, Clock, Video, Mic, StopCircle, ArrowLeft, FileText, Upload, X } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -44,6 +45,7 @@ type AvailableSlot = {
   doctorId: string;
   appointmentType?: string;
   studioAddress?: string | null;
+  slotDuration?: number; // Duration in minutes
 };
 
 export default function TeleconsultoPage() {
@@ -51,6 +53,7 @@ export default function TeleconsultoPage() {
   const [, setLocation] = useLocation();
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const [bookingNotes, setBookingNotes] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -104,9 +107,10 @@ export default function TeleconsultoPage() {
     }
   }, [isBookingDialogOpen]);
 
-  // Reset selected slot when doctor changes
+  // Reset selected slot and date when doctor changes
   useEffect(() => {
     setSelectedSlot(null);
+    setSelectedDate(undefined);
   }, [selectedDoctor]);
 
   // Voice recording for notes
@@ -440,34 +444,96 @@ export default function TeleconsultoPage() {
               </Select>
             </div>
 
-            {/* Available Slots Section */}
+            {/* Available Slots Section with Calendar */}
             {selectedDoctor && (
-              <div className="space-y-2">
-                <Label>Slot Disponibili</Label>
+              <div className="space-y-3">
+                <Label>Scegli Data e Orario</Label>
                 {isSlotsLoading ? (
                   <p className="text-sm text-muted-foreground">Caricamento slot disponibili...</p>
                 ) : availableSlots.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nessuno slot disponibile per questo medico nei prossimi giorni.</p>
                 ) : (
-                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3">
-                    {availableSlots.map((slot, index) => {
-                      const slotDate = slot.date ? new Date(slot.date) : null;
-                      const isValidDate = slotDate && !isNaN(slotDate.getTime());
+                  <>
+                    {/* Calendar with highlighted days */}
+                    <div className="flex justify-center border rounded-lg p-2">
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        locale={it}
+                        className="rounded-md"
+                        data-testid="calendar-teleconsult"
+                        modifiers={{
+                          available: (date) => {
+                            const checkDate = new Date(date);
+                            checkDate.setHours(0, 0, 0, 0);
+                            return availableSlots.some(slot => {
+                              const slotDate = new Date(slot.date);
+                              slotDate.setHours(0, 0, 0, 0);
+                              return slotDate.getTime() === checkDate.getTime();
+                            });
+                          }
+                        }}
+                        modifiersClassNames={{
+                          available: "bg-blue-100 dark:bg-blue-900 font-semibold text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-800"
+                        }}
+                      />
+                    </div>
+                    <div className="text-center text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="inline-block w-3 h-3 bg-blue-100 dark:bg-blue-900 rounded-sm border"></span>
+                        Giorni con slot disponibili
+                      </span>
+                    </div>
+
+                    {/* Slots for selected date */}
+                    {selectedDate && (() => {
+                      const selectedDateNormalized = new Date(selectedDate);
+                      selectedDateNormalized.setHours(0, 0, 0, 0);
                       
+                      const slotsForDate = availableSlots.filter(slot => {
+                        const slotDate = new Date(slot.date);
+                        slotDate.setHours(0, 0, 0, 0);
+                        return slotDate.getTime() === selectedDateNormalized.getTime();
+                      });
+
+                      if (slotsForDate.length === 0) {
+                        return (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Nessuno slot per questa data</p>
+                          </div>
+                        );
+                      }
+
                       return (
-                      <Button
-                        key={index}
-                        variant={selectedSlot?.date === slot.date && selectedSlot?.startTime === slot.startTime ? "default" : "outline"}
-                        className="w-full justify-start"
-                        onClick={() => setSelectedSlot(slot)}
-                        data-testid={`button-slot-${index}`}
-                      >
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {isValidDate ? format(slotDate, "EEEE dd MMMM", { locale: it }) : 'Data non disponibile'} - {slot.startTime} / {slot.endTime}
-                      </Button>
+                        <div className="space-y-2 border-t pt-3">
+                          <p className="text-sm font-medium">
+                            {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
+                          </p>
+                          <div className="max-h-48 overflow-y-auto space-y-2">
+                            {slotsForDate.map((slot, index) => (
+                              <Button
+                                key={index}
+                                variant={selectedSlot?.date === slot.date && selectedSlot?.startTime === slot.startTime ? "default" : "outline"}
+                                className="w-full justify-between"
+                                onClick={() => setSelectedSlot(slot)}
+                                data-testid={`button-slot-${index}`}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <Clock className="w-4 h-4" />
+                                  {slot.startTime} - {slot.slotDuration ? `${slot.slotDuration} min` : slot.endTime}
+                                </span>
+                                {slot.appointmentType === 'in_person' && (
+                                  <Badge variant="secondary" className="text-xs">In presenza</Badge>
+                                )}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
                       );
-                    })}
-                  </div>
+                    })()}
+                  </>
                 )}
               </div>
             )}

@@ -44,6 +44,24 @@ The platform integrates an email notification queue, real-time push and in-app n
 ### Appointment Management System
 The Doctor appointments page (`/appointments`) includes tabs for managing booked, available, and completed appointments, a monthly calendar view, and weekly schedule management for recurring availability slots.
 
+**Automatic Slot Generation from Recurring Availability:**
+- **Doctor Configuration**: Doctors define recurring availability (e.g., "Every Monday 9:00-17:00, 60-minute slots") in `doctor_availability` table with:
+  - Day of week (0=Sunday, 1=Monday, etc.)
+  - Start/end time (HH:MM format)
+  - Slot duration (30 or 60 minutes)
+  - Appointment type (video/in-person/both)
+  - Studio address (for in-person appointments)
+- **Automatic Generation**: When patient views available appointments (`GET /api/appointments?status=available`):
+  - Backend calls `generateSlotsFromAvailability()` to create individual slots for next 30 days
+  - Divides availability windows into slot-duration intervals (e.g., 9:00-17:00 with 60min → 9:00-10:00, 10:00-11:00, ..., 16:00-17:00)
+  - Inserts slots into `appointments` table with `status='available'`, `patient_id=NULL`
+  - Skips slots already existing (no duplicates) and slots in the past
+  - Enforces availability boundaries (no overflow slots beyond end_time)
+- **Patient View**: Patients see:
+  - Calendar with highlighted days (blue) when slots exist
+  - Individual bookable time slots (e.g., "9:00 - 60 min") when clicking a day
+  - All available slots from all doctors (not filtered by patient)
+
 **Double-Booking Prevention:**
 - **Optimistic Locking**: `bookAppointment()` uses atomic UPDATE with `WHERE status = 'available'` to prevent race conditions when multiple patients attempt to book the same slot simultaneously
 - **Overlap Detection**: Direct teleconsult bookings (`/api/appointments/book-teleconsult`) check for overlapping appointments before creation

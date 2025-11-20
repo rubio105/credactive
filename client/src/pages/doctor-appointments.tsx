@@ -664,23 +664,101 @@ export default function DoctorAppointmentsPage() {
             <div className="grid gap-4">
               {completedAppointments.map((apt) => (
                 <Card key={apt.id} data-testid={`completed-appointment-${apt.id}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{apt.title || 'Visita'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(apt.startTime), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
-                          </p>
-                          {apt.patient && (
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-3 flex-1">
+                        <div className="flex items-center gap-3">
+                          <Calendar className="w-5 h-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-semibold">{apt.title || 'Visita'}</p>
                             <p className="text-sm text-muted-foreground">
-                              {apt.patient.firstName} {apt.patient.lastName}
+                              {format(new Date(apt.startTime), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
                             </p>
-                          )}
+                          </div>
+                          {getStatusBadge(apt.status || 'available')}
                         </div>
+
+                        {apt.patient && (
+                          <div className="flex items-center gap-2 text-sm bg-muted p-3 rounded">
+                            <User className="w-4 h-4" />
+                            <div>
+                              <p className="font-medium">{apt.patient.firstName} {apt.patient.lastName}</p>
+                              <p className="text-muted-foreground">{apt.patient.email}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {apt.description && (
+                          <div className="text-sm bg-blue-50 dark:bg-blue-950 p-3 rounded">
+                            <p className="font-medium mb-1">Note del paziente:</p>
+                            <p className="text-muted-foreground">{apt.description}</p>
+                          </div>
+                        )}
+
+                        {apt.attachments && apt.attachments.length > 0 && (
+                          <div className="bg-secondary p-3 rounded">
+                            <p className="font-medium mb-2 flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              Documenti allegati ({apt.attachments.length})
+                            </p>
+                            <div className="space-y-2">
+                              {apt.attachments.map((attachment: AppointmentAttachment) => (
+                                <a
+                                  key={attachment.id}
+                                  href={attachment.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between p-2 bg-background hover:bg-muted rounded transition-colors"
+                                  data-testid={`attachment-${attachment.id}`}
+                                >
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <p className="text-sm truncate">{attachment.fileName}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {(attachment.fileSize / 1024).toFixed(1)} KB
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Download className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {getStatusBadge(apt.status || 'available')}
+
+                      <div className="flex flex-col gap-2 ml-4">
+                        {apt.patient && apt.status === 'completed' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => {
+                                setPreventionReportAppointmentId(apt.id);
+                                generatePreventionReportMutation.mutate(apt.id);
+                              }}
+                              disabled={generatePreventionReportMutation.isPending}
+                              data-testid={`button-prevention-report-${apt.id}`}
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              {generatePreventionReportMutation.isPending ? 'Generando...' : 'Report Prevenzione'}
+                            </Button>
+                            {apt.meetingUrl && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900"
+                                onClick={() => setAiReportAppointmentId(apt.id)}
+                                data-testid={`button-ai-report-${apt.id}`}
+                              >
+                                <Sparkles className="w-4 h-4 mr-2" />
+                                Referto AI
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

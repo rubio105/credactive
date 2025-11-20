@@ -313,7 +313,7 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
         <div className="absolute bottom-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden shadow-xl border-2 border-white">
           <div 
             ref={localVideoRef} 
-            className="w-full h-full [&>video]:w-full [&>video]:h-full [&>video]:object-cover"
+            className="w-full h-full [&>video]:w-full [&>video]:h-full [&>video]:object-cover [&>video]:[transform:scaleX(-1)]"
             data-testid="local-video-container"
           />
           {!isVideoEnabled && (

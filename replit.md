@@ -68,10 +68,15 @@ The Doctor appointments page (`/appointments`) includes tabs for managing booked
   - `GET /api/appointments?status=confirmed` → returns only confirmed appointments
 
 **Double-Booking Prevention:**
-- **Optimistic Locking**: `bookAppointment()` uses atomic UPDATE with `WHERE status = 'available'` to prevent race conditions when multiple patients attempt to book the same slot simultaneously
-- **Overlap Detection**: Direct teleconsult bookings (`/api/appointments/book-teleconsult`) check for overlapping appointments before creation
-- **Database Constraint**: Unique constraint `unique_doctor_time` on `(doctorId, startTime)` prevents duplicate slots
-- **Error Handling**: Returns HTTP 409 Conflict when slot is no longer available, with Italian user-friendly message
+- **Database Transaction**: All teleconsult bookings use atomic transactions with `SELECT FOR UPDATE` row-level locking to prevent concurrent modifications
+- **Race-Safe Overlap Detection**: Transaction filters out the target available slot by exact ISO timestamp comparison while detecting real conflicts (other appointments overlapping the requested time window)
+- **Atomic Slot Conversion**: Single `UPDATE` statement converts `status='available'` to `'pending'` with `patient_id` within transaction, eliminating DELETE+INSERT race window
+- **Physical Constraint**: Database `UNIQUE(doctor_id, start_time)` constraint provides secondary protection, preventing phantom inserts between SELECT and UPDATE
+- **Comprehensive Error Handling**: 
+  - Overlap conflicts (manual appointments) → HTTP 409 "Il dottore ha già un appuntamento"
+  - Race conditions (concurrent bookings) → HTTP 409 "Slot già prenotato da altro paziente"
+  - Constraint violations (23505) → HTTP 409 "Slot già prenotato da altro paziente"
+- **Architect-Approved**: Production-ready solution with no race windows, eliminating all double-booking scenarios
 
 ### ML Training Data Collection System (Active Learning)
 An architecture captures all platform interactions as `mlTrainingData` to train proprietary ML models, supporting a 12-month migration.

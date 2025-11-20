@@ -1327,9 +1327,14 @@ export default function DoctorAppointmentsPage() {
             </div>
           ) : preventionReportContent ? (
             <div className="space-y-4">
-              <div className="prose prose-sm max-w-none bg-secondary p-6 rounded-lg">
-                <div className="whitespace-pre-wrap">{preventionReportContent}</div>
-              </div>
+              <Label htmlFor="prevention-report">Modifica il Referto (puoi editare prima di salvare)</Label>
+              <Textarea
+                id="prevention-report"
+                value={preventionReportContent}
+                onChange={(e) => setPreventionReportContent(e.target.value)}
+                className="min-h-[400px] font-mono text-sm"
+                data-testid="textarea-prevention-report"
+              />
             </div>
           ) : (
             <div className="py-12 text-center text-muted-foreground">
@@ -1342,8 +1347,34 @@ export default function DoctorAppointmentsPage() {
               setPreventionReportAppointmentId(null);
               setPreventionReportContent("");
             }} data-testid="button-close-prevention-report">
-              Chiudi
+              Annulla
             </Button>
+            {preventionReportContent && (
+              <Button onClick={async () => {
+                try {
+                  await apiRequest(`/api/doctor/notes`, 'POST', {
+                    patientId: appointments.find(a => a.id === preventionReportAppointmentId)?.patientId,
+                    content: preventionReportContent,
+                    category: 'prevention_report',
+                  });
+                  toast({
+                    title: "✅ Referto salvato",
+                    description: "Il referto è stato salvato e condiviso con il paziente",
+                  });
+                  queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+                  setPreventionReportAppointmentId(null);
+                  setPreventionReportContent("");
+                } catch (error: any) {
+                  toast({
+                    title: "Errore",
+                    description: error.message || "Impossibile salvare il referto",
+                    variant: "destructive",
+                  });
+                }
+              }} data-testid="button-save-prevention-report">
+                Salva e Condividi
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

@@ -77,7 +77,8 @@ export function VideoCallRoom({ appointmentId, onLeave, isDoctorView = false }: 
             videoElement.setAttribute('autoplay', '');
             videoElement.setAttribute('muted', '');
             videoElement.setAttribute('playsinline', '');
-            // Styling is now handled by container's Tailwind classes
+            // Mirror self-view
+            videoElement.style.transform = 'scaleX(-1)';
             localVideoRef.current.appendChild(videoElement);
             console.log('[Twilio Video] Local video track attached');
           }

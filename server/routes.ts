@@ -15778,69 +15778,49 @@ Fornisci:
         }
       }
 
-      // Get recent medical reports
-      const reportsResult = await db.execute(sql`
-        SELECT title, summary, ai_analysis, created_at
-        FROM prevention_documents
-        WHERE uploaded_by_id = ${patientId}
-        ORDER BY created_at DESC
-        LIMIT 5
-      `);
-
-      const recentReports = reportsResult.rows.map((r: any) => ({
-        title: r.title,
-        summary: r.summary || r.ai_analysis?.patientSummary,
-        date: new Date(r.created_at).toLocaleDateString('it-IT'),
-      }));
-
-      // Get triage alerts
-      const alertsResult = await db.execute(sql`
-        SELECT reason, urgency_level, created_at
-        FROM triage_alerts
-        WHERE user_id = ${patientId}
-        ORDER BY created_at DESC
-        LIMIT 3
-      `);
-
-      const recentAlerts = alertsResult.rows.map((a: any) => ({
-        reason: a.reason,
-        urgencyLevel: a.urgency_level,
-        date: new Date(a.created_at).toLocaleDateString('it-IT'),
-      }));
-
-      // Prepare prompt for Gemini
-      const promptContext = `
-Sei un medico specialista in medicina preventiva. Genera un report di prevenzione post-visita dettagliato e personalizzato.
+      // Check if transcription exists
+      const transcription = appointment.transcription;
+      
+      let promptContext: string;
+      
+      if (transcription && transcription.trim()) {
+        // Use ONLY the call transcription for the report
+        promptContext = `
+Sei un medico specialista. Genera un report di prevenzione basandoti ESCLUSIVAMENTE sul contenuto della seguente teleconsulta.
 
 DATI PAZIENTE:
 - Nome: ${appointment.patient_first_name} ${appointment.patient_last_name}
 - Età: ${age || 'Non disponibile'} anni
-- Genere: ${appointment.gender || 'Non specificato'}
-- Altezza: ${appointment.height_cm ? appointment.height_cm + ' cm' : 'Non disponibile'}
-- Peso: ${appointment.weight_kg ? appointment.weight_kg + ' kg' : 'Non disponibile'}
-- Fumo: ${appointment.smoking_status || 'Non specificato'}
-- Attività fisica: ${appointment.physical_activity || 'Non specificata'}
 
-DATI VISITA:
-- Data: ${new Date(appointment.start_time).toLocaleDateString('it-IT')}
-- Tipo: ${appointment.appointment_type}
-- Note visita: ${appointment.notes || 'Nessuna nota'}
-
-STORIA CLINICA RECENTE:
-${recentReports.length > 0 ? recentReports.map((r: any) => `- ${r.title} (${r.date}): ${r.summary}`).join('\n') : 'Nessun referto recente'}
-
-ALERT RECENTI:
-${recentAlerts.length > 0 ? recentAlerts.map((a: any) => `- ${a.reason} (${a.urgencyLevel}, ${a.date})`).join('\n') : 'Nessun alert'}
+TRASCRIZIONE COMPLETA DELLA CHIAMATA:
+${transcription}
 
 GENERA UN REPORT STRUTTURATO CON:
-1. Sintesi della visita
-2. Raccomandazioni preventive personalizzate (almeno 5)
-3. Esami di screening consigliati (se applicabili)
-4. Modifiche allo stile di vita
-5. Follow-up consigliato
+1. Sintesi della visita (cosa è stato discusso durante la chiamata)
+2. Raccomandazioni preventive emerse dalla conversazione
+3. Esami o visite di follow-up menzionati
+4. Note importanti per il paziente
 
-Il report deve essere professionale, dettagliato e orientato alla prevenzione.
-      `.trim();
+Basati SOLO su ciò che è stato detto durante la chiamata. Non aggiungere informazioni non presenti nella trascrizione.
+        `.trim();
+      } else {
+        // Fallback: basic template if no transcription
+        promptContext = `
+Genera un report di prevenzione generico per la visita del ${new Date(appointment.start_time).toLocaleDateString('it-IT')}.
+
+DATI PAZIENTE:
+- Nome: ${appointment.patient_first_name} ${appointment.patient_last_name}
+- Età: ${age || 'Non disponibile'} anni
+- Note visita: ${appointment.notes || 'Nessuna nota'}
+
+GENERA UN TEMPLATE BASE CON:
+1. Sintesi della visita
+2. Raccomandazioni preventive generali
+3. Follow-up consigliato
+
+Il dottore potrà personalizzare il contenuto prima dell'invio.
+        `.trim();
+      }
 
       // Generate report using Gemini
       const reportText = await generateGeminiContent(promptContext, 'gemini-2.0-flash');

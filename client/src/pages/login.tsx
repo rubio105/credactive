@@ -19,12 +19,27 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [requiresMfa, setRequiresMfa] = useState(false);
+  
+  // Get redirect parameter from URL query string
+  const getRedirectUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('redirect') || null;
+  };
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
       const typedUser = user as any;
       console.log('[Login Guard] User already authenticated, redirecting...');
       
+      // Check if there's a redirect URL from protected route
+      const redirectUrl = getRedirectUrl();
+      if (redirectUrl) {
+        console.log('[Login Guard] Redirecting to:', redirectUrl);
+        setLocation(redirectUrl);
+        return;
+      }
+      
+      // Default role-based redirects
       if (typedUser.isAdmin) {
         setLocation("/admin");
       } else if (typedUser.aiOnlyAccess) {

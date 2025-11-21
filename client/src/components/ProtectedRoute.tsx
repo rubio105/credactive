@@ -1,4 +1,4 @@
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
@@ -9,15 +9,17 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, requireNonAiOnly = false, requireDoctor = false }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
+  const [location] = useLocation();
 
   // Show loading while checking auth
   if (isLoading) {
     return null;
   }
 
-  // If not authenticated, redirect to login immediately
+  // If not authenticated, redirect to login with return URL
   if (!user) {
-    return <Redirect to="/login" />;
+    const redirectUrl = encodeURIComponent(location);
+    return <Redirect to={`/login?redirect=${redirectUrl}`} />;
   }
 
   // If route requires doctor access and user is not a doctor, redirect to dashboard

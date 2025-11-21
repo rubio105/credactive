@@ -224,6 +224,9 @@ function Router() {
       <Route path="/documenti">
         {() => <ProtectedRoute requireNonAiOnly><Documenti /></ProtectedRoute>}
       </Route>
+      <Route path="/prenotazioni">
+        {() => <ProtectedRoute><TeleconsultoPage /></ProtectedRoute>}
+      </Route>
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Login} />
       ) : (
@@ -233,9 +236,6 @@ function Router() {
           </Route>
           <Route path="/medici">
             {() => <ProtectedRoute><MediciPage /></ProtectedRoute>}
-          </Route>
-          <Route path="/prenotazioni">
-            {() => <ProtectedRoute><TeleconsultoPage /></ProtectedRoute>}
           </Route>
           <Route path="/notifiche">
             {() => <ProtectedRoute><NotifichePage /></ProtectedRoute>}

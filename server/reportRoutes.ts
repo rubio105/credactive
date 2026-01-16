@@ -543,113 +543,182 @@ type User = {
   specialization: string | null;
 };
 
+function cleanMarkdownText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/_{2}([^_]+)_{2}/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/#{1,6}\s*/g, "")
+    .trim();
+}
+
+function formatReportContent(doc: typeof PDFDocument.prototype, text: string, pageWidth: number) {
+  if (!text) return;
+  
+  const cleanText = cleanMarkdownText(text);
+  const lines = cleanText.split("\n");
+  const sectionTitles = [
+    "REFERTO MEDICO", "DATI CLINICI", "SINTESI DIAGNOSTICA", 
+    "PROPOSTA TERAPEUTICA", "PIANO DI FOLLOW-UP", "NOTE",
+    "PAZIENTE:", "DATA DI NASCITA:", "SESSO:", "DATA PRELIEVO:", "DATA REFERTO:"
+  ];
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) {
+      doc.moveDown(0.5);
+      continue;
+    }
+    
+    const isSection = sectionTitles.some(title => 
+      trimmedLine.toUpperCase().startsWith(title) || 
+      trimmedLine.toUpperCase() === title
+    );
+    
+    if (isSection) {
+      doc.moveDown(0.8);
+      doc.fontSize(12).font("Helvetica-Bold").fillColor("#1a365d").text(trimmedLine);
+      doc.moveDown(0.3);
+    } else if (trimmedLine.includes(":") && trimmedLine.indexOf(":") < 40) {
+      const colonIndex = trimmedLine.indexOf(":");
+      const label = trimmedLine.substring(0, colonIndex + 1);
+      const value = trimmedLine.substring(colonIndex + 1).trim();
+      
+      doc.fontSize(10).font("Helvetica-Bold").fillColor("#2d3748").text(label, { continued: true });
+      doc.font("Helvetica").fillColor("#1a202c").text(" " + value);
+    } else {
+      doc.fontSize(10).font("Helvetica").fillColor("#1a202c").text(trimmedLine, {
+        align: "justify",
+        lineGap: 2,
+      });
+    }
+    
+    if (doc.y > doc.page.height - 120) {
+      doc.addPage();
+    }
+  }
+}
+
 async function generateSignedPDF(report: ReportDocument, doctor: User | null): Promise<string> {
   const fileName = `referto-${report.id}-${Date.now()}.pdf`;
   const filePath = path.join(signedPdfsDir, fileName);
 
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ 
+      margin: 50,
+      size: "A4",
+      bufferPages: true 
+    });
     const writeStream = fs.createWriteStream(filePath);
 
     doc.pipe(writeStream);
 
+    const primaryColor = "#1a365d";
+    const accentColor = "#2b6cb0";
+
     const logoPath = path.join(process.cwd(), "attached_assets", "image_1768563399301.png");
     if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 50, 45, { width: 150 });
+      doc.image(logoPath, 50, 30, { width: 140 });
     }
 
-    doc.moveDown(4);
+    doc.fontSize(9).font("Helvetica").fillColor("#718096")
+      .text("Refertazione Medica Professionale", doc.page.width - 200, 35, { width: 150, align: "right" })
+      .text("www.prohmed.it", doc.page.width - 200, 48, { width: 150, align: "right" });
 
-    doc
-      .fontSize(18)
-      .font("Helvetica-Bold")
-      .text("REFERTO MEDICO", { align: "center" });
+    doc.moveTo(50, 80).lineTo(doc.page.width - 50, 80).lineWidth(2).strokeColor(primaryColor).stroke();
+    doc.moveTo(50, 83).lineTo(doc.page.width - 50, 83).lineWidth(0.5).strokeColor(accentColor).stroke();
 
-    doc.moveDown();
+    doc.y = 100;
 
-    doc
-      .fontSize(11)
-      .font("Helvetica")
-      .text(`Paziente: ${report.patientName}`, { align: "left" });
+    doc.fontSize(20).font("Helvetica-Bold").fillColor(primaryColor).text("REFERTO MEDICO", { align: "center" });
+    doc.moveDown(1.5);
 
-    if (report.patientFiscalCode) {
-      doc.text(`Codice Fiscale: ${report.patientFiscalCode}`);
-    }
-
-    doc.text(`Data: ${new Date().toLocaleDateString("it-IT", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    })}`);
-
-    doc.moveDown(2);
-
-    doc
-      .fontSize(11)
-      .font("Helvetica")
-      .text(report.finalReport || report.aiDraftReport || "", {
-        align: "left",
-        lineGap: 4,
-      });
-
-    doc.moveDown(4);
-
-    const signatureY = doc.y;
+    doc.rect(50, doc.y, doc.page.width - 100, 60).fillColor("#f7fafc").fill();
+    doc.fillColor("#1a202c");
     
-    doc
-      .moveTo(350, signatureY)
-      .lineTo(550, signatureY)
-      .stroke();
-
-    doc
-      .fontSize(10)
-      .font("Helvetica")
-      .text(`Dr. ${doctor?.firstName || ""} ${doctor?.lastName || ""}`, 350, signatureY + 5, {
-        width: 200,
-        align: "center",
-      });
-
-    if (doctor?.specialization) {
-      doc.text(doctor.specialization, 350, signatureY + 20, {
-        width: 200,
-        align: "center",
-      });
+    const boxY = doc.y + 10;
+    doc.fontSize(11).font("Helvetica-Bold").text("Paziente: ", 60, boxY, { continued: true });
+    doc.font("Helvetica").text(report.patientName || "");
+    
+    if (report.patientFiscalCode) {
+      doc.fontSize(10).font("Helvetica-Bold").text("Codice Fiscale: ", 60, boxY + 18, { continued: true });
+      doc.font("Helvetica").text(report.patientFiscalCode);
     }
-
-    doc.moveDown(3);
-
+    
     const signDate = new Date().toLocaleDateString("it-IT", {
       day: "2-digit",
       month: "long",
       year: "numeric",
     });
+    doc.fontSize(10).font("Helvetica-Bold").text("Data: ", 60, boxY + 36, { continued: true });
+    doc.font("Helvetica").text(signDate);
 
-    doc
-      .fontSize(10)
-      .fillColor("black")
-      .font("Helvetica-Bold")
-      .text(
-        `Firmato dal Dott. ${doctor?.firstName || ""} ${doctor?.lastName || ""}`,
-        { align: "center" }
-      );
-
-    doc
-      .fontSize(10)
-      .font("Helvetica")
-      .text(
-        `in data ${signDate}`,
-        { align: "center" }
-      );
-
+    doc.y = boxY + 70;
     doc.moveDown(1);
 
-    doc
-      .fontSize(8)
-      .fillColor("gray")
-      .text(
-        `Documento firmato digitalmente | ID: ${report.id}`,
-        { align: "center" }
-      );
+    const reportText = report.finalReport || report.aiDraftReport || "";
+    formatReportContent(doc, reportText, doc.page.width - 100);
+
+    doc.moveDown(3);
+
+    if (doc.y > doc.page.height - 180) {
+      doc.addPage();
+    }
+
+    const signatureStartY = doc.y + 20;
+
+    doc.moveTo(doc.page.width - 220, signatureStartY)
+      .lineTo(doc.page.width - 50, signatureStartY)
+      .lineWidth(1)
+      .strokeColor("#2d3748")
+      .stroke();
+
+    const doctorName = `${doctor?.firstName || ""} ${doctor?.lastName || ""}`.trim();
+    
+    doc.fontSize(11).font("Helvetica-Bold").fillColor(primaryColor)
+      .text(`Dott. ${doctorName}`, doc.page.width - 220, signatureStartY + 8, {
+        width: 170,
+        align: "center",
+      });
+
+    if (doctor?.specialization) {
+      doc.fontSize(9).font("Helvetica-Oblique").fillColor("#4a5568")
+        .text(doctor.specialization, doc.page.width - 220, signatureStartY + 24, {
+          width: 170,
+          align: "center",
+        });
+    }
+
+    const range = doc.bufferedPageRange();
+    for (let i = 0; i < range.count; i++) {
+      doc.switchToPage(range.start + i);
+      
+      const footerY = doc.page.height - 50;
+      
+      doc.moveTo(50, footerY - 10)
+        .lineTo(doc.page.width - 50, footerY - 10)
+        .lineWidth(0.5)
+        .strokeColor("#cbd5e0")
+        .stroke();
+
+      doc.fontSize(8).font("Helvetica").fillColor("#718096")
+        .text(`Firmato digitalmente dal Dott. ${doctorName} in data ${signDate}`, 50, footerY, { 
+          width: doc.page.width - 200, 
+          align: "left" 
+        });
+      
+      doc.fontSize(7).fillColor("#a0aec0")
+        .text(`ID: ${report.id}`, 50, footerY + 12);
+      
+      doc.fontSize(8).fillColor("#718096")
+        .text(`Pagina ${i + 1} di ${range.count}`, doc.page.width - 100, footerY, { 
+          width: 50, 
+          align: "right" 
+        });
+    }
 
     doc.end();
 

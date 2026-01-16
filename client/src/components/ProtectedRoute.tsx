@@ -7,6 +7,7 @@ interface ProtectedRouteProps {
   requireDoctor?: boolean; // If true, blocks non-doctor users from this route
   requireReportOperator?: boolean; // If true, requires report operator role
   requireReportDoctor?: boolean; // If true, requires report doctor role
+  allowReportRoles?: boolean; // If true, allows report operators/doctors to access this route
 }
 
 export default function ProtectedRoute({ 
@@ -15,9 +16,11 @@ export default function ProtectedRoute({
   requireDoctor = false,
   requireReportOperator = false,
   requireReportDoctor = false,
+  allowReportRoles = false,
 }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
+  const typedUser = user as any;
 
   // Show loading while checking auth
   if (isLoading) {
@@ -31,17 +34,34 @@ export default function ProtectedRoute({
   }
 
   // If route requires report operator role
-  if (requireReportOperator && !(user as any)?.isReportOperator) {
+  if (requireReportOperator && !typedUser?.isReportOperator) {
     return <Redirect to="/login" />;
   }
 
   // If route requires report doctor role
-  if (requireReportDoctor && !(user as any)?.isReportDoctor) {
+  if (requireReportDoctor && !typedUser?.isReportDoctor) {
     return <Redirect to="/login" />;
   }
 
+  // Block report-only users from accessing general pages (unless allowReportRoles is true)
+  // Report operators and report doctors should only access their specific portals
+  const isReportOnlyUser = (typedUser?.isReportOperator || typedUser?.isReportDoctor) && 
+                           !typedUser?.isAdmin && 
+                           !typedUser?.isDoctor && 
+                           !typedUser?.aiOnlyAccess;
+  
+  if (isReportOnlyUser && !allowReportRoles && !requireReportOperator && !requireReportDoctor) {
+    // Redirect report-only users to their appropriate portal
+    if (typedUser?.isReportOperator) {
+      return <Redirect to="/operatore/referti" />;
+    }
+    if (typedUser?.isReportDoctor) {
+      return <Redirect to="/refertatore/referti" />;
+    }
+  }
+
   // If route requires doctor access and user is not a doctor, redirect to dashboard
-  if (requireDoctor && !(user as any)?.isDoctor) {
+  if (requireDoctor && !typedUser?.isDoctor) {
     return <Redirect to="/dashboard" />;
   }
 

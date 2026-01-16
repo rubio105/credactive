@@ -576,14 +576,15 @@ function formatReportContent(doc: typeof PDFDocument.prototype, text: string, pa
   const lines = cleanText.split("\n");
   const sectionTitles = [
     "REFERTO MEDICO", "DATI CLINICI", "SINTESI DIAGNOSTICA", 
-    "PROPOSTA TERAPEUTICA", "PIANO DI FOLLOW-UP", "NOTE",
-    "PAZIENTE:", "DATA DI NASCITA:", "SESSO:", "DATA PRELIEVO:", "DATA REFERTO:"
+    "PROPOSTA TERAPEUTICA", "PIANO DI FOLLOW-UP", "NOTE"
   ];
+  
+  let isFirstSection = true;
   
   for (const line of lines) {
     const trimmedLine = line.trim();
     if (!trimmedLine) {
-      doc.moveDown(0.5);
+      doc.moveDown(0.3);
       continue;
     }
     
@@ -593,25 +594,37 @@ function formatReportContent(doc: typeof PDFDocument.prototype, text: string, pa
     );
     
     if (isSection) {
-      doc.moveDown(0.8);
-      doc.fontSize(12).font("Helvetica-Bold").fillColor("#1a365d").text(trimmedLine);
+      if (!isFirstSection) {
+        doc.moveDown(0.6);
+      }
+      isFirstSection = false;
+      
+      doc.fontSize(11).font("Helvetica-Bold").fillColor("#1a365d").text(trimmedLine.toUpperCase());
+      doc.moveDown(0.2);
+      
+      doc.moveTo(50, doc.y).lineTo(200, doc.y).lineWidth(0.5).strokeColor("#3b82f6").stroke();
       doc.moveDown(0.3);
-    } else if (trimmedLine.includes(":") && trimmedLine.indexOf(":") < 40) {
+    } else if (trimmedLine.startsWith("-") || trimmedLine.startsWith("•")) {
+      const bulletText = trimmedLine.replace(/^[-•]\s*/, "");
+      doc.fontSize(9).font("Helvetica").fillColor("#374151")
+        .text("•  " + bulletText, { indent: 10, lineGap: 1 });
+    } else if (trimmedLine.includes(":") && trimmedLine.indexOf(":") < 35 && !trimmedLine.startsWith("http")) {
       const colonIndex = trimmedLine.indexOf(":");
       const label = trimmedLine.substring(0, colonIndex + 1);
       const value = trimmedLine.substring(colonIndex + 1).trim();
       
-      doc.fontSize(10).font("Helvetica-Bold").fillColor("#2d3748").text(label, { continued: true });
-      doc.font("Helvetica").fillColor("#1a202c").text(" " + value);
+      doc.fontSize(9).font("Helvetica-Bold").fillColor("#1f2937").text(label, { continued: true });
+      doc.font("Helvetica").fillColor("#374151").text(" " + value);
     } else {
-      doc.fontSize(10).font("Helvetica").fillColor("#1a202c").text(trimmedLine, {
+      doc.fontSize(9).font("Helvetica").fillColor("#374151").text(trimmedLine, {
         align: "justify",
-        lineGap: 2,
+        lineGap: 1,
       });
     }
     
-    if (doc.y > doc.page.height - 120) {
+    if (doc.y > doc.page.height - 80) {
       doc.addPage();
+      doc.y = 50;
     }
   }
 }
@@ -624,42 +637,47 @@ async function generateSignedPDF(report: ReportDocument, doctor: User | null): P
     const doc = new PDFDocument({ 
       margin: 50,
       size: "A4",
-      bufferPages: true 
+      bufferPages: true,
+      autoFirstPage: true
     });
     const writeStream = fs.createWriteStream(filePath);
 
     doc.pipe(writeStream);
 
     const primaryColor = "#1a365d";
-    const accentColor = "#2b6cb0";
+    const accentColor = "#3b82f6";
 
     const logoPath = path.join(process.cwd(), "attached_assets", "Immagine_16-01-26_-_18.22_1768584512639.png");
     if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 50, 30, { width: 140 });
+      try {
+        doc.image(logoPath, 50, 25, { width: 180 });
+      } catch (e) {
+        console.error("[PDF] Logo error:", e);
+        doc.fontSize(18).font("Helvetica-Bold").fillColor(primaryColor).text("PROHMED", 50, 35);
+      }
+    } else {
+      doc.fontSize(18).font("Helvetica-Bold").fillColor(primaryColor).text("PROHMED", 50, 35);
+      doc.fontSize(8).font("Helvetica").fillColor("#718096").text("Medical Intelligence Prevention", 50, 55);
     }
 
-    doc.fontSize(9).font("Helvetica").fillColor("#718096")
-      .text("Refertazione Medica Professionale", doc.page.width - 200, 35, { width: 150, align: "right" })
-      .text("www.prohmed.it", doc.page.width - 200, 48, { width: 150, align: "right" });
+    doc.moveTo(50, 85).lineTo(doc.page.width - 50, 85).lineWidth(2).strokeColor(primaryColor).stroke();
+    doc.moveTo(50, 88).lineTo(doc.page.width - 50, 88).lineWidth(1).strokeColor(accentColor).stroke();
 
-    doc.moveTo(50, 80).lineTo(doc.page.width - 50, 80).lineWidth(2).strokeColor(primaryColor).stroke();
-    doc.moveTo(50, 83).lineTo(doc.page.width - 50, 83).lineWidth(0.5).strokeColor(accentColor).stroke();
+    doc.y = 105;
 
-    doc.y = 100;
+    doc.fontSize(18).font("Helvetica-Bold").fillColor(primaryColor).text("REFERTO MEDICO", { align: "center" });
+    doc.moveDown(0.8);
 
-    doc.fontSize(20).font("Helvetica-Bold").fillColor(primaryColor).text("REFERTO MEDICO", { align: "center" });
-    doc.moveDown(1.5);
-
-    doc.rect(50, doc.y, doc.page.width - 100, 60).fillColor("#f7fafc").fill();
+    doc.roundedRect(50, doc.y, doc.page.width - 100, 55, 5).fillColor("#f0f4f8").fill();
     doc.fillColor("#1a202c");
     
-    const boxY = doc.y + 10;
-    doc.fontSize(11).font("Helvetica-Bold").text("Paziente: ", 60, boxY, { continued: true });
-    doc.font("Helvetica").text(report.patientName || "");
+    const boxY = doc.y + 12;
+    doc.fontSize(10).font("Helvetica-Bold").fillColor(primaryColor).text("Paziente: ", 60, boxY, { continued: true });
+    doc.font("Helvetica").fillColor("#1a202c").text(report.patientName || "");
     
     if (report.patientFiscalCode) {
-      doc.fontSize(10).font("Helvetica-Bold").text("Codice Fiscale: ", 60, boxY + 18, { continued: true });
-      doc.font("Helvetica").text(report.patientFiscalCode);
+      doc.fontSize(9).font("Helvetica-Bold").fillColor(primaryColor).text("Codice Fiscale: ", 60, boxY + 16, { continued: true });
+      doc.font("Helvetica").fillColor("#1a202c").text(report.patientFiscalCode);
     }
     
     const signDate = new Date().toLocaleDateString("it-IT", {
@@ -667,69 +685,68 @@ async function generateSignedPDF(report: ReportDocument, doctor: User | null): P
       month: "long",
       year: "numeric",
     });
-    doc.fontSize(10).font("Helvetica-Bold").text("Data: ", 60, boxY + 36, { continued: true });
-    doc.font("Helvetica").text(signDate);
+    doc.fontSize(9).font("Helvetica-Bold").fillColor(primaryColor).text("Data Referto: ", 60, boxY + 32, { continued: true });
+    doc.font("Helvetica").fillColor("#1a202c").text(signDate);
 
-    doc.y = boxY + 70;
-    doc.moveDown(0.5);
+    doc.y = boxY + 55;
 
     const reportText = report.finalReport || report.aiDraftReport || "";
     formatReportContent(doc, reportText, doc.page.width - 100);
 
-    doc.moveDown(1.5);
-
-    if (doc.y > doc.page.height - 140) {
+    const doctorName = `${doctor?.firstName || ""} ${doctor?.lastName || ""}`.trim();
+    const signatureHeight = doctor?.specialization ? 60 : 45;
+    
+    if (doc.y > doc.page.height - 100 - signatureHeight) {
       doc.addPage();
+      doc.y = 50;
     }
 
-    const signatureStartY = doc.y + 10;
+    doc.moveDown(1);
+    const signatureStartY = doc.y;
 
-    doc.moveTo(doc.page.width - 220, signatureStartY)
+    doc.moveTo(doc.page.width - 200, signatureStartY)
       .lineTo(doc.page.width - 50, signatureStartY)
       .lineWidth(1)
-      .strokeColor("#2d3748")
+      .strokeColor(primaryColor)
       .stroke();
-
-    const doctorName = `${doctor?.firstName || ""} ${doctor?.lastName || ""}`.trim();
     
-    doc.fontSize(11).font("Helvetica-Bold").fillColor(primaryColor)
-      .text(`Dott. ${doctorName}`, doc.page.width - 220, signatureStartY + 8, {
-        width: 170,
+    doc.fontSize(10).font("Helvetica-Bold").fillColor(primaryColor)
+      .text(`Dott. ${doctorName}`, doc.page.width - 200, signatureStartY + 6, {
+        width: 150,
         align: "center",
       });
 
     if (doctor?.specialization) {
-      doc.fontSize(9).font("Helvetica-Oblique").fillColor("#4a5568")
-        .text(doctor.specialization, doc.page.width - 220, signatureStartY + 24, {
-          width: 170,
+      doc.fontSize(8).font("Helvetica-Oblique").fillColor("#4a5568")
+        .text(doctor.specialization, doc.page.width - 200, signatureStartY + 20, {
+          width: 150,
           align: "center",
         });
     }
 
     const range = doc.bufferedPageRange();
-    for (let i = 0; i < range.count; i++) {
+    const totalPages = range.count;
+    
+    for (let i = 0; i < totalPages; i++) {
       doc.switchToPage(range.start + i);
       
-      const footerY = doc.page.height - 50;
+      const footerY = doc.page.height - 40;
       
-      doc.moveTo(50, footerY - 10)
-        .lineTo(doc.page.width - 50, footerY - 10)
+      doc.moveTo(50, footerY - 5)
+        .lineTo(doc.page.width - 50, footerY - 5)
         .lineWidth(0.5)
-        .strokeColor("#cbd5e0")
+        .strokeColor("#d1d5db")
         .stroke();
 
-      doc.fontSize(8).font("Helvetica").fillColor("#718096")
-        .text(`Firmato digitalmente dal Dott. ${doctorName} in data ${signDate}`, 50, footerY, { 
-          width: doc.page.width - 200, 
+      doc.fontSize(7).font("Helvetica").fillColor("#6b7280")
+        .text(`Firmato digitalmente - Dott. ${doctorName} - ${signDate}`, 50, footerY, { 
+          width: doc.page.width - 150, 
           align: "left" 
         });
       
-      doc.fontSize(7).fillColor("#a0aec0")
-        .text(`ID: ${report.id}`, 50, footerY + 12);
-      
-      doc.fontSize(8).fillColor("#718096")
-        .text(`Pagina ${i + 1} di ${range.count}`, doc.page.width - 100, footerY, { 
-          width: 50, 
+      doc.fontSize(7).fillColor("#6b7280")
+        .text(`${i + 1}/${totalPages}`, doc.page.width - 80, footerY, { 
+          width: 30, 
           align: "right" 
         });
     }

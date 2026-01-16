@@ -308,7 +308,7 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     const { id } = req.params;
     const { channel } = req.body;
 
-    if (!["sms", "whatsapp", "email"].includes(channel)) {
+    if (!["whatsapp", "email"].includes(channel)) {
       return res.status(400).json({ message: "Canale OTP non valido" });
     }
 
@@ -342,7 +342,7 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
       return res.status(400).json({ message: "Email non configurata nel profilo" });
     }
     
-    if ((channel === "sms" || channel === "whatsapp") && !phoneNumber) {
+    if (channel === "whatsapp" && !phoneNumber) {
       return res.status(400).json({ 
         message: "Numero di telefono non configurato. Aggiorna il tuo profilo." 
       });
@@ -366,7 +366,9 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     });
 
     if (channel === "email") {
-      console.log(`[REPORT_OTP] Sending Email OTP to ${doctorEmail}`);
+      console.log(`[REPORT_OTP] Sending OTP via Email to ${doctorEmail} and WhatsApp to ${phoneNumber}`);
+      
+      // Send via Email
       try {
         await sendEmail({
           to: doctorEmail!,
@@ -386,9 +388,21 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
         console.log(`[REPORT_OTP] Email OTP sent successfully`);
       } catch (emailError: any) {
         console.error(`[REPORT_OTP] Email failed:`, emailError);
-        return res.status(500).json({ 
-          message: `Errore invio email: ${emailError.message || 'Riprova più tardi'}` 
-        });
+      }
+      
+      // Also send via WhatsApp if phone number is available
+      if (phoneNumber) {
+        try {
+          const whatsappResult = await sendWhatsAppMessage(
+            phoneNumber,
+            `Prohmed - Codice OTP per firma referto: ${otpCode}\nScade tra 5 minuti.`
+          );
+          if (whatsappResult.success) {
+            console.log(`[REPORT_OTP] WhatsApp OTP also sent successfully`);
+          }
+        } catch (whatsappError: any) {
+          console.error(`[REPORT_OTP] WhatsApp backup failed:`, whatsappError);
+        }
       }
     } else if (channel === "whatsapp") {
       console.log(`[REPORT_OTP] Sending WhatsApp OTP to ${phoneNumber}`);
@@ -403,16 +417,6 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
         });
       }
       console.log(`[REPORT_OTP] WhatsApp OTP sent successfully: ${whatsappResult.sid}`);
-    } else {
-      const twilioClient = twilio(
-        process.env.TWILIO_ACCOUNT_SID,
-        process.env.TWILIO_AUTH_TOKEN
-      );
-      await twilioClient.messages.create({
-        body: `Prohmed - Codice OTP per firma referto: ${otpCode}. Scade tra 5 minuti.`,
-        from: process.env.TWILIO_PHONE_NUMBER || "+15005550006",
-        to: phoneNumber,
-      });
     }
 
     await db

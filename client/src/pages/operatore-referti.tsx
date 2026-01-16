@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Upload, FileText, CheckCircle, Clock, LogOut, Loader2 } from "lucide-react";
-import prohmedLogo from "@assets/image_1768563399301.png";
+const prohmedLogo = "/images/ciry-logo.png";
 
 export default function OperatoreReferti() {
   const [, setLocation] = useLocation();

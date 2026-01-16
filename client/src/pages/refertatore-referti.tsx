@@ -23,7 +23,7 @@ import {
   Eye,
   AlertCircle,
 } from "lucide-react";
-import prohmedLogo from "@assets/image_1768563399301.png";
+const prohmedLogo = "/images/ciry-logo.png";
 
 interface ReportDocument {
   id: string;

@@ -72,9 +72,22 @@ export default function RefertatorerReferti() {
     }
   };
 
+  const cleanMarkdown = (text: string): string => {
+    if (!text) return "";
+    return text
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1")
+      .replace(/_{2}([^_]+)_{2}/g, "$1")
+      .replace(/_([^_]+)_/g, "$1")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/#{1,6}\s*/g, "")
+      .trim();
+  };
+
   const openEditor = (report: ReportDocument) => {
     setSelectedReport(report);
-    setEditedReport(report.aiDraftReport || "");
+    const textToEdit = report.finalReport || report.aiDraftReport || "";
+    setEditedReport(cleanMarkdown(textToEdit));
     setIsEditorOpen(true);
   };
 

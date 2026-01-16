@@ -40,7 +40,11 @@ export default function Login() {
       }
       
       // Default role-based redirects
-      if (typedUser.isAdmin) {
+      if (typedUser.isReportOperator && !typedUser.isAdmin) {
+        setLocation("/operatore/referti");
+      } else if (typedUser.isReportDoctor && !typedUser.isAdmin) {
+        setLocation("/refertatore/referti");
+      } else if (typedUser.isAdmin) {
         setLocation("/admin");
       } else if (typedUser.aiOnlyAccess) {
         setLocation("/prevention");
@@ -86,7 +90,13 @@ export default function Login() {
       // Role-based redirect logic - use wouter for internal navigation
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       
-      if (data?.isAdmin) {
+      if (data?.isReportOperator && !data?.isAdmin) {
+        // Operatore caricamento referti → solo pagina operatore
+        setLocation("/operatore/referti");
+      } else if (data?.isReportDoctor && !data?.isAdmin) {
+        // Medico refertatore → solo pagina refertatore
+        setLocation("/refertatore/referti");
+      } else if (data?.isAdmin) {
         // Admin → Dashboard amministratore
         setLocation("/admin");
       } else if (data?.aiOnlyAccess) {

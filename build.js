@@ -1,6 +1,6 @@
 import * as esbuild from 'esbuild';
 
-const ESM_REQUIRE_SHIM = `import{createRequire}from'module';const require=createRequire(import.meta.url);`;
+const ESM_REQUIRE_SHIM = `import{createRequire as _createRequire}from'module';const require=_createRequire(import.meta.url);`;
 
 await esbuild.build({
   entryPoints: ['server/index.ts'],

@@ -64,7 +64,7 @@ export default function RefertatorerReferti() {
 
   const handleLogout = async () => {
     try {
-      await apiRequest("POST", "/api/auth/logout");
+      await apiRequest("/api/auth/logout", "POST");
       setLocation("/login");
     } catch (error) {
       console.error("Logout error:", error);
@@ -82,7 +82,7 @@ export default function RefertatorerReferti() {
 
     setIsSaving(true);
     try {
-      await apiRequest("PATCH", `/api/report-documents/${selectedReport.id}/edit`, {
+      await apiRequest(`/api/report-documents/${selectedReport.id}/edit`, "PATCH", {
         finalReport: editedReport.trim(),
       });
 
@@ -109,7 +109,7 @@ export default function RefertatorerReferti() {
 
     setIsSendingOtp(true);
     try {
-      await apiRequest("POST", `/api/report-documents/${selectedReport.id}/request-otp`, {
+      await apiRequest(`/api/report-documents/${selectedReport.id}/request-otp`, "POST", {
         channel: otpChannel,
       });
 
@@ -136,7 +136,7 @@ export default function RefertatorerReferti() {
 
     setIsVerifyingOtp(true);
     try {
-      await apiRequest("POST", `/api/report-documents/${selectedReport.id}/verify-otp`, {
+      await apiRequest(`/api/report-documents/${selectedReport.id}/verify-otp`, "POST", {
         otp: otpCode.trim(),
       });
 

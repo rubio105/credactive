@@ -65,7 +65,7 @@ export default function AdminReferti() {
 
   const assignDoctorMutation = useMutation({
     mutationFn: async ({ operatorId, doctorId }: { operatorId: string; doctorId: string | null }) => {
-      return apiRequest("PATCH", "/api/report-documents/admin/assign-doctor", {
+      return apiRequest("/api/report-documents/admin/assign-doctor", "PATCH", {
         operatorId,
         doctorId,
       });

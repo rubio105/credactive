@@ -101,7 +101,7 @@ export default function OperatoreReferti() {
 
   const handleLogout = async () => {
     try {
-      await apiRequest("POST", "/api/auth/logout");
+      await apiRequest("/api/auth/logout", "POST");
       setLocation("/login");
     } catch (error) {
       console.error("Logout error:", error);

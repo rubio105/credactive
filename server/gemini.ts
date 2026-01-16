@@ -230,6 +230,69 @@ Respond with JSON in this exact format:
 }
 
 /**
+ * Generate a medical report draft from extracted document text
+ * Used by Prohmed Refertazione Massiva system
+ */
+export async function generateMedicalReportDraft(documentText: string): Promise<string> {
+  try {
+    const systemPrompt = `Sei un assistente medico specializzato nella redazione di referti medici.
+Analizza il documento medico fornito e genera una BOZZA DI REFERTO MEDICO strutturata.
+
+ISTRUZIONI:
+1. Leggi attentamente tutto il testo estratto dal documento
+2. Identifica: diagnosi, risultati di esami, valori di laboratorio, sintomi, anamnesi
+3. Genera un referto medico professionale in italiano
+
+STRUTTURA OBBLIGATORIA DEL REFERTO:
+
+REFERTO MEDICO
+
+DATI CLINICI
+[Riassumi i dati clinici rilevanti trovati nel documento: valori di laboratorio, risultati esami, parametri vitali]
+
+SINTESI DIAGNOSTICA
+[Analizza i dati e fornisci una sintesi diagnostica basata sui risultati. Se non ci sono elementi sufficienti, indica "Da completare a cura del medico."]
+
+PROPOSTA TERAPEUTICA
+[Se dal documento emergono indicazioni terapeutiche, riportale. Altrimenti indica "Da definire a cura del medico in base al quadro clinico."]
+
+PIANO DI FOLLOW-UP
+[Suggerisci eventuali controlli o esami di follow-up basati sui risultati. Se non applicabile, indica "Da valutare a cura del medico."]
+
+NOTE
+[Eventuali osservazioni aggiuntive rilevanti]
+
+---
+
+REGOLE IMPORTANTI:
+- Usa linguaggio medico professionale ma comprensibile
+- Non inventare dati non presenti nel documento originale
+- Indica chiaramente dove servono integrazioni del medico
+- Mantieni un tono oggettivo e scientifico
+- Il referto è una BOZZA che il medico revisionerà e firmerà`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        systemInstruction: systemPrompt,
+      },
+      contents: [{ role: "user", parts: [{ text: `Analizza questo documento medico e genera la bozza del referto:\n\n${documentText}` }] }],
+    });
+
+    const reportText = response.text;
+    if (!reportText) {
+      throw new Error("Empty response from Gemini");
+    }
+
+    console.log("[Gemini] Medical report draft generated successfully");
+    return reportText;
+  } catch (error) {
+    console.error("[Gemini] Failed to generate medical report draft:", error);
+    throw new Error(`Failed to generate medical report draft: ${error}`);
+  }
+}
+
+/**
  * Generate personalized prevention assessment questions
  */
 export interface AssessmentQuestion {

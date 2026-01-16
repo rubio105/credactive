@@ -4,12 +4,13 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcryptjs";
 import PDFDocument from "pdfkit";
+import * as pdfParseModule from "pdf-parse";
 import { db } from "./db";
 import { reportDocuments, reportSignatureOtps, reportActivityLogs, users } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { isAuthenticated } from "./authSetup";
 import { sendWhatsAppMessage } from "./twilio";
-import { analyzePreventionDocument, extractTextFromMedicalReport } from "./gemini";
+import { generateMedicalReportDraft, extractTextFromMedicalReport } from "./gemini";
 import { z } from "zod";
 import twilio from "twilio";
 
@@ -150,8 +151,8 @@ async function processReportWithAI(reportId: string, filePath: string, fileType:
     let extractedText = "";
 
     if (fileType === "pdf") {
-      const pdfParse = require("pdf-parse");
       const pdfBuffer = fs.readFileSync(filePath);
+      const pdfParse = (pdfParseModule as any).default || pdfParseModule;
       const pdfData = await pdfParse(pdfBuffer);
       extractedText = pdfData.text;
     } else {
@@ -162,23 +163,8 @@ async function processReportWithAI(reportId: string, filePath: string, fileType:
 
     let aiDraft = "";
     if (extractedText.trim()) {
-      const aiAnalysis = await analyzePreventionDocument(extractedText);
-      
-      aiDraft = `REFERTO MEDICO
-
-${aiAnalysis.summary || ""}
-
-SINTESI DIAGNOSTICA
-${aiAnalysis.topics?.join("\n- ") || "Da completare a cura del medico."}
-
-PROPOSTA TERAPEUTICA
-Da completare a cura del medico.
-
-PIANO DI FOLLOW-UP
-Da definire a cura del medico.
-
----
-Parole chiave: ${aiAnalysis.keywords?.join(", ") || "N/A"}`;
+      const reportDraft = await generateMedicalReportDraft(extractedText);
+      aiDraft = reportDraft;
     } else {
       aiDraft = `REFERTO MEDICO
 

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +18,9 @@ import {
   UserCheck,
   Download,
   Eye,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface ReportDocument {
@@ -47,9 +51,15 @@ interface Doctor {
   specialization?: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function AdminReferti() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [signedPage, setSignedPage] = useState(1);
+  const [pendingPage, setPendingPage] = useState(1);
 
   const { data: reports, isLoading: reportsLoading } = useQuery<ReportDocument[]>({
     queryKey: ["/api/report-documents/admin/all"],
@@ -129,8 +139,26 @@ export default function AdminReferti() {
     }
   };
 
-  const signedReports = reports?.filter((r) => r.status === "signed") || [];
-  const pendingReports = reports?.filter((r) => r.status !== "signed") || [];
+  const filteredReports = useMemo(() => {
+    if (!reports) return [];
+    return reports.filter((r) => {
+      const matchesSearch = searchTerm === "" || 
+        r.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.patientFiscalCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.operatorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.doctorName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || r.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [reports, searchTerm, statusFilter]);
+
+  const signedReports = filteredReports.filter((r) => r.status === "signed");
+  const pendingReports = filteredReports.filter((r) => r.status !== "signed");
+
+  const paginatedSignedReports = signedReports.slice((signedPage - 1) * ITEMS_PER_PAGE, signedPage * ITEMS_PER_PAGE);
+  const paginatedPendingReports = pendingReports.slice((pendingPage - 1) * ITEMS_PER_PAGE, pendingPage * ITEMS_PER_PAGE);
+  const totalSignedPages = Math.ceil(signedReports.length / ITEMS_PER_PAGE);
+  const totalPendingPages = Math.ceil(pendingReports.length / ITEMS_PER_PAGE);
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -155,6 +183,32 @@ export default function AdminReferti() {
         </TabsList>
 
         <TabsContent value="referti" className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Cerca per nome paziente, CF, operatore, medico..."
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setSignedPage(1); setPendingPage(1); }}
+                className="pl-10"
+                data-testid="input-search"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setSignedPage(1); setPendingPage(1); }}>
+              <SelectTrigger className="w-[180px]" data-testid="select-status">
+                <SelectValue placeholder="Stato" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="processing">In elaborazione</SelectItem>
+                <SelectItem value="pending_review">Da revisionare</SelectItem>
+                <SelectItem value="in_review">In revisione</SelectItem>
+                <SelectItem value="pending_signature">Da firmare</SelectItem>
+                <SelectItem value="signed">Firmato</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -170,43 +224,60 @@ export default function AdminReferti() {
               ) : signedReports.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">Nessun referto firmato</p>
               ) : (
-                <div className="space-y-3">
-                  {signedReports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
-                      data-testid={`signed-report-${report.id}`}
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{report.patientName}</p>
-                        <p className="text-sm text-gray-500">
-                          Operatore: {report.operatorName} | Medico: {report.doctorName}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          Firmato il{" "}
-                          {report.signedAt &&
-                            new Date(report.signedAt).toLocaleDateString("it-IT", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                        </p>
+                <>
+                  <div className="space-y-3">
+                    {paginatedSignedReports.map((report) => (
+                      <div
+                        key={report.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
+                        data-testid={`signed-report-${report.id}`}
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{report.patientName}</p>
+                          <p className="text-sm text-gray-500">
+                            Operatore: {report.operatorName} | Medico: {report.doctorName}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Firmato il{" "}
+                            {report.signedAt &&
+                              new Date(report.signedAt).toLocaleDateString("it-IT", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {getStatusBadge(report.status)}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(`/api/report-documents/${report.id}/pdf`, "_blank")}
+                            data-testid={`button-download-${report.id}`}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            PDF
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        {getStatusBadge(report.status)}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(`/api/report-documents/${report.id}/pdf`, "_blank")}
-                          data-testid={`button-download-${report.id}`}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          PDF
+                    ))}
+                  </div>
+                  {totalSignedPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                      <span className="text-sm text-gray-500">
+                        Pagina {signedPage} di {totalSignedPages}
+                      </span>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setSignedPage(p => Math.max(1, p - 1))} disabled={signedPage === 1}>
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setSignedPage(p => Math.min(totalSignedPages, p + 1))} disabled={signedPage === totalSignedPages}>
+                          <ChevronRight className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -226,31 +297,48 @@ export default function AdminReferti() {
               ) : pendingReports.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">Nessun referto in elaborazione</p>
               ) : (
-                <div className="space-y-3">
-                  {pendingReports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
-                      data-testid={`pending-report-${report.id}`}
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{report.patientName}</p>
-                        <p className="text-sm text-gray-500">
-                          Operatore: {report.operatorName} | Medico: {report.doctorName}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          Caricato il{" "}
-                          {new Date(report.createdAt).toLocaleDateString("it-IT", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </p>
+                <>
+                  <div className="space-y-3">
+                    {paginatedPendingReports.map((report) => (
+                      <div
+                        key={report.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
+                        data-testid={`pending-report-${report.id}`}
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{report.patientName}</p>
+                          <p className="text-sm text-gray-500">
+                            Operatore: {report.operatorName} | Medico: {report.doctorName}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Caricato il{" "}
+                            {new Date(report.createdAt).toLocaleDateString("it-IT", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        {getStatusBadge(report.status)}
                       </div>
-                      {getStatusBadge(report.status)}
+                    ))}
+                  </div>
+                  {totalPendingPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                      <span className="text-sm text-gray-500">
+                        Pagina {pendingPage} di {totalPendingPages}
+                      </span>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setPendingPage(p => Math.max(1, p - 1))} disabled={pendingPage === 1}>
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setPendingPage(p => Math.min(totalPendingPages, p + 1))} disabled={pendingPage === totalPendingPages}>
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

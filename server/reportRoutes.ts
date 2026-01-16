@@ -5,7 +5,7 @@ import fs from "fs";
 import bcrypt from "bcryptjs";
 import PDFDocument from "pdfkit";
 import { db } from "./db";
-import { reportDocuments, reportSignatureOtps, reportActivityLogs, users, operatorDoctorAssignments } from "@shared/schema";
+import { reportDocuments, reportSignatureOtps, reportActivityLogs, users } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { isAuthenticated } from "./authSetup";
 import { sendWhatsAppMessage } from "./twilio";
@@ -105,13 +105,11 @@ router.post(
         return res.status(400).json({ message: "Nome paziente obbligatorio" });
       }
 
-      // Check if operator has at least one doctor assigned (many-to-many)
-      const assignments = await db
-        .select()
-        .from(operatorDoctorAssignments)
-        .where(eq(operatorDoctorAssignments.operatorId, req.user.id));
+      const operator = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+      });
 
-      if (assignments.length === 0) {
+      if (!operator?.assignedReportDoctorId) {
         return res.status(400).json({ 
           message: "Nessun medico assegnato. Contatta l'amministratore." 
         });
@@ -130,7 +128,7 @@ router.post(
           fileType,
           status: "processing",
           uploadedByOperatorId: req.user.id,
-          assignedDoctorId: null, // Will be visible to all assigned doctors
+          assignedDoctorId: operator.assignedReportDoctorId,
         })
         .returning();
 
@@ -235,21 +233,10 @@ router.get("/operator/my-uploads", isAuthenticated, isReportOperator, async (req
 
 router.get("/doctor/pending", isAuthenticated, isReportDoctor, async (req: any, res) => {
   try {
-    // Get all operators assigned to this doctor
-    const assignments = await db
-      .select()
-      .from(operatorDoctorAssignments)
-      .where(eq(operatorDoctorAssignments.doctorId, req.user.id));
-    
-    const assignedOperatorIds = assignments.map(a => a.operatorId);
-
-    // Get reports: either directly assigned OR uploaded by an assigned operator
     const reports = await db.query.reportDocuments.findMany({
       where: and(
-        inArray(reportDocuments.status, ["pending_review", "in_review", "pending_signature"]),
-        assignedOperatorIds.length > 0
-          ? inArray(reportDocuments.uploadedByOperatorId, assignedOperatorIds)
-          : eq(reportDocuments.assignedDoctorId, req.user.id) // Fallback for legacy
+        eq(reportDocuments.assignedDoctorId, req.user.id),
+        inArray(reportDocuments.status, ["pending_review", "in_review", "pending_signature"])
       ),
       orderBy: [desc(reportDocuments.createdAt)],
     });
@@ -263,7 +250,6 @@ router.get("/doctor/pending", isAuthenticated, isReportDoctor, async (req: any, 
 
 router.get("/doctor/signed", isAuthenticated, isReportDoctor, async (req: any, res) => {
   try {
-    // Show reports signed by this doctor (assignedDoctorId is set when signing)
     const reports = await db.query.reportDocuments.findMany({
       where: and(
         eq(reportDocuments.assignedDoctorId, req.user.id),
@@ -285,26 +271,14 @@ router.patch("/:id/edit", isAuthenticated, isReportDoctor, async (req: any, res)
     const { finalReport } = req.body;
 
     const report = await db.query.reportDocuments.findFirst({
-      where: eq(reportDocuments.id, id),
+      where: and(
+        eq(reportDocuments.id, id),
+        eq(reportDocuments.assignedDoctorId, req.user.id)
+      ),
     });
 
     if (!report) {
       return res.status(404).json({ message: "Referto non trovato" });
-    }
-
-    // Verify doctor is assigned to the operator who uploaded this report
-    const assignment = await db
-      .select()
-      .from(operatorDoctorAssignments)
-      .where(
-        and(
-          eq(operatorDoctorAssignments.operatorId, report.uploadedByOperatorId),
-          eq(operatorDoctorAssignments.doctorId, req.user.id)
-        )
-      );
-
-    if (assignment.length === 0) {
-      return res.status(403).json({ message: "Non autorizzato a modificare questo referto" });
     }
 
     if (report.status === "signed") {
@@ -339,26 +313,14 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     }
 
     const report = await db.query.reportDocuments.findFirst({
-      where: eq(reportDocuments.id, id),
+      where: and(
+        eq(reportDocuments.id, id),
+        eq(reportDocuments.assignedDoctorId, req.user.id)
+      ),
     });
 
     if (!report) {
       return res.status(404).json({ message: "Referto non trovato" });
-    }
-
-    // Verify doctor is assigned to the operator who uploaded this report
-    const assignment = await db
-      .select()
-      .from(operatorDoctorAssignments)
-      .where(
-        and(
-          eq(operatorDoctorAssignments.operatorId, report.uploadedByOperatorId),
-          eq(operatorDoctorAssignments.doctorId, req.user.id)
-        )
-      );
-
-    if (assignment.length === 0) {
-      return res.status(403).json({ message: "Non autorizzato a firmare questo referto" });
     }
 
     if (report.status === "signed") {
@@ -507,26 +469,14 @@ router.post("/:id/verify-otp", isAuthenticated, isReportDoctor, async (req: any,
     }
 
     const report = await db.query.reportDocuments.findFirst({
-      where: eq(reportDocuments.id, id),
+      where: and(
+        eq(reportDocuments.id, id),
+        eq(reportDocuments.assignedDoctorId, req.user.id)
+      ),
     });
 
     if (!report) {
       return res.status(404).json({ message: "Referto non trovato" });
-    }
-
-    // Verify doctor is assigned to the operator who uploaded this report
-    const assignment = await db
-      .select()
-      .from(operatorDoctorAssignments)
-      .where(
-        and(
-          eq(operatorDoctorAssignments.operatorId, report.uploadedByOperatorId),
-          eq(operatorDoctorAssignments.doctorId, req.user.id)
-        )
-      );
-
-    if (assignment.length === 0) {
-      return res.status(403).json({ message: "Non autorizzato a firmare questo referto" });
     }
 
     if (report.status === "signed") {
@@ -585,7 +535,6 @@ router.post("/:id/verify-otp", isAuthenticated, isReportDoctor, async (req: any,
         signedAt: new Date(),
         signatureOtpChannel: otpRecord.channel,
         signedPdfPath: pdfPath,
-        assignedDoctorId: req.user.id, // Set the signing doctor
         updatedAt: new Date(),
       })
       .where(eq(reportDocuments.id, id));
@@ -881,32 +830,21 @@ router.get("/admin/operators", isAuthenticated, async (req: any, res) => {
 
     const enrichedOperators = await Promise.all(
       operators.map(async (op) => {
-        // Get all assigned doctors from the many-to-many table
-        const assignments = await db
-          .select()
-          .from(operatorDoctorAssignments)
-          .where(eq(operatorDoctorAssignments.operatorId, op.id));
-
-        const assignedDoctorIds = assignments.map(a => a.doctorId);
-        
-        let assignedDoctors: { id: string; name: string }[] = [];
-        if (assignedDoctorIds.length > 0) {
-          const doctors = await db.query.users.findMany({
-            where: inArray(users.id, assignedDoctorIds),
-          });
-          assignedDoctors = doctors.map(d => ({
-            id: d.id,
-            name: `Dr. ${d.firstName} ${d.lastName}`,
-          }));
-        }
+        const assignedDoctor = op.assignedReportDoctorId
+          ? await db.query.users.findFirst({
+              where: eq(users.id, op.assignedReportDoctorId),
+            })
+          : null;
 
         return {
           id: op.id,
           email: op.email,
           firstName: op.firstName,
           lastName: op.lastName,
-          assignedDoctorIds: assignedDoctorIds,
-          assignedDoctors: assignedDoctors,
+          assignedDoctorId: op.assignedReportDoctorId,
+          assignedDoctorName: assignedDoctor
+            ? `Dr. ${assignedDoctor.firstName} ${assignedDoctor.lastName}`
+            : null,
         };
       })
     );
@@ -944,94 +882,27 @@ router.get("/admin/doctors", isAuthenticated, async (req: any, res) => {
   }
 });
 
-router.patch("/admin/assign-doctors", isAuthenticated, async (req: any, res) => {
+router.patch("/admin/assign-doctor", isAuthenticated, async (req: any, res) => {
   try {
     if (!req.user.isAdmin) {
       return res.status(403).json({ message: "Accesso non autorizzato" });
     }
 
-    const { operatorId, doctorIds } = req.body;
+    const { operatorId, doctorId } = req.body;
 
     if (!operatorId) {
       return res.status(400).json({ message: "ID operatore obbligatorio" });
     }
 
-    // Delete all existing assignments for this operator
     await db
-      .delete(operatorDoctorAssignments)
-      .where(eq(operatorDoctorAssignments.operatorId, operatorId));
-
-    // Insert new assignments
-    if (doctorIds && doctorIds.length > 0) {
-      await db.insert(operatorDoctorAssignments).values(
-        doctorIds.map((doctorId: string) => ({
-          operatorId,
-          doctorId,
-        }))
-      );
-    }
+      .update(users)
+      .set({ assignedReportDoctorId: doctorId || null })
+      .where(eq(users.id, operatorId));
 
     res.json({ success: true });
   } catch (error: any) {
     console.error("[REPORT_ASSIGN] Error:", error);
     res.status(500).json({ message: "Errore durante l'assegnazione" });
-  }
-});
-
-// Add single doctor assignment (add)
-router.post("/admin/add-doctor-assignment", isAuthenticated, async (req: any, res) => {
-  try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: "Accesso non autorizzato" });
-    }
-
-    const { operatorId, doctorId } = req.body;
-
-    if (!operatorId || !doctorId) {
-      return res.status(400).json({ message: "ID operatore e medico obbligatori" });
-    }
-
-    await db.insert(operatorDoctorAssignments).values({
-      operatorId,
-      doctorId,
-    });
-
-    res.json({ success: true });
-  } catch (error: any) {
-    if (error.code === '23505') {
-      return res.status(400).json({ message: "Assegnazione già esistente" });
-    }
-    console.error("[REPORT_ADD_ASSIGN] Error:", error);
-    res.status(500).json({ message: "Errore durante l'assegnazione" });
-  }
-});
-
-// Remove single doctor assignment
-router.delete("/admin/remove-doctor-assignment", isAuthenticated, async (req: any, res) => {
-  try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: "Accesso non autorizzato" });
-    }
-
-    const { operatorId, doctorId } = req.body;
-
-    if (!operatorId || !doctorId) {
-      return res.status(400).json({ message: "ID operatore e medico obbligatori" });
-    }
-
-    await db
-      .delete(operatorDoctorAssignments)
-      .where(
-        and(
-          eq(operatorDoctorAssignments.operatorId, operatorId),
-          eq(operatorDoctorAssignments.doctorId, doctorId)
-        )
-      );
-
-    res.json({ success: true });
-  } catch (error: any) {
-    console.error("[REPORT_REMOVE_ASSIGN] Error:", error);
-    res.status(500).json({ message: "Errore durante la rimozione" });
   }
 });
 

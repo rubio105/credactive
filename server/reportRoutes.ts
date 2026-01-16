@@ -633,7 +633,7 @@ async function generateSignedPDF(report: ReportDocument, doctor: User | null): P
     const primaryColor = "#1a365d";
     const accentColor = "#2b6cb0";
 
-    const logoPath = path.join(process.cwd(), "attached_assets", "image_1768563399301.png");
+    const logoPath = path.join(process.cwd(), "attached_assets", "Immagine_16-01-26_-_18.22_1768584512639.png");
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 30, { width: 140 });
     }

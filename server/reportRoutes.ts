@@ -308,7 +308,7 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     const { id } = req.params;
     const { channel } = req.body;
 
-    if (!["whatsapp", "email"].includes(channel)) {
+    if (!["whatsapp", "email", "sms"].includes(channel)) {
       return res.status(400).json({ message: "Canale OTP non valido" });
     }
 
@@ -342,7 +342,7 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
       return res.status(400).json({ message: "Email non configurata nel profilo" });
     }
     
-    if (channel === "whatsapp" && !phoneNumber) {
+    if ((channel === "whatsapp" || channel === "sms") && !phoneNumber) {
       return res.status(400).json({ 
         message: "Numero di telefono non configurato. Aggiorna il tuo profilo." 
       });
@@ -417,6 +417,18 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
         });
       }
       console.log(`[REPORT_OTP] WhatsApp OTP sent successfully: ${whatsappResult.sid}`);
+    } else if (channel === "sms") {
+      console.log(`[REPORT_OTP] Sending SMS OTP to ${phoneNumber}`);
+      const twilioClient = twilio(
+        process.env.TWILIO_ACCOUNT_SID,
+        process.env.TWILIO_AUTH_TOKEN
+      );
+      await twilioClient.messages.create({
+        body: `Prohmed - Codice OTP per firma referto: ${otpCode}. Scade tra 5 minuti.`,
+        from: process.env.TWILIO_PHONE_NUMBER || "+15005550006",
+        to: phoneNumber!,
+      });
+      console.log(`[REPORT_OTP] SMS OTP sent successfully`);
     }
 
     await db

@@ -45,7 +45,7 @@ export default function RefertatorerReferti() {
   const [editedReport, setEditedReport] = useState("");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
-  const [otpChannel, setOtpChannel] = useState<"whatsapp" | "email">("email");
+  const [otpChannel, setOtpChannel] = useState<"whatsapp" | "email" | "sms">("email");
   const [otpCode, setOtpCode] = useState("");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -116,7 +116,7 @@ export default function RefertatorerReferti() {
 
       toast({
         title: "OTP inviato",
-        description: `Codice di verifica inviato via ${otpChannel === "whatsapp" ? "WhatsApp" : "Email"}`,
+        description: `Codice di verifica inviato via ${otpChannel === "whatsapp" ? "WhatsApp" : otpChannel === "sms" ? "SMS" : "Email"}`,
       });
 
       setIsEditorOpen(false);
@@ -412,6 +412,16 @@ export default function RefertatorerReferti() {
                   <MessageSquare className="h-4 w-4 mr-2" />
                   WhatsApp
                 </Button>
+                <Button
+                  type="button"
+                  variant={otpChannel === "sms" ? "default" : "outline"}
+                  onClick={() => setOtpChannel("sms")}
+                  className="flex-1"
+                  data-testid="button-otp-sms"
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  SMS
+                </Button>
               </div>
             </div>
           </div>
@@ -451,7 +461,7 @@ export default function RefertatorerReferti() {
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               Inserisci il codice di verifica ricevuto via{" "}
-              {otpChannel === "whatsapp" ? "WhatsApp" : "Email"} per firmare il referto.
+              {otpChannel === "whatsapp" ? "WhatsApp" : otpChannel === "sms" ? "SMS" : "Email"} per firmare il referto.
             </p>
 
             <div className="space-y-2">

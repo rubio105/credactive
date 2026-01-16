@@ -51,6 +51,18 @@ CIRY features fully embedded video calls using Twilio Video, enabling in-app vid
 ### AI Medical Report Generation (Teleconsult Reports)
 A complete automated workflow generates, edits, and distributes AI-powered medical reports from teleconsult video calls. This involves auto-recording Twilio calls, transcribing them using OpenAI Whisper, and AI analysis by Gemini AI to generate structured medical reports with mandatory sections (Sintesi Diagnostica, Proposta Terapeutica, Piano di Follow-up). Doctors review and edit these reports before final distribution via email and WhatsApp. Editable Prevention Reports allow doctors to create and share prevention plans with patients, including document attachments. All reports are stored as `mlTrainingData` for Active Learning.
 
+### Prohmed Refertazione Massiva System
+A dedicated medical report workflow for bulk document processing with strict role segregation:
+- **Operators** (`/operatore/referti`): Upload PDF/image documents with patient info. Operators can only upload, not review.
+- **Doctors** (`/refertatore/referti`): Review AI-generated draft reports, edit, and sign with OTP verification. Doctors can only review, not upload.
+- **Admin** (`/admin/referti`): Manage all reports and assign operators to doctors.
+- **AI Processing**: Documents are analyzed with OCR/text extraction, AI generates draft reports with structured sections.
+- **OTP Signature**: Doctors sign reports via SMS or WhatsApp OTP (5-minute expiry, max 5 attempts).
+- **PDF Generation**: Signed PDFs include Prohmed logo (`attached_assets/image_1768563399301.png`).
+- **Audit Trail**: Complete logging in `report_activity_logs` table for compliance (upload, ai_processed, reviewed, edited, otp_sent, signed).
+- **Database Tables**: `report_documents`, `report_signature_otps`, `report_activity_logs`.
+- **User Roles**: `isReportOperator`, `isReportDoctor`, `assignedReportDoctorId` fields in users table.
+
 ## System Design Choices
 
 ### Base URL Configuration

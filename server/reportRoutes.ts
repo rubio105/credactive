@@ -5,7 +5,7 @@ import fs from "fs";
 import bcrypt from "bcryptjs";
 import PDFDocument from "pdfkit";
 import { db } from "./db";
-import { reportDocuments, reportSignatureOtps, reportActivityLogs, users } from "@shared/schema";
+import { reportDocuments, reportSignatureOtps, reportActivityLogs, users, operatorDoctorAssignments } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { isAuthenticated } from "./authSetup";
 import { sendWhatsAppMessage } from "./twilio";
@@ -830,21 +830,32 @@ router.get("/admin/operators", isAuthenticated, async (req: any, res) => {
 
     const enrichedOperators = await Promise.all(
       operators.map(async (op) => {
-        const assignedDoctor = op.assignedReportDoctorId
-          ? await db.query.users.findFirst({
-              where: eq(users.id, op.assignedReportDoctorId),
-            })
-          : null;
+        // Get all assigned doctors from the many-to-many table
+        const assignments = await db
+          .select()
+          .from(operatorDoctorAssignments)
+          .where(eq(operatorDoctorAssignments.operatorId, op.id));
+
+        const assignedDoctorIds = assignments.map(a => a.doctorId);
+        
+        let assignedDoctors: { id: string; name: string }[] = [];
+        if (assignedDoctorIds.length > 0) {
+          const doctors = await db.query.users.findMany({
+            where: inArray(users.id, assignedDoctorIds),
+          });
+          assignedDoctors = doctors.map(d => ({
+            id: d.id,
+            name: `Dr. ${d.firstName} ${d.lastName}`,
+          }));
+        }
 
         return {
           id: op.id,
           email: op.email,
           firstName: op.firstName,
           lastName: op.lastName,
-          assignedDoctorId: op.assignedReportDoctorId,
-          assignedDoctorName: assignedDoctor
-            ? `Dr. ${assignedDoctor.firstName} ${assignedDoctor.lastName}`
-            : null,
+          assignedDoctorIds: assignedDoctorIds,
+          assignedDoctors: assignedDoctors,
         };
       })
     );
@@ -882,7 +893,42 @@ router.get("/admin/doctors", isAuthenticated, async (req: any, res) => {
   }
 });
 
-router.patch("/admin/assign-doctor", isAuthenticated, async (req: any, res) => {
+router.patch("/admin/assign-doctors", isAuthenticated, async (req: any, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Accesso non autorizzato" });
+    }
+
+    const { operatorId, doctorIds } = req.body;
+
+    if (!operatorId) {
+      return res.status(400).json({ message: "ID operatore obbligatorio" });
+    }
+
+    // Delete all existing assignments for this operator
+    await db
+      .delete(operatorDoctorAssignments)
+      .where(eq(operatorDoctorAssignments.operatorId, operatorId));
+
+    // Insert new assignments
+    if (doctorIds && doctorIds.length > 0) {
+      await db.insert(operatorDoctorAssignments).values(
+        doctorIds.map((doctorId: string) => ({
+          operatorId,
+          doctorId,
+        }))
+      );
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("[REPORT_ASSIGN] Error:", error);
+    res.status(500).json({ message: "Errore durante l'assegnazione" });
+  }
+});
+
+// Add single doctor assignment (add)
+router.post("/admin/add-doctor-assignment", isAuthenticated, async (req: any, res) => {
   try {
     if (!req.user.isAdmin) {
       return res.status(403).json({ message: "Accesso non autorizzato" });
@@ -890,19 +936,51 @@ router.patch("/admin/assign-doctor", isAuthenticated, async (req: any, res) => {
 
     const { operatorId, doctorId } = req.body;
 
-    if (!operatorId) {
-      return res.status(400).json({ message: "ID operatore obbligatorio" });
+    if (!operatorId || !doctorId) {
+      return res.status(400).json({ message: "ID operatore e medico obbligatori" });
     }
 
-    await db
-      .update(users)
-      .set({ assignedReportDoctorId: doctorId || null })
-      .where(eq(users.id, operatorId));
+    await db.insert(operatorDoctorAssignments).values({
+      operatorId,
+      doctorId,
+    });
 
     res.json({ success: true });
   } catch (error: any) {
-    console.error("[REPORT_ASSIGN] Error:", error);
+    if (error.code === '23505') {
+      return res.status(400).json({ message: "Assegnazione già esistente" });
+    }
+    console.error("[REPORT_ADD_ASSIGN] Error:", error);
     res.status(500).json({ message: "Errore durante l'assegnazione" });
+  }
+});
+
+// Remove single doctor assignment
+router.delete("/admin/remove-doctor-assignment", isAuthenticated, async (req: any, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Accesso non autorizzato" });
+    }
+
+    const { operatorId, doctorId } = req.body;
+
+    if (!operatorId || !doctorId) {
+      return res.status(400).json({ message: "ID operatore e medico obbligatori" });
+    }
+
+    await db
+      .delete(operatorDoctorAssignments)
+      .where(
+        and(
+          eq(operatorDoctorAssignments.operatorId, operatorId),
+          eq(operatorDoctorAssignments.doctorId, doctorId)
+        )
+      );
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("[REPORT_REMOVE_ASSIGN] Error:", error);
+    res.status(500).json({ message: "Errore durante la rimozione" });
   }
 });
 

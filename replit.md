@@ -5,6 +5,8 @@ CIRY (Care & Intelligence Ready for You) is a B2B healthcare prevention platform
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+Working environment: Production server (Hetzner VPS 157.180.21.147)
+Deploy command: `cd /var/www/credactive && git pull origin main && npm run build && pm2 restart credactive`
 
 # System Architecture
 

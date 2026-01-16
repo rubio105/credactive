@@ -2968,3 +2968,22 @@ export const insertReportActivityLogSchema = createInsertSchema(reportActivityLo
   createdAt: true,
 });
 export type InsertReportActivityLog = z.infer<typeof insertReportActivityLogSchema>;
+
+// Operator-Doctor assignments (many-to-many relationship)
+export const operatorDoctorAssignments = pgTable("operator_doctor_assignments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  operatorId: varchar("operator_id", { length: 191 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  doctorId: varchar("doctor_id", { length: 191 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_op_doc_operator").on(table.operatorId),
+  index("idx_op_doc_doctor").on(table.doctorId),
+  unique("unique_operator_doctor").on(table.operatorId, table.doctorId),
+]);
+
+export type OperatorDoctorAssignment = typeof operatorDoctorAssignments.$inferSelect;
+export const insertOperatorDoctorAssignmentSchema = createInsertSchema(operatorDoctorAssignments).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertOperatorDoctorAssignment = z.infer<typeof insertOperatorDoctorAssignmentSchema>;

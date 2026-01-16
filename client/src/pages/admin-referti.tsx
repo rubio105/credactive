@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   FileText,
   CheckCircle,
@@ -21,6 +22,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Plus,
+  X,
 } from "lucide-react";
 
 interface ReportDocument {
@@ -39,8 +42,8 @@ interface Operator {
   email: string;
   firstName: string;
   lastName: string;
-  assignedDoctorId?: string;
-  assignedDoctorName?: string;
+  assignedDoctorIds: string[];
+  assignedDoctors: { id: string; name: string }[];
 }
 
 interface Doctor {
@@ -73,15 +76,15 @@ export default function AdminReferti() {
     queryKey: ["/api/report-documents/admin/doctors"],
   });
 
-  const assignDoctorMutation = useMutation({
-    mutationFn: async ({ operatorId, doctorId }: { operatorId: string; doctorId: string | null }) => {
-      return apiRequest("/api/report-documents/admin/assign-doctor", "PATCH", {
+  const addDoctorMutation = useMutation({
+    mutationFn: async ({ operatorId, doctorId }: { operatorId: string; doctorId: string }) => {
+      return apiRequest("/api/report-documents/admin/add-doctor-assignment", "POST", {
         operatorId,
         doctorId,
       });
     },
     onSuccess: () => {
-      toast({ title: "Assegnazione aggiornata" });
+      toast({ title: "Medico aggiunto" });
       queryClient.invalidateQueries({ queryKey: ["/api/report-documents/admin/operators"] });
     },
     onError: (error: any) => {
@@ -92,6 +95,34 @@ export default function AdminReferti() {
       });
     },
   });
+
+  const removeDoctorMutation = useMutation({
+    mutationFn: async ({ operatorId, doctorId }: { operatorId: string; doctorId: string }) => {
+      return apiRequest("/api/report-documents/admin/remove-doctor-assignment", "DELETE", {
+        operatorId,
+        doctorId,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Medico rimosso" });
+      queryClient.invalidateQueries({ queryKey: ["/api/report-documents/admin/operators"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante la rimozione",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDoctorToggle = (operatorId: string, doctorId: string, isAssigned: boolean) => {
+    if (isAssigned) {
+      removeDoctorMutation.mutate({ operatorId, doctorId });
+    } else {
+      addDoctorMutation.mutate({ operatorId, doctorId });
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -354,8 +385,8 @@ export default function AdminReferti() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-4">
-                Assegna ogni operatore a un medico refertatore. I documenti caricati dall'operatore
-                verranno automaticamente assegnati al medico selezionato.
+                Assegna uno o più medici refertatori a ogni operatore. I documenti caricati dall'operatore
+                verranno resi disponibili ai medici assegnati.
               </p>
 
               {operatorsLoading || doctorsLoading ? (
@@ -366,44 +397,81 @@ export default function AdminReferti() {
                 <p className="text-gray-500 text-center py-8">
                   Nessun operatore configurato. Crea utenti con il ruolo "Operatore Caricamento".
                 </p>
+              ) : !doctors?.length ? (
+                <p className="text-gray-500 text-center py-8">
+                  Nessun medico refertatore disponibile. Crea utenti con il ruolo "Medico Refertatore".
+                </p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {operators.map((operator) => (
                     <div
                       key={operator.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
+                      className="p-4 bg-gray-50 rounded-lg border"
                       data-testid={`operator-${operator.id}`}
                     >
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {operator.firstName} {operator.lastName}
-                        </p>
-                        <p className="text-sm text-gray-500">{operator.email}</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {operator.firstName} {operator.lastName}
+                          </p>
+                          <p className="text-sm text-gray-500">{operator.email}</p>
+                        </div>
+                        <span className="text-sm text-blue-600 font-medium">
+                          {operator.assignedDoctorIds?.length || 0} medici assegnati
+                        </span>
                       </div>
-                      <div className="w-64">
-                        <Select
-                          value={operator.assignedDoctorId || "none"}
-                          onValueChange={(value) =>
-                            assignDoctorMutation.mutate({
-                              operatorId: operator.id,
-                              doctorId: value === "none" ? null : value,
-                            })
-                          }
-                        >
-                          <SelectTrigger data-testid={`select-doctor-${operator.id}`}>
-                            <SelectValue placeholder="Seleziona medico" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nessun medico</SelectItem>
-                            {doctors?.map((doctor) => (
-                              <SelectItem key={doctor.id} value={doctor.id}>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {doctors.map((doctor) => {
+                          const isAssigned = operator.assignedDoctorIds?.includes(doctor.id) || false;
+                          return (
+                            <div
+                              key={doctor.id}
+                              className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${
+                                isAssigned 
+                                  ? "bg-blue-100 border border-blue-300" 
+                                  : "bg-white border border-gray-200 hover:bg-gray-100"
+                              }`}
+                              onClick={() => handleDoctorToggle(operator.id, doctor.id, isAssigned)}
+                              data-testid={`assign-${operator.id}-${doctor.id}`}
+                            >
+                              <Checkbox
+                                checked={isAssigned}
+                                disabled={addDoctorMutation.isPending || removeDoctorMutation.isPending}
+                              />
+                              <span className="text-sm">
                                 Dr. {doctor.firstName} {doctor.lastName}
-                                {doctor.specialization && ` - ${doctor.specialization}`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
+
+                      {operator.assignedDoctors && operator.assignedDoctors.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">Medici assegnati:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {operator.assignedDoctors.map((doc) => (
+                              <span
+                                key={doc.id}
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs"
+                              >
+                                {doc.name}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDoctorToggle(operator.id, doc.id, true);
+                                  }}
+                                  className="hover:text-red-600"
+                                  data-testid={`remove-${operator.id}-${doc.id}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

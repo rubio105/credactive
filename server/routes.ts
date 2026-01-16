@@ -2070,6 +2070,22 @@ Scrivi SOLO la nota, senza introduzioni o meta-commenti.`;
     }
   });
 
+  // Alias for /api/auth/user - used by report operator/doctor pages
+  app.get('/api/auth/me', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // Update user consents (only optional consents: marketing, commercial, scientific)
   const updateConsentsSchema = z.object({
     marketingConsent: z.boolean().optional(),

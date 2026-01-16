@@ -792,8 +792,7 @@ router.get("/:id/original", isAuthenticated, async (req: any, res) => {
 
     const canAccess =
       req.user.isAdmin ||
-      req.user.isReportDoctor ||
-      req.user.id === report.assignedDoctorId ||
+      (req.user.isReportDoctor && req.user.id === report.assignedDoctorId) ||
       req.user.id === report.uploadedByOperatorId;
 
     if (!canAccess) {

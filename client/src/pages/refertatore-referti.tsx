@@ -24,6 +24,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  FileImage,
 } from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
@@ -341,6 +342,15 @@ export default function RefertatorerReferti() {
                           <div className="flex items-center gap-3">
                             {getStatusBadge(report.status)}
                             <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`/api/report-documents/${report.id}/original`, "_blank")}
+                              data-testid={`button-original-${report.id}`}
+                            >
+                              <FileImage className="h-4 w-4 mr-2" />
+                              Originale
+                            </Button>
+                            <Button
                               onClick={() => openEditor(report)}
                               size="sm"
                               data-testid={`button-edit-${report.id}`}
@@ -466,6 +476,18 @@ export default function RefertatorerReferti() {
           </DialogHeader>
 
           <div className="space-y-4">
+            <div className="flex gap-2 mb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => selectedReport && window.open(`/api/report-documents/${selectedReport.id}/original`, "_blank")}
+                data-testid="button-view-original"
+              >
+                <FileImage className="h-4 w-4 mr-2" />
+                Vedi Documento Originale
+              </Button>
+            </div>
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-2">Bozza AI</h4>
               <p className="text-sm text-blue-800 whitespace-pre-wrap">

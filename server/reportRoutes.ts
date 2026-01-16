@@ -671,18 +671,18 @@ async function generateSignedPDF(report: ReportDocument, doctor: User | null): P
     doc.font("Helvetica").text(signDate);
 
     doc.y = boxY + 70;
-    doc.moveDown(1);
+    doc.moveDown(0.5);
 
     const reportText = report.finalReport || report.aiDraftReport || "";
     formatReportContent(doc, reportText, doc.page.width - 100);
 
-    doc.moveDown(3);
+    doc.moveDown(1.5);
 
-    if (doc.y > doc.page.height - 180) {
+    if (doc.y > doc.page.height - 140) {
       doc.addPage();
     }
 
-    const signatureStartY = doc.y + 20;
+    const signatureStartY = doc.y + 10;
 
     doc.moveTo(doc.page.width - 220, signatureStartY)
       .lineTo(doc.page.width - 50, signatureStartY)
@@ -775,6 +775,48 @@ router.get("/:id/pdf", isAuthenticated, async (req: any, res) => {
   } catch (error: any) {
     console.error("[REPORT_PDF] Error:", error);
     res.status(500).json({ message: "Errore nel recupero del PDF" });
+  }
+});
+
+router.get("/:id/original", isAuthenticated, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+
+    const report = await db.query.reportDocuments.findFirst({
+      where: eq(reportDocuments.id, id),
+    });
+
+    if (!report) {
+      return res.status(404).json({ message: "Documento non trovato" });
+    }
+
+    const canAccess =
+      req.user.isAdmin ||
+      req.user.isReportDoctor ||
+      req.user.id === report.assignedDoctorId ||
+      req.user.id === report.uploadedByOperatorId;
+
+    if (!canAccess) {
+      return res.status(403).json({ message: "Accesso non autorizzato" });
+    }
+
+    if (!report.filePath || !fs.existsSync(report.filePath)) {
+      return res.status(404).json({ message: "File originale non disponibile" });
+    }
+
+    const ext = path.extname(report.filePath).toLowerCase();
+    const contentType = ext === ".pdf" ? "application/pdf" : 
+                        ext === ".png" ? "image/png" : "image/jpeg";
+    
+    res.setHeader("Content-Type", contentType);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${report.originalFileName || 'documento-originale' + ext}"`
+    );
+    fs.createReadStream(report.filePath).pipe(res);
+  } catch (error: any) {
+    console.error("[REPORT_ORIGINAL] Error:", error);
+    res.status(500).json({ message: "Errore nel recupero del file originale" });
   }
 });
 

@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Upload, FileText, CheckCircle, Clock, LogOut, Loader2 } from "lucide-react";
+import { Upload, FileText, CheckCircle, Clock, LogOut, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+
+const ITEMS_PER_PAGE = 10;
 const prohmedLogo = "/images/ciry-logo.png";
 
 export default function OperatoreReferti() {
@@ -17,6 +20,9 @@ export default function OperatoreReferti() {
   const [patientName, setPatientName] = useState("");
   const [patientFiscalCode, setPatientFiscalCode] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: user } = useQuery<any>({
     queryKey: ["/api/auth/me"],
@@ -25,6 +31,20 @@ export default function OperatoreReferti() {
   const { data: myReports, isLoading: reportsLoading } = useQuery<any[]>({
     queryKey: ["/api/report-documents/operator/my-uploads"],
   });
+
+  const filteredReports = useMemo(() => {
+    if (!myReports) return [];
+    return myReports.filter((r) => {
+      const matchesSearch = searchTerm === "" || 
+        r.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.patientFiscalCode?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || r.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [myReports, searchTerm, statusFilter]);
+
+  const paginatedReports = filteredReports.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -261,40 +281,81 @@ export default function OperatoreReferti() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-gray-600" />
-              Documenti Caricati
+              Documenti Caricati ({filteredReports.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Cerca per nome paziente o CF..."
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  className="pl-10"
+                  data-testid="input-search"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
+                <SelectTrigger className="w-[160px]" data-testid="select-status">
+                  <SelectValue placeholder="Stato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti</SelectItem>
+                  <SelectItem value="processing">In elaborazione</SelectItem>
+                  <SelectItem value="pending_review">In revisione</SelectItem>
+                  <SelectItem value="signed">Firmato</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {reportsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
               </div>
-            ) : !myReports?.length ? (
-              <p className="text-gray-500 text-center py-8">Nessun documento caricato</p>
+            ) : filteredReports.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nessun documento trovato</p>
             ) : (
-              <div className="space-y-3">
-                {myReports.map((report: any) => (
-                  <div
-                    key={report.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    data-testid={`report-item-${report.id}`}
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">{report.patientName}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(report.createdAt).toLocaleDateString("it-IT", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+              <>
+                <div className="space-y-3">
+                  {paginatedReports.map((report: any) => (
+                    <div
+                      key={report.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      data-testid={`report-item-${report.id}`}
+                    >
+                      <div>
+                        <p className="font-medium text-gray-900">{report.patientName}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(report.createdAt).toLocaleDateString("it-IT", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                      {getStatusBadge(report.status)}
                     </div>
-                    {getStatusBadge(report.status)}
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                    <span className="text-sm text-gray-500">
+                      Pagina {currentPage} di {totalPages}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

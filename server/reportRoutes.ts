@@ -9,6 +9,7 @@ import { reportDocuments, reportSignatureOtps, reportActivityLogs, users } from 
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { isAuthenticated } from "./authSetup";
 import { sendWhatsAppMessage } from "./twilio";
+import { sendEmail } from "./email";
 import { generateMedicalReportDraft, extractTextFromMedicalReport } from "./gemini";
 import { z } from "zod";
 import twilio from "twilio";
@@ -307,7 +308,7 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     const { id } = req.params;
     const { channel } = req.body;
 
-    if (!["sms", "whatsapp"].includes(channel)) {
+    if (!["sms", "whatsapp", "email"].includes(channel)) {
       return res.status(400).json({ message: "Canale OTP non valido" });
     }
 
@@ -335,7 +336,13 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     });
 
     const phoneNumber = doctor?.phone || doctor?.whatsappNumber;
-    if (!phoneNumber) {
+    const doctorEmail = doctor?.email;
+    
+    if (channel === "email" && !doctorEmail) {
+      return res.status(400).json({ message: "Email non configurata nel profilo" });
+    }
+    
+    if ((channel === "sms" || channel === "whatsapp") && !phoneNumber) {
       return res.status(400).json({ 
         message: "Numero di telefono non configurato. Aggiorna il tuo profilo." 
       });
@@ -345,16 +352,45 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     const otpHash = await bcrypt.hash(otpCode, 10);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
+    const contactInfo = channel === "email" 
+      ? doctorEmail!.replace(/(.{3}).*@/, "$1***@")
+      : phoneNumber!.replace(/\d(?=\d{4})/g, "*");
+
     await db.insert(reportSignatureOtps).values({
       reportDocumentId: id,
       doctorId: req.user.id,
       otpHash,
       channel,
-      phoneNumber: phoneNumber.replace(/\d(?=\d{4})/g, "*"),
+      phoneNumber: contactInfo,
       expiresAt,
     });
 
-    if (channel === "whatsapp") {
+    if (channel === "email") {
+      console.log(`[REPORT_OTP] Sending Email OTP to ${doctorEmail}`);
+      try {
+        await sendEmail({
+          to: doctorEmail!,
+          subject: "Prohmed - Codice OTP per firma referto",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2563eb;">Codice OTP per Firma Referto</h2>
+              <p>Il tuo codice di verifica per firmare il referto è:</p>
+              <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1f2937;">${otpCode}</span>
+              </div>
+              <p style="color: #6b7280; font-size: 14px;">Questo codice scade tra 5 minuti.</p>
+              <p style="color: #6b7280; font-size: 14px;">Se non hai richiesto questo codice, ignora questa email.</p>
+            </div>
+          `,
+        });
+        console.log(`[REPORT_OTP] Email OTP sent successfully`);
+      } catch (emailError: any) {
+        console.error(`[REPORT_OTP] Email failed:`, emailError);
+        return res.status(500).json({ 
+          message: `Errore invio email: ${emailError.message || 'Riprova più tardi'}` 
+        });
+      }
+    } else if (channel === "whatsapp") {
       console.log(`[REPORT_OTP] Sending WhatsApp OTP to ${phoneNumber}`);
       const whatsappResult = await sendWhatsAppMessage(
         phoneNumber,

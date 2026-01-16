@@ -20,6 +20,7 @@ import {
   Send,
   Phone,
   MessageSquare,
+  Mail,
   Eye,
   AlertCircle,
 } from "lucide-react";
@@ -44,7 +45,7 @@ export default function RefertatorerReferti() {
   const [editedReport, setEditedReport] = useState("");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
-  const [otpChannel, setOtpChannel] = useState<"sms" | "whatsapp">("sms");
+  const [otpChannel, setOtpChannel] = useState<"sms" | "whatsapp" | "email">("email");
   const [otpCode, setOtpCode] = useState("");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -115,7 +116,7 @@ export default function RefertatorerReferti() {
 
       toast({
         title: "OTP inviato",
-        description: `Codice di verifica inviato via ${otpChannel === "sms" ? "SMS" : "WhatsApp"}`,
+        description: `Codice di verifica inviato via ${otpChannel === "sms" ? "SMS" : otpChannel === "whatsapp" ? "WhatsApp" : "Email"}`,
       });
 
       setIsEditorOpen(false);
@@ -390,16 +391,16 @@ export default function RefertatorerReferti() {
 
             <div className="space-y-2">
               <Label>Metodo Firma OTP</Label>
-              <div className="flex gap-4">
+              <div className="flex gap-2">
                 <Button
                   type="button"
-                  variant={otpChannel === "sms" ? "default" : "outline"}
-                  onClick={() => setOtpChannel("sms")}
+                  variant={otpChannel === "email" ? "default" : "outline"}
+                  onClick={() => setOtpChannel("email")}
                   className="flex-1"
-                  data-testid="button-otp-sms"
+                  data-testid="button-otp-email"
                 >
-                  <Phone className="h-4 w-4 mr-2" />
-                  SMS
+                  <Mail className="h-4 w-4 mr-2" />
+                  Email
                 </Button>
                 <Button
                   type="button"
@@ -410,6 +411,16 @@ export default function RefertatorerReferti() {
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
                   WhatsApp
+                </Button>
+                <Button
+                  type="button"
+                  variant={otpChannel === "sms" ? "default" : "outline"}
+                  onClick={() => setOtpChannel("sms")}
+                  className="flex-1"
+                  data-testid="button-otp-sms"
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  SMS
                 </Button>
               </div>
             </div>
@@ -450,7 +461,7 @@ export default function RefertatorerReferti() {
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               Inserisci il codice di verifica ricevuto via{" "}
-              {otpChannel === "sms" ? "SMS" : "WhatsApp"} per firmare il referto.
+              {otpChannel === "sms" ? "SMS" : otpChannel === "whatsapp" ? "WhatsApp" : "Email"} per firmare il referto.
             </p>
 
             <div className="space-y-2">

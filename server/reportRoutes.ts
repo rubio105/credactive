@@ -105,11 +105,13 @@ router.post(
         return res.status(400).json({ message: "Nome paziente obbligatorio" });
       }
 
-      const operator = await db.query.users.findFirst({
-        where: eq(users.id, req.user.id),
-      });
+      // Check if operator has at least one doctor assigned (many-to-many)
+      const assignments = await db
+        .select()
+        .from(operatorDoctorAssignments)
+        .where(eq(operatorDoctorAssignments.operatorId, req.user.id));
 
-      if (!operator?.assignedReportDoctorId) {
+      if (assignments.length === 0) {
         return res.status(400).json({ 
           message: "Nessun medico assegnato. Contatta l'amministratore." 
         });
@@ -128,7 +130,7 @@ router.post(
           fileType,
           status: "processing",
           uploadedByOperatorId: req.user.id,
-          assignedDoctorId: operator.assignedReportDoctorId,
+          assignedDoctorId: null, // Will be visible to all assigned doctors
         })
         .returning();
 
@@ -233,10 +235,21 @@ router.get("/operator/my-uploads", isAuthenticated, isReportOperator, async (req
 
 router.get("/doctor/pending", isAuthenticated, isReportDoctor, async (req: any, res) => {
   try {
+    // Get all operators assigned to this doctor
+    const assignments = await db
+      .select()
+      .from(operatorDoctorAssignments)
+      .where(eq(operatorDoctorAssignments.doctorId, req.user.id));
+    
+    const assignedOperatorIds = assignments.map(a => a.operatorId);
+
+    // Get reports: either directly assigned OR uploaded by an assigned operator
     const reports = await db.query.reportDocuments.findMany({
       where: and(
-        eq(reportDocuments.assignedDoctorId, req.user.id),
-        inArray(reportDocuments.status, ["pending_review", "in_review", "pending_signature"])
+        inArray(reportDocuments.status, ["pending_review", "in_review", "pending_signature"]),
+        assignedOperatorIds.length > 0
+          ? inArray(reportDocuments.uploadedByOperatorId, assignedOperatorIds)
+          : eq(reportDocuments.assignedDoctorId, req.user.id) // Fallback for legacy
       ),
       orderBy: [desc(reportDocuments.createdAt)],
     });
@@ -250,6 +263,7 @@ router.get("/doctor/pending", isAuthenticated, isReportDoctor, async (req: any, 
 
 router.get("/doctor/signed", isAuthenticated, isReportDoctor, async (req: any, res) => {
   try {
+    // Show reports signed by this doctor (assignedDoctorId is set when signing)
     const reports = await db.query.reportDocuments.findMany({
       where: and(
         eq(reportDocuments.assignedDoctorId, req.user.id),
@@ -271,14 +285,26 @@ router.patch("/:id/edit", isAuthenticated, isReportDoctor, async (req: any, res)
     const { finalReport } = req.body;
 
     const report = await db.query.reportDocuments.findFirst({
-      where: and(
-        eq(reportDocuments.id, id),
-        eq(reportDocuments.assignedDoctorId, req.user.id)
-      ),
+      where: eq(reportDocuments.id, id),
     });
 
     if (!report) {
       return res.status(404).json({ message: "Referto non trovato" });
+    }
+
+    // Verify doctor is assigned to the operator who uploaded this report
+    const assignment = await db
+      .select()
+      .from(operatorDoctorAssignments)
+      .where(
+        and(
+          eq(operatorDoctorAssignments.operatorId, report.uploadedByOperatorId),
+          eq(operatorDoctorAssignments.doctorId, req.user.id)
+        )
+      );
+
+    if (assignment.length === 0) {
+      return res.status(403).json({ message: "Non autorizzato a modificare questo referto" });
     }
 
     if (report.status === "signed") {
@@ -313,14 +339,26 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     }
 
     const report = await db.query.reportDocuments.findFirst({
-      where: and(
-        eq(reportDocuments.id, id),
-        eq(reportDocuments.assignedDoctorId, req.user.id)
-      ),
+      where: eq(reportDocuments.id, id),
     });
 
     if (!report) {
       return res.status(404).json({ message: "Referto non trovato" });
+    }
+
+    // Verify doctor is assigned to the operator who uploaded this report
+    const assignment = await db
+      .select()
+      .from(operatorDoctorAssignments)
+      .where(
+        and(
+          eq(operatorDoctorAssignments.operatorId, report.uploadedByOperatorId),
+          eq(operatorDoctorAssignments.doctorId, req.user.id)
+        )
+      );
+
+    if (assignment.length === 0) {
+      return res.status(403).json({ message: "Non autorizzato a firmare questo referto" });
     }
 
     if (report.status === "signed") {
@@ -469,14 +507,26 @@ router.post("/:id/verify-otp", isAuthenticated, isReportDoctor, async (req: any,
     }
 
     const report = await db.query.reportDocuments.findFirst({
-      where: and(
-        eq(reportDocuments.id, id),
-        eq(reportDocuments.assignedDoctorId, req.user.id)
-      ),
+      where: eq(reportDocuments.id, id),
     });
 
     if (!report) {
       return res.status(404).json({ message: "Referto non trovato" });
+    }
+
+    // Verify doctor is assigned to the operator who uploaded this report
+    const assignment = await db
+      .select()
+      .from(operatorDoctorAssignments)
+      .where(
+        and(
+          eq(operatorDoctorAssignments.operatorId, report.uploadedByOperatorId),
+          eq(operatorDoctorAssignments.doctorId, req.user.id)
+        )
+      );
+
+    if (assignment.length === 0) {
+      return res.status(403).json({ message: "Non autorizzato a firmare questo referto" });
     }
 
     if (report.status === "signed") {
@@ -535,6 +585,7 @@ router.post("/:id/verify-otp", isAuthenticated, isReportDoctor, async (req: any,
         signedAt: new Date(),
         signatureOtpChannel: otpRecord.channel,
         signedPdfPath: pdfPath,
+        assignedDoctorId: req.user.id, // Set the signing doctor
         updatedAt: new Date(),
       })
       .where(eq(reportDocuments.id, id));

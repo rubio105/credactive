@@ -355,10 +355,18 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
     });
 
     if (channel === "whatsapp") {
-      await sendWhatsAppMessage(
+      console.log(`[REPORT_OTP] Sending WhatsApp OTP to ${phoneNumber}`);
+      const whatsappResult = await sendWhatsAppMessage(
         phoneNumber,
         `Prohmed - Codice OTP per firma referto: ${otpCode}\nScade tra 5 minuti.`
       );
+      if (!whatsappResult.success) {
+        console.error(`[REPORT_OTP] WhatsApp failed:`, whatsappResult.error);
+        return res.status(500).json({ 
+          message: `Errore invio WhatsApp: ${whatsappResult.error || 'Verifica che il numero sia corretto e abilitato per WhatsApp'}` 
+        });
+      }
+      console.log(`[REPORT_OTP] WhatsApp OTP sent successfully: ${whatsappResult.sid}`);
     } else {
       const twilioClient = twilio(
         process.env.TWILIO_ACCOUNT_SID,

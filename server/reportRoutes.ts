@@ -150,11 +150,8 @@ async function processReportWithAI(reportId: string, filePath: string, fileType:
     let extractedText = "";
 
     if (fileType === "pdf") {
-      const pdfBuffer = fs.readFileSync(filePath);
-      const pdfParseModule = await import("pdf-parse");
-      const pdfParse = pdfParseModule.default || pdfParseModule;
-      const pdfData = await pdfParse(pdfBuffer);
-      extractedText = pdfData.text;
+      const ocrResult = await extractTextFromMedicalReport(filePath, "application/pdf");
+      extractedText = ocrResult.extractedText || "";
     } else {
       const mimeType = filePath.endsWith(".png") ? "image/png" : "image/jpeg";
       const ocrResult = await extractTextFromMedicalReport(filePath, mimeType);

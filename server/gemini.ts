@@ -1,15 +1,10 @@
 import * as fs from "fs";
 import { GoogleGenAI, Modality } from "@google/genai";
-import { createRequire } from "module";
 import { gemmaClient } from "./gemmaClient";
 
 // DON'T DELETE THIS COMMENT
 // Blueprint: javascript_gemini integration
 // Gemini AI service for medical prevention system
-
-// pdf-parse (CommonJS module) - use createRequire for compatibility
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
 
 if (!process.env.GEMINI_API_KEY) {
   throw new Error("GEMINI_API_KEY environment variable is required");
@@ -881,12 +876,44 @@ export async function extractTextFromMedicalReport(
   try {
     let extractedText = "";
     
-    // Handle PDF files
+    // Handle PDF files with Gemini Vision
     if (mimeType === "application/pdf") {
       const pdfBuffer = fs.readFileSync(filePath);
-      const pdfData = await pdfParse(pdfBuffer);
-      extractedText = pdfData.text;
-      console.log("[Gemini] PDF text extracted:", extractedText.length, "characters");
+      
+      const pdfOcrPrompt = `Extract ALL text from this PDF document.
+      
+CRITICAL INSTRUCTIONS:
+- Extract EVERY piece of text visible in the document
+- Preserve exact structure and formatting (tables, lists, columns)
+- Include ALL medical data: patient info, test names, values, units, reference ranges
+- Include metadata: hospital/lab names, dates, doctor names
+- Return the complete raw text exactly as it appears in the document
+
+Respond ONLY with the extracted text, no commentary or explanations.`;
+
+      try {
+        console.log("[Gemini] Attempting PDF OCR with gemini-2.5-flash...");
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  data: pdfBuffer.toString("base64"),
+                  mimeType: "application/pdf",
+                },
+              },
+              { text: pdfOcrPrompt }
+            ]
+          }],
+        });
+        extractedText = response.text || "";
+        console.log("[Gemini] PDF text extracted:", extractedText.length, "characters");
+      } catch (pdfError) {
+        console.error("[Gemini] PDF OCR failed:", pdfError);
+        throw pdfError;
+      }
     }
     // Handle images (JPEG, PNG) with Gemini Vision OCR + Retry Logic
     else if (mimeType.startsWith("image/")) {

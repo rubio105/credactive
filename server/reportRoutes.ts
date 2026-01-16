@@ -373,7 +373,7 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
         await sendEmail({
           to: doctorEmail!,
           subject: "Prohmed - Codice OTP per firma referto",
-          html: `
+          htmlContent: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #2563eb;">Codice OTP per Firma Referto</h2>
               <p>Il tuo codice di verifica per firmare il referto è:</p>

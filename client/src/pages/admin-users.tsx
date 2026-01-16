@@ -58,6 +58,8 @@ interface User {
   isDoctor: boolean;
   isProhmedDoctor: boolean;
   aiOnlyAccess: boolean;
+  isReportOperator: boolean;
+  isReportDoctor: boolean;
   createdAt: string;
 }
 
@@ -72,6 +74,8 @@ interface NewUser {
   isDoctor: boolean;
   isProhmedDoctor: boolean;
   aiOnlyAccess: boolean;
+  isReportOperator: boolean;
+  isReportDoctor: boolean;
 }
 
 export default function AdminUsers() {
@@ -96,6 +100,8 @@ export default function AdminUsers() {
     isDoctor: false,
     isProhmedDoctor: false,
     aiOnlyAccess: false,
+    isReportOperator: false,
+    isReportDoctor: false,
   });
 
   const { data: users, isLoading } = useQuery<User[]>({
@@ -157,6 +163,8 @@ export default function AdminUsers() {
         isDoctor: false,
         isProhmedDoctor: false,
         aiOnlyAccess: false,
+        isReportOperator: false,
+        isReportDoctor: false,
       });
     },
     onError: (error: any) => {
@@ -193,6 +201,8 @@ export default function AdminUsers() {
         isDoctor: editingUser.isDoctor,
         isProhmedDoctor: editingUser.isProhmedDoctor,
         aiOnlyAccess: editingUser.aiOnlyAccess,
+        isReportOperator: editingUser.isReportOperator,
+        isReportDoctor: editingUser.isReportDoctor,
       },
     });
   };
@@ -722,6 +732,36 @@ export default function AdminUsers() {
                   />
                 </div>
               )}
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <div className="space-y-0.5">
+                  <Label htmlFor="report-operator" className="font-medium">📤 Operatore Caricamento Referti</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Può caricare documenti per la refertazione massiva
+                  </p>
+                </div>
+                <Switch
+                  id="report-operator"
+                  checked={editingUser.isReportOperator || false}
+                  onCheckedChange={(checked) => setEditingUser({ ...editingUser, isReportOperator: checked })}
+                  data-testid="switch-report-operator"
+                />
+              </div>
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-green-50 dark:bg-green-950/20">
+                <div className="space-y-0.5">
+                  <Label htmlFor="report-doctor" className="font-medium">📝 Medico Refertatore</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Può revisionare e firmare referti con OTP
+                  </p>
+                </div>
+                <Switch
+                  id="report-doctor"
+                  checked={editingUser.isReportDoctor || false}
+                  onCheckedChange={(checked) => setEditingUser({ ...editingUser, isReportDoctor: checked })}
+                  data-testid="switch-report-doctor"
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -848,6 +888,36 @@ export default function AdminUsers() {
                 />
               </div>
             )}
+            
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+              <div className="space-y-0.5">
+                <Label htmlFor="new-report-operator" className="font-medium">📤 Operatore Caricamento Referti</Label>
+                <p className="text-sm text-muted-foreground">
+                  Può caricare documenti per la refertazione massiva
+                </p>
+              </div>
+              <Switch
+                id="new-report-operator"
+                checked={newUser.isReportOperator || false}
+                onCheckedChange={(checked) => setNewUser({ ...newUser, isReportOperator: checked })}
+                data-testid="switch-new-report-operator"
+              />
+            </div>
+            
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-green-50 dark:bg-green-950/20">
+              <div className="space-y-0.5">
+                <Label htmlFor="new-report-doctor" className="font-medium">📝 Medico Refertatore</Label>
+                <p className="text-sm text-muted-foreground">
+                  Può revisionare e firmare referti con OTP
+                </p>
+              </div>
+              <Switch
+                id="new-report-doctor"
+                checked={newUser.isReportDoctor || false}
+                onCheckedChange={(checked) => setNewUser({ ...newUser, isReportDoctor: checked })}
+                data-testid="switch-new-report-doctor"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button 
@@ -865,6 +935,8 @@ export default function AdminUsers() {
                   isDoctor: false,
                   isProhmedDoctor: false,
                   aiOnlyAccess: false,
+                  isReportOperator: false,
+                  isReportDoctor: false,
                 });
               }}
             >

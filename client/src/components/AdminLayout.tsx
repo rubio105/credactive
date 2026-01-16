@@ -17,7 +17,8 @@ import {
   LogOut,
   MessageSquare,
   Brain,
-  Zap
+  Zap,
+  FileText
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -42,6 +43,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/push-notifications", icon: Bell, label: "Notifiche Push", testId: "nav-admin-push" },
     { href: "/admin/audit", icon: Shield, label: "Audit Log", testId: "nav-admin-audit" },
     { href: "/admin/ml-training", icon: Brain, label: "ML Training Data", testId: "nav-admin-ml" },
+    { href: "/admin/referti", icon: FileText, label: "Referti Prohmed", testId: "nav-admin-referti" },
     { href: "/admin/documentazione", icon: BookOpen, label: "Documentazione", testId: "nav-admin-docs" },
   ];
 

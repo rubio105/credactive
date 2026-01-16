@@ -407,6 +407,7 @@ export default function RefertatorerReferti() {
                   variant={otpChannel === "whatsapp" ? "default" : "outline"}
                   onClick={() => setOtpChannel("whatsapp")}
                   className="flex-1"
+                  disabled={!user?.phone}
                   data-testid="button-otp-whatsapp"
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
@@ -417,11 +418,19 @@ export default function RefertatorerReferti() {
                   variant={otpChannel === "sms" ? "default" : "outline"}
                   onClick={() => setOtpChannel("sms")}
                   className="flex-1"
+                  disabled={!user?.phone}
                   data-testid="button-otp-sms"
                 >
                   <Phone className="h-4 w-4 mr-2" />
                   SMS
                 </Button>
+              </div>
+              <div className="text-xs text-muted-foreground mt-2">
+                <span className="font-medium">Email:</span> {user?.email || "Non configurata"} | 
+                <span className="font-medium ml-2">Telefono:</span> {user?.phone || "Non configurato"}
+                {!user?.phone && (
+                  <span className="text-amber-600 ml-2">(Contatta admin per configurare WhatsApp/SMS)</span>
+                )}
               </div>
             </div>
           </div>

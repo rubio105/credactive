@@ -195,7 +195,7 @@ export default function AdminUsers() {
       updates: {
         firstName: editingUser.firstName,
         lastName: editingUser.lastName,
-        phone: editingUser.phone || undefined,
+        phone: editingUser.phone ?? '',
         isPremium: editingUser.subscriptionTier !== 'free',
         subscriptionTier: editingUser.subscriptionTier,
         isAdmin: editingUser.isAdmin,

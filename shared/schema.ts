@@ -93,6 +93,10 @@ export const users = pgTable("users", {
   doctorCode: varchar("doctor_code", { length: 20 }).unique(), // Unique code for doctors to share with patients
   pendingDoctorCode: varchar("pending_doctor_code", { length: 20 }), // Temporary referral code until email verification
   aiOnlyAccess: boolean("ai_only_access").default(false), // User can access ONLY AI prevention, not quiz/courses
+  // Report system roles (Prohmed refertazione massiva)
+  isReportOperator: boolean("is_report_operator").default(false), // Operator role: can only upload documents
+  isReportDoctor: boolean("is_report_doctor").default(false), // Report doctor role: can only review and sign reports
+  assignedReportDoctorId: varchar("assigned_report_doctor_id", { length: 191 }), // For operators: their assigned doctor for reports
   language: varchar("language", { length: 2 }), // it, en, es, fr
   // MFA (Multi-Factor Authentication) fields
   mfaEnabled: boolean("mfa_enabled").default(false),
@@ -2863,3 +2867,104 @@ export const examsRecommendationResponseSchema = z.object({
 export type ExamRecommendationItem = z.infer<typeof examRecommendationItemSchema>;
 export type ExamCategory = z.infer<typeof examCategorySchema>;
 export type ExamsRecommendationResponse = z.infer<typeof examsRecommendationResponseSchema>;
+
+// ========== PROHMED REPORT SYSTEM (Refertazione Massiva) ==========
+
+// Report documents - uploaded by operators, processed by AI, reviewed by doctors
+export const reportDocuments = pgTable("report_documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Patient info (manual input by operator)
+  patientName: varchar("patient_name", { length: 200 }).notNull(),
+  patientFiscalCode: varchar("patient_fiscal_code", { length: 20 }), // Codice fiscale
+  patientDateOfBirth: timestamp("patient_date_of_birth"),
+  // Document
+  originalFileName: varchar("original_file_name", { length: 255 }).notNull(),
+  filePath: varchar("file_path", { length: 500 }).notNull(), // Secure path (not public)
+  fileType: varchar("file_type", { length: 20 }).notNull(), // pdf, image
+  // Processing
+  extractedText: text("extracted_text"), // OCR/PDF text extraction
+  aiDraftReport: text("ai_draft_report"), // AI-generated draft report
+  aiProcessedAt: timestamp("ai_processed_at"),
+  // Status: pending_upload, processing, pending_review, in_review, pending_signature, signed, rejected
+  status: varchar("status", { length: 30 }).notNull().default("pending_upload"),
+  // Assignments
+  uploadedByOperatorId: varchar("uploaded_by_operator_id", { length: 191 }).notNull().references(() => users.id),
+  assignedDoctorId: varchar("assigned_doctor_id", { length: 191 }).references(() => users.id),
+  // Final report
+  finalReport: text("final_report"), // Doctor-edited final version
+  doctorNotes: text("doctor_notes"), // Internal notes (not visible to patient)
+  // Signature
+  signedAt: timestamp("signed_at"),
+  signatureOtpChannel: varchar("signature_otp_channel", { length: 20 }), // sms, whatsapp
+  // Generated PDF
+  signedPdfPath: varchar("signed_pdf_path", { length: 500 }), // Final PDF with signature
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_report_docs_operator").on(table.uploadedByOperatorId),
+  index("idx_report_docs_doctor").on(table.assignedDoctorId),
+  index("idx_report_docs_status").on(table.status),
+  index("idx_report_docs_created").on(table.createdAt),
+]);
+
+export type ReportDocument = typeof reportDocuments.$inferSelect;
+export const insertReportDocumentSchema = createInsertSchema(reportDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  aiProcessedAt: true,
+  signedAt: true,
+});
+export type InsertReportDocument = z.infer<typeof insertReportDocumentSchema>;
+
+// Report signature OTP tracking (security audit trail)
+export const reportSignatureOtps = pgTable("report_signature_otps", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  reportDocumentId: uuid("report_document_id").notNull().references(() => reportDocuments.id, { onDelete: 'cascade' }),
+  doctorId: varchar("doctor_id", { length: 191 }).notNull().references(() => users.id),
+  otpHash: varchar("otp_hash", { length: 255 }).notNull(), // Bcrypt hashed OTP
+  channel: varchar("channel", { length: 20 }).notNull(), // sms, whatsapp
+  phoneNumber: varchar("phone_number", { length: 50 }).notNull(), // Target phone (masked in logs)
+  expiresAt: timestamp("expires_at").notNull(),
+  attemptCount: integer("attempt_count").default(0).notNull(),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_report_otp_document").on(table.reportDocumentId),
+  index("idx_report_otp_doctor").on(table.doctorId),
+  index("idx_report_otp_expires").on(table.expiresAt),
+]);
+
+export type ReportSignatureOtp = typeof reportSignatureOtps.$inferSelect;
+export const insertReportSignatureOtpSchema = createInsertSchema(reportSignatureOtps).omit({
+  id: true,
+  createdAt: true,
+  verifiedAt: true,
+  attemptCount: true,
+});
+export type InsertReportSignatureOtp = z.infer<typeof insertReportSignatureOtpSchema>;
+
+// Report activity log (full audit trail for compliance)
+export const reportActivityLogs = pgTable("report_activity_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  reportDocumentId: uuid("report_document_id").notNull().references(() => reportDocuments.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id", { length: 191 }).notNull().references(() => users.id),
+  action: varchar("action", { length: 50 }).notNull(), // uploaded, ai_processed, reviewed, edited, otp_sent, signed, rejected
+  details: jsonb("details"), // Additional context
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_report_activity_document").on(table.reportDocumentId),
+  index("idx_report_activity_user").on(table.userId),
+  index("idx_report_activity_action").on(table.action),
+  index("idx_report_activity_created").on(table.createdAt),
+]);
+
+export type ReportActivityLog = typeof reportActivityLogs.$inferSelect;
+export const insertReportActivityLogSchema = createInsertSchema(reportActivityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertReportActivityLog = z.infer<typeof insertReportActivityLogSchema>;

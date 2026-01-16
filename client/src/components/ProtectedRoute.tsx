@@ -5,9 +5,17 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requireNonAiOnly?: boolean; // If true, blocks AI-only users from this route
   requireDoctor?: boolean; // If true, blocks non-doctor users from this route
+  requireReportOperator?: boolean; // If true, requires report operator role
+  requireReportDoctor?: boolean; // If true, requires report doctor role
 }
 
-export default function ProtectedRoute({ children, requireNonAiOnly = false, requireDoctor = false }: ProtectedRouteProps) {
+export default function ProtectedRoute({ 
+  children, 
+  requireNonAiOnly = false, 
+  requireDoctor = false,
+  requireReportOperator = false,
+  requireReportDoctor = false,
+}: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
 
@@ -20,6 +28,16 @@ export default function ProtectedRoute({ children, requireNonAiOnly = false, req
   if (!user) {
     const redirectUrl = encodeURIComponent(location);
     return <Redirect to={`/login?redirect=${redirectUrl}`} />;
+  }
+
+  // If route requires report operator role
+  if (requireReportOperator && !(user as any)?.isReportOperator) {
+    return <Redirect to="/login" />;
+  }
+
+  // If route requires report doctor role
+  if (requireReportDoctor && !(user as any)?.isReportDoctor) {
+    return <Redirect to="/login" />;
   }
 
   // If route requires doctor access and user is not a doctor, redirect to dashboard

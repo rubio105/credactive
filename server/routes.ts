@@ -63,6 +63,7 @@ import {
 } from "./rateLimits";
 import { registerGamificationRoutes } from "./gamificationRoutes";
 import { registerWearableRoutes } from "./wearableRoutes";
+import reportRoutes from "./reportRoutes";
 import { processQuizCompletion } from "./gamification";
 import { transcribeAudio, textToSpeech, clearOpenAIInstance as clearVoiceOpenAI } from "./voice";
 
@@ -414,6 +415,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve uploaded PDFs statically (non-sensitive public content)
   app.use('/quiz-documents', express.static(pdfUploadDir));
+  
+  // Report documents routes (Prohmed refertazione massiva)
+  app.use('/api/report-documents', reportRoutes);
   
   // NOTE: Medical documents, doctor notes, and profile images are NOT served statically
   // for security reasons. They require authentication and are served via dedicated endpoints below.

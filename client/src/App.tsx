@@ -36,6 +36,7 @@ import AdminPushNotifications from "@/pages/admin-push-notifications";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import AdminDocumentazione from "@/pages/admin-documentazione";
 import AdminConsents from "@/pages/admin-consents";
+import AdminReferti from "@/pages/admin-referti";
 import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
 import Login from "@/pages/login";
@@ -76,6 +77,8 @@ import RoleDashboard from "@/pages/role-dashboard";
 import MediciPage from "@/pages/medici";
 import NotifichePage from "@/pages/notifiche";
 import DoctorAlertsPage from "@/pages/doctor-alerts";
+import OperatoreReferti from "@/pages/operatore-referti";
+import RefertatorerReferti from "@/pages/refertatore-referti";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -99,6 +102,12 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/logout" component={Logout} />
+      <Route path="/operatore/referti">
+        {() => <ProtectedRoute requireReportOperator><OperatoreReferti /></ProtectedRoute>}
+      </Route>
+      <Route path="/refertatore/referti">
+        {() => <ProtectedRoute requireReportDoctor><RefertatorerReferti /></ProtectedRoute>}
+      </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute requireNonAiOnly><RoleDashboard /></ProtectedRoute>}
       </Route>
@@ -197,6 +206,9 @@ function Router() {
       </Route>
       <Route path="/admin/consents">
         {() => <ProtectedRoute requireNonAiOnly><AdminConsents /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/referti">
+        {() => <ProtectedRoute requireNonAiOnly><AdminReferti /></ProtectedRoute>}
       </Route>
       <Route path="/admin/documentazione">
         {() => <ProtectedRoute requireNonAiOnly><AdminDocumentazione /></ProtectedRoute>}

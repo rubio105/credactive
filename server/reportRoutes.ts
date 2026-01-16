@@ -4,7 +4,6 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcryptjs";
 import PDFDocument from "pdfkit";
-import * as pdfParseModule from "pdf-parse";
 import { db } from "./db";
 import { reportDocuments, reportSignatureOtps, reportActivityLogs, users } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
@@ -152,7 +151,8 @@ async function processReportWithAI(reportId: string, filePath: string, fileType:
 
     if (fileType === "pdf") {
       const pdfBuffer = fs.readFileSync(filePath);
-      const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+      const pdfParseModule = await import("pdf-parse");
+      const pdfParse = pdfParseModule.default || pdfParseModule;
       const pdfData = await pdfParse(pdfBuffer);
       extractedText = pdfData.text;
     } else {

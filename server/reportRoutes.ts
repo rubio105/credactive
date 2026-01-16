@@ -370,18 +370,32 @@ router.post("/:id/request-otp", isAuthenticated, isReportDoctor, async (req: any
       
       // Send via Email
       try {
+        const patientName = report.patientName || "Paziente";
         await sendEmail({
           to: doctorEmail!,
-          subject: "Prohmed - Codice OTP per firma referto",
+          subject: "Prohmed - OTP per Firma Refertazione Medica",
           htmlContent: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2563eb;">Codice OTP per Firma Referto</h2>
-              <p>Il tuo codice di verifica per firmare il referto è:</p>
-              <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1f2937;">${otpCode}</span>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+              <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 24px; text-align: center;">
+                <img src="https://credactive.com/images/prohmed-logo.png" alt="Prohmed" style="height: 50px; margin-bottom: 8px;" onerror="this.style.display='none'"/>
+                <h1 style="color: white; margin: 0; font-size: 24px;">PROHMED</h1>
+                <p style="color: #bfdbfe; margin: 4px 0 0 0; font-size: 14px;">Sistema di Refertazione Medica</p>
               </div>
-              <p style="color: #6b7280; font-size: 14px;">Questo codice scade tra 5 minuti.</p>
-              <p style="color: #6b7280; font-size: 14px;">Se non hai richiesto questo codice, ignora questa email.</p>
+              <div style="padding: 32px;">
+                <h2 style="color: #1e40af; margin: 0 0 16px 0; font-size: 20px;">Codice OTP per Firma Referto</h2>
+                <p style="color: #374151; margin: 0 0 8px 0;">Gentile Dr./Dr.ssa,</p>
+                <p style="color: #374151; margin: 0 0 16px 0;">Ecco il codice di verifica per firmare digitalmente il referto del paziente <strong>${patientName}</strong>:</p>
+                <div style="background: #f0f9ff; border: 2px solid #3b82f6; padding: 24px; text-align: center; border-radius: 12px; margin: 24px 0;">
+                  <span style="font-size: 36px; font-weight: bold; letter-spacing: 10px; color: #1e40af;">${otpCode}</span>
+                </div>
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+                  <p style="color: #92400e; margin: 0; font-size: 14px;"><strong>Attenzione:</strong> Questo codice scade tra 5 minuti.</p>
+                </div>
+                <p style="color: #6b7280; font-size: 13px; margin: 24px 0 0 0;">Se non hai richiesto questo codice, ignora questa email.</p>
+              </div>
+              <div style="background: #f9fafb; padding: 16px; text-align: center; border-top: 1px solid #e5e7eb;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">Prohmed - Piattaforma di Refertazione Medica Digitale</p>
+              </div>
             </div>
           `,
         });

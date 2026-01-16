@@ -569,6 +569,16 @@ function cleanMarkdownText(text: string): string {
     .trim();
 }
 
+
+function ensureSpace(doc: typeof PDFDocument.prototype, requiredHeight: number) {
+  if (doc.y + requiredHeight > doc.page.height - 60) {
+    doc.addPage();
+    doc.y = 50;
+    return true;
+  }
+  return false;
+}
+
 function formatReportContent(doc: typeof PDFDocument.prototype, text: string, pageWidth: number) {
   if (!text) return;
   
@@ -576,57 +586,83 @@ function formatReportContent(doc: typeof PDFDocument.prototype, text: string, pa
   const lines = cleanText.split("\n");
   const sectionTitles = [
     "REFERTO MEDICO", "DATI CLINICI", "SINTESI DIAGNOSTICA", 
-    "PROPOSTA TERAPEUTICA", "PIANO DI FOLLOW-UP", "NOTE"
+    "PROPOSTA TERAPEUTICA", "PIANO DI FOLLOW-UP", "NOTE",
+    "SPIEGAZIONE SEMPLICE", "IN PAROLE SEMPLICI"
   ];
   
+  const fontSize = 10;
+  const lineGap = fontSize * 0.5;
   let isFirstSection = true;
+  let pendingLines: string[] = [];
+  
+  const flushPendingLines = () => {
+    if (pendingLines.length === 0) return;
+    
+    for (const pLine of pendingLines) {
+      const trimmed = pLine.trim();
+      if (!trimmed) {
+        doc.moveDown(0.4);
+        continue;
+      }
+      
+      ensureSpace(doc, 20);
+      
+      if (trimmed.startsWith("-") || trimmed.startsWith("•")) {
+        const bulletText = trimmed.replace(/^[-•]\s*/, "");
+        doc.fontSize(fontSize).font("Helvetica").fillColor("#374151")
+          .text("  •  " + bulletText, { lineGap });
+      } else if (trimmed.includes(":") && trimmed.indexOf(":") < 40 && !trimmed.startsWith("http")) {
+        const colonIndex = trimmed.indexOf(":");
+        const label = trimmed.substring(0, colonIndex + 1);
+        const value = trimmed.substring(colonIndex + 1).trim();
+        
+        doc.fontSize(fontSize).font("Helvetica-Bold").fillColor("#1f2937").text(label, { continued: true, lineGap });
+        doc.font("Helvetica").fillColor("#374151").text(" " + value, { lineGap });
+      } else {
+        doc.fontSize(fontSize).font("Helvetica").fillColor("#374151").text(trimmed, {
+          align: "justify",
+          lineGap,
+        });
+      }
+    }
+    pendingLines = [];
+  };
   
   for (const line of lines) {
     const trimmedLine = line.trim();
-    if (!trimmedLine) {
-      doc.moveDown(0.3);
-      continue;
-    }
     
-    const isSection = sectionTitles.some(title => 
+    const matchedSection = sectionTitles.find(title => 
       trimmedLine.toUpperCase().startsWith(title) || 
       trimmedLine.toUpperCase() === title
     );
     
-    if (isSection) {
+    if (matchedSection) {
+      flushPendingLines();
+      
+      ensureSpace(doc, 40);
+      
       if (!isFirstSection) {
-        doc.moveDown(0.6);
+        doc.moveDown(0.8);
       }
       isFirstSection = false;
       
-      doc.fontSize(11).font("Helvetica-Bold").fillColor("#1a365d").text(trimmedLine.toUpperCase());
-      doc.moveDown(0.2);
+      const rectY = doc.y;
+      doc.save();
+      doc.rect(50, rectY, 4, 14).fillColor("#3b82f6").fill();
+      doc.restore();
       
-      doc.moveTo(50, doc.y).lineTo(200, doc.y).lineWidth(0.5).strokeColor("#3b82f6").stroke();
+      doc.fontSize(11).font("Helvetica-Bold").fillColor("#1a365d")
+        .text(trimmedLine.toUpperCase(), 60, rectY);
       doc.moveDown(0.3);
-    } else if (trimmedLine.startsWith("-") || trimmedLine.startsWith("•")) {
-      const bulletText = trimmedLine.replace(/^[-•]\s*/, "");
-      doc.fontSize(9).font("Helvetica").fillColor("#374151")
-        .text("•  " + bulletText, { indent: 10, lineGap: 1 });
-    } else if (trimmedLine.includes(":") && trimmedLine.indexOf(":") < 35 && !trimmedLine.startsWith("http")) {
-      const colonIndex = trimmedLine.indexOf(":");
-      const label = trimmedLine.substring(0, colonIndex + 1);
-      const value = trimmedLine.substring(colonIndex + 1).trim();
       
-      doc.fontSize(9).font("Helvetica-Bold").fillColor("#1f2937").text(label, { continued: true });
-      doc.font("Helvetica").fillColor("#374151").text(" " + value);
+      doc.moveTo(60, doc.y).lineTo(250, doc.y).lineWidth(0.5).strokeColor("#93c5fd").stroke();
+      doc.moveDown(0.4);
     } else {
-      doc.fontSize(9).font("Helvetica").fillColor("#374151").text(trimmedLine, {
-        align: "justify",
-        lineGap: 1,
-      });
-    }
-    
-    if (doc.y > doc.page.height - 80) {
-      doc.addPage();
-      doc.y = 50;
+      pendingLines.push(line);
     }
   }
+  
+  flushPendingLines();
 }
 
 async function generateSignedPDF(report: ReportDocument, doctor: User | null): Promise<string> {
@@ -647,17 +683,31 @@ async function generateSignedPDF(report: ReportDocument, doctor: User | null): P
     const primaryColor = "#1a365d";
     const accentColor = "#3b82f6";
 
-    const logoPath = path.join(process.cwd(), "attached_assets", "Immagine_16-01-26_-_18.22_1768584512639.png");
-    if (fs.existsSync(logoPath)) {
+    const logoPaths = [
+      path.join(process.cwd(), "attached_assets", "Immagine_16-01-26_-_18.22_1768584512639.png"),
+      "/var/www/credactive/attached_assets/Immagine_16-01-26_-_18.22_1768584512639.png",
+      path.join(process.cwd(), "..", "attached_assets", "Immagine_16-01-26_-_18.22_1768584512639.png")
+    ];
+    
+    let logoLoaded = false;
+    for (const logoPath of logoPaths) {
       try {
-        doc.image(logoPath, 50, 25, { width: 180 });
+        if (fs.existsSync(logoPath)) {
+          console.log("[PDF] Loading logo from:", logoPath);
+          doc.image(logoPath, 50, 25, { width: 160 });
+          logoLoaded = true;
+          break;
+        }
       } catch (e) {
-        console.error("[PDF] Logo error:", e);
-        doc.fontSize(18).font("Helvetica-Bold").fillColor(primaryColor).text("PROHMED", 50, 35);
+        console.error("[PDF] Logo error for path:", logoPath, e);
+        continue;
       }
-    } else {
-      doc.fontSize(18).font("Helvetica-Bold").fillColor(primaryColor).text("PROHMED", 50, 35);
-      doc.fontSize(8).font("Helvetica").fillColor("#718096").text("Medical Intelligence Prevention", 50, 55);
+    }
+    
+    if (!logoLoaded) {
+      console.log("[PDF] No logo found at paths:", logoPaths.join(", "));
+      doc.fontSize(20).font("Helvetica-Bold").fillColor(primaryColor).text("PROHMED", 50, 30);
+      doc.fontSize(9).font("Helvetica").fillColor("#3b82f6").text("Medical Intelligence Prevention", 50, 52);
     }
 
     doc.moveTo(50, 85).lineTo(doc.page.width - 50, 85).lineWidth(2).strokeColor(primaryColor).stroke();
@@ -701,28 +751,52 @@ async function generateSignedPDF(report: ReportDocument, doctor: User | null): P
       doc.y = 50;
     }
 
-    doc.moveDown(1);
+    doc.moveDown(1.2);
     const signatureStartY = doc.y;
 
-    doc.moveTo(doc.page.width - 200, signatureStartY)
+    doc.moveTo(doc.page.width - 220, signatureStartY)
       .lineTo(doc.page.width - 50, signatureStartY)
       .lineWidth(1)
       .strokeColor(primaryColor)
       .stroke();
     
-    doc.fontSize(10).font("Helvetica-Bold").fillColor(primaryColor)
-      .text(`Dott. ${doctorName}`, doc.page.width - 200, signatureStartY + 6, {
-        width: 150,
+    doc.fontSize(11).font("Helvetica-Bold").fillColor(primaryColor)
+      .text(`Dott. ${doctorName}`, doc.page.width - 220, signatureStartY + 8, {
+        width: 170,
         align: "center",
       });
 
+    let nextY = signatureStartY + 24;
+    
     if (doctor?.specialization) {
-      doc.fontSize(8).font("Helvetica-Oblique").fillColor("#4a5568")
-        .text(doctor.specialization, doc.page.width - 200, signatureStartY + 20, {
-          width: 150,
+      doc.fontSize(9).font("Helvetica-Oblique").fillColor("#4a5568")
+        .text(doctor.specialization, doc.page.width - 220, nextY, {
+          width: 170,
           align: "center",
         });
+      nextY += 14;
     }
+    
+    const signDateTime = new Date();
+    const signDateTimeStr = signDateTime.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }) + " ore " + signDateTime.toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    
+    doc.fontSize(8).font("Helvetica").fillColor("#6b7280")
+      .text("Firmato digitalmente il", doc.page.width - 220, nextY, {
+        width: 170,
+        align: "center",
+      });
+    doc.fontSize(8).font("Helvetica-Bold").fillColor("#374151")
+      .text(signDateTimeStr, doc.page.width - 220, nextY + 10, {
+        width: 170,
+        align: "center",
+      });
 
     const range = doc.bufferedPageRange();
     const totalPages = range.count;

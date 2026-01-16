@@ -242,6 +242,14 @@ STRUTTURA OBBLIGATORIA DEL REFERTO:
 
 REFERTO MEDICO
 
+IN PAROLE SEMPLICI
+[Scrivi 3-4 frasi che spiegano al paziente, in modo semplice e rassicurante, cosa mostrano i risultati.
+Usa un linguaggio quotidiano, evita termini tecnici. Il paziente deve capire facilmente:
+- Come sta in generale (bene, qualche valore da tenere sotto controllo, necessita attenzione)
+- Cosa significano i valori alterati in parole semplici
+- Cosa dovrebbe fare (niente di particolare, controllo tra X mesi, parlare col medico)
+Esempio: "I suoi esami mostrano che la maggior parte dei valori sono nella norma. Il colesterolo e leggermente alto, quindi potrebbe essere utile fare attenzione all'alimentazione. Si consiglia un controllo tra 6 mesi."]
+
 DATI CLINICI
 [Riassumi i dati clinici rilevanti trovati nel documento: valori di laboratorio, risultati esami, parametri vitali]
 
@@ -264,7 +272,8 @@ REGOLE IMPORTANTI:
 - Non inventare dati non presenti nel documento originale
 - Indica chiaramente dove servono integrazioni del medico
 - Mantieni un tono oggettivo e scientifico
-- Il referto è una BOZZA che il medico revisionerà e firmerà
+- Il referto e una BOZZA che il medico revisionera e firmera
+- La sezione IN PAROLE SEMPLICI deve essere comprensibile a chiunque, anche senza cultura medica
 
 FORMATTAZIONE OBBLIGATORIA:
 - NON usare MAI formattazione markdown (asterischi **, *, underscore _, hashtag #)

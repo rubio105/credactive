@@ -264,7 +264,15 @@ REGOLE IMPORTANTI:
 - Non inventare dati non presenti nel documento originale
 - Indica chiaramente dove servono integrazioni del medico
 - Mantieni un tono oggettivo e scientifico
-- Il referto è una BOZZA che il medico revisionerà e firmerà`;
+- Il referto è una BOZZA che il medico revisionerà e firmerà
+
+FORMATTAZIONE OBBLIGATORIA:
+- NON usare MAI formattazione markdown (asterischi **, *, underscore _, hashtag #)
+- NON usare bullet points con asterischi. Usa trattini (-) o numeri per gli elenchi
+- Scrivi testo pulito senza simboli di formattazione
+- Per evidenziare valori anomali, scrivi "(elevato)" o "(basso)" in parentesi
+- Usa solo lettere maiuscole per i titoli delle sezioni (es. DATI CLINICI)
+- Separa le sezioni con una riga vuota, non con simboli`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",

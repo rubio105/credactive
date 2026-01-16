@@ -556,13 +556,38 @@ async function generateSignedPDF(report: ReportDocument, doctor: User | null): P
       });
     }
 
-    doc.moveDown(2);
+    doc.moveDown(3);
+
+    const signDate = new Date().toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+
+    doc
+      .fontSize(10)
+      .fillColor("black")
+      .font("Helvetica-Bold")
+      .text(
+        `Firmato dal Dott. ${doctor?.firstName || ""} ${doctor?.lastName || ""}`,
+        { align: "center" }
+      );
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(
+        `in data ${signDate}`,
+        { align: "center" }
+      );
+
+    doc.moveDown(1);
 
     doc
       .fontSize(8)
       .fillColor("gray")
       .text(
-        `Firmato digitalmente il ${new Date().toLocaleString("it-IT")} | ID: ${report.id}`,
+        `Documento firmato digitalmente | ID: ${report.id}`,
         { align: "center" }
       );
 

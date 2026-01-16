@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,12 @@ import {
   Mail,
   Eye,
   AlertCircle,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+
+const ITEMS_PER_PAGE = 10;
 const prohmedLogo = "/images/ciry-logo.png";
 
 interface ReportDocument {
@@ -48,6 +53,10 @@ export default function RefertatorerReferti() {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [pendingSearchTerm, setPendingSearchTerm] = useState("");
+  const [signedSearchTerm, setSignedSearchTerm] = useState("");
+  const [pendingPage, setPendingPage] = useState(1);
+  const [signedPage, setSignedPage] = useState(1);
 
   const { data: user } = useQuery<any>({
     queryKey: ["/api/auth/me"],
@@ -60,6 +69,29 @@ export default function RefertatorerReferti() {
   const { data: signedReports, isLoading: signedLoading } = useQuery<ReportDocument[]>({
     queryKey: ["/api/report-documents/doctor/signed"],
   });
+
+  const filteredPendingReports = useMemo(() => {
+    if (!pendingReports) return [];
+    if (pendingSearchTerm === "") return pendingReports;
+    return pendingReports.filter((r) => 
+      r.patientName.toLowerCase().includes(pendingSearchTerm.toLowerCase()) ||
+      r.patientFiscalCode?.toLowerCase().includes(pendingSearchTerm.toLowerCase())
+    );
+  }, [pendingReports, pendingSearchTerm]);
+
+  const filteredSignedReports = useMemo(() => {
+    if (!signedReports) return [];
+    if (signedSearchTerm === "") return signedReports;
+    return signedReports.filter((r) => 
+      r.patientName.toLowerCase().includes(signedSearchTerm.toLowerCase()) ||
+      r.patientFiscalCode?.toLowerCase().includes(signedSearchTerm.toLowerCase())
+    );
+  }, [signedReports, signedSearchTerm]);
+
+  const paginatedPendingReports = filteredPendingReports.slice((pendingPage - 1) * ITEMS_PER_PAGE, pendingPage * ITEMS_PER_PAGE);
+  const paginatedSignedReports = filteredSignedReports.slice((signedPage - 1) * ITEMS_PER_PAGE, signedPage * ITEMS_PER_PAGE);
+  const totalPendingPages = Math.ceil(filteredPendingReports.length / ITEMS_PER_PAGE);
+  const totalSignedPages = Math.ceil(filteredSignedReports.length / ITEMS_PER_PAGE);
 
   const handleLogout = async () => {
     try {
@@ -263,52 +295,79 @@ export default function RefertatorerReferti() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-orange-600" />
-                  Referti da Revisionare
+                  Referti da Revisionare ({filteredPendingReports.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Cerca per nome paziente o CF..."
+                    value={pendingSearchTerm}
+                    onChange={(e) => { setPendingSearchTerm(e.target.value); setPendingPage(1); }}
+                    className="pl-10"
+                    data-testid="input-search-pending"
+                  />
+                </div>
                 {pendingLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                   </div>
-                ) : !pendingReports?.length ? (
-                  <p className="text-gray-500 text-center py-8">Nessun referto da revisionare</p>
+                ) : filteredPendingReports.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">Nessun referto trovato</p>
                 ) : (
-                  <div className="space-y-3">
-                    {pendingReports.map((report) => (
-                      <div
-                        key={report.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
-                        data-testid={`pending-report-${report.id}`}
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{report.patientName}</p>
-                          {report.patientFiscalCode && (
-                            <p className="text-xs text-gray-500 font-mono">{report.patientFiscalCode}</p>
-                          )}
-                          <p className="text-sm text-gray-500 mt-1">
-                            Caricato il{" "}
-                            {new Date(report.createdAt).toLocaleDateString("it-IT", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </p>
+                  <>
+                    <div className="space-y-3">
+                      {paginatedPendingReports.map((report) => (
+                        <div
+                          key={report.id}
+                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
+                          data-testid={`pending-report-${report.id}`}
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{report.patientName}</p>
+                            {report.patientFiscalCode && (
+                              <p className="text-xs text-gray-500 font-mono">{report.patientFiscalCode}</p>
+                            )}
+                            <p className="text-sm text-gray-500 mt-1">
+                              Caricato il{" "}
+                              {new Date(report.createdAt).toLocaleDateString("it-IT", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {getStatusBadge(report.status)}
+                            <Button
+                              onClick={() => openEditor(report)}
+                              size="sm"
+                              data-testid={`button-edit-${report.id}`}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Revisiona
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {getStatusBadge(report.status)}
-                          <Button
-                            onClick={() => openEditor(report)}
-                            size="sm"
-                            data-testid={`button-edit-${report.id}`}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Revisiona
+                      ))}
+                    </div>
+                    {totalPendingPages > 1 && (
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                        <span className="text-sm text-gray-500">
+                          Pagina {pendingPage} di {totalPendingPages}
+                        </span>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setPendingPage(p => Math.max(1, p - 1))} disabled={pendingPage === 1}>
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setPendingPage(p => Math.min(totalPendingPages, p + 1))} disabled={pendingPage === totalPendingPages}>
+                            <ChevronRight className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -319,53 +378,80 @@ export default function RefertatorerReferti() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  Referti Firmati
+                  Referti Firmati ({filteredSignedReports.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Cerca per nome paziente o CF..."
+                    value={signedSearchTerm}
+                    onChange={(e) => { setSignedSearchTerm(e.target.value); setSignedPage(1); }}
+                    className="pl-10"
+                    data-testid="input-search-signed"
+                  />
+                </div>
                 {signedLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                   </div>
-                ) : !signedReports?.length ? (
-                  <p className="text-gray-500 text-center py-8">Nessun referto firmato</p>
+                ) : filteredSignedReports.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">Nessun referto trovato</p>
                 ) : (
-                  <div className="space-y-3">
-                    {signedReports.map((report) => (
-                      <div
-                        key={report.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
-                        data-testid={`signed-report-${report.id}`}
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{report.patientName}</p>
-                          <p className="text-sm text-gray-500">
-                            Firmato il{" "}
-                            {report.signedAt &&
-                              new Date(report.signedAt).toLocaleDateString("it-IT", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                          </p>
+                  <>
+                    <div className="space-y-3">
+                      {paginatedSignedReports.map((report) => (
+                        <div
+                          key={report.id}
+                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
+                          data-testid={`signed-report-${report.id}`}
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{report.patientName}</p>
+                            <p className="text-sm text-gray-500">
+                              Firmato il{" "}
+                              {report.signedAt &&
+                                new Date(report.signedAt).toLocaleDateString("it-IT", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {getStatusBadge(report.status)}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`/api/report-documents/${report.id}/pdf`, "_blank")}
+                              data-testid={`button-view-pdf-${report.id}`}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Visualizza PDF
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {getStatusBadge(report.status)}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(`/api/report-documents/${report.id}/pdf`, "_blank")}
-                            data-testid={`button-view-pdf-${report.id}`}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Visualizza PDF
+                      ))}
+                    </div>
+                    {totalSignedPages > 1 && (
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                        <span className="text-sm text-gray-500">
+                          Pagina {signedPage} di {totalSignedPages}
+                        </span>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setSignedPage(p => Math.max(1, p - 1))} disabled={signedPage === 1}>
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setSignedPage(p => Math.min(totalSignedPages, p + 1))} disabled={signedPage === totalSignedPages}>
+                            <ChevronRight className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>

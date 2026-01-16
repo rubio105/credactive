@@ -9,6 +9,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 import { storage } from "./storage";
 import { db } from "./db";
 import { liveCourseSessions, liveCourses, liveStreamingSessions, liveCourseEnrollments, users, mlTrainingData, proactiveHealthTriggers, appointmentAttachments, appointments } from "@shared/schema";
@@ -67,9 +68,6 @@ import reportRoutes from "./reportRoutes";
 import { processQuizCompletion } from "./gamification";
 import { transcribeAudio, textToSpeech, clearOpenAIInstance as clearVoiceOpenAI } from "./voice";
 
-// pdf-parse (CommonJS module) - use createRequire for compatibility
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
 
 // Stripe instance - initialized lazily to support database-stored keys
 let stripeInstance: Stripe | null = null;
@@ -6629,17 +6627,16 @@ Restituisci SOLO un JSON con:
       const category = categories.find(c => c.id === quiz.categoryId);
       const categoryName = category?.name || 'General';
       
-      // Extract PDF document text if available
+      // Extract PDF document text if available using Gemini Vision
       let documentContext: string | undefined;
       if (quiz.documentPdfUrl) {
         try {
           const pdfPath = path.join(process.cwd(), 'public', quiz.documentPdfUrl.replace(/^\//, ''));
           if (fs.existsSync(pdfPath)) {
-            const pdfBuffer = fs.readFileSync(pdfPath);
-            const pdfParse = (await import('pdf-parse')) as any;
-            const pdfData = await pdfParse(pdfBuffer);
-            documentContext = pdfData.text;
-            console.log(`Loaded PDF context: ${pdfData.numpages} pages, ${pdfData.text.length} characters`);
+            const { extractTextFromMedicalReport } = await import('./gemini');
+            const ocrResult = await extractTextFromMedicalReport(pdfPath, 'application/pdf');
+            documentContext = ocrResult.extractedText;
+            console.log(`Loaded PDF context via Gemini: ${documentContext.length} characters`);
           }
         } catch (error) {
           console.error('Error reading PDF for context:', error);

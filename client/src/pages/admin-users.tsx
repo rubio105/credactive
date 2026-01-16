@@ -195,6 +195,7 @@ export default function AdminUsers() {
       updates: {
         firstName: editingUser.firstName,
         lastName: editingUser.lastName,
+        phone: editingUser.phone || undefined,
         isPremium: editingUser.subscriptionTier !== 'free',
         subscriptionTier: editingUser.subscriptionTier,
         isAdmin: editingUser.isAdmin,
@@ -592,7 +593,7 @@ export default function AdminUsers() {
                 <div>
                   <Label>Data di Nascita</Label>
                   <Input 
-                    value={editingUser.dateOfBirth ? new Date(editingUser.dateOfBirth).toLocaleDateString('it-IT') : '-'} 
+                    value={editingUser.dateOfBirth ? new Date(editingUser.dateOfBirth).toLocaleDateString('it-IT') : 'Non specificata'} 
                     disabled 
                     data-testid="input-dateOfBirth"
                   />
@@ -600,7 +601,7 @@ export default function AdminUsers() {
                 <div>
                   <Label>Genere</Label>
                   <Input 
-                    value={editingUser.gender || '-'} 
+                    value={editingUser.gender || 'Non specificato'} 
                     disabled 
                     data-testid="input-gender"
                   />
@@ -608,17 +609,19 @@ export default function AdminUsers() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Telefono</Label>
+                  <Label htmlFor="phone">Telefono</Label>
                   <Input 
-                    value={editingUser.phone || '-'} 
-                    disabled 
+                    id="phone"
+                    value={editingUser.phone || ''} 
+                    onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
+                    placeholder="Es. +39 333 1234567"
                     data-testid="input-phone"
                   />
                 </div>
                 <div>
                   <Label>Lingua</Label>
                   <Input 
-                    value={editingUser.language ? editingUser.language.toUpperCase() : '-'} 
+                    value={editingUser.language ? editingUser.language.toUpperCase() : 'Non specificata'} 
                     disabled 
                     data-testid="input-language"
                   />
@@ -628,7 +631,7 @@ export default function AdminUsers() {
                 <div>
                   <Label>Professione</Label>
                   <Input 
-                    value={editingUser.profession || '-'} 
+                    value={editingUser.profession || 'Non specificata'} 
                     disabled 
                     data-testid="input-profession"
                   />
@@ -636,7 +639,7 @@ export default function AdminUsers() {
                 <div>
                   <Label>Formazione</Label>
                   <Input 
-                    value={editingUser.education || '-'} 
+                    value={editingUser.education || 'Non specificata'} 
                     disabled 
                     data-testid="input-education"
                   />
@@ -645,7 +648,7 @@ export default function AdminUsers() {
               <div>
                 <Label>Azienda</Label>
                 <Input 
-                  value={editingUser.company || '-'} 
+                  value={editingUser.company || 'Non specificata'} 
                   disabled 
                   data-testid="input-company"
                 />
@@ -659,7 +662,7 @@ export default function AdminUsers() {
                     editingUser.addressPostalCode,
                     editingUser.addressProvince,
                     editingUser.addressCountry
-                  ].filter(Boolean).join(', ') || '-'} 
+                  ].filter(Boolean).join(', ') || 'Non specificato'} 
                   disabled 
                   data-testid="input-address"
                 />

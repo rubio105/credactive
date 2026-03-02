@@ -65,6 +65,16 @@ A dedicated medical report workflow for bulk document processing with strict rol
 - **Database Tables**: `report_documents`, `report_signature_otps`, `report_activity_logs`.
 - **User Roles**: `isReportOperator`, `isReportDoctor`, `assignedReportDoctorId` fields in users table.
 
+### External Client API (B2B Integration)
+A complete B2B API system allows external clients to integrate with Prohmed Refertazione Massiva:
+- **Authentication**: Bearer token via API key (`pmk_...` format), managed via Admin panel (`/admin/client-api`)
+- **Upload endpoint**: `POST /api/client/reports/upload` — multipart/form-data with file + patient info + webhook_url
+- **Status endpoint**: `GET /api/client/reports/:id` — check processing status
+- **Webhook delivery**: After doctor signs, signed PDF is automatically POSTed (base64) to client's `webhook_url`
+- **Webhook signature**: HMAC-SHA256 signature in `X-Prohmed-Signature` header for security verification
+- **Database tables**: `client_api_keys`, `client_report_submissions`
+- **Admin UI**: `/admin/client-api` — create/disable API keys, assign doctor+operator, monitor submissions
+
 ## System Design Choices
 
 ### Base URL Configuration

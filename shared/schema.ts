@@ -2968,3 +2968,62 @@ export const insertReportActivityLogSchema = createInsertSchema(reportActivityLo
   createdAt: true,
 });
 export type InsertReportActivityLog = z.infer<typeof insertReportActivityLogSchema>;
+
+// Client API Keys - for external B2B clients to use the Prohmed API
+export const clientApiKeys = pgTable("client_api_keys", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientName: varchar("client_name", { length: 200 }).notNull(),
+  apiKey: varchar("api_key", { length: 100 }).notNull().unique(),
+  apiKeyHash: varchar("api_key_hash", { length: 255 }).notNull(),
+  assignedDoctorId: varchar("assigned_doctor_id", { length: 191 }).references(() => users.id),
+  assignedOperatorId: varchar("assigned_operator_id", { length: 191 }).references(() => users.id),
+  isActive: boolean("is_active").default(true).notNull(),
+  webhookSecret: varchar("webhook_secret", { length: 100 }),
+  notes: text("notes"),
+  lastUsedAt: timestamp("last_used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_client_api_key").on(table.apiKey),
+  index("idx_client_api_active").on(table.isActive),
+]);
+
+export type ClientApiKey = typeof clientApiKeys.$inferSelect;
+export const insertClientApiKeySchema = createInsertSchema(clientApiKeys).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastUsedAt: true,
+});
+export type InsertClientApiKey = z.infer<typeof insertClientApiKeySchema>;
+
+// Client report submissions - tracks documents submitted via external API
+export const clientReportSubmissions = pgTable("client_report_submissions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientApiKeyId: uuid("client_api_key_id").notNull().references(() => clientApiKeys.id),
+  reportDocumentId: uuid("report_document_id").references(() => reportDocuments.id),
+  clientExternalId: varchar("client_external_id", { length: 200 }),
+  webhookUrl: varchar("webhook_url", { length: 500 }).notNull(),
+  webhookSentAt: timestamp("webhook_sent_at"),
+  webhookAttempts: integer("webhook_attempts").default(0).notNull(),
+  webhookLastError: text("webhook_last_error"),
+  webhookSuccess: boolean("webhook_success").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_client_submission_key").on(table.clientApiKeyId),
+  index("idx_client_submission_report").on(table.reportDocumentId),
+  index("idx_client_submission_external").on(table.clientExternalId),
+]);
+
+export type ClientReportSubmission = typeof clientReportSubmissions.$inferSelect;
+export const insertClientReportSubmissionSchema = createInsertSchema(clientReportSubmissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  webhookSentAt: true,
+  webhookAttempts: true,
+  webhookLastError: true,
+  webhookSuccess: true,
+});
+export type InsertClientReportSubmission = z.infer<typeof insertClientReportSubmissionSchema>;

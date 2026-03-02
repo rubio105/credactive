@@ -37,6 +37,7 @@ import AdminSubscriptions from "@/pages/admin-subscriptions";
 import AdminDocumentazione from "@/pages/admin-documentazione";
 import AdminConsents from "@/pages/admin-consents";
 import AdminReferti from "@/pages/admin-referti";
+import AdminClientApi from "@/pages/admin-client-api";
 import Contatti from "@/pages/contatti";
 import DynamicContentPage from "@/pages/DynamicContentPage";
 import Login from "@/pages/login";
@@ -209,6 +210,9 @@ function Router() {
       </Route>
       <Route path="/admin/referti">
         {() => <ProtectedRoute requireNonAiOnly><AdminReferti /></ProtectedRoute>}
+      </Route>
+      <Route path="/admin/client-api">
+        {() => <ProtectedRoute requireNonAiOnly><AdminClientApi /></ProtectedRoute>}
       </Route>
       <Route path="/admin/documentazione">
         {() => <ProtectedRoute requireNonAiOnly><AdminDocumentazione /></ProtectedRoute>}

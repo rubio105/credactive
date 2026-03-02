@@ -541,12 +541,23 @@ router.post("/:id/verify-otp", isAuthenticated, isReportDoctor, async (req: any,
 
     await logActivity(id, req.user.id, "signed", { pdfPath }, req);
 
+    deliverWebhookIfNeeded(id);
+
     res.json({ success: true, pdfPath: `/api/report-documents/${id}/pdf` });
   } catch (error: any) {
     console.error("[REPORT_VERIFY] Error:", error);
     res.status(500).json({ message: "Errore durante la verifica" });
   }
 });
+
+async function deliverWebhookIfNeeded(reportDocumentId: string) {
+  try {
+    const { deliverWebhook } = await import("./clientApiRoutes");
+    await deliverWebhook(reportDocumentId);
+  } catch (err) {
+    console.error("[REPORT_WEBHOOK] Failed to deliver webhook:", err);
+  }
+}
 
 import type { ReportDocument } from "@shared/schema";
 

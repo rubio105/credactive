@@ -94,7 +94,7 @@ export default function AdminClientApiPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/client/admin/keys", data);
+      const res = await apiRequest("/api/client/admin/keys", "POST", data);
       return res.json();
     },
     onSuccess: (data) => {
@@ -109,7 +109,7 @@ export default function AdminClientApiPage() {
 
   const toggleMutation = useMutation({
     mutationFn: async (keyId: string) => {
-      const res = await apiRequest("PATCH", `/api/client/admin/keys/${keyId}/toggle`, {});
+      const res = await apiRequest(`/api/client/admin/keys/${keyId}/toggle`, "PATCH", {});
       return res.json();
     },
     onSuccess: () => {

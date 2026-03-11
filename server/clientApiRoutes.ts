@@ -11,7 +11,7 @@ import {
   reportDocuments,
   reportActivityLogs,
 } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import { generateMedicalReportDraft, extractTextFromMedicalReport } from "./gemini";
 import { isAuthenticated } from "./authSetup";
@@ -378,12 +378,11 @@ router.get("/admin/keys", isAuthenticated, async (req: any, res) => {
     return res.status(403).json({ error: "forbidden" });
   }
   try {
-    const keys = await db.query.clientApiKeys.findMany({
-      orderBy: (t, { desc }) => [desc(t.createdAt)],
-    });
+    const keys = await db.select().from(clientApiKeys).orderBy(desc(clientApiKeys.createdAt));
     res.json(keys.map((k) => ({ ...k, apiKeyHash: undefined })));
-  } catch (err) {
-    res.status(500).json({ error: "server_error" });
+  } catch (err: any) {
+    console.error("[CLIENT_API] GET keys error:", err?.message);
+    res.status(500).json({ error: "server_error", detail: err?.message });
   }
 });
 
@@ -439,9 +438,7 @@ router.patch("/admin/keys/:keyId/toggle", isAuthenticated, async (req: any, res)
   }
   try {
     const { keyId } = req.params;
-    const key = await db.query.clientApiKeys.findFirst({
-      where: eq(clientApiKeys.id, keyId),
-    });
+    const [key] = await db.select().from(clientApiKeys).where(eq(clientApiKeys.id, keyId)).limit(1);
     if (!key) return res.status(404).json({ error: "not_found" });
 
     const [updated] = await db
@@ -461,12 +458,11 @@ router.get("/admin/submissions", isAuthenticated, async (req: any, res) => {
     return res.status(403).json({ error: "forbidden" });
   }
   try {
-    const submissions = await db.query.clientReportSubmissions.findMany({
-      orderBy: (t, { desc }) => [desc(t.createdAt)],
-    });
+    const submissions = await db.select().from(clientReportSubmissions).orderBy(desc(clientReportSubmissions.createdAt));
     res.json(submissions);
-  } catch (err) {
-    res.status(500).json({ error: "server_error" });
+  } catch (err: any) {
+    console.error("[CLIENT_API] GET submissions error:", err?.message);
+    res.status(500).json({ error: "server_error", detail: err?.message });
   }
 });
 

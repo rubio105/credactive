@@ -154,11 +154,11 @@ router.post("/reports/upload", authenticateApiKey, uploadReport.single("file"), 
 
     const clientKey = req.clientApiKey;
 
-    if (!clientKey.assignedDoctorId || !clientKey.assignedOperatorId) {
+    if (!clientKey.assignedDoctorId) {
       fs.unlinkSync(file.path);
       return res.status(500).json({
         error: "configuration_error",
-        message: "Medico o operatore non configurato per questa API key. Contatta il supporto Prohmed.",
+        message: "Medico refertatore non configurato per questa API key. Contatta il supporto Prohmed.",
       });
     }
 
@@ -174,7 +174,7 @@ router.post("/reports/upload", authenticateApiKey, uploadReport.single("file"), 
         filePath: file.path,
         fileType,
         status: "processing",
-        uploadedByOperatorId: clientKey.assignedOperatorId,
+        uploadedByOperatorId: clientKey.assignedOperatorId || clientKey.assignedDoctorId,
         assignedDoctorId: clientKey.assignedDoctorId,
       })
       .returning();
@@ -395,8 +395,8 @@ router.post("/admin/keys", async (req: any, res) => {
     if (!clientName?.trim()) {
       return res.status(400).json({ error: "clientName obbligatorio" });
     }
-    if (!assignedDoctorId || !assignedOperatorId) {
-      return res.status(400).json({ error: "Medico e operatore obbligatori" });
+    if (!assignedDoctorId) {
+      return res.status(400).json({ error: "Il medico refertatore è obbligatorio" });
     }
 
     const rawKey = `pmk_${crypto.randomBytes(24).toString("hex")}`;
@@ -409,7 +409,7 @@ router.post("/admin/keys", async (req: any, res) => {
         apiKey: rawKey,
         apiKeyHash: keyHash,
         assignedDoctorId,
-        assignedOperatorId,
+        assignedOperatorId: assignedOperatorId || null,
         notes: notes || null,
         webhookSecret: crypto.randomBytes(16).toString("hex"),
         isActive: true,

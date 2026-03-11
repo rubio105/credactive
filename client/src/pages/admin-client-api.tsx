@@ -76,7 +76,6 @@ export default function AdminClientApiPage() {
   const [form, setForm] = useState({
     clientName: "",
     assignedDoctorId: "",
-    assignedOperatorId: "",
     notes: "",
   });
 
@@ -92,11 +91,6 @@ export default function AdminClientApiPage() {
     queryKey: ["/api/report-documents/admin/doctors"],
   });
 
-  const { data: allUsers = [] } = useQuery<any[]>({
-    queryKey: ["/api/admin/users"],
-  });
-
-  const operators = allUsers.filter((u: any) => u.isReportOperator);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -125,8 +119,8 @@ export default function AdminClientApiPage() {
   });
 
   const handleCreate = () => {
-    if (!form.clientName || !form.assignedDoctorId || !form.assignedOperatorId) {
-      toast({ title: "Campi mancanti", description: "Compila tutti i campi obbligatori", variant: "destructive" });
+    if (!form.clientName || !form.assignedDoctorId) {
+      toast({ title: "Campi mancanti", description: "Inserisci nome cliente e medico refertatore", variant: "destructive" });
       return;
     }
     createMutation.mutate(form);
@@ -152,7 +146,7 @@ export default function AdminClientApiPage() {
 
         <Dialog open={createOpen} onOpenChange={(o) => {
           setCreateOpen(o);
-          if (!o) { setNewKey(null); setNewSecret(null); setForm({ clientName: "", assignedDoctorId: "", assignedOperatorId: "", notes: "" }); }
+          if (!o) { setNewKey(null); setNewSecret(null); setForm({ clientName: "", assignedDoctorId: "", notes: "" }); }
         }}>
           <DialogTrigger asChild>
             <Button data-testid="button-create-api-key" className="bg-blue-600 hover:bg-blue-700">
@@ -214,21 +208,6 @@ export default function AdminClientApiPage() {
                       {reportDoctors.map((d: any) => (
                         <SelectItem key={d.id} value={d.id}>
                           Dr. {d.firstName} {d.lastName}{d.specialization ? ` - ${d.specialization}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Operatore assegnato *</Label>
-                  <Select value={form.assignedOperatorId} onValueChange={(v) => setForm({ ...form, assignedOperatorId: v })}>
-                    <SelectTrigger data-testid="select-operator">
-                      <SelectValue placeholder="Seleziona operatore" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operators.map((o: any) => (
-                        <SelectItem key={o.id} value={o.id}>
-                          {o.firstName} {o.lastName} ({o.email})
                         </SelectItem>
                       ))}
                     </SelectContent>

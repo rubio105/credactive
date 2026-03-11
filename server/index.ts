@@ -105,6 +105,45 @@ app.use((req, res, next) => {
 
 // One-time application bootstrap (executes once at module load, not per-request)
 (async () => {
+  // Auto-create tables that may not exist yet (safe, uses IF NOT EXISTS)
+  try {
+    const { pool } = await import("./db");
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS client_api_keys (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        client_name VARCHAR(200) NOT NULL,
+        api_key VARCHAR(100) NOT NULL UNIQUE,
+        api_key_hash VARCHAR(255) NOT NULL,
+        assigned_doctor_id VARCHAR(191) REFERENCES users(id),
+        assigned_operator_id VARCHAR(191) REFERENCES users(id),
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        webhook_secret VARCHAR(100),
+        notes TEXT,
+        last_used_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_client_api_key ON client_api_keys(api_key);
+      CREATE INDEX IF NOT EXISTS idx_client_api_active ON client_api_keys(is_active);
+
+      CREATE TABLE IF NOT EXISTS client_report_submissions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        client_api_key_id UUID NOT NULL REFERENCES client_api_keys(id),
+        report_document_id UUID REFERENCES report_documents(id),
+        client_external_id VARCHAR(200),
+        webhook_url VARCHAR(500) NOT NULL,
+        webhook_sent_at TIMESTAMP,
+        webhook_status VARCHAR(50),
+        webhook_attempts INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_client_submissions_key ON client_report_submissions(client_api_key_id);
+    `);
+    console.log('[Bootstrap] client_api_keys and client_report_submissions tables ready');
+  } catch (e: any) {
+    console.error('[Bootstrap] Table init error:', e?.message);
+  }
+
   const server = await registerRoutes(app);
 
   // Start job worker for async document processing

@@ -393,6 +393,8 @@ router.post("/admin/keys", isAuthenticated, async (req: any, res) => {
   }
   try {
     const { clientName, assignedDoctorId, assignedOperatorId, notes } = req.body;
+    console.log("[CLIENT_API] POST /admin/keys body:", { clientName, assignedDoctorId, notes });
+
     if (!clientName?.trim()) {
       return res.status(400).json({ error: "clientName obbligatorio" });
     }
@@ -402,6 +404,8 @@ router.post("/admin/keys", isAuthenticated, async (req: any, res) => {
 
     const rawKey = `pmk_${crypto.randomBytes(24).toString("hex")}`;
     const keyHash = await bcrypt.hash(rawKey, 10);
+
+    console.log("[CLIENT_API] Inserting key for doctor:", assignedDoctorId);
 
     const [key] = await db
       .insert(clientApiKeys)
@@ -417,14 +421,15 @@ router.post("/admin/keys", isAuthenticated, async (req: any, res) => {
       })
       .returning();
 
+    console.log("[CLIENT_API] Key created:", key.id);
     res.json({
       ...key,
       apiKeyHash: undefined,
       message: "Conserva questa API key, non verrà mostrata di nuovo.",
     });
   } catch (err: any) {
-    console.error("[CLIENT_API_ADMIN] Create key error:", err);
-    res.status(500).json({ error: "server_error" });
+    console.error("[CLIENT_API_ADMIN] Create key error:", err?.message, err?.code, err?.detail);
+    res.status(500).json({ error: "server_error", detail: err?.message });
   }
 });
 

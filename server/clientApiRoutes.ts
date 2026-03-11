@@ -14,6 +14,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateMedicalReportDraft, extractTextFromMedicalReport } from "./gemini";
+import { isAuthenticated } from "./authSetup";
 
 const router = Router();
 
@@ -372,7 +373,7 @@ export async function deliverWebhook(reportDocumentId: string): Promise<void> {
   }
 }
 
-router.get("/admin/keys", async (req: any, res) => {
+router.get("/admin/keys", isAuthenticated, async (req: any, res) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: "forbidden" });
   }
@@ -386,7 +387,7 @@ router.get("/admin/keys", async (req: any, res) => {
   }
 });
 
-router.post("/admin/keys", async (req: any, res) => {
+router.post("/admin/keys", isAuthenticated, async (req: any, res) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: "forbidden" });
   }
@@ -427,7 +428,7 @@ router.post("/admin/keys", async (req: any, res) => {
   }
 });
 
-router.patch("/admin/keys/:keyId/toggle", async (req: any, res) => {
+router.patch("/admin/keys/:keyId/toggle", isAuthenticated, async (req: any, res) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: "forbidden" });
   }
@@ -450,7 +451,7 @@ router.patch("/admin/keys/:keyId/toggle", async (req: any, res) => {
   }
 });
 
-router.get("/admin/submissions", async (req: any, res) => {
+router.get("/admin/submissions", isAuthenticated, async (req: any, res) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: "forbidden" });
   }

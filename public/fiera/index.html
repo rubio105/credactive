@@ -3,48 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ExperienceLab 2026 — Registrazione</title>
+  <title>valièr — ExperienceLab 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    /* === COLORI TEMA — aggiornare con colori Valieri Italia === */
     :root {
-      --color-primary:    #1e3a4f;
-      --color-accent:     #c9a96e;
-      --color-bg:         #f8f6f3;
-      --color-white:      #ffffff;
-      --color-text:       #2c2c2c;
-      --color-text-light: #777777;
-      --color-border:     #e2ddd9;
+      --burgundy:   #7b1f3a;
+      --dark-nav:   #3d3d3d;
+      --gold:       #c9a46a;
+      --white:      #ffffff;
+      --bg:         #f7f5f4;
+      --text:       #2c2c2c;
+      --text-light: #888888;
+      --border:     #e4dfdc;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background: var(--color-bg);
-      color: var(--color-text);
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
     }
 
-    header {
-      background: var(--color-primary);
-      color: var(--color-white);
+    /* ---- HEADER (stile Valier Italia) ---- */
+    .site-header {
+      background: var(--white);
       text-align: center;
-      padding: 52px 20px 42px;
+      padding: 36px 20px 28px;
+      border-bottom: 1px solid #ede8e5;
     }
-    header h1 {
-      font-size: 2rem;
+    .logo-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3.6rem;
       font-weight: 300;
-      letter-spacing: 4px;
-      text-transform: uppercase;
+      font-style: italic;
+      color: var(--burgundy);
+      line-height: 1;
+      letter-spacing: 1px;
     }
-    header .sub {
-      color: var(--color-accent);
-      font-size: 0.78rem;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-top: 10px;
+    .logo-tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--burgundy);
+      letter-spacing: 2px;
+      margin-top: 4px;
     }
 
+    /* ---- NAV BAR ---- */
+    .site-nav {
+      background: var(--dark-nav);
+      text-align: center;
+      padding: 18px 20px;
+    }
+    .site-nav span {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    /* ---- CONTAINER ---- */
     .container {
       max-width: 560px;
       margin: 44px auto;
@@ -52,48 +74,50 @@
     }
 
     .card {
-      background: var(--color-white);
-      border-radius: 4px;
+      background: var(--white);
+      border-radius: 3px;
       padding: 42px 40px;
-      box-shadow: 0 2px 24px rgba(0,0,0,0.07);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
     }
     .card-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-light);
       margin-bottom: 28px;
       padding-bottom: 16px;
-      border-bottom: 1px solid var(--color-border);
-      color: var(--color-text);
+      border-bottom: 1px solid var(--border);
     }
 
     .field { margin-bottom: 20px; }
     label {
       display: block;
-      font-size: 0.73rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
-      color: var(--color-text-light);
+      color: var(--text-light);
       margin-bottom: 7px;
     }
-    label .req { color: var(--color-accent); }
+    label .req { color: var(--gold); }
 
     input, select {
       width: 100%;
       padding: 11px 14px;
-      border: 1px solid var(--color-border);
-      border-radius: 3px;
-      font-size: 0.92rem;
-      color: var(--color-text);
-      background: var(--color-white);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+      background: var(--white);
       transition: border-color 0.18s;
       -webkit-appearance: none;
       appearance: none;
     }
     input:focus, select:focus {
       outline: none;
-      border-color: var(--color-primary);
+      border-color: var(--burgundy);
     }
 
     .sel-wrap { position: relative; }
@@ -103,9 +127,8 @@
       right: 13px;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--color-text-light);
+      color: var(--text-light);
       pointer-events: none;
-      font-size: 0.8rem;
     }
 
     .row {
@@ -115,9 +138,9 @@
     }
 
     .privacy {
-      font-size: 0.77rem;
-      color: var(--color-text-light);
-      line-height: 1.55;
+      font-size: 0.72rem;
+      color: var(--text-light);
+      line-height: 1.6;
       margin-top: 18px;
     }
 
@@ -126,103 +149,113 @@
       width: 100%;
       margin-top: 28px;
       padding: 15px;
-      background: var(--color-primary);
-      color: var(--color-white);
+      background: var(--dark-nav);
+      color: var(--white);
       border: none;
-      border-radius: 3px;
-      font-size: 0.82rem;
+      border-radius: 2px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.74rem;
       font-weight: 700;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
       text-transform: uppercase;
       cursor: pointer;
       transition: background 0.18s;
     }
-    .btn:hover { background: #162d3f; }
-    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn:hover  { background: #2a2a2a; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .err {
       background: #fef2f2;
       border: 1px solid #fecaca;
       color: #dc2626;
       padding: 11px 14px;
-      border-radius: 3px;
-      font-size: 0.83rem;
+      border-radius: 2px;
+      font-size: 0.8rem;
       margin-top: 14px;
       display: none;
     }
 
-    /* Success */
+    /* ---- SUCCESS ---- */
     .success-card {
-      background: var(--color-white);
-      border-radius: 4px;
+      background: var(--white);
+      border-radius: 3px;
       padding: 52px 40px;
-      box-shadow: 0 2px 24px rgba(0,0,0,0.07);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
       text-align: center;
     }
     .check {
-      width: 58px; height: 58px;
-      background: #edf7f1;
+      width: 56px; height: 56px;
+      background: #f5ede8;
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 22px;
-      font-size: 1.6rem;
+      font-size: 1.4rem;
+      color: var(--burgundy);
     }
     .s-title {
-      font-size: 1.35rem;
-      font-weight: 500;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.7rem;
+      font-weight: 400;
+      color: var(--burgundy);
       margin-bottom: 12px;
     }
     .s-msg {
-      color: var(--color-text-light);
-      font-size: 0.93rem;
-      line-height: 1.65;
+      color: var(--text-light);
+      font-size: 0.88rem;
+      line-height: 1.7;
       margin-bottom: 28px;
     }
     .voucher {
-      background: var(--color-bg);
-      border: 2px dashed var(--color-accent);
-      border-radius: 4px;
+      background: var(--bg);
+      border: 2px dashed var(--gold);
+      border-radius: 3px;
       padding: 30px 24px;
-      margin: 0 0 18px;
+      margin-bottom: 16px;
     }
     .v-label {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: var(--color-text-light);
+      color: var(--text-light);
       margin-bottom: 10px;
     }
     .v-code {
-      font-size: 2.1rem;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.9rem;
       font-weight: 800;
       letter-spacing: 5px;
-      color: var(--color-text);
+      color: var(--text);
     }
     .v-pct {
-      font-size: 1.05rem;
-      color: var(--color-accent);
+      font-size: 1rem;
+      color: var(--gold);
       font-weight: 600;
       margin-top: 6px;
     }
     .v-note {
-      font-size: 0.78rem;
-      color: #aaa;
-      margin-top: 14px;
+      font-size: 0.75rem;
+      color: #bbb;
+      margin-top: 12px;
     }
 
     @media (max-width: 480px) {
       .card, .success-card { padding: 28px 20px; }
       .row { grid-template-columns: 1fr; gap: 0; }
-      header h1 { font-size: 1.5rem; }
+      .logo-text { font-size: 2.6rem; }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>ExperienceLab 2026</h1>
-  <div class="sub">Registrazione Visitatori</div>
+<header class="site-header">
+  <!-- Sostituire con <img src="/images/valier-logo.png" alt="valièr"> quando disponibile -->
+  <div class="logo-text">vali&egrave;r</div>
+  <div class="logo-tagline">be your priority</div>
 </header>
+
+<nav class="site-nav">
+  <span>ExperienceLab 2026 &mdash; Registrazione Visitatori</span>
+</nav>
 
 <div class="container">
 
@@ -244,14 +277,14 @@
 
         <div class="row">
           <div class="field">
-            <label>Età <span class="req">*</span></label>
+            <label>Et&agrave; <span class="req">*</span></label>
             <input type="number" name="eta" placeholder="35" min="16" max="99" required>
           </div>
           <div class="field">
             <label>Sesso <span class="req">*</span></label>
             <div class="sel-wrap">
               <select name="sesso" required>
-                <option value="">— Seleziona —</option>
+                <option value="">&mdash; Seleziona &mdash;</option>
                 <option>Uomo</option>
                 <option>Donna</option>
                 <option>Preferisco non indicare</option>
@@ -264,7 +297,7 @@
           <label>Tipologia <span class="req">*</span></label>
           <div class="sel-wrap">
             <select name="tipologia" required>
-              <option value="">— Seleziona —</option>
+              <option value="">&mdash; Seleziona &mdash;</option>
               <option>Distributore</option>
               <option>Produttore</option>
               <option>Centro Estetico</option>
@@ -277,7 +310,7 @@
           <label>Paese <span class="req">*</span></label>
           <div class="sel-wrap">
             <select name="paese" required>
-              <option value="">— Seleziona —</option>
+              <option value="">&mdash; Seleziona &mdash;</option>
               <option>Italia</option>
               <option>Svizzera</option>
               <option>Francia</option>
@@ -297,7 +330,7 @@
         </div>
 
         <p class="privacy">
-          Compilando questo modulo acconsenti al trattamento dei tuoi dati personali per la gestione della tua registrazione, in conformità con il Regolamento UE 2016/679 (GDPR).
+          Compilando questo modulo acconsenti al trattamento dei tuoi dati personali per la gestione della tua registrazione, in conformit&agrave; con il Regolamento UE 2016/679 (GDPR).
         </p>
 
         <div class="err" id="errMsg"></div>
@@ -350,7 +383,7 @@ document.getElementById('fieraForm').addEventListener('submit', async function(e
     if (!res.ok) throw new Error(json.error || 'Errore server');
 
     document.getElementById('formView').style.display = 'none';
-    const card = document.getElementById('successCard');
+    const card  = document.getElementById('successCard');
     const nome1 = data.nome.split(' ')[0];
 
     if (json.isPrivato) {
@@ -363,7 +396,7 @@ document.getElementById('fieraForm').addEventListener('submit', async function(e
           <div class="v-code">EXPERIENCELAB26</div>
           <div class="v-pct">&minus;25% di sconto</div>
         </div>
-        <p class="v-note">Conserva questo codice. Ti &egrave; stato inviato anche via email.</p>
+        <p class="v-note">Conserva questo codice &bull; Ti &egrave; stato inviato anche via email</p>
       `;
     } else {
       card.innerHTML = `
@@ -375,7 +408,7 @@ document.getElementById('fieraForm').addEventListener('submit', async function(e
     document.getElementById('successView').style.display = 'block';
 
   } catch (ex) {
-    err.textContent = ex.message || 'Si &egrave; verificato un errore. Riprova.';
+    err.textContent = ex.message || 'Si è verificato un errore. Riprova.';
     err.style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Registrati';

@@ -7,29 +7,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --burgundy:   #7b1f3a;
-      --dark-nav:   #3d3d3d;
-      --gold:       #c9a46a;
-      --white:      #ffffff;
-      --bg:         #f7f5f4;
-      --text:       #2c2c2c;
-      --text-light: #888888;
-      --border:     #e4dfdc;
-    }
-
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Montserrat', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: #f7f5f4;
       min-height: 100vh;
     }
 
-    /* ---- HEADER (stile Valier Italia) ---- */
+    /* Header bianco con logo Valier */
     .site-header {
-      background: var(--white);
+      background: #ffffff;
       text-align: center;
       padding: 36px 20px 28px;
       border-bottom: 1px solid #ede8e5;
@@ -39,22 +27,21 @@
       font-size: 3.6rem;
       font-weight: 300;
       font-style: italic;
-      color: var(--burgundy);
+      color: #7b1f3a;
       line-height: 1;
       letter-spacing: 1px;
     }
     .logo-tagline {
       font-family: 'Cormorant Garamond', serif;
       font-size: 1rem;
-      font-weight: 400;
-      color: var(--burgundy);
+      color: #7b1f3a;
       letter-spacing: 2px;
       margin-top: 4px;
     }
 
-    /* ---- NAV BAR ---- */
+    /* Barra nav grigio scuro */
     .site-nav {
-      background: var(--dark-nav);
+      background: #3d3d3d;
       text-align: center;
       padding: 18px 20px;
     }
@@ -63,358 +50,80 @@
       font-weight: 600;
       letter-spacing: 2.5px;
       text-transform: uppercase;
-      color: var(--gold);
+      color: #c9a46a;
     }
 
-    /* ---- CONTAINER ---- */
-    .container {
-      max-width: 560px;
+    /* Area form */
+    .form-wrap {
+      max-width: 640px;
       margin: 44px auto;
       padding: 0 20px 80px;
     }
-
-    .card {
-      background: var(--white);
+    .form-card {
+      background: #ffffff;
       border-radius: 3px;
-      padding: 42px 40px;
+      padding: 40px 36px;
       box-shadow: 0 2px 20px rgba(0,0,0,0.06);
-    }
-    .card-title {
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--text-light);
-      margin-bottom: 28px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .field { margin-bottom: 20px; }
-    label {
-      display: block;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: var(--text-light);
-      margin-bottom: 7px;
-    }
-    label .req { color: var(--gold); }
-
-    input, select {
-      width: 100%;
-      padding: 11px 14px;
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.88rem;
-      color: var(--text);
-      background: var(--white);
-      transition: border-color 0.18s;
-      -webkit-appearance: none;
-      appearance: none;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--burgundy);
-    }
-
-    .sel-wrap { position: relative; }
-    .sel-wrap::after {
-      content: '▾';
-      position: absolute;
-      right: 13px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-light);
-      pointer-events: none;
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .privacy {
-      font-size: 0.72rem;
-      color: var(--text-light);
-      line-height: 1.6;
-      margin-top: 18px;
-    }
-
-    .btn {
-      display: block;
-      width: 100%;
-      margin-top: 28px;
-      padding: 15px;
-      background: var(--dark-nav);
-      color: var(--white);
-      border: none;
-      border-radius: 2px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.74rem;
-      font-weight: 700;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: background 0.18s;
-    }
-    .btn:hover  { background: #2a2a2a; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .err {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #dc2626;
-      padding: 11px 14px;
-      border-radius: 2px;
-      font-size: 0.8rem;
-      margin-top: 14px;
-      display: none;
-    }
-
-    /* ---- SUCCESS ---- */
-    .success-card {
-      background: var(--white);
-      border-radius: 3px;
-      padding: 52px 40px;
-      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
-      text-align: center;
-    }
-    .check {
-      width: 56px; height: 56px;
-      background: #f5ede8;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 22px;
-      font-size: 1.4rem;
-      color: var(--burgundy);
-    }
-    .s-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.7rem;
-      font-weight: 400;
-      color: var(--burgundy);
-      margin-bottom: 12px;
-    }
-    .s-msg {
-      color: var(--text-light);
-      font-size: 0.88rem;
-      line-height: 1.7;
-      margin-bottom: 28px;
-    }
-    .voucher {
-      background: var(--bg);
-      border: 2px dashed var(--gold);
-      border-radius: 3px;
-      padding: 30px 24px;
-      margin-bottom: 16px;
-    }
-    .v-label {
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--text-light);
-      margin-bottom: 10px;
-    }
-    .v-code {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 1.9rem;
-      font-weight: 800;
-      letter-spacing: 5px;
-      color: var(--text);
-    }
-    .v-pct {
-      font-size: 1rem;
-      color: var(--gold);
-      font-weight: 600;
-      margin-top: 6px;
-    }
-    .v-note {
-      font-size: 0.75rem;
-      color: #bbb;
-      margin-top: 12px;
     }
 
     @media (max-width: 480px) {
-      .card, .success-card { padding: 28px 20px; }
-      .row { grid-template-columns: 1fr; gap: 0; }
-      .logo-text { font-size: 2.6rem; }
+      .logo-text  { font-size: 2.6rem; }
+      .form-card  { padding: 24px 16px; }
     }
   </style>
 </head>
 <body>
 
-<header class="site-header">
-  <!-- Sostituire con <img src="/images/valier-logo.png" alt="valièr"> quando disponibile -->
-  <div class="logo-text">vali&egrave;r</div>
-  <div class="logo-tagline">be your priority</div>
-</header>
+  <header class="site-header">
+    <!-- Sostituire il testo con <img src="/images/valier-logo.png" alt="valièr"> -->
+    <div class="logo-text">vali&egrave;r</div>
+    <div class="logo-tagline">be your priority</div>
+  </header>
 
-<nav class="site-nav">
-  <span>ExperienceLab 2026 &mdash; Registrazione Visitatori</span>
-</nav>
+  <nav class="site-nav">
+    <span>ExperienceLab 2026 &mdash; Registrazione Visitatori</span>
+  </nav>
 
-<div class="container">
+  <div class="form-wrap">
+    <div class="form-card">
 
-  <div id="formView">
-    <div class="card">
-      <div class="card-title">Compila i tuoi dati per partecipare</div>
-      <form id="fieraForm" novalidate>
+      <!-- ============================================================
+           SOSTITUIRE "TUOFORMID" con l'ID del form Tally
+           Esempio: se il link è tally.so/r/abc123  →  TUOFORMID = abc123
+           ============================================================ -->
+      <iframe
+        data-tally-src="https://tally.so/embed/TUOFORMID?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
+        loading="lazy"
+        width="100%"
+        height="500"
+        frameborder="0"
+        marginheight="0"
+        marginwidth="0"
+        title="ExperienceLab 2026 - Registrazione">
+      </iframe>
+      <script>
+        var d = document,
+            w = "https://tally.so/widgets/embed.js",
+            v = function() {
+              typeof Tally !== 'undefined'
+                ? Tally.loadEmbeds()
+                : d.querySelectorAll('iframe[data-tally-src]:not([src])').forEach(function(e) {
+                    e.src = e.dataset.tallySrc;
+                  });
+            };
+        if (typeof Tally !== 'undefined') {
+          v();
+        } else if (d.querySelector('script[src="' + w + '"]') === null) {
+          var s = d.createElement('script');
+          s.src = w;
+          s.onload = v;
+          s.onerror = v;
+          d.body.appendChild(s);
+        }
+      </script>
 
-        <div class="row">
-          <div class="field">
-            <label>Nome e Cognome <span class="req">*</span></label>
-            <input type="text" name="nome" placeholder="Mario Rossi" required autocomplete="name">
-          </div>
-          <div class="field">
-            <label>Email <span class="req">*</span></label>
-            <input type="email" name="email" placeholder="mario@email.com" required autocomplete="email">
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label>Et&agrave; <span class="req">*</span></label>
-            <input type="number" name="eta" placeholder="35" min="16" max="99" required>
-          </div>
-          <div class="field">
-            <label>Sesso <span class="req">*</span></label>
-            <div class="sel-wrap">
-              <select name="sesso" required>
-                <option value="">&mdash; Seleziona &mdash;</option>
-                <option>Uomo</option>
-                <option>Donna</option>
-                <option>Preferisco non indicare</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Tipologia <span class="req">*</span></label>
-          <div class="sel-wrap">
-            <select name="tipologia" required>
-              <option value="">&mdash; Seleziona &mdash;</option>
-              <option>Distributore</option>
-              <option>Produttore</option>
-              <option>Centro Estetico</option>
-              <option>Utente Privato</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Paese <span class="req">*</span></label>
-          <div class="sel-wrap">
-            <select name="paese" required>
-              <option value="">&mdash; Seleziona &mdash;</option>
-              <option>Italia</option>
-              <option>Svizzera</option>
-              <option>Francia</option>
-              <option>Germania</option>
-              <option>Spagna</option>
-              <option>Portogallo</option>
-              <option>Austria</option>
-              <option>Belgio</option>
-              <option>Paesi Bassi</option>
-              <option>Regno Unito</option>
-              <option>USA</option>
-              <option>Canada</option>
-              <option>Australia</option>
-              <option>Altro</option>
-            </select>
-          </div>
-        </div>
-
-        <p class="privacy">
-          Compilando questo modulo acconsenti al trattamento dei tuoi dati personali per la gestione della tua registrazione, in conformit&agrave; con il Regolamento UE 2016/679 (GDPR).
-        </p>
-
-        <div class="err" id="errMsg"></div>
-        <button type="submit" class="btn" id="submitBtn">Registrati</button>
-
-      </form>
     </div>
   </div>
-
-  <div id="successView" style="display:none">
-    <div class="success-card" id="successCard"></div>
-  </div>
-
-</div>
-
-<script>
-document.getElementById('fieraForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const form = e.target;
-  const btn  = document.getElementById('submitBtn');
-  const err  = document.getElementById('errMsg');
-
-  const data = {
-    nome:      form.nome.value.trim(),
-    email:     form.email.value.trim(),
-    eta:       form.eta.value.trim(),
-    sesso:     form.sesso.value,
-    tipologia: form.tipologia.value,
-    paese:     form.paese.value,
-  };
-
-  for (const v of Object.values(data)) {
-    if (!v) {
-      err.textContent = 'Per favore compila tutti i campi obbligatori.';
-      err.style.display = 'block';
-      return;
-    }
-  }
-  err.style.display = 'none';
-  btn.disabled = true;
-  btn.textContent = 'Invio in corso…';
-
-  try {
-    const res  = await fetch('/api/fiera/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || 'Errore server');
-
-    document.getElementById('formView').style.display = 'none';
-    const card  = document.getElementById('successCard');
-    const nome1 = data.nome.split(' ')[0];
-
-    if (json.isPrivato) {
-      card.innerHTML = `
-        <div class="check">&#10003;</div>
-        <div class="s-title">Registrazione completata!</div>
-        <p class="s-msg">Ciao <strong>${nome1}</strong>, grazie per esserti registrato.<br>Abbiamo inviato il tuo codice sconto a <strong>${data.email}</strong>.</p>
-        <div class="voucher">
-          <div class="v-label">Il tuo codice sconto esclusivo</div>
-          <div class="v-code">EXPERIENCELAB26</div>
-          <div class="v-pct">&minus;25% di sconto</div>
-        </div>
-        <p class="v-note">Conserva questo codice &bull; Ti &egrave; stato inviato anche via email</p>
-      `;
-    } else {
-      card.innerHTML = `
-        <div class="check">&#10003;</div>
-        <div class="s-title">Registrazione completata!</div>
-        <p class="s-msg">Ciao <strong>${nome1}</strong>, grazie per esserti registrato a ExperienceLab 2026.<br>Ti aspettiamo all&rsquo;evento!</p>
-      `;
-    }
-    document.getElementById('successView').style.display = 'block';
-
-  } catch (ex) {
-    err.textContent = ex.message || 'Si è verificato un errore. Riprova.';
-    err.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Registrati';
-  }
-});
-</script>
 
 </body>
 </html>

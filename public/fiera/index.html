@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExperienceLab 2026 — Registrazione</title>
+  <style>
+    /* === COLORI TEMA — aggiornare con colori Valieri Italia === */
+    :root {
+      --color-primary:    #1e3a4f;
+      --color-accent:     #c9a96e;
+      --color-bg:         #f8f6f3;
+      --color-white:      #ffffff;
+      --color-text:       #2c2c2c;
+      --color-text-light: #777777;
+      --color-border:     #e2ddd9;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--color-primary);
+      color: var(--color-white);
+      text-align: center;
+      padding: 52px 20px 42px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+    header .sub {
+      color: var(--color-accent);
+      font-size: 0.78rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 10px;
+    }
+
+    .container {
+      max-width: 560px;
+      margin: 44px auto;
+      padding: 0 20px 80px;
+    }
+
+    .card {
+      background: var(--color-white);
+      border-radius: 4px;
+      padding: 42px 40px;
+      box-shadow: 0 2px 24px rgba(0,0,0,0.07);
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text);
+    }
+
+    .field { margin-bottom: 20px; }
+    label {
+      display: block;
+      font-size: 0.73rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--color-text-light);
+      margin-bottom: 7px;
+    }
+    label .req { color: var(--color-accent); }
+
+    input, select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: 3px;
+      font-size: 0.92rem;
+      color: var(--color-text);
+      background: var(--color-white);
+      transition: border-color 0.18s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+
+    .sel-wrap { position: relative; }
+    .sel-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-text-light);
+      pointer-events: none;
+      font-size: 0.8rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .privacy {
+      font-size: 0.77rem;
+      color: var(--color-text-light);
+      line-height: 1.55;
+      margin-top: 18px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      margin-top: 28px;
+      padding: 15px;
+      background: var(--color-primary);
+      color: var(--color-white);
+      border: none;
+      border-radius: 3px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .btn:hover { background: #162d3f; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .err {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 11px 14px;
+      border-radius: 3px;
+      font-size: 0.83rem;
+      margin-top: 14px;
+      display: none;
+    }
+
+    /* Success */
+    .success-card {
+      background: var(--color-white);
+      border-radius: 4px;
+      padding: 52px 40px;
+      box-shadow: 0 2px 24px rgba(0,0,0,0.07);
+      text-align: center;
+    }
+    .check {
+      width: 58px; height: 58px;
+      background: #edf7f1;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 22px;
+      font-size: 1.6rem;
+    }
+    .s-title {
+      font-size: 1.35rem;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .s-msg {
+      color: var(--color-text-light);
+      font-size: 0.93rem;
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+    .voucher {
+      background: var(--color-bg);
+      border: 2px dashed var(--color-accent);
+      border-radius: 4px;
+      padding: 30px 24px;
+      margin: 0 0 18px;
+    }
+    .v-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--color-text-light);
+      margin-bottom: 10px;
+    }
+    .v-code {
+      font-size: 2.1rem;
+      font-weight: 800;
+      letter-spacing: 5px;
+      color: var(--color-text);
+    }
+    .v-pct {
+      font-size: 1.05rem;
+      color: var(--color-accent);
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .v-note {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .card, .success-card { padding: 28px 20px; }
+      .row { grid-template-columns: 1fr; gap: 0; }
+      header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ExperienceLab 2026</h1>
+  <div class="sub">Registrazione Visitatori</div>
+</header>
+
+<div class="container">
+
+  <div id="formView">
+    <div class="card">
+      <div class="card-title">Compila i tuoi dati per partecipare</div>
+      <form id="fieraForm" novalidate>
+
+        <div class="row">
+          <div class="field">
+            <label>Nome e Cognome <span class="req">*</span></label>
+            <input type="text" name="nome" placeholder="Mario Rossi" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label>Email <span class="req">*</span></label>
+            <input type="email" name="email" placeholder="mario@email.com" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Età <span class="req">*</span></label>
+            <input type="number" name="eta" placeholder="35" min="16" max="99" required>
+          </div>
+          <div class="field">
+            <label>Sesso <span class="req">*</span></label>
+            <div class="sel-wrap">
+              <select name="sesso" required>
+                <option value="">— Seleziona —</option>
+                <option>Uomo</option>
+                <option>Donna</option>
+                <option>Preferisco non indicare</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Tipologia <span class="req">*</span></label>
+          <div class="sel-wrap">
+            <select name="tipologia" required>
+              <option value="">— Seleziona —</option>
+              <option>Distributore</option>
+              <option>Produttore</option>
+              <option>Centro Estetico</option>
+              <option>Utente Privato</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Paese <span class="req">*</span></label>
+          <div class="sel-wrap">
+            <select name="paese" required>
+              <option value="">— Seleziona —</option>
+              <option>Italia</option>
+              <option>Svizzera</option>
+              <option>Francia</option>
+              <option>Germania</option>
+              <option>Spagna</option>
+              <option>Portogallo</option>
+              <option>Austria</option>
+              <option>Belgio</option>
+              <option>Paesi Bassi</option>
+              <option>Regno Unito</option>
+              <option>USA</option>
+              <option>Canada</option>
+              <option>Australia</option>
+              <option>Altro</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="privacy">
+          Compilando questo modulo acconsenti al trattamento dei tuoi dati personali per la gestione della tua registrazione, in conformità con il Regolamento UE 2016/679 (GDPR).
+        </p>
+
+        <div class="err" id="errMsg"></div>
+        <button type="submit" class="btn" id="submitBtn">Registrati</button>
+
+      </form>
+    </div>
+  </div>
+
+  <div id="successView" style="display:none">
+    <div class="success-card" id="successCard"></div>
+  </div>
+
+</div>
+
+<script>
+document.getElementById('fieraForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const btn  = document.getElementById('submitBtn');
+  const err  = document.getElementById('errMsg');
+
+  const data = {
+    nome:      form.nome.value.trim(),
+    email:     form.email.value.trim(),
+    eta:       form.eta.value.trim(),
+    sesso:     form.sesso.value,
+    tipologia: form.tipologia.value,
+    paese:     form.paese.value,
+  };
+
+  for (const v of Object.values(data)) {
+    if (!v) {
+      err.textContent = 'Per favore compila tutti i campi obbligatori.';
+      err.style.display = 'block';
+      return;
+    }
+  }
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Invio in corso…';
+
+  try {
+    const res  = await fetch('/api/fiera/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Errore server');
+
+    document.getElementById('formView').style.display = 'none';
+    const card = document.getElementById('successCard');
+    const nome1 = data.nome.split(' ')[0];
+
+    if (json.isPrivato) {
+      card.innerHTML = `
+        <div class="check">&#10003;</div>
+        <div class="s-title">Registrazione completata!</div>
+        <p class="s-msg">Ciao <strong>${nome1}</strong>, grazie per esserti registrato.<br>Abbiamo inviato il tuo codice sconto a <strong>${data.email}</strong>.</p>
+        <div class="voucher">
+          <div class="v-label">Il tuo codice sconto esclusivo</div>
+          <div class="v-code">EXPERIENCELAB26</div>
+          <div class="v-pct">&minus;25% di sconto</div>
+        </div>
+        <p class="v-note">Conserva questo codice. Ti &egrave; stato inviato anche via email.</p>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="check">&#10003;</div>
+        <div class="s-title">Registrazione completata!</div>
+        <p class="s-msg">Ciao <strong>${nome1}</strong>, grazie per esserti registrato a ExperienceLab 2026.<br>Ti aspettiamo all&rsquo;evento!</p>
+      `;
+    }
+    document.getElementById('successView').style.display = 'block';
+
+  } catch (ex) {
+    err.textContent = ex.message || 'Si &egrave; verificato un errore. Riprova.';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Registrati';
+  }
+});
+</script>
+
+</body>
+</html>

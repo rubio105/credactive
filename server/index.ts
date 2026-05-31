@@ -13,7 +13,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://www.googletagmanager.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://www.googletagmanager.com", "https://fonts.googleapis.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
@@ -144,6 +144,10 @@ app.use((req, res, next) => {
     console.error('[Bootstrap] Table init error:', e?.message);
   }
 
+  // Fiera form routes (public, no auth required)
+  const { registerFieraRoutes } = await import("./fieraRoutes");
+  registerFieraRoutes(app);
+
   const server = await registerRoutes(app);
 
   // Start job worker for async document processing
@@ -211,11 +215,10 @@ app.use((req, res, next) => {
           .where(
             and(
               eq(liveCourseEnrollments.sessionId, session.sessionId),
-              isNull(liveCourseEnrollments.reminderSentAt) // Only send if reminder not sent yet
+              isNull(liveCourseEnrollments.reminderSentAt)
             )
           );
         
-        // Send reminder email to each enrolled user (only once)
         for (const enrollment of enrollments) {
           try {
             const emailSubject = `Promemoria: Webinar "${session.courseTitle}" domani`;
@@ -265,7 +268,7 @@ app.use((req, res, next) => {
     } catch (error) {
       console.error('Webinar reminder system error:', error);
     }
-  }, 60 * 60 * 1000); // Run every hour
+  }, 60 * 60 * 1000);
 
   // Serve static files BEFORE Vite catch-all in development
   if (app.get("env") === "development") {
@@ -281,19 +284,12 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,
